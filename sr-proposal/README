@@ -1,0 +1,84 @@
+In general, design files go in rtl/ subdirectory and testbench files
+go in tst/ subdirectory.
+
+Also: for the makefile to work, you'll need to have Genesis2.pl in your
+path, i.e. "which Genesis2.pl" should return some valid path e.g. (for
+me on kiwi)
+
+  % which Genesis2.pl
+  /cad/genesis2/r11879/Genesis2Tools/bin/Genesis2.pl
+
+Alternatively you can specify the complete path on the make command line e.g.
+
+  make gen GENESIS_TOP=sb GENESIS=/cad/genesis2/r11879/Genesis2Tools/bin/Genesis2.pl
+
+instead of
+
+  make gen GENESIS_TOP=sb
+
+The makefile assumes that there is a top-level file top_<module> with
+the name of the test bench to be run for <module>, e.g. "top_pe.vp"
+(or "top_pe.svp") might be the name of the test bench for "pe.svp"
+
+But you can override this.  For instance, Artem's top-level module
+appears to be test_pe.svp.  To process his genesis files, then, we'll
+use this command:
+
+  make gen GENESIS_TOP=test_pe
+
+The "gen" at the end means to stop after verilog-generation phase.
+Without the "gen" it would go on and try to run the vcs verilog
+simulator on the resulting file(s).
+
+The most useful variation on the make command is the "-n" switch,
+which says "show me what you're going to do but don't do it."  So for
+instance,
+
+  make -n gen GENESIS_TOP=test_pe
+
+prints this (when I run it), but doesn't actually execute any of the commands:
+
+    Makefile:16: Home dir set to /nobackup/steveri/github/CGRA/sr-proposal
+    Makefile:20: Work started at /nobackup/steveri/github/CGRA/sr-proposal
+
+    Making genesis_vlog.vf because of /nobackup/steveri/github/CGRA/sr-proposal/tst/test_full_add.svp /nobackup/steveri/github/CGRA/sr-proposal/tst/test_lut.svp /nobackup/steveri/github/CGRA/sr-proposal/tst/test_mult_add.svp /nobackup/steveri/github/CGRA/sr-proposal/tst/test_opt_reg.svp /nobackup/steveri/github/CGRA/sr-proposal/tst/test_pe.svp /nobackup/steveri/github/CGRA/sr-proposal/rtl/sb.vp /nobackup/steveri/github/CGRA/sr-proposal/rtl/top_sb.vp
+    ==================================================
+    Genesis2.pl -gen -top test_pe -synthtop test_pe.pe -depend depend.list
+    -product genesis_vlog.vf -
+    ...
+
+After running the make command, you can look at the output
+
+  % make gen GENESIS_TOP=test_pe
+  % ls */test_*
+    genesis_verif/test_full_add.sv  genesis_work/test_full_add.pm  tst/test_full_add.svp
+    genesis_verif/test_lut.sv       genesis_work/test_lut.pm       tst/test_lut.svp
+    genesis_verif/test_mult_add.sv  genesis_work/test_mult_add.pm  tst/test_mult_add.svp
+    genesis_verif/test_opt_reg.sv   genesis_work/test_opt_reg.pm   tst/test_opt_reg.svp
+    genesis_verif/test_pe.sv        genesis_work/test_pe.pm        tst/test_pe.svp
+
+In this example, Artem's tst/*.svp turned into genesis_verif/*.sv verilog files
+using intermediate files genesis_work/*.pm
+
+Similarly, for Ankita's switchbox:
+
+  % make gen GENESIS_TOP=sb
+  % ls */sb*
+  genesis_verif/sb.v  genesis_work/sb.pm  rtl/sb.vp
+
+
+The result of the "make gen" command is a huge mess that you will want
+to clean up after you're done using the "genesis_clean.cmd" command
+produced by genesis:
+
+    % ls
+    depend.list         genesis_synth/         genesis_vlog.vf         pe.xml        tst/
+    genesis_clean.cmd*  genesis_verif/         genesis_work/           rtl/
+    genesis.log         genesis_vlog.synth.vf  Makefile*               small_pe.xml
+    genesis_raw/        genesis_vlog.verif.vf  Makefile.steveri.orig*  tiny_pe.xml
+
+    % ./genesis_clean.cmd
+
+    % ls
+    Makefile*  Makefile.steveri.orig*  rtl/  tst/
+
