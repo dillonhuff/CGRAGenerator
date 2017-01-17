@@ -14,6 +14,7 @@ For a quick example of how Steve's proposal works, you can do this
 (assumes github repository is mapped to CGRA/ and that the "make" and
 "Genesis2.pl" commands are both working and available in your path):
 
+<pre>
   % cd CGRA/sr-proposal
 
   % ls */test_pe.svp
@@ -25,6 +26,7 @@ For a quick example of how Steve's proposal works, you can do this
     genesis_verif/test_pe.sv
 
   % ./genesis_clean.cmd
+</pre>
 
 What did this do?  Well, if everything worked correctly...
 * the "make" command used the information in CGRA/Makefile to find and
