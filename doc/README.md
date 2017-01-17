@@ -1,11 +1,5 @@
 # CGRA/doc - A Place for CGRA-Related Documentation
 
-<i>(This page needs work...!)</i>
-
-As of now (1/2017), I guess all our docs are elsewhere.  Over time, I hope we
-can get most of them all here in one place.
-
------
 <b>Documents here:</b>
 * CGRA_architecture_overview_NB_161117.pdf - CGRA Overview: Nikhil slides from 11/2016 AHA meeting.
 * LineBuffer_block_for_CGRA_AV_161106.pdf - Snapshot of Artem's Google Doc about the line buffer.
