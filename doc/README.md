@@ -1,7 +1,6 @@
-# CGRA/doc
-A Place for CGRA-Related Documentation
+# CGRA/doc - A Place for CGRA-Related Documentation
 
-(This page needs work...!)
+<small>(This page needs work...!)</small>
 
 <i>
 The CGRA generator is part of the larger AHA project described here (external link)
