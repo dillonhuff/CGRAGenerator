@@ -1,13 +1,6 @@
 # CGRA/doc - A Place for CGRA-Related Documentation
 
-<small>(This page needs work...!)</small>
-
-<small><i>
-> CGRA generator is part of the larger AHA project described here (external link)
-> https://aha.stanford.edu
-> and here (internal link)
-> https://vlsiweb.stanford.edu/mediawiki/index.php/Agile_HArdware
-</i></small>
+<i>(This page needs work...!)</i>
 
 As of now (1/2017), I guess all our docs are elsewhere.  Over time, I hope we
 can get most of them all here in one place.
@@ -31,3 +24,13 @@ can get most of them all here in one place.
 * Evaluating programmable architectures for imaging and vision applications http://ieeexplore.ieee.org/abstract/document/7783755/ 
 
 <b>Papers in progress:</b>
+
+
+-----
+<i>
+(CGRA generator is part of the larger AHA project described here (external link)
+https://aha.stanford.edu
+and here (internal link)
+https://vlsiweb.stanford.edu/mediawiki/index.php/Agile_HArdware)
+</i>
+
