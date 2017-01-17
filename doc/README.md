@@ -3,10 +3,10 @@
 <small>(This page needs work...!)</small>
 
 <small><i>
-CGRA generator is part of the larger AHA project described here (external link)
-https://aha.stanford.edu
-and here (internal link)
-https://vlsiweb.stanford.edu/mediawiki/index.php/Agile_HArdware
+> CGRA generator is part of the larger AHA project described here (external link)
+> https://aha.stanford.edu
+> and here (internal link)
+> https://vlsiweb.stanford.edu/mediawiki/index.php/Agile_HArdware
 </i></small>
 
 As of now (1/2017), I guess all our docs are elsewhere.  Over time, I hope we
