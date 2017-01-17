@@ -17,19 +17,17 @@ can get most of them all here in one place.
 * CGRA meeting notes: https://vlsiweb.stanford.edu/mediawiki/index.php/AHA_CGRA_subgroup#Meeting_Notes
 
 
-#### Artem's Google docs regarding LB and interconnect
+#### Artem's google docs regarding LB and interconnect
 
-* Line buffer:
-  * https://docs.google.com/document/d/1gEinK1Xhr4RUpffNCfjqNEJfSPRZDqfVqBmZMSHVUvA/edit?usp=sharing
+* Line buffer: https://docs.google.com/document/d/1gEinK1Xhr4RUpffNCfjqNEJfSPRZDqfVqBmZMSHVUvA/edit?usp=sharing
 
-* Wire segments (interconnect) and Switch Box:
-  * https://docs.google.com/document/d/1sKWauvUi6FUGlyyq5OuMcn1a5Qtg9WFYkt_Zgvma0GA/edit#heading=h.giwxz920rh2p
+* Wire segments (interconnect) and switch box: https://docs.google.com/document/d/1sKWauvUi6FUGlyyq5OuMcn1a5Qtg9WFYkt_Zgvma0GA/edit#heading=h.giwxz920rh2p
 
 
 #### Paper(s):
 * Evaluating programmable architectures for imaging and vision applications http://ieeexplore.ieee.org/abstract/document/7783755/ 
 
-#### Papers in progress:
+#### Papers in progress: (TBD)
 
 
 -----
