@@ -4,7 +4,7 @@
 * CGRA_architecture_overview_NB_161117.pdf - CGRA Overview: Nikhil slides from 11/2016 AHA meeting.
 * LineBuffer_block_for_CGRA_AV_161106.pdf - Snapshot of Artem's Google Doc about the line buffer.
 * Wire_segments_experiment_AV_161106.pdf - Snapshot of Artem's Google Doc about wire segments.
-
+* sample_4x4_connectivity_matrix.xml - sample connectivity matrix for a 4x4 array of switchboxes.
 
 -----
 <b>Documentation in the wiki:</b>

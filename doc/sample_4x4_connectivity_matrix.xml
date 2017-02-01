@@ -1,3 +1,38 @@
+<!--------------------------------------------------------------------------
+# (ntracks) = total # of tracks; each NESW side has ntracks/4 tracks
+#
+# (input wirename) =  [NSEW]_i\[n\] where n = (0,1,2,...ntracks-1) or "PE"
+# (output wirename) = [NSEW]_o\[n\] where n = (0,1,2,...ntracks-1)
+# "PE" => output from PE associated with the current switchbox
+# 
+# Template for connectivity matrix for e.g. 4x4 matrix of <sb> switchboxes:
+#   <sb x='0' y='0' trk_cnt='(ntracks-1)'
+#     <dir name='N'>
+#       <mux>
+#         <src>'(input wirename)'</src>
+#         <src>'(input wirename)'</src>
+#         <src>'(input wirename)'</src>
+# 	...
+#         <snk>'(output wirename)'</snk>
+#       </mux>
+#       <mux> ...
+#       <mux> ...
+#       <mux> ...
+#     <dir name='S'>
+#       ...
+#     <dir name='E'>
+#       ...
+#     <dir name='W'>
+#       ...
+#   </sb>
+#   <sb x='1' y='0' trk_cnt='(ntracks-1)'
+#   <sb x='2' y='0' trk_cnt='(ntracks-1)'
+#   ...
+#   <sb x='3' y='2' trk_cnt='(ntracks-1)'
+#   <sb x='3' y='3' trk_cnt='(ntracks-1)'
+#
+# Example below:
+-------------------------------------------------------------------------->
 <sb x='0' y='0' trk_cnt='15'>
   <dir name='N'>
     <mux>
