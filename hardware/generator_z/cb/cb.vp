@@ -1,0 +1,90 @@
+//; use POSIX;
+//; my $width  = parameter(Name=>'width', val=> 16, doc=>'Bus width for SB');
+//; my $num_tracks = parameter(Name=>'num_tracks', val=> 10, doc=>'num_tracks Count for SB'); 
+//; my $feedthrough_outputs = parameter(Name=>'feedthrough_outputs', val=> "1111101111", doc=>'binary vector for specifying tracks that are muxed. MSB corresponds to track 0 eg: 1011 means tracks 0, 2, 3 are muxed to produce output for PE. Length in bits = num_tracks.');
+//; my $has_constant = parameter(Name=>'has_constant', val=> 1, doc=>'set to 1 if the CB has a register to supply a constant '); 
+
+//; my @feedthrough = split('',$feedthrough_outputs);
+
+module `mname` (
+clk, reset,
+//; for(my $i=0; $i<$num_tracks; $i++) {
+//;  if ($feedthrough[$i]==1) {
+in_`$i`,
+//;   }
+//; }
+out,
+config_addr,
+config_data,
+config_en
+);
+
+  input  clk;
+  input  reset;
+  input  config_en;
+  input [31:0] config_data;
+  input [31:0] config_addr;
+
+  output reg [`$width-1`:0] out;
+//; for(my $i=0; $i<$num_tracks; $i++) {
+//;   if ($feedthrough[$i]==1) {
+  input [`$width-1`:0] in_`$i`;
+//;   }
+//; }
+
+//; # ############################################
+//; # Setup register for CB mux configuration
+//; # ############################################
+
+//; my $feedthrough_count=$num_tracks;
+//; for(my $i=0; $i< scalar @feedthrough; $i++) { $feedthrough_count -= $feedthrough[$i] }
+
+//; my $mux_sel_bit_count = int(ceil(log($num_tracks - $feedthrough_count + $has_constant)/log(2)));
+//; my $constant_bit_count = $has_constant * $width;
+//; my $config_bit_count = $mux_sel_bit_count + $constant_bit_count;
+
+  reg [`int(ceil($config_bit_count/32.0)*32)-1`:0] config_cb;
+  //; my $config_addrs_needed = int(ceil($config_bit_count / 32.0));
+  always @(posedge clk) begin
+    if (reset==1'b1) begin
+      config_cb <= `$config_bit_count`'d0;
+    end else begin
+      if (config_en==1'b1) begin
+         case (config_addr[31:24])
+  //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
+           8'd`$j`: config_cb[`($j+1)*32-1`:`$j*32`] <= config_data;
+  //; }
+         endcase
+      end
+    end
+  end
+
+//; # ###############################################
+//; # Setup input mux
+//; # ###############################################
+
+//; my $sel=0;
+  always @(*) begin
+    case (config_cb[`$mux_sel_bit_count - 1`:0])
+//; for(my $i=0; $i<$num_tracks; $i++) {
+//;   if ($feedthrough[$i]==1) {
+        `$mux_sel_bit_count`'d`$sel`: out <= in_`$i`;
+//;     $sel++;
+//;   }
+//;    
+//; }
+//;   if ($has_constant==1) {
+        default: out <= config_cb[`$mux_sel_bit_count+$constant_bit_count-1`:`$mux_sel_bit_count`];
+//;     $sel++;
+//;   } else {
+        default: out <= `$width`'d0;
+//;   }
+    endcase
+  end
+endmodule
+
+//;# generate corresponding testbench
+//;# my $tb = generate_base('tb_cb', 'tb_cb', width => $width, num_tracks => $num_tracks, feedthrough_outputs => $feedthrough_outputs);
+
+//;# generate corresponding place and route scripts
+//;# my $pnr = generate_base('cb_pnr', 'cb_pnr');

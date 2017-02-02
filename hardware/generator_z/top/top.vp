@@ -1,0 +1,217 @@
+///////////////////////////////////////////////////////////////////
+// CGRA TOP generator 
+//
+// Nikhil Bhagdikar
+// (C) Stanford University
+//////////////////////////////////////////////////////////////////
+//; #global
+//; my $bus_config = "BUS16:16b:10t#4:2:1:1:1#2 BUS1:1b:10t#4:2:1:1:1#2";
+
+//; # for sb
+//; my $is_bidi = 0; 
+//; my $sides = 4;
+
+//; # for cb
+//; my $cb_connections = "1111111111"; 
+//; my $has_constant = 1;
+
+//; # for oper
+//; my $op_set0  = "NAME:add      INPUTS: a#BUS16#cb0     b#BUS16#cb1      OUTPUT: c#BUS16#sb0     IMPL: c=a+b";
+//;    $op_set0 .= "NAME:lt       INPUTS: a#BUS16#cb0     b#BUS16#cb1      OUTPUT: c#BUS1#sb0      IMPL: c=a<b";
+//;    $op_set0 .= "NAME:lshift   INPUTS: a#BUS16#cb0     b#BUS16#cb1      OUTPUT: c#BUS16#sb0     IMPL: c=a<<b";
+//;    $op_set0 .= "NAME:add_p1   INPUTS: a#BUS16#add___c b#BUS16#cb2      OUTPUT: c#BUS16#sb0     IMPL: c=a+b";
+
+//; my $op_set1  = "NAME:aaoi     INPUTS: a#BUS1#cb0      b#BUS1#cb1 c#BUS1#cb2 d#BUS1#cb3  OUTPUT: e#BUS1#sb0     IMPL: e=~((a&b)|(c&d))";
+//;    $op_set1 .= "NAME:mul      INPUTS: a#BUS16#cb0     b#BUS16#cb1     OUTPUT: c#BUS16#sb0     IMPL: c=a+b";
+//;    $op_set1 .= "NAME:lut1     INPUTS: a#BUS1#cb0      b#BUS1#cb1       OUTPUT: c#BUS1#sb0      IMPL: c=LUT:ab:";
+//;    $op_set1 .= "NAME:lut2     INPUTS: a#BUS1#cb2      b#BUS1#cb3       OUTPUT: c#BUS1#sb0      IMPL: c=LUT:ab:";
+
+//; my $tile_config;
+//; $tile_config->{ 't0' } = {
+//;       type => 'pe',
+//;       sides => $sides,
+//;       oper => $op_set0,
+//;       is_bidi => $is_bidi,
+//;       bus_config => $bus_config,
+//;       cb_connections => $cb_connections,
+//;       has_constant => $has_constant,
+//;       tile_height => 1,
+//;       tile_width => 1
+//; };
+
+//; $tile_config->{ 't1' } = {
+//;       type => 'pe',
+//;       sides => $sides,
+//;       oper => $op_set1,
+//;       is_bidi => $is_bidi,
+//;       bus_config => $bus_config,
+//;       cb_connections => $cb_connections,
+//;       has_constant => $has_constant,
+//;       tile_height => 1,
+//;       tile_width => 1
+//; };
+
+//; $tile_config->{ 't2' } = {
+//;       type => 'mem_tile_sb_cb',
+//;       max_lb => 4,
+//;       gen_mem_for_busname => 'BUS16',
+//;       ddepth => 4096,
+//;       impl_mem_tile_height => 4,
+//;       tile_height => 4,
+//;       tile_width => 1
+//; };
+
+//; my %tile_pattern;
+//;    $tile_pattern {'p1'} = "t0_2_1 t1_1_1";
+//;    $tile_pattern {'p2'} = "p1_2_4 t2_1_1";
+//;    $tile_pattern {'top'} = "p2_2_2";
+
+//; #####################################################
+//; #Initialize cgra grid
+//; #####################################################
+//; my $tile_grid;
+//; for (my $i=0; $i<1000; $i++) {
+//;   for (my $j=0; $j<1000; $j++) {
+//;     my $key = "${i}_${j}";
+//;     $tile_grid->{ $key} = '';
+//;   }
+//; }
+//; #####################################################
+//; #Recursively stamp CGRA pattern in $tile_pattern
+//; #####################################################
+//; sub stamp_pattern {
+//;   my $pattern=$_[0];
+//;   my $x=$_[1];
+//;   my $y=$_[2];
+//;   my $width = 0;
+//;   my $height = 0;
+//;   my @plist = split / /, $tile_pattern {$pattern};
+//;   foreach my $p (@plist) {
+//;#     print "$p $x $y #\n";
+//;     if ($p =~ m/^\s*(p\d+)_(\d+)_(\d+)/) {
+//;       my $pts = $1;
+//;       my $prx = $2;
+//;       my $pry = $3;
+//;       my %incr;
+//;       my $ly = $y;
+//;       for (my $j=0; $j < $pry; $j++) {
+//;         my $lx = $x;
+//;         for (my $i=0; $i < $prx; $i++) {
+//;           (%incr) = stamp_pattern($pts,$lx,$ly);
+//;           $lx += $incr{'width'};
+//;         }
+//;         $ly += $incr{'height'};
+//;       }
+//;       $width += ($incr{'width'} * $prx);
+//;       my $h = $incr{'height'} * $pry;
+//;       if ($height < $h) {$height = $h};
+//;       $x += ($incr{'width'} * $prx);
+//;     } elsif ($p =~ m/^\s*(t\d+)_(\d+)_(\d+)/) {
+//;       my $tile = $1;
+//;       my $trx = $2;
+//;       my $try = $3;
+//;       my $tile_width  = $tile_config->{ $tile }{ 'tile_width' };
+//;       my $tile_height = $tile_config->{ $tile }{ 'tile_height' };
+//;       my $ly = $y;
+//;       for (my $j=0; $j < $try; $j++) {
+//;         my $lx = $x;
+//;         for (my $i=0; $i < $trx; $i++) {
+//;#           print "Setting $ly $lx to $tile\n";
+//;           my $key = "${ly}_${lx}";
+//;           $tile_grid->{$key} = $tile;
+//;           $lx += $tile_width;
+//;         }
+//;         $ly += $tile_height;
+//;       }
+//;       $width += ($tile_width * $trx);
+//;       my $h = $tile_height * $try;
+//;       if ($height < $h) {$height = $h};
+//;       $x += ($tile_width * $trx);
+//;     }
+//;   }
+//;  my %ret;
+//;  $ret{'width'} = $width;
+//;  $ret{'height'} = $height;
+//;  return (%ret);
+//; }
+//; #####################################################
+//; #Print cgra grid as comments in the verilog file
+//; #####################################################
+//; my (%canvas_size) = stamp_pattern('top',0,0);
+//; for (my $i=0; $i<$canvas_size{'height'}; $i++) {
+//;   print "\\\\";
+//;   for (my $j=0; $j<$canvas_size{'width'}; $j++) {
+//;     my $key = "${i}_${j}";
+//;     print "$tile_grid->{$key}\t";
+//;   }
+//;   print "\n";
+//; }
+
+//; #####################################################
+//; #Initialize base tiles based on tile_config
+//; #####################################################
+//; my %base_tiles = ();
+//; my %base_tiles_count = ();
+//;     while( my ($xtile, $xconfig) = each %$tile_config ) {
+//;       my $tile_type = $xconfig->{'type'};
+//;       my $options = "";
+//;       if (exists $base_tiles_count{ $xtile }) {
+//;         $base_tiles_count{ $xtile }++;
+//;       } else {
+//;         $base_tiles_count{ $xtile }=1;
+//;       }
+//;       my $tile_id = "${xtile}_$base_tiles_count{ $xtile }";
+//;       while( my ($f, $v) = each %$xconfig ) {
+//;#         print "$f : $v\n";
+//;         if (($f!~m/type/) && ($f!~m/tile_height/) && ($f!~m/tile_width/)) {
+//;           $options .= " $f => \"$v\",";
+//;         }
+//;       }
+//;       chop($options);
+//;       my $cmd = "\$base_tiles{'$tile_id'} = generate('$tile_type', '$tile_id', $options);";
+//;       print "$cmd\n";
+//;       eval $cmd;
+//;     }
+
+//; #####################################################
+//; #Create verilog
+//; #####################################################
+
+module top(
+clk,
+reset,
+config_addr,
+config_data);
+
+  input clk;
+  input reset;
+  input [31:0] config_addr;
+  input [31:0] config_data;
+
+//; #####################################################
+//; #Create nets and wires
+//; #####################################################
+
+
+//; #####################################################
+//; #Instantiate components
+//; #####################################################
+//; for (my $i=0; $i<$canvas_size{'height'}; $i++) {
+//;   for (my $j=0; $j<$canvas_size{'width'}; $j++) {
+//;     my $key = "${i}_${j}";
+//;     my $tile = $tile_grid->{$key};
+//;     if ($tile eq "") {next;}
+//;     my $tile_id = "${tile}_1";
+//;     my $obj = $base_tiles{ $tile_id };
+//;     my $cloned_obj = clone($obj, "${tile}_${i}_${j}");
+  `$cloned_obj->instantiate()` 
+  (
+  .clk(clk),
+  .reset(reset),
+  .config_addr(config_addr),
+  .config_data(config_data)
+  );
+//;   }
+//; }
+  
+endmodule
