@@ -1,0 +1,197 @@
+//; my $num_res    = parameter(Name=>'num_res', val=> 1, Min=>1, doc=>'Number of result inputs');
+//;
+//; my $mux_recipe = parameter(Name=>'mux_recipe', val=> ('$i+1; $i; $N-$i'), doc=>'MUX parrten');
+//;
+//; my $segments        = parameter(Name=>'segments', val=> ('1=>0.5, 2=> 0.3, 4=>0.0, 8=>0.2'), doc=>'Frequency of the //;wire segments');
+//; my $tracks_per_tile = parameter(Name=>'tracks_per_tile', val=> 6, Min=>1, doc=>'Number of tracks that start here');
+//; my $tile_x          = parameter(Name=>'tile_x', val=> 3, Min=>0, doc=>'X position of this tile in chips geometry');
+//; my $tile_y          = parameter(Name=>'tile_y', val=> 1, Min=>0, doc=>'Y position of this tile in chips geometry');
+//;
+//; use List::Util 'sum';
+//; use POSIX qw(floor);
+//;
+//;###########################################################################
+//; my %freq  = eval("($segments)");
+//; my %wires_cnt;
+//;
+//; my $patern_len = 1;
+//;
+//;foreach my $l (sort keys %freq) {
+//;  $wires_cnt{$l} = floor(0.5 + $tracks_per_tile * $freq{$l});
+//;
+//;  if($wires_cnt{$l} > 0) {
+//;    $patern_len = $l;
+//;  }
+//;}
+//;my $origin_tracks = sum values %wires_cnt;
+//;
+//;if($origin_tracks != $tracks_per_tile){
+//;  error("Can't use $tracks_per_tile total new tracks with the given frequencies. Try $origin_tracks new tracks //;instead.")
+//;}
+//;
+//;my @patern_mask;
+//;
+//;for (my $p=0; $p < $patern_len; $p = $p + 1){
+//;  $patern_mask[$p] = "";
+//;  my $pat = "";
+//;
+//;  foreach my $l (sort keys %wires_cnt) {
+//;    for (my $i=0; $i < $l; $i = $i + 1){
+//;      if($i==($p%$l)) {
+//;        $pat = $pat . ("1" x $wires_cnt{$l}) ;#($wires_cnt{$l}*"1");
+//;      } else {
+//;        $pat = $pat . ("0" x $wires_cnt{$l}) ; #($wires_cnt{$l}*"0");
+//;      }
+//;    }
+//;
+//;    #$pat = $pat . "|"
+//;  }
+//;
+//;  $patern_mask[$p] = $pat;
+//;}
+//;
+//;###########################################################################
+//;my $N = length($patern_mask[0]);
+//;
+/*
+Culculated number of segments starting at this tile:
+//;foreach my $l (sort keys %wires_cnt) {
+  `$l` length => `$wires_cnt{$l}`
+//;}
+------------------------------------------------------------
+Possible patterns":
+//;for (my $p=0; $p < $patern_len; $p = $p + 1){
+//; my $pref = "  ";
+//; if( $p==($tile_x)%$patern_len ) { $pref = "**"; }
+//; if( $p==$patern_len - 1 - ($tile_x)%$patern_len ) {$pref = "\$*";}
+//; if( $p==($tile_y)%$patern_len ) {$pref = "@@";}
+//; if( $p==$patern_len - 1 - ($tile_y)%$patern_len ) {$pref = "\$@";}
+//;
+`$pref``$p` : `$patern_mask[$p]`
+//;}
+------------------------------------------------------------
+
+*/
+module `mname`  #(
+  parameter Width   = 16
+) (
+  input               clk,
+  input               rst_n,
+
+  input        [15:0] cfg_d,
+  input        [7:0]  cfg_a,
+  input               cfg_en,
+
+
+  input        [`$N-1`:0][Width - 1:0] in0,
+  input        [`$N-1`:0][Width - 1:0] in1,
+  input        [`$N-1`:0][Width - 1:0] in2,
+  input        [`$N-1`:0][Width - 1:0] in3,
+
+  input        [ `$num_res-1`:0][Width - 1:0] res,
+
+  output logic [`$N-1`:0][Width - 1:0] out0,
+  output logic [`$N-1`:0][Width - 1:0] out1,
+  output logic [`$N-1`:0][Width - 1:0] out2,
+  output logic [`$N-1`:0][Width - 1:0] out3
+);
+
+
+logic [`$N-1`:0][2:0] cfg_N;
+logic [`$N-1`:0][2:0] cfg_E;
+logic [`$N-1`:0][2:0] cfg_S;
+logic [`$N-1`:0][2:0] cfg_W;
+
+genvar g;
+
+
+generate
+  for (g=0; g < `$N`; g = g + 1) begin : test_sb_config
+    always_ff @(posedge clk or negedge rst_n) begin
+      if(~rst_n) begin
+        cfg_N[g] <= 3'h0;
+        cfg_E[g] <= 3'h0;
+        cfg_S[g] <= 3'h0;
+        cfg_W[g] <= 3'h0;
+      end else if(cfg_en && (cfg_a[7:0]==g)) begin
+        cfg_N[g] <= cfg_d[2:0];
+        cfg_E[g] <= cfg_d[2+ 4:0+ 4];
+        cfg_S[g] <= cfg_d[2+ 8:0+ 8];
+        cfg_W[g] <= cfg_d[2+12:0+12];
+      end
+    end
+  end
+endgenerate
+
+//; my $dir_N = generate('test_sb_dir', 'test_sb_dir_N', "num_res"=>$num_res, "mux_recipe" => $mux_recipe, mask=> $patern_mask[($tile_x)%$patern_len]);
+//; my $dir_E = generate('test_sb_dir', 'test_sb_dir_E', "num_res"=>$num_res, "mux_recipe" => $mux_recipe, mask=> $patern_mask[($tile_y)%$patern_len]);
+//; my $dir_S = generate('test_sb_dir', 'test_sb_dir_S', "num_res"=>$num_res, "mux_recipe" => $mux_recipe, mask=> $patern_mask[$patern_len - 1 - ($tile_x)%$patern_len]);
+//; my $dir_W = generate('test_sb_dir', 'test_sb_dir_W', "num_res"=>$num_res, "mux_recipe" => $mux_recipe, mask=> $patern_mask[$patern_len - 1 - ($tile_y)%$patern_len]);
+
+
+`$dir_N->mname()` #(.Width(Width)) `$dir_N->iname()`
+(
+  .clk      (clk),
+  .rst_n    (rst_n),
+
+  .cfg      (cfg_N),
+
+  .in0      (in0),
+  .in1      (in1),
+  .in2      (in2),
+  .res      (res),
+
+  .out      (out0)
+);
+
+
+`$dir_E->mname()` #(.Width(Width)) `$dir_E->iname()`
+(
+  .clk      (clk),
+  .rst_n    (rst_n),
+
+  .cfg      (cfg_E),
+
+  .in0      (in1),
+  .in1      (in2),
+  .in2      (in3),
+  .res      (res),
+
+  .out      (out1)
+);
+
+
+`$dir_S->mname()` #(.Width(Width)) `$dir_S->iname()`
+(
+  .clk      (clk),
+  .rst_n    (rst_n),
+
+  .cfg      (cfg_S),
+
+  .in0      (in2),
+  .in1      (in3),
+  .in2      (in0),
+  .res      (res),
+
+  .out      (out2)
+);
+
+
+`$dir_W->mname()` #(.Width(Width)) `$dir_W->iname()`
+(
+  .clk      (clk),
+  .rst_n    (rst_n),
+
+  .cfg      (cfg_W),
+
+  .in0      (in3),
+  .in1      (in0),
+  .in2      (in1),
+  .res      (res),
+
+  .out      (out3)
+);
+
+
+
+endmodule

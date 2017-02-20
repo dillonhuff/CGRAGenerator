@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DESIGN=sb
+DESIGN=test_sb
 
 DIR=`pwd`
 RTL_DIR=${DIR}/../rtl
