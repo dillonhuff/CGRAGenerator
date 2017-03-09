@@ -7,6 +7,7 @@ install:
  - sudo apt-get -y --force-yes install perl
 
 script:
-  - perl -f tmp.pl
-  - hardware/generator_z/top/run.csh
+  - travis-test.csh
+#   - perl -f tmp.pl
+#   - hardware/generator_z/top/run.csh
 
