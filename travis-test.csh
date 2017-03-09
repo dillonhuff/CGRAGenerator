@@ -4,7 +4,7 @@ perl -f tmp.pl
 perl --version
 
 pwd
-set whereami = `pwdw`
+set whereami = `pwd`
 echo $whereami
 
 setenv GENESIS_HOME "$whereami/Genesis2Tools"
