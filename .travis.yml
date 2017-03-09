@@ -1,7 +1,10 @@
 sudo: required
-language: perl
-perl:
-- "5.18"
+language: c
+# perl:
+# - "5.18"
+
+install:
+ - sudo apt-get -y --force-yes install perl
 
 script:
  - hardware/generator_z/top/run.csh
