@@ -5,9 +5,11 @@ language: c
 
 install:
  - sudo apt-get -y --force-yes install perl
+ - sudo apt-get -y --force-yes install csh
 
 script:
-  - travis-test.csh
+  - which csh
+  - ./travis-test.csh
 #   - perl -f tmp.pl
 #   - hardware/generator_z/top/run.csh
 
