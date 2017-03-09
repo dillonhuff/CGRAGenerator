@@ -8,8 +8,8 @@
 
 module `mname` (
 clk, reset,
-//; for(my $i=0; $i<$num_tracks; $i++) {
-//;  if ($feedthrough[$i]==1) {
+//; for(my $i=0; $i<($num_tracks*2); $i++) {
+//;  if ($feedthrough[($i%$num_tracks)]==1) {
 in_`$i`,
 //;   }
 //; }
@@ -26,8 +26,8 @@ config_en
   input [31:0] config_addr;
 
   output reg [`$width-1`:0] out;
-//; for(my $i=0; $i<$num_tracks; $i++) {
-//;   if ($feedthrough[$i]==1) {
+//; for(my $i=0; $i<($num_tracks*2); $i++) {
+//;   if ($feedthrough[$i%$num_tracks]==1) {
   input [`$width-1`:0] in_`$i`;
 //;   }
 //; }
@@ -39,7 +39,7 @@ config_en
 //; my $feedthrough_count=$num_tracks;
 //; for(my $i=0; $i< scalar @feedthrough; $i++) { $feedthrough_count -= $feedthrough[$i] }
 
-//; my $mux_sel_bit_count = int(ceil(log($num_tracks - $feedthrough_count + $has_constant)/log(2)));
+//; my $mux_sel_bit_count = int(ceil(log(($num_tracks*2) - $feedthrough_count + $has_constant)/log(2)));
 //; my $constant_bit_count = $has_constant * $width;
 //; my $config_bit_count = $mux_sel_bit_count + $constant_bit_count;
 
@@ -66,8 +66,8 @@ config_en
 //; my $sel=0;
   always @(*) begin
     case (config_cb[`$mux_sel_bit_count - 1`:0])
-//; for(my $i=0; $i<$num_tracks; $i++) {
-//;   if ($feedthrough[$i]==1) {
+//; for(my $i=0; $i<($num_tracks*2); $i++) {
+//;   if ($feedthrough[$i%$num_tracks]==1) {
         `$mux_sel_bit_count`'d`$sel`: out <= in_`$i`;
 //;     $sel++;
 //;   }

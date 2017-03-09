@@ -1,9 +1,3 @@
-///////////////////////////////////////////////////////////////////
-// CGRA SB generator 
-//
-// Nikhil Bhagdikar
-// (C) Stanford University
-/////////////////////////////////////////////////////////////////
 //; use POSIX;
 //; my $width  = parameter(Name=>'width', val=> 16, doc=>'Bus width for SB');
 //; my $num_tracks = parameter(Name=>'num_tracks', val=> 10, doc=>'number of tracks per side for SB. half of these are inputs for unidirectional SB'); 
@@ -12,8 +6,9 @@
 //; my $registered_outputs = parameter(Name=>'registered_outputs', val=> "00110", doc=>'binary vector for registered output config. Affects all sides. MSB corresponds to output 0. Registering feedthrough outputs is ignored.');
 //; my $pe_output_count = parameter(Name=>'pe_output_count', val=> 1, doc=>'Number of PE outputs to be muxed into outgoing driven tracks');
 //; my $is_bidi = parameter(Name=>'is_bidi', val=> 0, doc=>'1 if SB pins are bidi. TBD.');
+//; my $sb_fs = parameter(Name=>'sb_fs', val=> "10000#10000#10000", doc=>'binary vector for modifying fanin of sb muxes');
 
-//; my $number_of_outputs = $num_tracks * 0.5;
+//; my $number_of_outputs = $num_tracks;
 
 module `mname` (
 clk, reset,

@@ -3,6 +3,7 @@
 //
 // Nikhil Bhagdikar
 // (C) Stanford University
+// Please do not remove this header
 //////////////////////////////////////////////////////////////////
 //; use POSIX;
 //; #global
@@ -344,7 +345,7 @@ tile_id
 //; my $k=0;
 //; foreach my $i (@xsides) {
 //;   for(my $j=0; $j<$num_tracks*0.5; $j++, $k++) {
-//;     if (@cb_connections_arr[$k]==1) {
+//;     if (@cb_connections_arr[$j]==1) {
     .in_`$k`(in_`$bus_name`_`$i`_`$j`),
 //;     }
 //;   }    
