@@ -7,5 +7,6 @@ install:
  - sudo apt-get -y --force-yes install perl
 
 script:
- - hardware/generator_z/top/run.csh
+  - perl -f tmp.pl
+  - hardware/generator_z/top/run.csh
 
