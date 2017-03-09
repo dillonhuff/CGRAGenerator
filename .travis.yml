@@ -1,0 +1,7 @@
+language: perl
+perl:
+- "5.18"
+
+script:
+ - hardware/generator_z/top/run.csh
+
