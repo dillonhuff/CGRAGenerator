@@ -21,7 +21,7 @@ cd hardware/generator_z/top
 pwd
 ls
 find . -name top.\*
-
+cat ./genesis_verif/top.v
 
 # setenv GENESIS_HOME "$GENESIS/r#####/Genesis2Tools"
 # set path=($GENESIS_HOME/bin $GENESIS_HOME/gui/bin $path)
