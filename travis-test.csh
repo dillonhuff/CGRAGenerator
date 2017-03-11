@@ -23,11 +23,12 @@ ls -R
 # find . -name top.\*
 # cat ./genesis_verif/top.v
 
-echo "Here is what I built"
-echo "(it's supposed to look like an array of tiles)"
-echo "(yes it's cryptic, deal with it):"
-echo
+echo '-------------------------------------------------------------------"
+echo "Here is what I built (it's supposed to look like an array of tiles)"
+echo "  (yes it's cryptic, deal with it):"
+echo ""
 egrep '^//t' ./genesis_verif/top.v | sed 's/^../  /'
+echo '-------------------------------------------------------------------"
 
 
 # setenv GENESIS_HOME "$GENESIS/r#####/Genesis2Tools"
