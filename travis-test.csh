@@ -18,6 +18,9 @@ echo path=$path
 cd hardware/generator_z/top
 ./run.csh
 
+pwd
+ls
+
 
 
 # setenv GENESIS_HOME "$GENESIS/r#####/Genesis2Tools"
