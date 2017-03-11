@@ -20,7 +20,7 @@ cd hardware/generator_z/top
 
 pwd
 ls
-
+find . -name top.\*
 
 
 # setenv GENESIS_HOME "$GENESIS/r#####/Genesis2Tools"
