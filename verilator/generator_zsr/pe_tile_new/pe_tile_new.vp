@@ -1,0 +1,432 @@
+///////////////////////////////////////////////////////////////////
+// CGRA PE generator 
+//
+// (C) Stanford University
+// Please do not remove this header
+//////////////////////////////////////////////////////////////////
+//; use POSIX;
+//; #global
+//; my $bus_config = parameter(Name=>'bus_config', val=> "BUS16:16b#4_2:2_4:1_16:1_8:1_4 BUS1:1b#4_2:2_4:1_16:1_8:1_4", doc=>'buses used at global level.');
+//; my $all_segments_for_all_tiles =  parameter(Name=>'all_segments_for_all_tiles', val=> "1", doc=>'stagger or overlap segments');
+//; # for sb
+//; my $sides = parameter(Name=>'sides', val=> 4, doc=>'number of edges for a SB'); 
+//; my $feedthrough_outputs = parameter(Name=>'feedthrough_outputs', val=> "11000", doc=>'binary vector for feedthrough output config. Affects all sides. MSB corresponds to output 0 eg: 00000010 means output 7 is feedthrough. Length in bits = 0.5*num_tracks.');
+//; my $registered_outputs = parameter(Name=>'registered_outputs', val=> "00110", doc=>'binary vector for registered output config. Affects all sides. MSB corresponds to output 0. Registering feedthrough outputs is ignored.');
+//; my $is_bidi = parameter(Name=>'is_bidi', val=> 0, doc=>'1 if SB pins are bidi. TBD.');
+//; my $sb_fs = parameter(Name=>'sb_fs', val=> "10000#10000#10000", doc=>'binary vector for modifying fanin of sb muxes');
+
+//; # for cb
+//; my $cb_connections = parameter(Name=>'cb_connections', val=> "1111111111", doc=>'binary vector for specifying tracks that are muxed. MSB corresponds to track 0 eg: 1011 means tracks 0, 2, 3 are muxed to produce output for PE. Length in bits = num_tracks.');
+//; my $has_constant = parameter(Name=>'has_constant', val=> 1, doc=>'set to 1 if the CB has a register to supply a constant '); 
+
+//; # for pe
+//; my $reg_inputs = parameter(Name=>'reg_inputs', val=> 1, List=>[1, 0], doc=>'Add register on the inputs');
+//; my $reg_out    = parameter(Name=>'reg_out', val=> 1, List=>[1, 0], doc=>'Add register on the outputs');
+//;
+//; my $use_add   = parameter(Name=>'use_add', val=> 2, List=>[2, 1, 0], doc=>'0 - no adders, 1 - simple ADDs, 2 - SAD');
+//; my $bool_inps = parameter(Name=>'bool_inps',
+//;                               Val=>3, Min=>0, Step=>1, Max=>16,
+//;                               Doc=>"0 - no booleans, 1 - simple gates, 2-16 - uses LUTs with that number of inputs");
+//; my $use_shift = parameter(Name=>'use_shift', val=> 1, List=>[1, 0], doc=>'Use shift operations');
+//; my $mult_mode = parameter(Name=>'mult_mode', val=> 2, List=>[2, 1, 0], doc=>'Use MAD(2) or MULT(1) or None(0)');
+
+//; my $intra_tile_addr = 0;
+
+//; my $use_sad  = $use_add > 1;
+//; my $use_bool = ($bool_inps == 1);
+//; my $use_lut  = ($bool_inps > 1);
+//; my $use_c_input = ($use_sad > 0 || $mult_mode > 1 || $bool_inps > 2);
+
+//; #####################################################
+//; #Populate bus track hash
+//; #####################################################
+//; my %bus_width_hash = ();
+//; my %bus_segment_hash = ();
+//; my %bus_registered_outputs_hash = ();
+//; my %bus_num_tracks_hash = ();
+//; my $wide_bus_width = 0;
+//; foreach my $bus (split(' ', $bus_config)) {
+//;   my $track_count=0;
+//;   if ($bus=~m/(BUS\S+):(\S+)b#(\S+)/) {
+//;     my $bus_name = $1;
+//;     $bus_width_hash{ $bus_name } = $2;
+//;     $bus_segment_hash{ $bus_name } = $3;
+//;     if ($wide_bus_width < $bus_width_hash{ $bus_name }) {
+//;       $wide_bus_width = $bus_width_hash{ $bus_name };
+//;     }
+//;     foreach my $seg_info (split(':',$bus_segment_hash{ $bus_name })) {
+//;       $seg_info =~ m/(\S+)_(\S+)/;
+//;       my $segment_length = $1;
+//;       if ($all_segments_for_all_tiles==1) {
+//;         $track_count += $segment_length;
+//;       } else {
+//;         $track_count += 1;
+//;       }
+//;     }
+//;     $bus_num_tracks_hash{ $bus_name } = $track_count;
+//;   }
+//; }
+module `mname` (
+clk,
+config_addr,
+config_data,
+//;   for my $bus (keys %bus_width_hash) {
+//;     my $num_tracks = $bus_num_tracks_hash { $bus };
+//;     for(my $i=0; $i<$sides; $i++) {
+//;       for(my $j=0; $j<$num_tracks; $j++) {
+out_`$bus`_S`$i`_T`$j`,
+in_`$bus`_S`$i`_T`$j`,
+//;      }
+//;     }
+//;   }
+reset,
+tile_id
+);
+//; my $config_bits_used = 0;
+  input clk;
+  input [31:0] config_addr;
+  input [31:0] config_data;
+
+//;   for my $bus (keys %bus_num_tracks_hash) {
+//;     my $num_tracks = $bus_num_tracks_hash { $bus };
+//;     my $bus_width = $bus_width_hash { $bus };
+//;     for(my $i=0; $i<$sides; $i++) {
+//;       for(my $j=0; $j<$num_tracks; $j++) {
+  output [`$bus_width-1`:0] out_`$bus`_S`$i`_T`$j`;
+  input [`$bus_width-1`:0] in_`$bus`_S`$i`_T`$j`;
+//;      }
+//;     }
+//;   }
+
+  input [15:0] tile_id;
+  input reset;
+
+//; #############################################################
+//; # Generate feature enables
+//; #############################################################
+
+// Never used anywhere in this module!?
+//   reg config_en_pe;
+//   always @(posedge clk) begin
+//     if (reset) begin
+//        config_en_pe <= 1'b0;
+//     end else begin
+//        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+//          config_en_pe <= 1'b1;
+//        end else begin
+//          config_en_pe <= 1'b0;
+//        end
+//     end
+//   end
+
+//;$intra_tile_addr+=1;
+  // Note: verilator complains because opcode[31:16] goes unused...
+  // For now, I will try to fix it with a verilator directive (/* verilator lint_off UNUSED */)
+  /* verilator lint_off UNUSED */
+  reg [31:0] opcode;
+  /* verilator lint_on UNUSED */
+  always @(posedge clk) begin
+    if (reset) begin
+       opcode <= 32'd0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         opcode <= config_data;
+       end
+    end
+  end
+
+//;$intra_tile_addr+=1;
+  reg config_en_cb1;
+  always @(posedge clk) begin
+    if (reset) begin
+       config_en_cb1 <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_cb1 <= 1'b1;
+       end else begin
+         config_en_cb1 <= 1'b0;
+       end
+    end
+  end
+
+//;$intra_tile_addr+=1;
+  reg config_en_cb2;
+  always @(posedge clk) begin
+    if (reset) begin
+       config_en_cb2 <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_cb2 <= 1'b1;
+       end else begin
+         config_en_cb2 <= 1'b0;
+       end
+    end
+  end
+
+//; if($use_c_input) {
+//;$intra_tile_addr+=1;
+  reg config_en_cb3;
+  always @(posedge clk) begin
+    if (reset) begin
+       config_en_cb3 <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_cb3 <= 1'b1;
+       end else begin
+         config_en_cb3 <= 1'b0;
+       end
+    end
+  end
+//; }
+
+//;$intra_tile_addr+=1;
+  reg config_en_cb4;
+  always @(posedge clk) begin
+    if (reset) begin
+       config_en_cb4 <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_cb4 <= 1'b1;
+       end else begin
+         config_en_cb4 <= 1'b0;
+       end
+    end
+  end
+
+//;$intra_tile_addr+=1;
+  reg config_en_sb1;
+  always @(posedge clk) begin
+    if (reset) begin
+       config_en_sb1 <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_sb1 <= 1'b1;
+       end else begin
+         config_en_sb1 <= 1'b0;
+       end
+    end
+  end
+
+//;$intra_tile_addr+=1;
+  reg config_en_sb2;
+  always @(posedge clk) begin
+    if (reset) begin
+       config_en_sb2 <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_sb2 <= 1'b1;
+       end else begin
+         config_en_sb2 <= 1'b0;
+       end
+    end
+  end
+
+//; #############################################################
+//; # Generate PE
+//; #############################################################
+
+  wire [`$wide_bus_width-1`:0] pe_inp_a;
+  wire [`$wide_bus_width-1`:0] pe_inp_b;
+//; if($use_c_input) {
+  wire [`$wide_bus_width-1`:0] pe_inp_c;
+//; }
+  wire pe_inp_d;
+  wire [`$wide_bus_width-1`:0] pe_out_res;
+  wire pe_out_p;
+
+//;my $pe = generate('test_pe', 'test_pe', reg_inputs => $reg_inputs, reg_out => $reg_out, use_add => $use_add, bool_inps => $bool_inps, use_shift => $use_shift, mult_mode => $mult_mode, DataWidth => $wide_bus_width);
+`$pe->instantiate()`
+ (
+  .clk(clk),
+  .rst_n(~reset),
+//; if($use_lut || $reg_inputs) {
+  .cfg_d(config_data[15:0]),
+  .cfg_a(config_addr[31:24]),
+  .cfg_en(config_en_pe),
+//;} else {
+  .op_code(opcode[15:0]),
+  // Note: verilator complains because opcode[31:16] goes unused...
+  // For now, I will try to fix it with a verilator directive (/* verilator lint_off UNUSED */)
+//;}
+  .op_a_in(pe_inp_a),
+  .op_b_in(pe_inp_b),
+//; if($use_c_input) {
+  .op_c_in(pe_inp_c),
+//;}
+  .op_d_p_in(pe_inp_d),
+  .res(pe_out_res),
+  .res_p(pe_out_p)
+);
+//;my $cb_wide = generate('cb', 'cbwide_base', width=>$wide_bus_width, num_tracks=>$bus_num_tracks_hash{'BUS16'}, has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
+//;my $cb_1b = generate('cb', 'cb1b_base', width=>1, num_tracks=>$bus_num_tracks_hash{'BUS1'}, has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
+//;my $num_tracks = $bus_num_tracks_hash{'BUS16'};
+//;my @cb_connections_arr = split('',$cb_connections);
+//;my $cb_count;
+
+
+//; #############################################################
+//; # Generate wide and 1-bit CBs
+//; #############################################################
+
+//;$cb_count = 1;
+//;my $cb1 = clone($cb_wide,'cb'.$cb_count);
+`$cb1->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .out(pe_inp_a),
+//; #change the code below for supporting more than 4 sides
+//; my @xsides;
+//; if ($cb_count % 2 == 0) {
+//;  @xsides = (0, 2);
+//; } else {
+//;  @xsides = (1, 3);
+//; }
+//; my $k=0;
+//; foreach my $i (@xsides) {
+//;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
+//;     if (@cb_connections_arr[$j]==1) {
+    .in_`$k`(in_BUS16_S`$i`_T`$j`),
+//;     }
+//;   }    
+//;  }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_cb`$cb_count`)
+  );
+
+
+//;$cb_count = 2;
+//;my $cb2 = clone($cb_wide,'cb'.$cb_count);
+`$cb2->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .out(pe_inp_b),
+//; #change the code below for supporting more than 4 sides
+//; my @xsides;
+//; if ($cb_count % 2 == 0) {
+//;  @xsides = (0, 2);
+//; } else {
+//;  @xsides = (1, 3);
+//; }
+//; my $k=0;
+//; foreach my $i (@xsides) {
+//;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
+//;     if (@cb_connections_arr[$j]==1) {
+    .in_`$k`(in_BUS16_S`$i`_T`$j`),
+//;     }
+//;   }    
+//;  }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_cb`$cb_count`)
+  );
+
+//;if($use_c_input) {
+//; $cb_count = 3;
+//; my $cb3 = clone($cb_wide,'cb'.$cb_count);
+`$cb3->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .out(pe_inp_c),
+//; #change the code below for supporting more than 4 sides
+//; my @xsides;
+//; if ($cb_count % 2 == 0) {
+//;  @xsides = (0, 2);
+//; } else {
+//;  @xsides = (1, 3);
+//; }
+//; my $k=0;
+//; foreach my $i (@xsides) {
+//;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
+//;     if (@cb_connections_arr[$j]==1) {
+    .in_`$k`(in_BUS16_S`$i`_T`$j`),
+//;     }
+//;   }    
+//;  }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_cb`$cb_count`)
+  );
+//; }
+
+
+//;my $num_tracks = $bus_num_tracks_hash{'BUS1'};
+//;$cb_count = 4;
+//;my $cb4 = clone($cb_1b,'cb'.$cb_count);
+`$cb4->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .out(pe_inp_d),
+//; #change the code below for supporting more than 4 sides
+//; my @xsides;
+//; if ($cb_count % 2 == 0) {
+//;  @xsides = (0, 2);
+//; } else {
+//;  @xsides = (1, 3);
+//; }
+//; my $k=0;
+//; foreach my $i (@xsides) {
+//;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
+//;     if (@cb_connections_arr[$j]==1) {
+    .in_`$k`(in_BUS1_S`$i`_T`$j`),
+//;     }
+//;   }    
+//;  }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_cb`$cb_count`)
+  );
+
+//; #############################################################
+//; # Generate SB 
+//; #############################################################
+
+//;   $feedthrough_outputs =~ m/BUS16:(\S+)/;
+//;   my $bus_feedthrough_outputs = $1;
+//;   $registered_outputs =~ m/BUS16:(\S+)/;
+//;   my $bus_registered_outputs = $1;
+
+//;   my $sb_wide = generate('sb', 'sb_wide', width => $wide_bus_width, num_tracks => $bus_num_tracks_hash{'BUS16'}, sides => $sides, feedthrough_outputs=>$bus_feedthrough_outputs, registered_outputs=>$bus_registered_outputs, pe_output_count=>1, is_bidi=>$is_bidi, sb_fs=>$sb_fs);
+ `$sb_wide->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .pe_output_0(pe_out_res),
+//; for(my $i=0; $i<$sides; $i++) {
+//;  for(my $j=0; $j<$bus_num_tracks_hash{'BUS16'}; $j++) {
+    .out_`$i`_`$j`(out_BUS16_S`$i`_T`$j`),
+    .in_`$i`_`$j`(in_BUS16_S`$i`_T`$j`),
+//;  }
+//; }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_sb1)
+  );
+
+//;   $feedthrough_outputs =~ m/BUS1:(\S+)/;
+//;   my $bus_feedthrough_outputs = $1;
+//;   $registered_outputs =~ m/BUS1:(\S+)/;
+//;   my $bus_registered_outputs = $1;
+
+//;   my $sb_1b = generate('sb', 'sb_1b', width => 1, num_tracks => $bus_num_tracks_hash{'BUS1'}, sides => $sides, feedthrough_outputs=>$bus_feedthrough_outputs, registered_outputs=>$bus_registered_outputs, pe_output_count=>1, is_bidi=>$is_bidi, sb_fs=>$sb_fs);
+ `$sb_1b->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .pe_output_0(pe_out_p),
+//; for(my $i=0; $i<$sides; $i++) {
+//;  for(my $j=0; $j<$bus_num_tracks_hash{'BUS1'}; $j++) {
+    .out_`$i`_`$j`(out_BUS1_S`$i`_T`$j`),
+    .in_`$i`_`$j`(in_BUS1_S`$i`_T`$j`),
+//;  }
+//; }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_sb2)
+  );
+
+endmodule

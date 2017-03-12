@@ -1,0 +1,141 @@
+//; use POSIX;
+//; my $width  = parameter(Name=>'width', val=> 16, doc=>'Bus width for SB');
+//; my $num_tracks = parameter(Name=>'num_tracks', val=> 10, doc=>'num_tracks Count for SB'); 
+//; my $feedthrough_outputs = parameter(Name=>'feedthrough_outputs', val=> "1111101111", doc=>'binary vector for specifying tracks that are muxed. MSB corresponds to track 0 eg: 1011 means tracks 0, 2, 3 are muxed to produce output for PE. Length in bits = num_tracks.');
+//; my $has_constant = parameter(Name=>'has_constant', val=> 1, doc=>'set to 1 if the CB has a register to supply a constant '); 
+
+//; my @feedthrough = split('',$feedthrough_outputs);
+
+module `mname` (
+clk, reset,
+//; for(my $i=0; $i<($num_tracks*2); $i++) {
+//;  if ($feedthrough[($i%$num_tracks)]==1) {
+in_`$i`,
+//;   }
+//; }
+out,
+config_addr,
+config_data,
+config_en
+);
+
+  input  clk;
+  input  reset;
+  input  config_en;
+  input [31:0] config_data;
+
+  // FIXME
+  // %Warning-UNUSED: .../cb_unq1.v:73: Bits of signal are not used: config_addr[23:0]
+  /* verilator lint_off UNUSED */
+  input [31:0] config_addr;
+  /* verilator lint_on UNUSED */
+
+  output reg [`$width-1`:0] out;
+//; for(my $i=0; $i<($num_tracks*2); $i++) {
+//;   if ($feedthrough[$i%$num_tracks]==1) {
+  input [`$width-1`:0] in_`$i`;
+//;   }
+//; }
+
+//; # ############################################
+//; # Setup register for CB mux configuration
+//; # ############################################
+
+//; my $feedthrough_count=$num_tracks;
+//; for(my $i=0; $i< scalar @feedthrough; $i++) { $feedthrough_count -= $feedthrough[$i] }
+
+//; my $mux_sel_bit_count = int(ceil(log(($num_tracks*2) - $feedthrough_count + $has_constant)/log(2)));
+//; my $constant_bit_count = $has_constant * $width;
+//; my $config_bit_count = $mux_sel_bit_count + $constant_bit_count;
+//; my $config_reg_width = int(ceil($config_bit_count/32.0)*32);
+
+
+  // FIXME
+  // %Warning-UNUSED: .../cb_unq1.v:91: Bits of signal are not used: config_cb[31:20]
+  // %Warning-UNUSED: .../cb_unq2.v:91: Bits of signal are not used: config_cb[31:5]
+  /* verilator lint_off UNUSED */
+  reg [`$config_reg_width-1`:0] config_cb;
+  /* verilator lint_on UNUSED */
+
+  //; my $config_addrs_needed = int(ceil($config_bit_count / 32.0));
+  always @(posedge clk) begin
+    if (reset==1'b1) begin
+      // config_cb <= `$config_bit_count`'d0;
+      config_cb <= `$config_reg_width`'d0;
+    end else begin
+      if (config_en==1'b1) begin
+         case (config_addr[31:24])
+  //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
+           8'd`$j`: config_cb[`($j+1)*32-1`:`$j*32`] <= config_data;
+  //; }
+
+  //; # FIXME: It ('for' loop above) generated this:
+  //; # 
+  //; #       case (config_addr[31:24])
+  //; #         8''d0: config_cb[31:0] <= config_data;
+  //; #       endcase
+  //; # 
+  //; # So naturally verilator complained:
+  //; # %Warning-CASEINCOMPLETE: .../cb_unq1.v:109: Case values incompletely covered (example pattern 0x1)
+  //; # So I''m adding a no-op default case (below)...but is this really what we want?
+           default: ;
+
+
+
+         endcase
+      end
+    end
+  end
+
+//; # ###############################################
+//; # Setup input mux
+//; # ###############################################
+
+//; my $sel=0;
+  always @(*) begin
+    case (config_cb[`$mux_sel_bit_count - 1`:0])
+//; for(my $i=0; $i<($num_tracks*2); $i++) {
+//;   if ($feedthrough[$i%$num_tracks]==1) {
+
+        // FIXME: verify that this is the correct fix...
+        // default: out <= `$width`'d0;
+        // %Warning-COMBDLY: .../cb_unq1.v:134:
+        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+
+        // `$mux_sel_bit_count`'d`$sel`: out <= in_`$i`;
+        `$mux_sel_bit_count`'d`$sel`: out = in_`$i`;
+
+//;     $sel++;
+//;   }
+//;    
+//; }
+//;   if ($has_constant==1) {
+
+        // FIXME: verify that this is the correct fix...
+        // default: out <= `$width`'d0;
+        // %Warning-COMBDLY: .../cb_unq1.v:134:
+        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+
+        // default: out <= config_cb[`$mux_sel_bit_count+$constant_bit_count-1`:`$mux_sel_bit_count`];
+        default: out = config_cb[`$mux_sel_bit_count+$constant_bit_count-1`:`$mux_sel_bit_count`];
+
+//;     $sel++;
+//;   } else {
+
+        // FIXME: verify that this is the correct fix...
+        // %Warning-COMBDLY: .../cb_unq1.v:134:
+        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+
+        // default: out <= `$width`'d0;
+        default: out = `$width`'d0;
+
+//;   }
+    endcase
+  end
+endmodule
+
+//;# generate corresponding testbench
+//;# my $tb = generate_base('tb_cb', 'tb_cb', width => $width, num_tracks => $num_tracks, feedthrough_outputs => $feedthrough_outputs);
+
+//;# generate corresponding place and route scripts
+//;# my $pnr = generate_base('cb_pnr', 'cb_pnr');
