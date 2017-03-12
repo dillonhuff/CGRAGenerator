@@ -2,8 +2,8 @@
 
 # Usage:
 #  $0                      - Runs default original testbench w/trace
-#  $0 <textbench>          - Run indicated testbench, no "-trace" flag
-#  $0 <textbench> --trace  - Run indicated testbench, use "-trace" flag
+#  $0 <testbench>          - Run indicated testbench, no "-trace" flag
+#  $0 <testbench> --trace  - Run indicated testbench, use "-trace" flag
 
 # cleanup
 if (-e obj_dir)     rm -rf obj_dir
@@ -22,7 +22,6 @@ if ($#argv == 0) then
   set testbench = "counter_tb.cpp --trace"
   echo "Using default (original) testbench '$testbench'"
 else
-  set testbench = counter_tb.cpp
   set testbench = "$*"
   echo "Using testbench '$testbench'"
 endif
