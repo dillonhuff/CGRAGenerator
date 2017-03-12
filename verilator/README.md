@@ -1,7 +1,7 @@
 Subdirectories:
 
 example/
-        Simple verilator example shows how to cmoile and run a testbench for a simple 8-bit counter.
+        Simple verilator example shows how to compile and run a testbench for a simple 8-bit counter.
 
 example-remote/
         Similar to example/ except it builds a local testbench using remote verilog sources.
