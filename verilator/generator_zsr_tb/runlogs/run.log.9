@@ -1,0 +1,83 @@
+/nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr_tb 
+/nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top
+generator_zsr_tb
+Makefile
+obj_dir
+README.md
+run.csh
+run.log
+run.log.old
+top.vp
+top.vp~
+
+-----------------------------------------------
+--- Genesis Is Starting Work On Your Design ---
+-----------------------------------------------
+
+-----------------------------------------------
+|            Genesis Release Info             |
+|  $Change: 11879 $ --- $Date: 2013/06/11 $   |
+-----------------------------------------------
+
+---------------------------------------------------------------------------
+    !! THIS VERSION OF GENESIS2 IS NOT FOR ANY COMMERCIAL USE !!
+     FOR COMMERCIAL LICENSE CONTACT SHACHAM@ALUMNI.STANFORD.EDU
+---------------------------------------------------------------------------
+
+Genesis2::Manager->execute: Starting Source File Parsing Phase
+Genesis2::Manager->parse_files: Now parsing file ../sb/sb.vp
+Genesis2::Manager->parse_files: Now parsing file ../cb/cb.vp
+Genesis2::Manager->parse_files: Now parsing file ../pe_tile/pe_tile.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory_tile/mem_tile_sb_cb.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory/mem_tile.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory/mem.vp
+Genesis2::Manager->parse_files: Now parsing file top.vp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_pe.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_mult_add.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_full_add.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_lut.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_opt_reg.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_tile_new/pe_tile_new.vp
+Genesis2::Manager->execute: Done With Source File Parsing Phase
+
+Genesis2::Manager->execute: Starting Verilog Code Generation Phase
+Using a hash as a reference is deprecated at /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/top.vp line 259.
+Genesis2::ConfigHandler->SetPrmOverrides: Now processing command line parameter overrides
+Genesis2::Manager->gen_verilog: Starting code generation from module top
+
+WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING
+WARNING While processing Genesis2 template 'pe_tile_new' at line 237 of file /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/pe_tile_new/pe_tile_new.vp
+WARNING while at instance top.t0_0_0.test_pe
+WARNING Message:
+	Parameter 'DataWidth' was passed to top.t0_0_0.test_pe but it was never actually declared/used in test_pe
+Continuing Genesis2 despite warning... 
+
+
+WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING
+WARNING While processing Genesis2 template 'pe_tile_new' at line 237 of file /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/pe_tile_new/pe_tile_new.vp
+WARNING while at instance top.t0_0_1.test_pe
+WARNING Message:
+	Parameter 'DataWidth' was passed to top.t0_0_1.test_pe but it was never actually declared/used in test_pe
+Continuing Genesis2 despite warning... 
+
+Genesis2::Manager->execute: Done With Verilog Code Generation Phase
+
+Genesis2::Manager->execute: Starting Auxiliary File Generation Phase
+Genesis2::Manager->execute: Done With Auxiliary File Generation Phase
+
+-----------------------------------------------
+--- Genesis Finished Generating Your Design ---
+-----------------------------------------------
+
+/nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr_tb 
+verilator -Wall --cc --exe tb_remote.cpp -y /nobackup/steveri/github/CGRAGenerat
+or/verilator/generator_zsr/top/genesis_verif cb_unq1.v cb_unq2.v pe_tile_new_unq
+1.v pe_tile_new_unq2.v sb_unq1.v sb_unq2.v sb_unq3.v sb_unq4.v top.v
+make: Entering directory `/nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/obj_dir'
+make: Vtop.mk: No such file or directory
+make: *** No rule to make target `Vtop.mk'.  Stop.
+make: Leaving directory `/nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/obj_dir'
+now run executable simulation
+$: Command not found.
+obj_dir/Vtop
+obj_dir/Vtop: Command not found.

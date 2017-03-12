@@ -1,0 +1,182 @@
+/nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr_tb 
+/nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top
+generator_zsr_tb
+Makefile
+obj_dir
+README.md
+run.csh
+run.log
+run.log.old
+top.vp
+top.vp~
+
+-----------------------------------------------
+--- Genesis Is Starting Work On Your Design ---
+-----------------------------------------------
+
+-----------------------------------------------
+|            Genesis Release Info             |
+|  $Change: 11879 $ --- $Date: 2013/06/11 $   |
+-----------------------------------------------
+
+---------------------------------------------------------------------------
+    !! THIS VERSION OF GENESIS2 IS NOT FOR ANY COMMERCIAL USE !!
+     FOR COMMERCIAL LICENSE CONTACT SHACHAM@ALUMNI.STANFORD.EDU
+---------------------------------------------------------------------------
+
+Genesis2::Manager->execute: Starting Source File Parsing Phase
+Genesis2::Manager->parse_files: Now parsing file ../sb/sb.vp
+Genesis2::Manager->parse_files: Now parsing file ../cb/cb.vp
+Genesis2::Manager->parse_files: Now parsing file ../pe_tile/pe_tile.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory_tile/mem_tile_sb_cb.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory/mem_tile.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory/mem.vp
+Genesis2::Manager->parse_files: Now parsing file top.vp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_pe.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_mult_add.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_full_add.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_lut.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_opt_reg.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_tile_new/pe_tile_new.vp
+Genesis2::Manager->execute: Done With Source File Parsing Phase
+
+Genesis2::Manager->execute: Starting Verilog Code Generation Phase
+Using a hash as a reference is deprecated at /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/top.vp line 259.
+Genesis2::ConfigHandler->SetPrmOverrides: Now processing command line parameter overrides
+Genesis2::Manager->gen_verilog: Starting code generation from module top
+
+WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING
+WARNING While processing Genesis2 template 'pe_tile_new' at line 237 of file /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/pe_tile_new/pe_tile_new.vp
+WARNING while at instance top.t0_0_0.test_pe
+WARNING Message:
+	Parameter 'DataWidth' was passed to top.t0_0_0.test_pe but it was never actually declared/used in test_pe
+Continuing Genesis2 despite warning... 
+
+
+WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING
+WARNING While processing Genesis2 template 'pe_tile_new' at line 237 of file /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/pe_tile_new/pe_tile_new.vp
+WARNING while at instance top.t0_0_1.test_pe
+WARNING Message:
+	Parameter 'DataWidth' was passed to top.t0_0_1.test_pe but it was never actually declared/used in test_pe
+Continuing Genesis2 despite warning... 
+
+Genesis2::Manager->execute: Done With Verilog Code Generation Phase
+
+Genesis2::Manager->execute: Starting Auxiliary File Generation Phase
+Genesis2::Manager->execute: Done With Auxiliary File Generation Phase
+
+-----------------------------------------------
+--- Genesis Finished Generating Your Design ---
+-----------------------------------------------
+
+/nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr_tb 
+verilator -Wall --cc --exe tb_remote.cpp -y /nobackup/steveri/github/CGRAGenerat
+or/verilator/generator_zsr/top/genesis_verif cb_unq1.v cb_unq2.v pe_tile_new_unq
+1.v pe_tile_new_unq2.v sb_unq1.v sb_unq2.v sb_unq3.v sb_unq4.v top.v
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/cb_unq1.v:73: Bits of signal are not used: config_addr[23:0]
+%Warning-UNUSED: Use "/* verilator lint_off UNUSED */" and lint_on around source to disable this message.
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/cb_unq1.v:91: Bits of signal are not used: config_cb[31:20]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/cb_unq2.v:73: Bits of signal are not used: config_addr[23:0]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/cb_unq2.v:91: Bits of signal are not used: config_cb[31:5]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:115: Bits of signal are not used: config_addr[23:0]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:164: Bits of signal are not used: config_sb[63:60]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:115: Bits of signal are not used: config_addr[23:0]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:164: Bits of signal are not used: config_sb[63:60]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:115: Bits of signal are not used: config_addr[23:0]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:164: Bits of signal are not used: config_sb[63:40]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:115: Bits of signal are not used: config_addr[23:0]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:164: Bits of signal are not used: config_sb[63:40]
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/test_pe_unq1.sv:59: Signal is not used: clk
+%Warning-UNUSED: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/test_pe_unq1.sv:60: Signal is not used: rst_n
+%Warning-CASEINCOMPLETE: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/cb_unq1.v:98: Case values incompletely covered (example pattern 0x1)
+%Warning-CASEINCOMPLETE: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/cb_unq2.v:98: Case values incompletely covered (example pattern 0x1)
+%Warning-CASEINCOMPLETE: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:172: Case values incompletely covered (example pattern 0x2)
+%Warning-CASEINCOMPLETE: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:172: Case values incompletely covered (example pattern 0x2)
+%Warning-CASEINCOMPLETE: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:172: Case values incompletely covered (example pattern 0x2)
+%Warning-CASEINCOMPLETE: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:172: Case values incompletely covered (example pattern 0x2)
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/cb_unq1.v:118: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: *** See the manual before disabling this,
+%Warning-COMBDLY: else you may end up with different sim results.
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/cb_unq2.v:118: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:188: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:203: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:218: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:233: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:248: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:263: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:278: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:293: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:308: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:323: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:338: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:353: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:368: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:383: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:398: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:413: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:428: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:443: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:458: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq1.v:473: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:188: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:203: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:218: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:233: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:248: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:263: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:278: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:293: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:308: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:323: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:338: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:353: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:368: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:383: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:398: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:413: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:428: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:443: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:458: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq2.v:473: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:188: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:200: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:212: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:224: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:236: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:248: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:260: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:272: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:284: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:296: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:308: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:320: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:332: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:344: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:356: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:368: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:380: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:392: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:404: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq3.v:416: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:188: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:200: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:212: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:224: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:236: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:248: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:260: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:272: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:284: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:296: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:308: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:320: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:332: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:344: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:356: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:368: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:380: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:392: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:404: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif/sb_unq4.v:416: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Error: Exiting due to 102 warning(s)
+%Error: Command Failed /var/local/verilator-3.900/verilator_bin -Wall --cc --exe tb_remote.cpp -y /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top/genesis_verif cb_unq1.v cb_unq2.v pe_tile_new_unq1.v pe_tile_new_unq2.v sb_unq1.v sb_unq2.v sb_unq3.v sb_unq4.v top.v
