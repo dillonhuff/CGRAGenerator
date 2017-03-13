@@ -69,9 +69,17 @@ NOTE: Currently (3/13) runscript only works to here.
 To get the rest to work, someone is gonna have to
 write a working test bench "tb.cpp" :)
 ****************************************************
-
+THEN: uncomment the got/bypass in run-travis.csh below.
+****************************************************
 
 eof
+
+echo NOT DOING: make -j -C obj_dir/ -f V${top}.mk V${top}
+echo NOT DOING: obj_dir/V${top}
+echo
+echo "Good-bye!"
+
+goto END
 
 # build C++ project
 # make -j -C obj_dir/ -f Vcounter.mk Vcounter
@@ -88,16 +96,14 @@ echo "obj_dir/V${top}"
 obj_dir/V${top}
 
 
-cat << eof
+# cat << eof
+# ************************************************************************
+# NOTE: If you want to clean up after yourself you'll want to do this:
+# 
+#   ./run.csh -clean
+#   pushd $gdir; ./genesis_clean.cmd; popd
+# 
+# ************************************************************************
+# eof
 
-************************************************************************
-NOTE: If you want to clean up after yourself you'll want to do this:
-
-  ./run.csh -clean
-  pushd $gdir; ./genesis_clean.cmd; popd
-
-************************************************************************
-
-
-
-eof
+END:
