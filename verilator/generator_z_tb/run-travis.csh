@@ -50,9 +50,10 @@ if (! -e $vdir) then
   exit -1
 endif
 
-pushd $vdir >& /dev/null || echo Could not pushd $vdir
-  set vfiles = (*.v)
-popd >& /dev/null
+# travis script did this i think.
+# pushd $vdir >& /dev/null || echo Could not pushd $vdir
+#   set vfiles = (*.v)
+# popd >& /dev/null
 
 set top = top
 echo
