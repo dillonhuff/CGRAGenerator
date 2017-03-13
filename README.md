@@ -13,10 +13,11 @@ Quick guide to repository contents as of 03/2017:
 * hardware/generator_z => latest instantiation of the generator
 * hardware/generator_z/to => go here to run the generator
 * verilator => verilator experiments
-
+<br/>
 
 TODO
 * should replace Genesis2Tools with a build from within the travis script maybe
+<br/>
 
 
 OBSOLETE: I think maybe these are obsolete?
