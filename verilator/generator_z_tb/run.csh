@@ -88,7 +88,7 @@ cat << eof
 NOTE: If you want to clean up after yourself you'll want to do this:
 
   ./run.csh -clean
-  $gdir/genesis_clean.cmd
+  pushd $gdir; ./genesis_clean.cmd; popd
 
 ************************************************************************
 
