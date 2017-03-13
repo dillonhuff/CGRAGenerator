@@ -12,13 +12,14 @@
 
 dist: trusty
 language: c
-sudo: required
+# sudo: required
+sudo: false
 
 
 
 
 
-# Maybe someday we'll (need to) do this:
+# Maybe someday we'll want/need to do this:
 # perl:
 # - "5.18"
 
