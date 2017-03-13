@@ -16,6 +16,12 @@ language: c
 sudo: false
 
 
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+      - build-essential
 
 
 
@@ -32,15 +38,15 @@ sudo: false
 #  - apt-get -y --force-yes install perl
 #  - apt-get -y --force-yes install csh
 
-# Let's try it James' way, see ref.
-# https://github.com/jameshegarty/rigel/blob/master/.travis.yml
-before_install:
-  - apt-get -qq update
-
-  # perl, csh
-  # - sudo apt-get -y update
-  - apt-get -y install perl
-  - apt-get -y install csh
+# # Let's try it James' way, see ref.
+# # https://github.com/jameshegarty/rigel/blob/master/.travis.yml
+# before_install:
+#   - apt-get -qq update
+# 
+#   # perl, csh
+#   # - sudo apt-get -y update
+#   - apt-get -y install perl
+#   - apt-get -y install csh
 
 #  # verilator
 #   - sudo apt-get install verilator
