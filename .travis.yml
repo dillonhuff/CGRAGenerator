@@ -16,10 +16,20 @@ language: c
 sudo: false
 
 
+# This works:
+# addons:
+#   apt:
+#     sources:
+#     - ubuntu-toolchain-r-test
+#     packages:
+#       - csh
+#       - build-essential
+
+
 addons:
   apt:
-    sources:
-    - ubuntu-toolchain-r-test
+    # sources:
+    # - ubuntu-toolchain-r-test
     packages:
       - csh
       # - build-essential
