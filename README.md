@@ -1,6 +1,6 @@
 [![linux build status][1]][2]
 
-# CGRA Coarse-Grained Reconfigurable Architecture Generator
+# CGRA Coarse-Grain Reconfigurable Architecture Generator
 
 
 [1]: https://travis-ci.org/StanfordAHA/CGRAGenerator.svg?branch=master
