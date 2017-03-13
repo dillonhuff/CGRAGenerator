@@ -22,7 +22,7 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
       - csh
-      - build-essential
+      # - build-essential
 
 
 
