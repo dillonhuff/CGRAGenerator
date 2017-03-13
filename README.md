@@ -1,6 +1,16 @@
 # CGRA
 Coarse-Grained Reconfigurable Architecture
 
+| Linux                        |
+|------------------------------|
+| [![linux build status][1]][2]|
+
+[1]: https://travis-ci.org/StanfordAHA/CGRAGenerator?branch=master
+[2]: https://travis-ci.org/travis-ci.org/StanfordAHA/CGRAGenerator
+------------------------------------------------------------------------------
+
+
+
 See doc/srnotes.txt for Steve's notes on organization and such
 (still TBD as of this writing).
 
