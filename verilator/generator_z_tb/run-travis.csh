@@ -34,6 +34,7 @@ endif
 # set gdir = /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top
 # set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/top
   set gdir = ../../hardware/generator_z/top
+  set vdir = $gdir/genesis_verif
 
 # travis script did this already i think.
 # pushd $gdir
@@ -42,7 +43,6 @@ endif
 #   ./run.csh
 # popd
 
-# set vdir = $gdir/genesis_verif
 # if (! -e $vdir) then
 #   echo "ERROR: Could not find vfile directory"
 #   echo "       $vdir"
