@@ -1,5 +1,24 @@
-sudo: required
+
+# We learned this weekend that Travis will load different VM configs
+# depending on language settings etc. We will need to standardize on a
+# config so that we can build the tools together. I recommend:
+# 
+# dist: trusty
+# language: c
+# sudo: false
+# 
+# Which will load Ubuntu 14. Then apt-get whatever language you need. If
+# this doesn't work for you, let everyone know ASAP.
+
+dist: trusty
 language: c
+sudo: required
+
+
+
+
+
+# Maybe someday we'll (need to) do this:
 # perl:
 # - "5.18"
 
@@ -10,6 +29,11 @@ install:
 script:
   - which csh
   - ./travis-test.csh
+
+
+# script:
+#   - which csh
+#   - ./travis-test.csh
 #   - perl -f tmp.pl
 #   - hardware/generator_z/top/run.csh
 
