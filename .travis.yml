@@ -21,8 +21,8 @@ addons:
     # - ubuntu-toolchain-r-test
     packages:
       - csh
+      - verilator
     # - build-essential
-    # - verilator
 
 ##############################################################################
 # Here's how James does Verilator:
@@ -31,13 +31,16 @@ addons:
 #   - sudo apt-get install verilator
 #   - export PKG_CONFIG_PATH=/home/travis/build/jameshegarty/rigel/platform/verilator
 
+# maybe this should be done as before-script/before-install?
+# - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
+
+
 script:
   - which csh
   - ./travis-test.csh
-# maybe this should be done as before-script/before-install?
-# - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
-# - cd verilator/generator_z_tb
-# - ./run.csh tb_remote.cpp
+  - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
+  - cd verilator/generator_z_tb
+  - ./run.csh tb_remote.cpp
 
 
 
