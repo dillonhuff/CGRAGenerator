@@ -50,7 +50,7 @@ if (! -e $vdir) then
   exit -1
 endif
 
-# travis script did this i think.
+# travis script did this already i think.
 # pushd $vdir >& /dev/null || echo Could not pushd $vdir
 #   set vfiles = (*.v)
 # popd >& /dev/null
