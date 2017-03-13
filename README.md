@@ -1,5 +1,5 @@
+[![linux build status][1]][2]
 
-[![linux build status][1]][2]|
 # CGRA Coarse-Grained Reconfigurable Architecture Generator
 
 
