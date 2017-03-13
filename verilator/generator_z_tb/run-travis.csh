@@ -35,25 +35,25 @@ endif
 # set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/top
   set gdir = ../../hardware/generator_z/top
 
-pushd $gdir
-  if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
-  # pwd; ls
-  ./run.csh
-popd
-
-set vdir = $gdir/genesis_verif
-if (! -e $vdir) then
-  echo "ERROR: Could not find vfile directory"
-  echo "       $vdir"
-  echo "Maybe do something like:"
-  echo "    (cd $vdir:h; ./run.csh; popd) |& tee tmp.log"
-  exit -1
-endif
-
 # travis script did this already i think.
-# pushd $vdir >& /dev/null || echo Could not pushd $vdir
-#   set vfiles = (*.v)
-# popd >& /dev/null
+# pushd $gdir
+#   if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
+#   # pwd; ls
+#   ./run.csh
+# popd
+
+# set vdir = $gdir/genesis_verif
+# if (! -e $vdir) then
+#   echo "ERROR: Could not find vfile directory"
+#   echo "       $vdir"
+#   echo "Maybe do something like:"
+#   echo "    (cd $vdir:h; ./run.csh; popd) |& tee tmp.log"
+#   exit -1
+# endif
+
+pushd $vdir >& /dev/null || echo Could not pushd $vdir
+  set vfiles = (*.v)
+popd >& /dev/null
 
 set top = top
 echo
