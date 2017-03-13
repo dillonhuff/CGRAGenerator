@@ -35,7 +35,7 @@ sudo: false
 # Let's try it James' way, see ref.
 # https://github.com/jameshegarty/rigel/blob/master/.travis.yml
 before_install:
-  - sudo apt-get -qq update
+  - apt-get -qq update
 
   # perl, csh
   # - sudo apt-get -y update
