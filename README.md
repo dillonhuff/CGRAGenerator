@@ -13,6 +13,7 @@ Quick guide to repository contents as of 03/2017:
 * hardware/generator_z => latest instantiation of the generator
 * hardware/generator_z/top => go here to run the generator
 * verilator => verilator experiments
+* verilator/generator_z_tb => go here to run the generator testbench (under development)
 <br/><br/>
 
 TODO
