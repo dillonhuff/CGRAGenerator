@@ -3,11 +3,7 @@
 Coarse-Grained Reconfigurable Architecture
 ==========================================
 
-Build Status
-
-foo | Linux                        |
-    |------------------------------|
-    | [![linux build status][1]][2]|
+Build Status: [![linux build status][1]][2]|
 
 [1]: https://travis-ci.org/StanfordAHA/CGRAGenerator.svg?branch=master
 [2]: https://travis-ci.org/StanfordAHA/CGRAGenerator
