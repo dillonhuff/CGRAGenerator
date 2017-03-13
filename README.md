@@ -11,7 +11,7 @@ Quick guide to repository contents as of 03/2017:
 * doc/ => documentation (still TBD as of this writing)
 * Genesis2Tools => for building the project and running it with e.g. travis
 * hardware/generator_z => latest instantiation of the generator
-* hardware/generator_z/to => go here to run the generator
+* hardware/generator_z/top => go here to run the generator
 * verilator => verilator experiments
 <br/><br/>
 
