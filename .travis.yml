@@ -1,4 +1,4 @@
-
+##############################################################################
 # We learned this weekend that Travis will load different VM configs
 # depending on language settings etc. We will need to standardize on a
 # config so that we can build the tools together. I recommend:
@@ -9,22 +9,11 @@
 # 
 # Which will load Ubuntu 14. Then apt-get whatever language you need. If
 # this doesn't work for you, let everyone know ASAP.
+##############################################################################
 
 dist: trusty
 language: c
-# sudo: required
 sudo: false
-
-
-# This works:
-# addons:
-#   apt:
-#     sources:
-#     - ubuntu-toolchain-r-test
-#     packages:
-#       - csh
-#       - build-essential
-
 
 addons:
   apt:
@@ -34,42 +23,27 @@ addons:
       - csh
       # - build-essential
 
-
-
-
-# Maybe someday we'll want/need to do this:
-# perl:
-# - "5.18"
-
-
-# # install:
-# #  - sudo apt-get -y --force-yes install perl
-# #  - sudo apt-get -y --force-yes install csh
+##############################################################################
+# Here's how James does Verilator:
 # 
-# install:
-#  - apt-get -y --force-yes install perl
-#  - apt-get -y --force-yes install csh
-
-# # Let's try it James' way, see ref.
-# # https://github.com/jameshegarty/rigel/blob/master/.travis.yml
-# before_install:
-#   - apt-get -qq update
-# 
-#   # perl, csh
-#   # - sudo apt-get -y update
-#   - apt-get -y install perl
-#   - apt-get -y install csh
-
 #  # verilator
 #   - sudo apt-get install verilator
 #   - export PKG_CONFIG_PATH=/home/travis/build/jameshegarty/rigel/platform/verilator
-
 
 script:
   - which csh
   - ./travis-test.csh
 
 
+##############################################################################
+##############################################################################
+# NOTES
+# 
+# Maybe someday we'll want/need this:
+# perl:
+# - "5.18"
+# 
+# OLD
 # script:
 #   - which csh
 #   - ./travis-test.csh
