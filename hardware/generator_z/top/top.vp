@@ -220,6 +220,12 @@ config_data
 //;   }
 //; }
 
+// FIXME Note there are LOTS of unused wires being created below!
+// FIXME I assume they will be hooked up to something eventually
+// FIXME when this module is ready to be part of a working testbench...?
+// FIXME At which point the verilator directive(s) can be removed maybe...
+
+/* verilator lint_off UNUSED */
 //; #####################################################
 //; #Create wires
 //; #####################################################
@@ -236,6 +242,8 @@ config_data
 //;     }
 //;   }
 //; }
+/* verilator lint_on UNUSED */
+
 
 //; my $tile_hash_ref;
 //; my $tile_count=0;

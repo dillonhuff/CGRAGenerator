@@ -10,7 +10,10 @@ module `mname`  #(
   output logic                  c_out
 );
 
-  assign {c_out, res} = a + b + c_in;
+  // FIXME owner please verify the following change
+
+  // assign {c_out, res} = a + b + c_in;
+  assign {c_out, res} = a + b + { {(DataWidth-1){1'b0}}, c_in};
 
 endmodule
 

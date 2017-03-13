@@ -35,8 +35,17 @@ config_en
   input  reset;
   input  config_en;
   input [31:0] config_data;
+
+  // Bits [31:24] are for switch box, [23:0] for connection box.
+  // So we have to let the linter know (verilator directives below) or it complains:
+  // %Warning-UNUSED: .../sb_unq1.v:115: Bits of signal are not used: config_addr[23:0]
+  // FIXME Owner please confirm that this is correct and delete this FIXME line (but keep the rest)
+  // FIXME someday? Maybe shouldn't bring in all 32 bits if we're not going to use them?
+
+  /* verilator lint_off UNUSED */
   input [31:0] config_addr;
-  
+  /* verilator lint_on UNUSED */
+
   //; for(my $i=0; $i<$pe_output_count; $i++) {
   input [`$width-1`:0] pe_output_`$i`;
   //; }
@@ -65,18 +74,49 @@ config_en
 //;    $config_bit_count += ($registered_count * $sides);
 
 //; if ($config_bit_count>0) { 
-  reg [`int(ceil($config_bit_count/32.0)*32)-1`:0] config_sb;
+//;     my $config_reg_width = int(ceil($config_bit_count/32.0)*32);
+  // reg [`int(ceil($config_bit_count/32.0)*32)-1`:0] config_sb;
+
+  // Note not all config bits are used by this module.  Is this on purpose?
+  // As a result, however, verilator needs lint directives or it complains:
+  // %Warning-UNUSED: .../sb_unq1.v:164: Bits of signal are not used: config_sb[63:60]
+  // %Warning-UNUSED: .../sb_unq3.v:164: Bits of signal are not used: config_sb[63:40]
+  // [FIXME Owner please confirm that this is correct and delete this FIXME line]
+
+  /* verilator lint_off UNUSED */
+  reg [`$config_reg_width-1`:0] config_sb;
+  /* verilator lint_on UNUSED */
   
   //; my $config_addrs_needed = int(ceil($config_bit_count / 32.0));
   always @(posedge clk) begin
     if (reset==1'b1) begin
-      config_sb <= `$config_bit_count`'d0;
+
+      // Seems like the entire register should be initialized, not just a subset of the bits, yes?
+      // FIXME Owner please check that this is still correct!
+      // config_sb <= `$config_bit_count`'d0;
+      config_sb <= `$config_reg_width`'d0;
+
     end else begin
       if (config_en==1'b1) begin
          case (config_addr[31:24])
   //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
            8'd`$j`: config_sb[`($j+1)*32-1`:`$j*32`] <= config_data;
   //; }
+
+  //; # FIXME: 'for' loop ,above, generated this:
+  //; # 
+  //; #       case (config_addr[31:24])
+  //; #         8''d0: config_sb[31:0] <= config_data;
+  //; #         8''d1: config_sb[63:32] <= config_data;
+  //; # 
+  //; #       endcase
+  //; # 
+  //; # So naturally verilator complained:
+  //; # %Warning-CASEINCOMPLETE: .../sb_unq1.v:183: Case values incompletely covered (example pattern 0x2)
+  //; # So I''m adding a no-op default case (below)...but is this okay?
+  //; # FIXME: Owner please verify this is okay and delete this comment block.
+           default: ;
+
          endcase
       end
     end
@@ -108,11 +148,26 @@ config_en
              //; my $sel = 0;
              //; for(my $k=0; $k<$sides; $k++) {
              //; if ($k == $i) {next;}
-        `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i <= in_`$k`_`$j`;
+
+        // FIXME: verify that this change is okay...
+        // %Warning-COMBDLY:
+        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+
+        // `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i <= in_`$k`_`$j`;
+        `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i = in_`$k`_`$j`;
+
              //; $sel++;
              //; }
              //; for(my $k=0; $k<$pe_output_count; $k++) {
-        `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i <= pe_output_`$k`;
+
+        // FIXME: verify that this change is okay...
+        // %Warning-COMBDLY:
+        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+
+        // `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i <= pe_output_`$k`;
+        `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i = pe_output_`$k`;
+
+
              //; $sel++;
              //; }
     endcase

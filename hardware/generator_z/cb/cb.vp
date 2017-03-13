@@ -23,7 +23,16 @@ config_en
   input  reset;
   input  config_en;
   input [31:0] config_data;
+
+  // Bits [31:24] are for switch box, [23:0] for connection box.
+  // So we have to let the linter know (verilator directives below) or it complains:
+  // %Warning-UNUSED: .../cb_unq1.v:73: Bits of signal are not used: config_addr[23:0]
+  // FIXME Owner please confirm that this is correct and delete this FIXME line (but keep the rest)
+  // FIXME someday? Maybe shouldn't bring in all 32 bits if we're not going to use them?
+
+  /* verilator lint_off UNUSED */
   input [31:0] config_addr;
+  /* verilator lint_on UNUSED */
 
   output reg [`$width-1`:0] out;
 //; for(my $i=0; $i<($num_tracks*2); $i++) {
@@ -42,18 +51,46 @@ config_en
 //; my $mux_sel_bit_count = int(ceil(log(($num_tracks*2) - $feedthrough_count + $has_constant)/log(2)));
 //; my $constant_bit_count = $has_constant * $width;
 //; my $config_bit_count = $mux_sel_bit_count + $constant_bit_count;
+//; my $config_reg_width = int(ceil($config_bit_count/32.0)*32);
 
-  reg [`int(ceil($config_bit_count/32.0)*32)-1`:0] config_cb;
+  // Note not all config bits are used by this module.  Is this on purpose?
+  // As a result, however, verilator needs lint directives or it complains:
+  // %Warning-UNUSED: .../cb_unq1.v:91: Bits of signal are not used: config_cb[31:20]
+  // %Warning-UNUSED: .../cb_unq2.v:91: Bits of signal are not used: config_cb[31:5]
+  // [FIXME Owner please confirm that this is correct and delete this FIXME line]
+
+  /* verilator lint_off UNUSED */
+  reg [`$config_reg_width-1`:0] config_cb;
+  /* verilator lint_on UNUSED */
+
   //; my $config_addrs_needed = int(ceil($config_bit_count / 32.0));
   always @(posedge clk) begin
     if (reset==1'b1) begin
-      config_cb <= `$config_bit_count`'d0;
+
+      // Seems like the entire register should be initialized, not just a subset of the bits, yes?
+      // FIXME Owner please check that this is still correct!
+      // config_cb <= `$config_bit_count`'d0;
+      config_cb <= `$config_reg_width`'d0;
+
     end else begin
       if (config_en==1'b1) begin
          case (config_addr[31:24])
   //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
            8'd`$j`: config_cb[`($j+1)*32-1`:`$j*32`] <= config_data;
   //; }
+
+  //; # FIXME: 'for' loop ,above, generated this:
+  //; # 
+  //; #   case (config_addr[31:24])
+  //; #     8''d0: config_cb[31:0] <= config_data;
+  //; #   endcase
+  //; # 
+  //; # So naturally verilator complained:
+  //; # %Warning-CASEINCOMPLETE: .../cb_unq1.v:109: Case values incompletely covered (example pattern 0x1)
+  //; # So I''m adding a no-op default case (below)...but is this okay?
+  //; # FIXME: Owner please verify this is okay and delete this comment block.
+           default: ;
+
          endcase
       end
     end
@@ -68,16 +105,39 @@ config_en
     case (config_cb[`$mux_sel_bit_count - 1`:0])
 //; for(my $i=0; $i<($num_tracks*2); $i++) {
 //;   if ($feedthrough[$i%$num_tracks]==1) {
-        `$mux_sel_bit_count`'d`$sel`: out <= in_`$i`;
+
+        // FIXME: Owner please verify that this lint fix won't break anything.
+        // default: out <= `$width`'d0;
+        // %Warning-COMBDLY: .../cb_unq1.v:134:
+        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+
+        // `$mux_sel_bit_count`'d`$sel`: out <= in_`$i`;
+        `$mux_sel_bit_count`'d`$sel`: out = in_`$i`;
+
 //;     $sel++;
 //;   }
 //;    
 //; }
 //;   if ($has_constant==1) {
-        default: out <= config_cb[`$mux_sel_bit_count+$constant_bit_count-1`:`$mux_sel_bit_count`];
+
+        // FIXME: Owner please verify that this lint fix won't break anything.
+        // default: out <= `$width`'d0;
+        // %Warning-COMBDLY: .../cb_unq1.v:134:
+        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+
+        // default: out <= config_cb[`$mux_sel_bit_count+$constant_bit_count-1`:`$mux_sel_bit_count`];
+        default: out = config_cb[`$mux_sel_bit_count+$constant_bit_count-1`:`$mux_sel_bit_count`];
+
 //;     $sel++;
 //;   } else {
-        default: out <= `$width`'d0;
+
+        // FIXME: verify that this is the correct fix...
+        // %Warning-COMBDLY: .../cb_unq1.v:134:
+        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+
+        // default: out <= `$width`'d0;
+        default: out = `$width`'d0;
+
 //;   }
     endcase
   end

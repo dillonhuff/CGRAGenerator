@@ -17,8 +17,18 @@
 module   `mname`  #(
   parameter DataWidth = 16
 ) (
+
+  // FIXME
+  // Neither of these (clk and rst below) are used(!) and verilator complains, 
+  // %Warning-UNUSED: .../test_pe_unq1.sv:59: Signal is not used: clk
+  // %Warning-UNUSED: ...test_pe_unq1.sv:60: Signal is not used: rst_n
+  // %Warning-UNUSED: Use "/* verilator lint_off UNUSED */" and lint_on around source to disable this message.
+  // ...so I'm adding the workaround for now.  (Do we even use this module?)
+
+  /* verilator lint_off UNUSED */
   input                clk,
   input                rst_n,
+  /* verilator lint_on UNUSED */
 
 //; if($use_lut || $reg_inputs) {
   input         [15:0] cfg_d,

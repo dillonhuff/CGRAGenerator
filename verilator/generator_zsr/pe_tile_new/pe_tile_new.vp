@@ -105,7 +105,9 @@ tile_id
 //; # Generate feature enables
 //; #############################################################
 
-// Never used anywhere in this module!?
+// 'cinfig_en_pe' never used in this module, so I commented it out (below).
+// FIXME owner please check to see what is the right thing to do here...?
+
 //   reg config_en_pe;
 //   always @(posedge clk) begin
 //     if (reset) begin
@@ -120,11 +122,16 @@ tile_id
 //   end
 
 //;$intra_tile_addr+=1;
-  // Note: verilator complains because opcode[31:16] goes unused...
-  // For now, I will try to fix it with a verilator directive (/* verilator lint_off UNUSED */)
+
+  // Note: verilator complains because some bits (opcode[31:16]) go unused...
+  // For now, I will fix it with a verilator directive
+  // FIXME owner please verify that unused bits are correct behavior and
+  // FIXME maybe add a comment to that effect...?
+
   /* verilator lint_off UNUSED */
   reg [31:0] opcode;
   /* verilator lint_on UNUSED */
+
   always @(posedge clk) begin
     if (reset) begin
        opcode <= 32'd0;
@@ -245,8 +252,12 @@ tile_id
   .cfg_en(config_en_pe),
 //;} else {
   .op_code(opcode[15:0]),
+
   // Note: verilator complains because opcode[31:16] goes unused...
   // For now, I will try to fix it with a verilator directive (/* verilator lint_off UNUSED */)
+  // FIXME owner please verify that you mean for these bits to go unused and
+  // FIXME maybe add a comment to that effect...?
+
 //;}
   .op_a_in(pe_inp_a),
   .op_b_in(pe_inp_b),
