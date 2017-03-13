@@ -21,7 +21,9 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
+      - csh
       - build-essential
+
 
 
 
