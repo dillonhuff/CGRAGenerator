@@ -23,13 +23,29 @@ sudo: false
 # perl:
 # - "5.18"
 
-# install:
-#  - sudo apt-get -y --force-yes install perl
-#  - sudo apt-get -y --force-yes install csh
 
-install:
- - apt-get -y --force-yes install perl
- - apt-get -y --force-yes install csh
+# # install:
+# #  - sudo apt-get -y --force-yes install perl
+# #  - sudo apt-get -y --force-yes install csh
+# 
+# install:
+#  - apt-get -y --force-yes install perl
+#  - apt-get -y --force-yes install csh
+
+# Let's try it James' way, see ref.
+# https://github.com/jameshegarty/rigel/blob/master/.travis.yml
+before_install:
+  - sudo apt-get -qq update
+
+  # perl, csh
+  # - sudo apt-get -y update
+  - apt-get -y install perl
+  - apt-get -y install csh
+
+#  # verilator
+#   - sudo apt-get install verilator
+#   - export PKG_CONFIG_PATH=/home/travis/build/jameshegarty/rigel/platform/verilator
+
 
 script:
   - which csh
