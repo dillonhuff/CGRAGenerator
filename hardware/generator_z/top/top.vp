@@ -5,7 +5,7 @@
 //////////////////////////////////////////////////////////////////
 //; #global
 //; #<BUS_NAME>:<number of bits>b#<seg1_length>_<seg1_register_after_hops>:<seg2_length>_<seg2_register_after_hops>:...
-//; my $bus_config = "BUS16:16b#2_4:1_4:1_4:1_4:1_4 BUS1:1b#1_4:1_4:1_4:1_4:1_4";
+//; my $bus_config = "BUS16:16b#1_4:1_4:1_4:1_4:1_4 BUS1:1b#1_4:1_4:1_4:1_4:1_4";
 //; my $all_segments_for_all_tiles = 1;
 //; my $sides = 4;
 //; # for cb

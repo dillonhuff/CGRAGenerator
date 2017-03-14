@@ -109,21 +109,20 @@ tile_id
 //; # Generate feature enables
 //; #############################################################
 
-// 'cinfig_en_pe' never used in this module, so I commented it out (below).
-// FIXME owner please check to see what is the right thing to do here...?
-
-//   reg config_en_pe;
-//   always @(posedge clk) begin
-//     if (reset) begin
-//        config_en_pe <= 1'b0;
-//     end else begin
-//        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-//          config_en_pe <= 1'b1;
-//        end else begin
-//          config_en_pe <= 1'b0;
-//        end
-//     end
-//   end
+//; if($use_lut || $reg_inputs) {
+   reg config_en_pe;
+   always @(*) begin
+     if (reset) begin
+        config_en_pe <= 1'b0;
+     end else begin
+        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+          config_en_pe <= 1'b1;
+        end else begin
+          config_en_pe <= 1'b0;
+        end
+     end
+   end
+//; }
 //; $tile_info_hash->{ 'pe' } = {
 //;   address => $intra_tile_addr
 //; };
@@ -154,7 +153,7 @@ tile_id
 
 //;$intra_tile_addr+=1;
   reg config_en_cb1;
-  always @(posedge clk) begin
+  always @(*) begin
     if (reset) begin
        config_en_cb1 <= 1'b0;
     end else begin
@@ -171,7 +170,7 @@ tile_id
 
 //;$intra_tile_addr+=1;
   reg config_en_cb2;
-  always @(posedge clk) begin
+  always @(*) begin
     if (reset) begin
        config_en_cb2 <= 1'b0;
     end else begin
@@ -189,7 +188,7 @@ tile_id
 //; if($use_c_input) {
 //;$intra_tile_addr+=1;
   reg config_en_cb3;
-  always @(posedge clk) begin
+  always @(*) begin
     if (reset) begin
        config_en_cb3 <= 1'b0;
     end else begin
@@ -207,7 +206,7 @@ tile_id
 
 //;$intra_tile_addr+=1;
   reg config_en_cb4;
-  always @(posedge clk) begin
+  always @(*) begin
     if (reset) begin
        config_en_cb4 <= 1'b0;
     end else begin
@@ -224,7 +223,7 @@ tile_id
 
 //;$intra_tile_addr+=1;
   reg config_en_sb1;
-  always @(posedge clk) begin
+  always @(*) begin
     if (reset) begin
        config_en_sb1 <= 1'b0;
     end else begin
@@ -241,7 +240,7 @@ tile_id
 
 //;$intra_tile_addr+=1;
   reg config_en_sb2;
-  always @(posedge clk) begin
+  always @(*) begin
     if (reset) begin
        config_en_sb2 <= 1'b0;
     end else begin
