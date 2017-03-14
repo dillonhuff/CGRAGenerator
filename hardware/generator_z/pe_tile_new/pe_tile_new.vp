@@ -66,6 +66,10 @@
 //;     $bus_num_tracks_hash{ $bus_name } = $track_count;
 //;   }
 //; }
+//;my $filename = "TILE".$self->mname();
+//;open(TILEINFO, ">$filename") or die "Couldn't open file $filename, $!";
+//; my $tile_info_hash;
+//; my $rename_hash;
 module `mname` (
 clk,
 config_addr,
@@ -120,6 +124,9 @@ tile_id
 //        end
 //     end
 //   end
+//; $tile_info_hash->{ 'pe' } = {
+//;   address => $intra_tile_addr
+//; };
 
 //;$intra_tile_addr+=1;
 
@@ -141,6 +148,9 @@ tile_id
        end
     end
   end
+//; $tile_info_hash->{ 'opcode' } = {
+//;   address => $intra_tile_addr
+//; };
 
 //;$intra_tile_addr+=1;
   reg config_en_cb1;
@@ -155,6 +165,9 @@ tile_id
        end
     end
   end
+//; $tile_info_hash->{ 'cb1' } = {
+//;   address => $intra_tile_addr
+//; };
 
 //;$intra_tile_addr+=1;
   reg config_en_cb2;
@@ -169,6 +182,9 @@ tile_id
        end
     end
   end
+//; $tile_info_hash->{ 'cb2' } = {
+//;   address => $intra_tile_addr
+//; };
 
 //; if($use_c_input) {
 //;$intra_tile_addr+=1;
@@ -184,6 +200,9 @@ tile_id
        end
     end
   end
+//; $tile_info_hash->{ 'cb3' } = {
+//;   address => $intra_tile_addr
+//; };
 //; }
 
 //;$intra_tile_addr+=1;
@@ -199,6 +218,9 @@ tile_id
        end
     end
   end
+//; $tile_info_hash->{ 'cb4' } = {
+//;   address => $intra_tile_addr
+//; };
 
 //;$intra_tile_addr+=1;
   reg config_en_sb1;
@@ -213,6 +235,9 @@ tile_id
        end
     end
   end
+//; $tile_info_hash->{ 'sb1' } = {
+//;   address => $intra_tile_addr
+//; };
 
 //;$intra_tile_addr+=1;
   reg config_en_sb2;
@@ -227,6 +252,9 @@ tile_id
        end
     end
   end
+//; $tile_info_hash->{ 'sb2' } = {
+//;   address => $intra_tile_addr
+//; };
 
 //; #############################################################
 //; # Generate PE
@@ -268,6 +296,13 @@ tile_id
   .res(pe_out_res),
   .res_p(pe_out_p)
 );
+//; $tile_info_hash->{ 'pe' }{'reg_inputs'} = $reg_inputs;
+//; $tile_info_hash->{ 'pe' }{'reg_out'} = $reg_out;
+//; $tile_info_hash->{ 'pe' }{'use_add'} = $use_add;
+//; $tile_info_hash->{ 'pe' }{'bool_inps'} = $bool_inps;
+//; $tile_info_hash->{ 'pe' }{'use_shift'} = $use_shift;
+//; $tile_info_hash->{ 'pe' }{'mult_mode'} = $mult_mode;
+
 //;my $cb_wide = generate('cb', 'cbwide_base', width=>$wide_bus_width, num_tracks=>$bus_num_tracks_hash{'BUS16'}, has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
 //;my $cb_1b = generate('cb', 'cb1b_base', width=>1, num_tracks=>$bus_num_tracks_hash{'BUS1'}, has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
 //;my $num_tracks = $bus_num_tracks_hash{'BUS16'};
@@ -298,6 +333,7 @@ tile_id
 //;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
 //;     if (@cb_connections_arr[$j]==1) {
     .in_`$k`(in_BUS16_S`$i`_T`$j`),
+//;       $rename_hash->{ 'cb1' }{"in_${k}"} = "in_BUS16_S${i}_T${j}";
 //;     }
 //;   }    
 //;  }
@@ -305,7 +341,9 @@ tile_id
     .config_data(config_data),
     .config_en(config_en_cb`$cb_count`)
   );
-
+//; $tile_info_hash->{ 'cb1' }{'bus'} = 'BUS16';
+//; $tile_info_hash->{ 'cb1' }{'mname'} = $cb1->mname();
+//; $rename_hash->{ 'cb1' }{'out'} = 'a';
 
 //;$cb_count = 2;
 //;my $cb2 = clone($cb_wide,'cb'.$cb_count);
@@ -326,6 +364,7 @@ tile_id
 //;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
 //;     if (@cb_connections_arr[$j]==1) {
     .in_`$k`(in_BUS16_S`$i`_T`$j`),
+//;       $rename_hash->{ 'cb2' }{"in_${k}"} = "in_BUS16_S${i}_T${j}";
 //;     }
 //;   }    
 //;  }
@@ -333,6 +372,9 @@ tile_id
     .config_data(config_data),
     .config_en(config_en_cb`$cb_count`)
   );
+//; $tile_info_hash->{ 'cb2' }{'bus'} = 'BUS16';
+//; $tile_info_hash->{ 'cb2' }{'mname'} = $cb2->mname();
+//; $rename_hash->{ 'cb2' }{'out'} = 'b';
 
 //;if($use_c_input) {
 //; $cb_count = 3;
@@ -354,6 +396,7 @@ tile_id
 //;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
 //;     if (@cb_connections_arr[$j]==1) {
     .in_`$k`(in_BUS16_S`$i`_T`$j`),
+//;       $rename_hash->{ 'cb3' }{"in_${k}"} = "in_BUS16_S${i}_T${j}";
 //;     }
 //;   }    
 //;  }
@@ -361,6 +404,9 @@ tile_id
     .config_data(config_data),
     .config_en(config_en_cb`$cb_count`)
   );
+//; $tile_info_hash->{ 'cb3' }{'bus'} = 'BUS16';
+//; $tile_info_hash->{ 'cb3' }{'mname'} = $cb3->mname();
+//; $rename_hash->{ 'cb3' }{'out'} = 'c';
 //; }
 
 
@@ -384,6 +430,7 @@ tile_id
 //;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
 //;     if (@cb_connections_arr[$j]==1) {
     .in_`$k`(in_BUS1_S`$i`_T`$j`),
+//;       $rename_hash->{ 'cb4' }{"in_${k}"} = "in_BUS1_S${i}_T${j}";
 //;     }
 //;   }    
 //;  }
@@ -391,6 +438,9 @@ tile_id
     .config_data(config_data),
     .config_en(config_en_cb`$cb_count`)
   );
+//; $tile_info_hash->{ 'cb4' }{'bus'} = 'BUS1';
+//; $tile_info_hash->{ 'cb4' }{'mname'} = $cb4->mname();
+//; $rename_hash->{ 'cb4' }{'out'} = 'd';
 
 //; #############################################################
 //; # Generate SB 
@@ -411,12 +461,17 @@ tile_id
 //;  for(my $j=0; $j<$bus_num_tracks_hash{'BUS16'}; $j++) {
     .out_`$i`_`$j`(out_BUS16_S`$i`_T`$j`),
     .in_`$i`_`$j`(in_BUS16_S`$i`_T`$j`),
+//;    $rename_hash->{ 'sb1' }{"out_${i}_${j}"} = "out_BUS16_S${i}_T${j}";
+//;    $rename_hash->{ 'sb1' }{"in_${i}_${j}"} = "in_BUS16_S${i}_T${j}";
 //;  }
 //; }
     .config_addr(config_addr),
     .config_data(config_data),
     .config_en(config_en_sb1)
   );
+//; $tile_info_hash->{ 'sb1' }{'bus'} = 'BUS16';
+//; $tile_info_hash->{ 'sb1' }{'mname'} = $sb_wide->mname();
+//; $rename_hash->{ 'sb1' }{'pe_output_0'} = 'pe_out_res';
 
 //;   $feedthrough_outputs =~ m/BUS1:(\S+)/;
 //;   my $bus_feedthrough_outputs = $1;
@@ -433,11 +488,72 @@ tile_id
 //;  for(my $j=0; $j<$bus_num_tracks_hash{'BUS1'}; $j++) {
     .out_`$i`_`$j`(out_BUS1_S`$i`_T`$j`),
     .in_`$i`_`$j`(in_BUS1_S`$i`_T`$j`),
+//;    $rename_hash->{ 'sb2' }{"out_${i}_${j}"} = "out_BUS1_S${i}_T${j}";
+//;    $rename_hash->{ 'sb2' }{"in_${i}_${j}"} = "in_BUS1_S${i}_T${j}";
 //;  }
 //; }
     .config_addr(config_addr),
     .config_data(config_data),
     .config_en(config_en_sb2)
   );
-
+//; $tile_info_hash->{ 'sb2' }{'bus'} = 'BUS1';
+//; $tile_info_hash->{ 'sb2' }{'mname'} = $sb_1b->mname();
+//; $rename_hash->{ 'sb2' }{'pe_output_0'} = 'pe_out_p';
+//;#######################################################################
+//;## Generate tile connectivity, and pe info 
+//;##
+//;#######################################################################
+//;foreach my $feature (sort keys %$tile_info_hash)  {
+//;  my $value = $tile_info_hash->{$feature};
+//;################### PEs
+//;  if ($feature=~m/pe/) {
+//;    print TILEINFO "    <pe feature_address='$value->{'address'}'>\n";
+//;    foreach my $param_name (sort keys %$value) {
+//;      my $param_value = $value->{$param_name};
+//;      if ($param_name!~m/address/) {
+//;        print TILEINFO "        <$param_name> $param_value </$param_name>\n";
+//;      }
+//;    }
+//;    print TILEINFO "    </pe>\n"
+//;  }
+//;################### OPCODEs
+//;  if ($feature=~m/opcode/) {
+//;    print TILEINFO "    <opcode feature_address='$value->{'address'}'></opcode>\n";
+//;  }
+//;################### CBs
+//;  if ($feature=~m/cb/) {
+//;    print TILEINFO "    <cb feature_address='$value->{'address'}' bus='$value->{'bus'}'>\n";
+//;    my $filename = "CB".$value->{'mname'};
+//;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
+//;    while (<INP>) {
+//;      my $line = $_;
+//;      while ( my ($find, $replace) = each(%$rename_hash->{$feature}) ) {
+//;#         print TILEINFO "$find###$replace###$line"\n";
+//;         $line=~s/>$find</>$replace</g;
+//;         $line=~s/='$find'>/='$replace'>/g;
+//;      }
+//;      print TILEINFO $line;
+//;    }
+//;    close INP;
+//;    print TILEINFO "    </cb>\n"
+//;  }
+//;################### SBs
+//;  if ($feature=~m/sb/) {
+//;    print TILEINFO "    <sb feature_address='$value->{'address'}' bus='$value->{'bus'}'>\n";
+//;    my $filename = "SB".$value->{'mname'};
+//;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
+//;    while (<INP>) {
+//;      my $line = $_;
+//;      while ( my ($find, $replace) = each(%$rename_hash->{$feature}) ) {
+//;#         print TILEINFO "$find###$replace###$line"\n";
+//;         $line=~s/>$find</>$replace</g;
+//;         $line=~s/'$find'/'$replace'/g;
+//;      }
+//;      print TILEINFO $line;
+//;    }
+//;    close INP;
+//;    print TILEINFO "    </sb>\n"
+//;  }
+//;}
+//;close TILEINFO;
 endmodule

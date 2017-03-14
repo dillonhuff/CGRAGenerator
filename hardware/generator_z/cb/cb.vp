@@ -99,7 +99,11 @@ config_en
 //; # ###############################################
 //; # Setup input mux
 //; # ###############################################
-
+//;my $filename = "CB".$self->mname();
+//;open(CBINFO, ">$filename") or die "Couldn't open file $filename, $!";
+//;print CBINFO "        <sel_width>$mux_sel_bit_count</sel_width>\n";
+//;#print CBINFO "        <has_constant>$has_constant</has_constant>\n";
+//;print CBINFO "        <mux snk='out'>\n";
 //; my $sel=0;
   always @(*) begin
     case (config_cb[`$mux_sel_bit_count - 1`:0])
@@ -113,10 +117,9 @@ config_en
 
         // `$mux_sel_bit_count`'d`$sel`: out <= in_`$i`;
         `$mux_sel_bit_count`'d`$sel`: out = in_`$i`;
-
+//;     print CBINFO "          <src sel='$sel'>in_$i</src>\n";
 //;     $sel++;
 //;   }
-//;    
 //; }
 //;   if ($has_constant==1) {
 
@@ -142,6 +145,8 @@ config_en
     endcase
   end
 endmodule
+//;print CBINFO "        </mux>\n";
+//;close CBINFO;
 
 //;# generate corresponding testbench
 //;# my $tb = generate_base('tb_cb', 'tb_cb', width => $width, num_tracks => $num_tracks, feedthrough_outputs => $feedthrough_outputs);

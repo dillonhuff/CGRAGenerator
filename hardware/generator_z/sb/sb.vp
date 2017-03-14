@@ -10,6 +10,9 @@
 
 //; my $number_of_outputs = $num_tracks;
 
+//;my $filename = "SB".$self->mname();
+//;open(SBINFO, ">$filename") or die "Couldn't open file $filename, $!";
+
 module `mname` (
 clk, reset,
 //; for(my $i=0; $i<$pe_output_count; $i++) {
@@ -126,28 +129,29 @@ config_en
 //; # ###############################################
 //; # Setup all outputs (feedthrough/non-feedthrough)
 //; # ###############################################
-
+//;print SBINFO "        <sel_width>$number_of_config_bits_per_driven_output</sel_width>\n";
 //; for(my $i=0; $i<$sides; $i++) {
 //; my $registered_config_bit_count = 0;
 //; my $driven_config_bit_count = 0;
 //;  for(my $j=0; $j<$number_of_outputs; $j++) {
 //;     if ($feedthrough[$j]==1) {
+//;     print SBINFO "        <ft snk='out_${i}_${j}'>\n";
 //;       my $opposite_side = $i + int($sides*0.5);
 //;       if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
 
   assign out_`$i`_`$j` = in_`$opposite_side`_`$j`;
-
+//;     print SBINFO "          <src>in_${opposite_side}_${j}</src>\n";
+//;     print SBINFO "        </ft>\n";
 //;     } else {
-
   reg [`$width-1`:0] out_`$i`_`$j`_i;
   always @(*) begin
 //;        my $config_bit_l = ($number_of_driven_outputs_per_side * $number_of_config_bits_per_driven_output * $i) + ($number_of_config_bits_per_driven_output * $driven_config_bit_count);
 //;        $driven_config_bit_count++;
 //;        my $config_bit_h =  $config_bit_l + $number_of_config_bits_per_driven_output-1;
     case (config_sb[`$config_bit_h`:`$config_bit_l`])
-             //; my $sel = 0;
-             //; for(my $k=0; $k<$sides; $k++) {
-             //; if ($k == $i) {next;}
+//;        my $sel = 0;
+//;        for(my $k=0; $k<$sides; $k++) {
+//;          if ($k == $i) {next;}
 
         // FIXME: verify that this change is okay...
         // %Warning-COMBDLY:
@@ -155,11 +159,10 @@ config_en
 
         // `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i <= in_`$k`_`$j`;
         `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i = in_`$k`_`$j`;
-
-             //; $sel++;
-             //; }
-             //; for(my $k=0; $k<$pe_output_count; $k++) {
-
+//;          print SBINFO "          <src sel='$sel'>in_${k}_${j}</src>\n";
+//;          $sel++;
+//;        }
+//;        for(my $k=0; $k<$pe_output_count; $k++) {
         // FIXME: verify that this change is okay...
         // %Warning-COMBDLY:
         // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
@@ -167,9 +170,9 @@ config_en
         // `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i <= pe_output_`$k`;
         `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i = pe_output_`$k`;
 
-
-             //; $sel++;
-             //; }
+//;          print SBINFO "          <src sel='$sel'>pe_output_${k}</src>\n";
+//;          $sel++;
+//;        }
     endcase
   end
 //; 
@@ -178,17 +181,19 @@ config_en
   always @(posedge clk) begin
     out_`$i`_`$j`_id1 <= out_`$i`_`$j`_i;
   end
-//;        my $config_bit_l = ($number_of_driven_outputs_per_side * $number_of_config_bits_per_driven_output * $sides) + ($registered_count * $i) + $registered_config_bit_count;
+//;         my $config_bit_r = ($number_of_driven_outputs_per_side * $number_of_config_bits_per_driven_output * $sides) + ($registered_count * $i) + $registered_config_bit_count;
 //;        $registered_config_bit_count++;
-  assign out_`$i`_`$j` = config_sb[`$config_bit_l`]?out_`$i`_`$j`_id1:out_`$i`_`$j`_i; 
+  assign out_`$i`_`$j` = config_sb[`$config_bit_r`]?out_`$i`_`$j`_id1:out_`$i`_`$j`_i; 
+//;         print SBINFO "        <mux snk='out_${i}_${j}' reg='$registered[$j]' configh='$config_bit_h' configl='$config_bit_l' configr='$config_bit_r'>\n";
 //;       } else {
   assign out_`$i`_`$j` = out_`$i`_`$j`_i;
-
+//;       print SBINFO "        <mux snk='out_${i}_${j}' reg='$registered[$j]' configh='$config_bit_h' configl='$config_bit_l'>\n";
 //;       }
+//;       print SBINFO "        </mux>\n";
 //;     }
 //;  }
 //; }
-
+//; close SBINFO;
 endmodule
 
 //;# generate corresponding testbench

@@ -4,7 +4,8 @@
 // (C) Stanford University
 //////////////////////////////////////////////////////////////////
 //; #global
-//; my $bus_config = "BUS16:16b#1_4:1_4:1_4:1_4:1_4 BUS1:1b#1_4:1_4:1_4:1_4:1_4";
+//; #<BUS_NAME>:<number of bits>b#<seg1_length>_<seg1_register_after_hops>:<seg2_length>_<seg2_register_after_hops>:...
+//; my $bus_config = "BUS16:16b#2_4:1_4:1_4:1_4:1_4 BUS1:1b#1_4:1_4:1_4:1_4:1_4";
 //; my $all_segments_for_all_tiles = 1;
 //; my $sides = 4;
 //; # for cb
@@ -192,6 +193,9 @@ config_addr,
 config_data
 );
 
+//;open(INFO, ">cgra_info.txt") or die "Couldn't open file cgra_info.txt, $!";
+//;print INFO "<CGRA>\n";
+
   input clk;
   input reset;
   input [31:0] config_addr;
@@ -357,14 +361,21 @@ config_data
 //;     }
       .tile_id(16'd`$tile_count`)
     );
+//;   print INFO "  <tile tile_addr='$tile_count' row='$j' col='$i' tracks='";
+//;   foreach my $bus (sort keys %bus_num_tracks_hash) {
+//;     print INFO "$bus:$bus_num_tracks_hash{$bus} ";
+//;   }
+//;   print INFO "'>\n";
+//;   open (INP, "<TILE".$inst_obj->mname()) or die "Couldn't open file TILE$inst_obj->mname(), $!";
+//;   while (<INP>) {
+//;     print INFO $_;
+//;   }
+//;   close INP;
+//;   print INFO "  </tile>\n";
 //;   $tile_count+=1;
 //;   }
 //; }
 
-
-//; #####################################################
-//; #Connect wires
-//; #####################################################
-
-
+//;print INFO "</CGRA>\n";
+//;close INFO;
 endmodule
