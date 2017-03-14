@@ -143,11 +143,17 @@ config_en
 //;     print SBINFO "          <src>in_${opposite_side}_${j}</src>\n";
 //;     print SBINFO "        </ft>\n";
 //;     } else {
+//;         my $config_bit_r = ($number_of_driven_outputs_per_side * $number_of_config_bits_per_driven_output * $sides) + ($registered_count * $i) + $registered_config_bit_count;
   reg [`$width-1`:0] out_`$i`_`$j`_i;
   always @(*) begin
 //;        my $config_bit_l = ($number_of_driven_outputs_per_side * $number_of_config_bits_per_driven_output * $i) + ($number_of_config_bits_per_driven_output * $driven_config_bit_count);
 //;        $driven_config_bit_count++;
 //;        my $config_bit_h =  $config_bit_l + $number_of_config_bits_per_driven_output-1;
+//;       if ($registered[$j]==1) {
+//;         print SBINFO "        <mux snk='out_${i}_${j}' reg='$registered[$j]' configh='$config_bit_h' configl='$config_bit_l' configr='$config_bit_r'>\n";
+//;       } else {
+//;         print SBINFO "        <mux snk='out_${i}_${j}' reg='$registered[$j]' configh='$config_bit_h' configl='$config_bit_l'>\n";
+//;       }
     case (config_sb[`$config_bit_h`:`$config_bit_l`])
 //;        my $sel = 0;
 //;        for(my $k=0; $k<$sides; $k++) {
@@ -181,13 +187,10 @@ config_en
   always @(posedge clk) begin
     out_`$i`_`$j`_id1 <= out_`$i`_`$j`_i;
   end
-//;         my $config_bit_r = ($number_of_driven_outputs_per_side * $number_of_config_bits_per_driven_output * $sides) + ($registered_count * $i) + $registered_config_bit_count;
 //;        $registered_config_bit_count++;
   assign out_`$i`_`$j` = config_sb[`$config_bit_r`]?out_`$i`_`$j`_id1:out_`$i`_`$j`_i; 
-//;         print SBINFO "        <mux snk='out_${i}_${j}' reg='$registered[$j]' configh='$config_bit_h' configl='$config_bit_l' configr='$config_bit_r'>\n";
 //;       } else {
   assign out_`$i`_`$j` = out_`$i`_`$j`_i;
-//;       print SBINFO "        <mux snk='out_${i}_${j}' reg='$registered[$j]' configh='$config_bit_h' configl='$config_bit_l'>\n";
 //;       }
 //;       print SBINFO "        </mux>\n";
 //;     }
