@@ -17,8 +17,11 @@ setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 
 echo path=$path
 
+printenv
+
 # hardware/generator_z/top/run.csh
 cd hardware/generator_z/top
+if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
 ./run.csh || exit -1
 
 pwd
