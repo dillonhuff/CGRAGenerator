@@ -105,7 +105,7 @@ int main(int argc, char **argv, char **env) {
       ///    end
       ///    assign reset = !reset_count[3];
     
-      if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=0"); }
+      if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
       if (i==4) { sprintf(what_i_did, "reset=0\n"); }
 
       int in_0_0 = random() & 0xff;
