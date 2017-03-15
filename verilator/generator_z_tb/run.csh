@@ -5,8 +5,9 @@
 # Can I run a local test bench using remote v-sources?
 
 # cleanup
-if (-e obj_dir)     rm -rf obj_dir
-if (-e counter.vcd) rm -f  counter.vcd
+if (-e obj_dir)         rm -rf obj_dir
+if (-e counter.vcd)     rm -f  counter.vcd
+if (-e tile_config.dat) rm -f  tile_config.dat
 if ("$1" == "-clean") exit 0
 
 # setup
@@ -28,15 +29,16 @@ if (! -e "$testbench") then
 endif
 
 # set gdir = /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top
-  set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/top
+  set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z
 
-pushd $gdir
+pushd $gdir/top
+  setenv SR_VERILATOR
   if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
   # pwd; ls
   ./run.csh
 popd
 
-set vdir = $gdir/genesis_verif
+set vdir = $gdir/top/genesis_verif
 if (! -e $vdir) then
   echo "ERROR: Could not find vfile directory"
   echo "       $vdir"
@@ -45,16 +47,41 @@ if (! -e $vdir) then
   exit -1
 endif
 
+# set top = top
+
+set top = top
+
+# The old switcharoo
+if ($testbench == "tbsr1.cpp") then
+  mv $gdir/top/genesis_verif/top.v ./top.v.old
+  cp ./top_sr.v $gdir/top/genesis_verif/top.v
+endif
+
+
+if ($testbench == "top_tb.cpp") then
+  set config = $gdir/top_tb/tile_config.dat
+  echo "Copy latest config file from $config..."
+  if (! -e "$config") then
+    echo
+    echo "ERROR Config file does not exist!"
+    exit
+  endif       
+  cp $config .
+endif
+
 pushd $vdir >& /dev/null || echo Could not pushd $vdir
+  # set vfiles = (*.v *.sv)
   set vfiles = (*.v)
 popd >& /dev/null
 
-set top = top
+# So many warnings it wants to DIE!
+set myswitches = '-Wno-fatal'
+
 echo
-echo verilator -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
   | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
 echo
-verilator -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top || exit -1
+verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top || exit -1
 
 cat << eof
 
@@ -88,7 +115,7 @@ cat << eof
 NOTE: If you want to clean up after yourself you'll want to do this:
 
   ./run.csh -clean
-  pushd $gdir; ./genesis_clean.cmd; popd
+  pushd $gdir/top; ./genesis_clean.cmd; popd
 
 ************************************************************************
 

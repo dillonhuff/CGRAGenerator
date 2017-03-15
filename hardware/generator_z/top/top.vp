@@ -189,6 +189,19 @@ wire_`$canvas_size{'height'}`_`$i`_`$bus`_S3_T`$t`,
 //;     }
 //;   }
 //; }
+
+//; ###################################################################################
+//; # I NEED this output for the verilator testbench.
+//; # (Only included if SR_VERILATOR env variable when Genesis is called).
+//; #
+//; if ( defined $ENV{'SR_VERILATOR'}) {
+  // Added for verilator testbench
+  // Note adding this output port causes a LOT of verilator "circular-logic" warnings!?
+  wire_0_1_BUS16_S0_T4,
+//; }
+//; ###################################################################################
+
+
 config_addr,
 config_data
 );
@@ -223,6 +236,18 @@ config_data
 //;     }
 //;   }
 //; }
+
+//; ###################################################################################
+//; # I NEED this output for the verilator testbench.
+//; # (Only included if SR_VERILATOR env variable when Genesis is called).
+//; #
+//; if ( defined $ENV{'SR_VERILATOR'}) {
+  // Added for verilator testbench
+  // Note adding this output port causes a LOT of verilator "circular-logic" warnings!?
+  output [15:0] wire_0_1_BUS16_S0_T4;
+//; }
+//; ###################################################################################
+
 
 // FIXME Note there are LOTS of unused wires being created below!
 // FIXME I assume they will be hooked up to something eventually
