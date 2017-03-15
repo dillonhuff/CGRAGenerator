@@ -17,7 +17,8 @@ setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 
 echo path=$path
 
-printenv
+setenv SR_VERILATOR
+printenv | sort
 
 # hardware/generator_z/top/run.csh
 cd hardware/generator_z/top
