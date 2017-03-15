@@ -37,6 +37,7 @@ addons:
 
 script:
   - which csh
+  - export SR_VERILATOR
   - ./travis-test.csh
   - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
   - cd verilator/generator_z_tb
