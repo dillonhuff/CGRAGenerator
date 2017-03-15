@@ -141,6 +141,6 @@ NOTE: If you want to clean up after yourself you'll want to do this:
 
 
 eof
-end
+endif
 
 # END:
