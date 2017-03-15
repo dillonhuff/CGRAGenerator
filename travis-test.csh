@@ -3,10 +3,6 @@
 # goto TMP
 # exit
 
-
-
-
-
 perl -f tmp.pl
 perl --version
 

@@ -2,19 +2,18 @@
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...
 
-# Can I run a local test bench using remote v-sources?
+# CLEANUP
+# if (-e obj_dir)         rm -rf obj_dir
+# if (-e counter.vcd)     rm -f  counter.vcd
+# if (-e tile_config.dat) rm -f  tile_config.dat
 
-# cleanup
-if (-e obj_dir)         rm -rf obj_dir
-if (-e counter.vcd)     rm -f  counter.vcd
-if (-e tile_config.dat) rm -f  tile_config.dat
+foreach f (obj_dir counter.cvd tile_config_date)
+  if (-e $f) rm -rf $f
+end
+
 if ("$1" == "-clean") exit 0
 
-# setup
-setenv VERILATOR_ROOT /var/local/verilator-3.900
-set path = (/var/local/verilator-3.900/bin $path)
-
-# set testbench = tb_remote.cpp
+# set testbench = top_tb.cpp
 
 set testbench = $1
 if (! -e "$testbench") then
@@ -29,14 +28,28 @@ if (! -e "$testbench") then
 endif
 
 # set gdir = /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top
-  set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z
+# set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/top
+# set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z
+# set gdir = ../../hardware/generator_z/top
+  set gdir = ../../hardware/generator_z
 
-pushd $gdir/top
-  setenv SR_VERILATOR
-  if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
-  # pwd; ls
-  ./run.csh
-popd
+# SETUP
+# /home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
+if (`hostname` == "kiwi") then
+  setenv VERILATOR_ROOT /var/local/verilator-3.900
+  set path = (/var/local/verilator-3.900/bin $path)
+
+  # GENERATE
+  pushd $gdir/top
+    setenv SR_VERILATOR
+    if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
+    # pwd; ls
+    ./run.csh
+  popd
+
+endif
+
+# No need for GENERATE phase on travis because travis script does it already.
 
 set vdir = $gdir/top/genesis_verif
 if (! -e $vdir) then
@@ -47,8 +60,6 @@ if (! -e $vdir) then
   exit -1
 endif
 
-# set top = top
-
 set top = top
 
 # The old switcharoo
@@ -56,7 +67,6 @@ if ($testbench == "tbsr1.cpp") then
   mv $gdir/top/genesis_verif/top.v ./top.v.old
   cp ./top_sr.v $gdir/top/genesis_verif/top.v
 endif
-
 
 if ($testbench == "top_tb.cpp") then
   set config = $gdir/top_tb/tile_config.dat
@@ -68,6 +78,8 @@ if ($testbench == "top_tb.cpp") then
   endif       
   cp $config .
 endif
+
+# set vdir = $gdir/genesis_verif
 
 pushd $vdir >& /dev/null || echo Could not pushd $vdir
   # set vfiles = (*.v *.sv)
@@ -83,16 +95,23 @@ echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-mo
 echo
 verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top || exit -1
 
-cat << eof
+# cat << eof
+# 
+# ****************************************************
+# NOTE: Currently (3/13) runscript only works to here.
+# To get the rest to work, someone is gonna have to
+# write a working test bench "tb.cpp" :)
+# ****************************************************
+# THEN: uncomment the got/bypass in run-travis.csh below.
+# ****************************************************
+# 
+# eof
 
-****************************************************
-NOTE: Currently (3/13) runscript only works to here.
-To get the rest to work, someone is gonna have to
-write a working test bench "tb.cpp" :)
-****************************************************
-
-
-eof
+# echo NOT DOING: make -j -C obj_dir/ -f V${top}.mk V${top}
+# echo NOT DOING: obj_dir/V${top}
+# echo
+# echo "Good-bye!"
+# goto END
 
 # build C++ project
 # make -j -C obj_dir/ -f Vcounter.mk Vcounter
@@ -104,11 +123,11 @@ make -j -C obj_dir/ -f V${top}.mk V${top}
 echo
 echo "# Run executable simulation"
 # echo "obj_dir/Vcounter"
-$ obj_dir/Vcounter
+# obj_dir/Vcounter
 echo "obj_dir/V${top}"
 obj_dir/V${top}
 
-
+if (`hostname` == "kiwi") then
 cat << eof
 
 ************************************************************************
@@ -122,3 +141,6 @@ NOTE: If you want to clean up after yourself you'll want to do this:
 
 
 eof
+end
+
+# END:
