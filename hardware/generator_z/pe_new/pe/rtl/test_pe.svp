@@ -212,11 +212,43 @@ logic                 mult_c_out;
 );
 //;}
 
-always_comb begin : proc_alu
+// SR: I''m changing the code below to make verilator happy.
+// Functionality should be the same, it just doesn''t like inputs
+// and outputs together in the same always_comb block.
+// If you want the old code back, it''s in 'test_pe_orig.sv'
+
+
 //; if($use_add > 0) {
+always_comb begin : alu_inputs_0
   add_a[0] = op_a;
   add_b[0] = op_b;
   add_c_in[0] = 1'b0;
+
+  case (op_code)
+    16'h1: begin
+        add_b[0]    = ~op_b;
+        add_c_in[0] = 1'b1;
+      end
+    16'h2: begin
+        add_b[0]    = ~op_b;
+        add_c_in[0] = 1'b1;
+      end
+    16'h4: begin
+        add_b[0]    = ~op_b;
+        add_c_in[0] = 1'b1;
+      end
+    16'h5: begin
+        add_b[0]    = ~op_b;
+        add_c_in[0] = 1'b1;
+      end
+    default: begin
+      end
+  endcase
+end
+//;}
+
+always_comb begin : proc_alu
+//; if($use_add > 0) {
 
 //; if($use_sad) {
   add_a[1] = add_res[0];
@@ -231,7 +263,6 @@ always_comb begin : proc_alu
   res_p_w = 'hX;
 //;}
 
-
   case (op_code)
 //; if($use_add > 0) {
     16'h0: begin
@@ -241,27 +272,15 @@ always_comb begin : proc_alu
 //;}
       end
     16'h1: begin
-        add_b[0]    = ~op_b;
-        add_c_in[0] = 1'b1;
 //; if($use_sad) {
         add_c_in[1] = add_c_out[0];
 //;}
       end
-    16'h2: begin
-        add_b[0]    = ~op_b;
-        add_c_in[0] = 1'b1;
-      end
     16'h4: begin
-        add_b[0]    = ~op_b;
-        add_c_in[0] = 1'b1;
-
         res_w   = add_res_0[DataWidth-1] ? op_a : op_b;
         res_p_w = ~add_res_0[DataWidth-1];
       end
     16'h5: begin
-        add_b[0]    = ~op_b;
-        add_c_in[0] = 1'b1;
-
         res_w   = ~add_res_0[DataWidth-1] ? op_a : op_b;
         res_p_w = add_res_0[DataWidth-1];
       end
@@ -277,16 +296,16 @@ always_comb begin : proc_alu
         res_w = op_d_p ? op_a : op_b;
       end
 //; }
-//; if($use_lut) {
-    16'h9: begin
-         res_w = res_lut;
-       end
-//; }
 //; if($use_sad) {
     16'hA: begin
         add_a[1]    = add_res_0[DataWidth-1] ? ~add_res[0] : add_res[0];
         add_c_in[1] = add_res_0[DataWidth-1];
       end
+//; }
+//; if($use_lut) {
+    16'h9: begin
+         res_w = res_lut;
+       end
 //; }
 //; if($use_shift > 0) {
     16'hF: begin
@@ -327,7 +346,6 @@ always_comb begin : proc_alu
         res_w = ~op_a;
       end
 //; }
-
 
     default: begin
         res_w   = op_a;
