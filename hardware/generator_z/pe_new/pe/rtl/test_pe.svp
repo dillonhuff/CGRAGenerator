@@ -212,11 +212,10 @@ logic                 mult_c_out;
 );
 //;}
 
-// SR: I''m changing the code below to make verilator happy.
+// SR: I changed the code below to make verilator happier.
 // Functionality should be the same, it just doesn''t like inputs
 // and outputs together in the same always_comb block.
 // If you want the old code back, it''s in 'test_pe_orig.sv'
-
 
 //; if($use_add > 0) {
 always_comb begin : alu_inputs_0
