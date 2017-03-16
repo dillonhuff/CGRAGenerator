@@ -11,11 +11,22 @@ foreach f (obj_dir counter.cvd tile_config_date)
   if (-e $f) rm -rf $f
 end
 
-if ("$1" == "-clean") exit 0
+# Process command-line switches.
+set GENERATE
+while ($#argv)
+  echo "  found switch '$1'"
+  if ("$1" == "-clean") then
+    exit 0
+  else if ("$1" == "-nogen") then
+    unset GENERATE
+  else
+    set testbench = "$1"
+  endif
+  shift argv
+end
 
 # set testbench = top_tb.cpp
-
-set testbench = $1
+# set testbench = $1
 if (! -e "$testbench") then
   echo ""
   echo "ERROR: Testbench '$testbench' not found."
@@ -33,23 +44,32 @@ endif
 # set gdir = ../../hardware/generator_z/top
   set gdir = ../../hardware/generator_z
 
-# SETUP
+# SETUP (not needed for travis)
 # /home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
 if (`hostname` == "kiwi") then
   setenv VERILATOR_ROOT /var/local/verilator-3.900
   set path = (/var/local/verilator-3.900/bin $path)
+endif
 
-  # GENERATE
+
+if (! $?GENERATE) then
+  echo "No generate!"
+  goto NOGEN
+endif
+
+# GENERATE (not needed for travis)
+# No need for GENERATE phase on travis because travis script does it already.
+if (`hostname` == "kiwi") then
   pushd $gdir/top
     setenv SR_VERILATOR
     if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
     # pwd; ls
     ./run.csh
   popd
-
 endif
 
-# No need for GENERATE phase on travis because travis script does it already.
+NOGEN:
+
 
 set vdir = $gdir/top/genesis_verif
 if (! -e $vdir) then
