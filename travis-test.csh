@@ -3,10 +3,6 @@
 # goto TMP
 # exit
 
-
-
-
-
 perl -f tmp.pl
 perl --version
 
@@ -21,8 +17,12 @@ setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 
 echo path=$path
 
+setenv SR_VERILATOR
+# printenv | sort
+
 # hardware/generator_z/top/run.csh
 cd hardware/generator_z/top
+if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
 ./run.csh || exit -1
 
 pwd

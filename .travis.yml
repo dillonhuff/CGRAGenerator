@@ -40,9 +40,11 @@ script:
   - ./travis-test.csh
   - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
   - cd verilator/generator_z_tb
-  - ./run-travis.csh tb_remote.cpp
+  - ./run.csh top_tb.cpp
 
 
+#  - export SR_VERILATOR
+#  - ./run-travis.csh tb_remote.cpp
 
 ##############################################################################
 ##############################################################################
