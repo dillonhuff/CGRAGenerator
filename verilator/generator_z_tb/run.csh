@@ -26,6 +26,7 @@ while ($#argv)
   else if ("$1" == "-nogen") then
     unset GENERATE
   else if ("$1" == "-config") then
+    shift
     set config = "$1"
   else
     set testbench = "$1"
