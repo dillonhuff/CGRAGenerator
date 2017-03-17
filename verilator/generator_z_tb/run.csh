@@ -94,6 +94,10 @@ endif
 if ($testbench == "top_tb.cpp") then
   if (! $?config) set config = $gdir/top_tb/tile_config.dat
   echo "Copy latest config file from $config..."
+  set echo
+  pwd
+  ls -l
+  ls -l $config
   if (! -e "$config") then
     echo
     echo "ERROR Config file does not exist!"
