@@ -7,9 +7,15 @@
 # if (-e counter.vcd)     rm -f  counter.vcd
 # if (-e tile_config.dat) rm -f  tile_config.dat
 
-foreach f (obj_dir counter.cvd tile_config_data)
+foreach f (obj_dir counter.cvd tile_config.dat)
   if (-e $f) rm -rf $f
 end
+
+# set gdir = /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top
+# set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/top
+# set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z
+# set gdir = ../../hardware/generator_z/top
+  set gdir = ../../hardware/generator_z
 
 # Process command-line switches.
 set GENERATE
@@ -19,6 +25,8 @@ while ($#argv)
     exit 0
   else if ("$1" == "-nogen") then
     unset GENERATE
+  else if ("$1" == "-config") then
+    set config = "$1"
   else
     set testbench = "$1"
   endif
@@ -37,12 +45,6 @@ if (! -e "$testbench") then
   end
   exit -1
 endif
-
-# set gdir = /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top
-# set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/top
-# set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z
-# set gdir = ../../hardware/generator_z/top
-  set gdir = ../../hardware/generator_z
 
 # SETUP (not needed for travis)
 # /home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
@@ -89,14 +91,14 @@ if ($testbench == "tbsr1.cpp") then
 endif
 
 if ($testbench == "top_tb.cpp") then
-  set config = $gdir/top_tb/tile_config.dat
+  if (! $?config) set config = $gdir/top_tb/tile_config.dat
   echo "Copy latest config file from $config..."
   if (! -e "$config") then
     echo
     echo "ERROR Config file does not exist!"
     exit
   endif       
-  cp $config .
+  cp $config tile_config.dat
 endif
 
 # set vdir = $gdir/genesis_verif
@@ -157,8 +159,6 @@ NOTE: If you want to clean up after yourself you'll want to do this:
   pushd $gdir/top; ./genesis_clean.cmd; popd
 
 ************************************************************************
-
-
 
 eof
 endif
