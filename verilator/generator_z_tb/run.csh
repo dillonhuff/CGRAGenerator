@@ -7,7 +7,7 @@
 # if (-e counter.vcd)     rm -f  counter.vcd
 # if (-e tile_config.dat) rm -f  tile_config.dat
 
-foreach f (obj_dir counter.cvd tile_config_date)
+foreach f (obj_dir counter.cvd tile_config_data)
   if (-e $f) rm -rf $f
 end
 
