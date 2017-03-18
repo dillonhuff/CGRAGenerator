@@ -3,7 +3,7 @@
 # goto TMP
 # exit
 
-perl -f tmp.pl
+# perl -f tmp.pl DUH!  Why/how did this ever work!?
 perl --version
 
 pwd
