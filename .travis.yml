@@ -28,9 +28,11 @@ script:
   - if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ];
     then
         cgroot=${TRAVIS_BUILD_DIR}/CGRAGenerator;
+        cgbuild=${TRAVIS_BUILD_DIR}/build;
     else
         cgroot=${TRAVIS_BUILD_DIR};
-        mkdir $cgroot/../build;
+        cgbuild=$cgroot/build;
+        mkdir $cgbuild
     fi
 
   - echo "CGRA generate (generates CGRA + connection matrix for pnr)"
@@ -52,15 +54,19 @@ script:
 #        bsdir=${TRAVIS_BUILD_DIR}/bitstream;
 #        mkdir ${TRAVIS_BUILD_DIR}/build;
 #    fi
-#  - ls -l $cgroot/bitstream/bitstream_gen.pl $cgroot/bitstream/example/connectivity_4x4.txt
-  - touch ${TRAVIS_BUILD_DIR}/build/foo
+  - ls -l 
+    $cgroot/bitstream/bitstream_gen.pl
+    $cgroot/bitstream/example/connectivity_4x4.xml
+    ${TRAVIS_BUILD_DIR}/../build/
+
+  - touch ${TRAVIS_BUILD_DIR}/../build/foo
   - perl
         $cgroot/bitstream/bitstream_gen.pl
         $cgroot/bitstream/example/connectivity_4x4.xml
-        ${TRAVIS_BUILD_DIR}/build/config
+        $cgbuild/config
   - diff
         $cgroot/bitstream/example/config.dat
-        ${TRAVIS_BUILD_DIR}/build/config.dat
+        $cgbuild/config.dat
         && echo PASS || echo FAIL
 
 
