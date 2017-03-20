@@ -41,12 +41,22 @@ script:
   - ls -l $bsdir/bitstream_gen.pl $bsdir/example/connectivity_4x4.txt ${TRAVIS_BUILD_DIR}/build/config
   - perl
         $bsdir/bitstream_gen.pl
-        $bsdir/example/connectivity_4x4.txt
+        $bsdir/example/connectivity_4x4.xml
         ${TRAVIS_BUILD_DIR}/build/config
   - diff
         $bsdir/example/config.dat
         ${TRAVIS_BUILD_DIR}/build/config.dat
         && echo PASS || echo FAIL
+
+
+
+
+#  # CGRA program and run (uses output of pnr)
+#  - echo "BEGIN CGRA PROGRAM/RUN"
+#  - pushd ${TRAVIS_BUILD_DIR}/CGRAGenerator/verilator/generator_z_tb
+#  -     ./run.csh top_tb.cpp -config ../../hardware/generator_z/top_tb/tile_config.dat
+#  - popd
+
 
 
 
