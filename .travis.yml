@@ -27,9 +27,9 @@ script:
   - echo "CGRAGenerator setup"
   - if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ];
     then
-        cgroot=${TRAVIS_BUILD_DIR}/CGRAGenerator
+        cgroot=${TRAVIS_BUILD_DIR}/CGRAGenerator;
     else
-        cgroot=${TRAVIS_BUILD_DIR}
+        cgroot=${TRAVIS_BUILD_DIR};
         mkdir $cgroot/../build;
     fi
 
