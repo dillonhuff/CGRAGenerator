@@ -25,8 +25,8 @@ addons:
 script:
 
   # CGRA setup
-  - echo "CGRAGenerator setup"
-  - if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ];
+  - echo "CGRAGenerator setup";
+    if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ];
     then
         cgroot=${TRAVIS_BUILD_DIR}/CGRAGenerator;
         cgbuild=${TRAVIS_BUILD_DIR}/build;
