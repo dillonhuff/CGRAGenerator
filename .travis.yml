@@ -38,6 +38,7 @@ script:
         bsdir=${TRAVIS_BUILD_DIR}/bitstream;
         mkdir ${TRAVIS_BUILD_DIR}/build;
     fi
+  - ls -l $bsdir/bitstream_gen.pl $bsdir/example/connectivity_4x4.txt ${TRAVIS_BUILD_DIR}/build/config
   - perl
         $bsdir/bitstream_gen.pl
         $bsdir/example/connectivity_4x4.txt

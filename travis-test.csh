@@ -4,18 +4,17 @@
 # exit
 
 # perl -f tmp.pl DUH!  Why/how did this ever work!?
-perl --version
+perl --version | head -1
 
-pwd
 set whereami = `pwd`
-echo $whereami
+# echo $whereami
 
 setenv GENESIS_HOME "$whereami/Genesis2Tools"
 set path=(. $GENESIS_HOME/bin $GENESIS_HOME/gui/bin $path)
 # setenv PERL5LIB "$PERL5LIB":$GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 
-echo path=$path
+# echo path=$path
 
 setenv SR_VERILATOR
 # printenv | sort
