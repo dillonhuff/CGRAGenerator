@@ -36,16 +36,11 @@ script:
         mkdir $cgbuild;
     fi
 
-
   # CGRA generate
   - echo "CGRA generate (generates CGRA + connection matrix for pnr)"
   - pushd $cgroot; ./travis-test.csh; popd
 
-
-
   # PNR goes here
-
-
 
   # Bitstream build
   - perl
@@ -56,8 +51,6 @@ script:
         $cgroot/bitstream/example/config.dat
         $cgbuild/config.dat
         && echo PASS || echo FAIL
-
-
 
   # CGRA program and run (uses output of pnr)
   - echo "CGRA program and run (uses output of pnr)"

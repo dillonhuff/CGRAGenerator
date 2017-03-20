@@ -120,8 +120,10 @@ echo
 echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
   | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
 echo
+
+echo 'To get the flavor of all the warnings, just showing first 40 lines of output...'
 verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
-  | tail -n 100 \
+  |& sed -n '1,40p' \
   || exit -1
 
 # cat << eof
