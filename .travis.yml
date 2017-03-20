@@ -1,16 +1,3 @@
-##############################################################################
-# We learned this weekend that Travis will load different VM configs
-# depending on language settings etc. We will need to standardize on a
-# config so that we can build the tools together. I recommend:
-# 
-# dist: trusty
-# language: c
-# sudo: false
-# 
-# Which will load Ubuntu 14. Then apt-get whatever language you need. If
-# this doesn't work for you, let everyone know ASAP.
-##############################################################################
-
 dist: trusty
 language: c
 sudo: false
@@ -45,9 +32,9 @@ script:
   # Bitstream build
   # Note the script appends ".dat" to the end of its output filename e.g. "config" => "config.dat"
   - if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ] then
-        bsdir = ${TRAVIS_BUILD_DIR}/CGRAGenerator/bitstream;
+        bsdir=${TRAVIS_BUILD_DIR}/CGRAGenerator/bitstream;
     else
-        bsdir = ${TRAVIS_BUILD_DIR}/bitstream;
+        bsdir=${TRAVIS_BUILD_DIR}/bitstream;
         mkdir ${TRAVIS_BUILD_DIR}/build;
     fi
   - perl
