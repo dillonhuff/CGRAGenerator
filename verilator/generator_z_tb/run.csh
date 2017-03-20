@@ -120,7 +120,9 @@ echo
 echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
   | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
 echo
-verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top || exit -1
+verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+  | tail -n 100 \
+  || exit -1
 
 # cat << eof
 # 

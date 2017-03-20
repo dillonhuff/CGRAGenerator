@@ -25,8 +25,8 @@ addons:
 script:
 
   # CGRA setup
-  - echo "CGRAGenerator setup";
-    if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ];
+  - echo "CGRAGenerator setup"
+  - if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ];
     then
         cgroot=${TRAVIS_BUILD_DIR}/CGRAGenerator;
         cgbuild=${TRAVIS_BUILD_DIR}/build;
@@ -36,13 +36,16 @@ script:
         mkdir $cgbuild;
     fi
 
+
   # CGRA generate
   - echo "CGRA generate (generates CGRA + connection matrix for pnr)"
   - pushd $cgroot; ./travis-test.csh; popd
 
 
-#  - ./travis-test.csh
-#  # - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
+
+  # PNR goes here
+
+
 
   # Bitstream build
   - perl
@@ -55,13 +58,12 @@ script:
         && echo PASS || echo FAIL
 
 
+
   # CGRA program and run (uses output of pnr)
-  - echo "CGRA generate (generates CGRA + connection matrix for pnr)"
+  - echo "CGRA program and run (uses output of pnr)"
   - pushd $cgroot/verilator/generator_z_tb
-  -   ./run.csh top_tb.cpp -config ../../hardware/generator_z/top_tb/tile_config.dat
+  -   ./run.csh top_tb.cpp -config ../../hardware/generator_z/top_tb/tile_config.dat | tail -n 100
   - popd
-
-
 
 
 #  - cd verilator/generator_z_tb
