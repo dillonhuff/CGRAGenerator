@@ -24,6 +24,7 @@ addons:
 
 script:
 
+  # CGRA setup
   - echo "CGRAGenerator setup"
   - if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ];
     then
@@ -35,31 +36,21 @@ script:
         mkdir $cgbuild;
     fi
 
+  # CGRA generate
   - echo "CGRA generate (generates CGRA + connection matrix for pnr)"
-  - echo $cgroot
-  - pushd $cgroot
-  -     ./travis-test.csh
-  - popd
+  - pushd $cgroot; ./travis-test.csh; popd
 
 
 #  - ./travis-test.csh
 #  # - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
 
   # Bitstream build
-#  # Note the script appends ".dat" to the end of its output filename e.g. "config" => "config.dat"
-#  - if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ];
-#    then
-#        bsdir=${TRAVIS_BUILD_DIR}/CGRAGenerator/bitstream;
-#    else
-#        bsdir=${TRAVIS_BUILD_DIR}/bitstream;
-#        mkdir ${TRAVIS_BUILD_DIR}/build;
-#    fi
   - ls -l 
     $cgroot/bitstream/bitstream_gen.pl
     $cgroot/bitstream/example/connectivity_4x4.xml
-    ${TRAVIS_BUILD_DIR}/../build/
+    $cgbuile
 
-  - touch ${TRAVIS_BUILD_DIR}/../build/foo
+  - touch $cgbuild/foo
   - perl
         $cgroot/bitstream/bitstream_gen.pl
         $cgroot/bitstream/example/connectivity_4x4.xml
@@ -70,19 +61,17 @@ script:
         && echo PASS || echo FAIL
 
 
-
-
-#  # CGRA program and run (uses output of pnr)
-#  - echo "BEGIN CGRA PROGRAM/RUN"
-#  - pushd $cgroot/verilator/generator_z_tb
-#  -     ./run.csh top_tb.cpp -config ../../hardware/generator_z/top_tb/tile_config.dat
-#  - popd
+  # CGRA program and run (uses output of pnr)
+  - echo "CGRA generate (generates CGRA + connection matrix for pnr)"
+  - pushd $cgroot/verilator/generator_z_tb
+  -   ./run.csh top_tb.cpp -config ../../hardware/generator_z/top_tb/tile_config.dat
+  - popd
 
 
 
 
-  - cd verilator/generator_z_tb
-  - ./run.csh top_tb.cpp -config ../../hardware/generator_z/top_tb/tile_config.dat
+#  - cd verilator/generator_z_tb
+#  - ./run.csh top_tb.cpp -config ../../hardware/generator_z/top_tb/tile_config.dat
 
 #  - export SR_VERILATOR
 #  - ./run-travis.csh tb_remote.cpp
