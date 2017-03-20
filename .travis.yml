@@ -32,7 +32,7 @@ script:
     else
         cgroot=${TRAVIS_BUILD_DIR};
         cgbuild=$cgroot/build;
-        mkdir $cgbuild
+        mkdir $cgbuild;
     fi
 
   - echo "CGRA generate (generates CGRA + connection matrix for pnr)"
