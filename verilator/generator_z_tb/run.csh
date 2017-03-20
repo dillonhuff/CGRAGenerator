@@ -20,7 +20,7 @@ end
 # Process command-line switches.
 set GENERATE
 while ($#argv)
-  echo "  found switch '$1'"
+  # echo "  found switch '$1'"
   if ("$1" == "-clean") then
     exit 0
   else if ("$1" == "-nogen") then
@@ -94,10 +94,10 @@ endif
 if ($testbench == "top_tb.cpp") then
   if (! $?config) set config = $gdir/top_tb/tile_config.dat
   echo "Copy latest config file from $config..."
-  set echo
-  pwd
-  ls -l
-  ls -l $config
+  # set echo
+  # pwd
+  # ls -l
+  # ls -l $config
   if (! -e "$config") then
     echo
     echo "ERROR Config file does not exist!"
