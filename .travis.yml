@@ -36,9 +36,31 @@ addons:
 
 
 script:
-  - which csh
+
+  # CGRA generate (generates connection matrix for pnr)
+  - echo "BEGIN CGRA GENERATE"
   - ./travis-test.csh
-  - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
+  # - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
+
+  # Bitstream build
+  # Note the script appends ".dat" to the end of its output filename e.g. "config" => "config.dat"
+  - if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ] then
+        bsdir = ${TRAVIS_BUILD_DIR}/CGRAGenerator/bitstream;
+    else
+        bsdir = ${TRAVIS_BUILD_DIR}/bitstream;
+        mkdir ${TRAVIS_BUILD_DIR}/build;
+    fi
+  - perl
+        $bsdir/bitstream/bitstream_gen.pl
+        $bsdir/example/connectivity_4x4.txt
+        ${TRAVIS_BUILD_DIR}/build/config
+  - diff
+        $bsdir/example/config.dat
+        ${TRAVIS_BUILD_DIR}/build/config.dat
+        && echo PASS || echo FAIL
+
+
+
   - cd verilator/generator_z_tb
   - ./run.csh top_tb.cpp -config ../../hardware/generator_z/top_tb/tile_config.dat
 
