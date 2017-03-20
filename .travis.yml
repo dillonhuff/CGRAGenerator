@@ -53,6 +53,7 @@ script:
 #        mkdir ${TRAVIS_BUILD_DIR}/build;
 #    fi
 #  - ls -l $cgroot/bitstream/bitstream_gen.pl $cgroot/bitstream/example/connectivity_4x4.txt
+  - touch ${TRAVIS_BUILD_DIR}/build/foo
   - perl
         $cgroot/bitstream/bitstream_gen.pl
         $cgroot/bitstream/example/connectivity_4x4.xml
