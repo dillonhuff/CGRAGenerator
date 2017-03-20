@@ -24,7 +24,6 @@ addons:
 
 script:
 
-  - echo "##########################################################"
   - echo "CGRAGenerator setup"
   - if [ "${TRAVIS_BUILD_DIR}" == "/home/travis/build/StanfordAHA/CGRAFlow" ];
     then
@@ -34,8 +33,8 @@ script:
         mkdir $cgroot/../build;
     fi
 
-  - echo "##########################################################"
   - echo "CGRA generate (generates CGRA + connection matrix for pnr)"
+  - echo $cgroot
   - pushd $cgroot
   -     ./travis-test.csh
   - popd
@@ -53,7 +52,7 @@ script:
 #        bsdir=${TRAVIS_BUILD_DIR}/bitstream;
 #        mkdir ${TRAVIS_BUILD_DIR}/build;
 #    fi
-#  - ls -l $cgroot/bitstream/bitstream_gen.pl $cgroot/bitstream/example/connectivity_4x4.txt ${TRAVIS_BUILD_DIR}/build/config
+#  - ls -l $cgroot/bitstream/bitstream_gen.pl $cgroot/bitstream/example/connectivity_4x4.txt
   - perl
         $cgroot/bitstream/bitstream_gen.pl
         $cgroot/bitstream/example/connectivity_4x4.xml
