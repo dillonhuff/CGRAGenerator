@@ -1,8 +1,6 @@
-| Linux                        |
+| CGRA generator               |
 |------------------------------|
 | [![linux build status][1]][2]|
-
-
 
 [1]: https://travis-ci.org/StanfordAHA/CGRAGenerator.svg?branch=master
 [2]: https://travis-ci.org/StanfordAHA/CGRAGenerator
