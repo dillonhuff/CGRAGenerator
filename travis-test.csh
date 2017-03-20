@@ -25,8 +25,8 @@ cd hardware/generator_z/top
 if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
 ./run.csh || exit -1
 
-pwd
-ls -R
+# pwd
+# ls -R
 
 TMP:
 

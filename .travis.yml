@@ -39,7 +39,7 @@ script:
         mkdir ${TRAVIS_BUILD_DIR}/build;
     fi
   - perl
-        $bsdir/bitstream/bitstream_gen.pl
+        $bsdir/bitstream_gen.pl
         $bsdir/example/connectivity_4x4.txt
         ${TRAVIS_BUILD_DIR}/build/config
   - diff
