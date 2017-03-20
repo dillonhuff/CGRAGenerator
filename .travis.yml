@@ -45,12 +45,6 @@ script:
 #  # - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
 
   # Bitstream build
-  - ls -l 
-    $cgroot/bitstream/bitstream_gen.pl
-    $cgroot/bitstream/example/connectivity_4x4.xml
-    $cgbuile
-
-  - touch $cgbuild/foo
   - perl
         $cgroot/bitstream/bitstream_gen.pl
         $cgroot/bitstream/example/connectivity_4x4.xml
