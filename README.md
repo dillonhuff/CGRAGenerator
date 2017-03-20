@@ -1,4 +1,4 @@
-| CGRA generator               |
+| Status                       |
 |------------------------------|
 | [![linux build status][1]][2]|
 
