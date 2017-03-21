@@ -268,11 +268,17 @@ tile_id
   wire [`$wide_bus_width-1`:0] pe_out_res;
   wire pe_out_p;
 
-//;my $pe = generate('test_pe', 'test_pe', reg_inputs => $reg_inputs, reg_out => $reg_out, use_add => $use_add, bool_inps => $bool_inps, use_shift => $use_shift, mult_mode => $mult_mode, DataWidth => $wide_bus_width);
+//;my $pe = generate('test_pe', 'test_pe', reg_inputs => $reg_inputs,
+//;    reg_out => $reg_out, use_add => $use_add, bool_inps => $bool_inps,
+//;    use_shift => $use_shift, mult_mode => $mult_mode, DataWidth => $wide_bus_width);
 `$pe->instantiate()`
  (
+
+//; if($use_lut || $reg_inputs || $reg_out) {
   .clk(clk),
   .rst_n(~reset),
+//;}
+
 //; if($use_lut || $reg_inputs) {
   .cfg_d(config_data[15:0]),
   .cfg_a(config_addr[31:24]),
