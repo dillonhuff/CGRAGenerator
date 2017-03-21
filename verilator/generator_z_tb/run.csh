@@ -121,10 +121,16 @@ echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-mo
   | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
 echo
 
-echo 'To get the flavor of all the warnings, just showing first 40 lines of output...'
 verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
-  |& sed -n '1,40p' \
-  || exit -1
+  > /tmp/verilator_out
+
+set verilator_exit_status = $status
+
+echo 'To get the flavor of all the warnings, just showing first 40 lines of output...'
+head -n 40 /tmp/verilator.out
+
+if ($verilator_exit_status != 0) exit -1
+
 
 # cat << eof
 # 
