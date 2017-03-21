@@ -122,7 +122,7 @@ echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-mo
 echo
 
 verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
-  > /tmp/verilator_out
+  >& /tmp/verilator.out
 
 set verilator_exit_status = $status
 
