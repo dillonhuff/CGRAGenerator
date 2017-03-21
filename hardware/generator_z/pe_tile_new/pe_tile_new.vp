@@ -274,10 +274,10 @@ tile_id
 `$pe->instantiate()`
  (
 
-//;# if($use_lut || $reg_inputs || $reg_out) {
+//;if($use_lut || $reg_inputs || $reg_out) {
   .clk(clk),
   .rst_n(~reset),
-//;  #}
+//;}
 
 //; if($use_lut || $reg_inputs) {
   .cfg_d(config_data[15:0]),
