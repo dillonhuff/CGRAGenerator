@@ -18,6 +18,12 @@ set fmt = "%a %m/%d %R%P"
 # date format for e.g. "08:11am"
 set fmt = "%R%P"
 
+if ("$1" == "-reset") then
+  echo 0 > .travistimer_begin
+  set timer_begin = `cat .travistimer_begin`
+  echo "Timer reset to $timer_begin ("`date --date="@$timer_begin"`")"
+  exit 0
+endif
 
 if ("$1" == "-set") then
   date +%s > .travistimer_begin
