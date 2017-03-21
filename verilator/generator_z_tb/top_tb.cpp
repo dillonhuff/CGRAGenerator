@@ -178,7 +178,8 @@ int main(int argc, char **argv, char **env) {
           top->wire_0_m1_BUS16_S0_T0 = in_0_0;
           top->wire_m1_0_BUS16_S1_T0 = in_0_1;
           top->wire_1_m1_BUS16_S0_T2 = in_1_0;
-          top->wire_2_0_BUS16_S3_T2  = in_1_1;
+       // top->wire_2_0_BUS16_S3_T2  = in_1_1;
+          top->wire_4_0_BUS16_S3_T2  = in_1_1;
 
           top->config_addr = config_addr;
           top->config_data = config_data;
