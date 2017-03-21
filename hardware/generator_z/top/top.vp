@@ -22,12 +22,12 @@
 //;       has_constant => 1,
 //;       tile_height => 1,
 //;       tile_width => 1,
-//;       reg_inputs => 0,
+//;       reg_inputs => 1,
 //;       reg_out => 0, 
 //;       use_add => 1,
 //;       bool_inps => 1,
 //;       use_shift => 1,
-//;       mult_mode => 0,
+//;       mult_mode => 1,
 //;       sb_fs => $sb_fs,
 //;       all_segments_for_all_tiles => $all_segments_for_all_tiles
 //; };
@@ -48,7 +48,7 @@
 //; #Tile pattern : <tile_name_defined_in_tile_config>_<number_of_columns>_<number_of_rows>
 //; #             : <pattern_name>_<number_of_columns>_<number_of_rows>
 //;    $tile_pattern {'p1'} = "t0_1_1";
-//;    $tile_pattern {'top'} = "p1_2_2";
+//;    $tile_pattern {'top'} = "p1_4_4";
 
 //; #####################################################
 //; #Populate bus track hash
