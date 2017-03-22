@@ -26,8 +26,8 @@ int main(int argc, char **argv, char **env) {
     printf("  - Found config filename '%s'\n", config_filename);
 
     if (input_filename == NULL) {
-        printf("WARNING No input file specified.\n");
-        printf("WARNING I will generate random numbers instead of input.\n");
+        printf("\n");
+        printf("WARNING No input file specified. I will generate random numbers instead of input.\n");
     }
     else {
         printf("  - Found input filename '%s'\n", input_filename);
@@ -168,18 +168,6 @@ int main(int argc, char **argv, char **env) {
       unsigned int in_1_0;
       unsigned int in_1_1;
 
-      if (input_filename == NULL) {
-          in_0_0 = random() & 0xff;
-          in_0_1 = random() & 0xff;
-          in_1_0 = random() & 0xff;
-          in_1_1 = random() & 0xff;
-      }
-      else {
-          in_0_0 = (unsigned int)fgetc(input_file);
-          in_0_1 = (unsigned int)fgetc(input_file);
-          in_1_0 = (unsigned int)fgetc(input_file);
-          in_1_1 = (unsigned int)fgetc(input_file);
-      }
 
       for (clk=0; clk<2; clk++) {
 
@@ -209,6 +197,7 @@ int main(int argc, char **argv, char **env) {
 
           if (clk == 0) { // So it will be stable for posedge events, I guess
               // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
+              // if (!reset && ) {
               if (!reset) {
                   fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
                   if (!feof(config_data_file)) {
@@ -218,6 +207,22 @@ int main(int argc, char **argv, char **env) {
                       config_data = config_data_i;
                   } else {
                       tile_config_done = 1;
+                  }
+              }
+
+              if (!reset && tile_config_done) {
+                  if (input_filename == NULL) {
+                      in_0_0 = random() & 0xff;
+                      in_0_1 = random() & 0xff;
+                      in_1_0 = random() & 0xff;
+                      in_1_1 = random() & 0xff;
+                  }
+                  else {
+                      in_0_0 = (unsigned int)fgetc(input_file);
+                      in_0_1 = (unsigned int)fgetc(input_file);
+                      in_1_0 = (unsigned int)fgetc(input_file);
+                      in_1_1 = (unsigned int)fgetc(input_file);
+                      // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
                   }
               }
           }

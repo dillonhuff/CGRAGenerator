@@ -28,6 +28,9 @@ while ($#argv)
   else if ("$1" == "-config") then
     shift
     set config = "$1"
+  else if ("$1" == "-input") then
+    shift
+    set input = "$1"
   else
     set testbench = "$1"
   endif
@@ -157,16 +160,41 @@ echo "# Build testbench"
 echo make -j -C obj_dir/ -f V${top}.mk V${top}
 make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
 
-# Prepare an input file
-# set input = /tmp/input.raw
-set input = /tmp/gray_small.raw
-# stream io/gray_small.png $input
-# convert io/gray_small.png /tmp/input.raw
-io/myconvert.csh io/gray_small.png /tmp/gray_small.raw
 
-echo "First few lines of input file for comparison..."
-echo od -t x1 $input
-od -t x1 $input | head
+# # set input = /tmp/input.raw
+# set input = /tmp/gray_small.raw
+# # stream io/gray_small.png $input
+# # convert io/gray_small.png /tmp/input.raw
+# io/myconvert.csh io/gray_small.png /tmp/gray_small.raw
+
+
+# Prepare an input file
+
+if (! $?input) then
+  # testbench will use random numbers for its check (i think)
+  set in = ''
+endif
+
+if ($?input) then
+  if ("$input:e" == "png") then
+    # Convert to raw format
+    echo
+    io/myconvert.csh $input /tmp/input.raw
+    echo
+  else if ("$input:e" == "raw") then
+    cp $input /tmp/input.raw
+  else
+    echo "ERROR Input file '$input' has invalid extension"
+    exit -1
+  endif
+
+  set in = "-input /tmp/input.raw"
+  echo "First few lines of input file for comparison..."
+  set cmd = "od -t x1 /tmp/input.raw"
+  echo $cmd
+  $cmd | head
+endif
+
 
 echo
 echo "# Run executable simulation"
@@ -175,7 +203,8 @@ echo "# Run executable simulation"
 echo "obj_dir/V${top}"
 # obj_dir/V${top}
 # obj_dir/V${top} -config tile_config.dat -input ifile || exit -1
-obj_dir/V${top} -config tile_config.dat -input $input || exit -1
+# obj_dir/V${top} -config tile_config.dat -input $input || exit -1
+obj_dir/V${top} -config tile_config.dat $in || exit -1
 
 if (`hostname` == "kiwi") then
 cat << eof
