@@ -33,7 +33,7 @@ int main(int argc, char **argv, char **env) {
         printf("Found input filename '%s'\n", input_filename);
 
         // FIXME fopen has no corresponding fclose()!
-        *input_file = fopen(input_filename, "r");
+        input_file = fopen(input_filename, "r");
         if (input_file == NULL) {
             fflush(stdout);
             fprintf(stderr,"\n\nERROR: Could not open input file '%s'\n\n", input_filename);

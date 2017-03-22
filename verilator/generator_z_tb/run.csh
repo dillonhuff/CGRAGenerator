@@ -159,7 +159,8 @@ make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
 
 # Prepare an input file
 set input = /tmp/input.raw
-stream io/gray_small.png > $input
+# stream io/gray_small.png $input
+convert io/gray_small.png /tmp/input.raw
 
 echo
 echo "# Run executable simulation"
