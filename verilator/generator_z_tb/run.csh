@@ -162,6 +162,11 @@ set input = /tmp/input.raw
 # stream io/gray_small.png $input
 convert io/gray_small.png /tmp/input.raw
 
+echo "First few lines of input file for comparison...
+echo od -t x1 $input
+echo od -t x1 $input
+od -t x1 $input
+
 echo
 echo "# Run executable simulation"
 # echo "obj_dir/Vcounter"

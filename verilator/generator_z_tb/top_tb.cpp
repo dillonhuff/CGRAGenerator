@@ -56,10 +56,7 @@ int main(int argc, char **argv, char **env) {
            in_1_0,
            in_1_1);
 
-
-    exit(-1);
-
-    // return(-1);
+    // exit(-1);
 
     /////////////////////////////////////////////////////////
     // Clock and reset
