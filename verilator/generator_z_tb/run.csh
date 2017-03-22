@@ -158,12 +158,13 @@ echo make -j -C obj_dir/ -f V${top}.mk V${top}
 make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
 
 # Prepare an input file
-set input = /tmp/input.raw
+# set input = /tmp/input.raw
+set input = /tmp/gray_small.raw
 # stream io/gray_small.png $input
-convert io/gray_small.png /tmp/input.raw
+# convert io/gray_small.png /tmp/input.raw
+# io/myconvert.csh io/gray_small.png /tmp/gray_small.raw
 
 echo "First few lines of input file for comparison...
-echo od -t x1 $input
 echo od -t x1 $input
 od -t x1 $input
 
