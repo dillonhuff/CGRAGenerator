@@ -23,14 +23,14 @@ int main(int argc, char **argv, char **env) {
         else if (! strcmp(argv[i], "-input" )) { input_filename  = argv[++i]; }
     }
 
-    printf("Found config filename '%s'\n", config_filename);
+    printf("  - Found config filename '%s'\n", config_filename);
 
     if (input_filename == NULL) {
         printf("WARNING No input file specified.\n");
         printf("WARNING I will generate random numbers instead of input.\n");
     }
     else {
-        printf("Found input filename '%s'\n", input_filename);
+        printf("  - Found input filename '%s'\n", input_filename);
 
         // FIXME fopen has no corresponding fclose()!
         input_file = fopen(input_filename, "r");
@@ -39,10 +39,10 @@ int main(int argc, char **argv, char **env) {
             fprintf(stderr,"\n\nERROR: Could not open input file '%s'\n\n", input_filename);
             exit(-1);
         }
-
-
     }
+    printf("\n");
 
+    /*
     // Let's try reading from the input file
 
     unsigned int in_0_0 = (unsigned int)fgetc(input_file);
@@ -55,6 +55,7 @@ int main(int argc, char **argv, char **env) {
            in_0_1,
            in_1_0,
            in_1_1);
+    */
 
     // exit(-1);
 
@@ -162,17 +163,22 @@ int main(int argc, char **argv, char **env) {
       if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
       if (i==4) { sprintf(what_i_did, "reset=0\n"); }
 
+      unsigned int in_0_0;
+      unsigned int in_0_1;
+      unsigned int in_1_0;
+      unsigned int in_1_1;
+
       if (input_filename == NULL) {
-          unsigned int in_0_0 = random() & 0xff;
-          unsigned int in_0_1 = random() & 0xff;
-          unsigned int in_1_0 = random() & 0xff;
-          unsigned int in_1_1 = random() & 0xff;
+          in_0_0 = random() & 0xff;
+          in_0_1 = random() & 0xff;
+          in_1_0 = random() & 0xff;
+          in_1_1 = random() & 0xff;
       }
       else {
-          unsigned int in_0_0 = (unsigned int)fgetc(input_file);
-          unsigned int in_0_1 = (unsigned int)fgetc(input_file);
-          unsigned int in_1_0 = (unsigned int)fgetc(input_file);
-          unsigned int in_1_1 = (unsigned int)fgetc(input_file);
+          in_0_0 = (unsigned int)fgetc(input_file);
+          in_0_1 = (unsigned int)fgetc(input_file);
+          in_1_0 = (unsigned int)fgetc(input_file);
+          in_1_1 = (unsigned int)fgetc(input_file);
       }
 
       for (clk=0; clk<2; clk++) {

@@ -162,11 +162,11 @@ make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
 set input = /tmp/gray_small.raw
 # stream io/gray_small.png $input
 # convert io/gray_small.png /tmp/input.raw
-# io/myconvert.csh io/gray_small.png /tmp/gray_small.raw
+io/myconvert.csh io/gray_small.png /tmp/gray_small.raw
 
-echo "First few lines of input file for comparison...
+echo "First few lines of input file for comparison..."
 echo od -t x1 $input
-od -t x1 $input
+od -t x1 $input | head
 
 echo
 echo "# Run executable simulation"
