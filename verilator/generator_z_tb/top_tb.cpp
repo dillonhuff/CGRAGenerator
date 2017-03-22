@@ -151,10 +151,18 @@ int main(int argc, char **argv, char **env) {
       if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
       if (i==4) { sprintf(what_i_did, "reset=0\n"); }
 
-      int in_0_0 = random() & 0xff;
-      int in_0_1 = random() & 0xff;
-      int in_1_0 = random() & 0xff;
-      int in_1_1 = random() & 0xff;
+      if (input_filename == NULL) {
+          unsigned int in_0_0 = random() & 0xff;
+          unsigned int in_0_1 = random() & 0xff;
+          unsigned int in_1_0 = random() & 0xff;
+          unsigned int in_1_1 = random() & 0xff;
+      }
+      else {
+          unsigned int in_0_0 = (unsigned int)fgetc(input_file);
+          unsigned int in_0_1 = (unsigned int)fgetc(input_file);
+          unsigned int in_1_0 = (unsigned int)fgetc(input_file);
+          unsigned int in_1_1 = (unsigned int)fgetc(input_file);
+      }
 
       for (clk=0; clk<2; clk++) {
 
