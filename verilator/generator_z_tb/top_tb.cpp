@@ -6,6 +6,9 @@
 
 int main(int argc, char **argv, char **env) {
     printf("\n\nHi there!  I am the simulatory thingy.\n\n");
+    printf("\n\narg1 is maybe %s\n\n", argv[0]);
+    printf("\n\narg2 is maybe %s\n\n", argv[0]);
+
 
     /////////////////////////////////////////////////////////
     // Clock and reset
