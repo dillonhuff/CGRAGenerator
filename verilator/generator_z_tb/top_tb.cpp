@@ -5,19 +5,17 @@
 // #include "verilated_vcd_c.h"
 
 int main(int argc, char **argv, char **env) {
-    printf("\n\nHi there!  I am the simulatory thingy.\n");
-    printf("    arg0 is maybe %s\n", argv[0]);  // "obj_dir/Vtop"
-    printf("    arg1 is maybe %s\n", argv[1]);  // "-config"
-    printf("    arg2 is maybe %s\n", argv[2]);  // "../../hardware/generator_z/top_tb/tile_config.dat"
-    printf("\n");
-
     char *config_file;
     char *input_file;
 
+    printf("\n\nHi there!  I am the simulatory thingy.\n");
+    // printf("    arg0 is maybe %s\n", argv[0]);  // "obj_dir/Vtop"
+    // printf("    arg1 is maybe %s\n", argv[1]);  // "-config"
+    // printf("    arg2 is maybe %s\n", argv[2]);  // "../../hardware/generator_z/top_tb/tile_config.dat"
+    // printf("\n");
+
     for (int i=1; i< argc; i++) {
-        char *a = argv[i];
         // printf("    arg%d is maybe %s\n\n", argv[i]);
-        printf("    arg%d is maybe %s\n\n", i, a);
         if (! strcmp(a, "-config")) {
             config_file = argv[++i];
             printf("Found config filename '%s'\n", config_file);
@@ -26,11 +24,10 @@ int main(int argc, char **argv, char **env) {
             input_file = argv[++i];
             printf("Found input filename '%s'\n", input_file);
         }
-
-
     }
     printf("Found config filename '%s'\n", config_file);
-    return(-1);
+    printf("Found input filename '%s'\n", input_file);
+    // return(-1);
 
     /////////////////////////////////////////////////////////
     // Clock and reset
@@ -101,7 +98,9 @@ int main(int argc, char **argv, char **env) {
     ///      end
     ///    end
 
-    config_data_file = fopen("tile_config.dat", "r");
+    // config_data_file = fopen("tile_config.dat", "r");
+    config_data_file = fopen(config_file, "r");
+
     if (config_data_file == NULL) {
         fflush(stdout);
         fprintf(stderr,"\n\nERROR: Could not open 'config_data_file'\n\n");
