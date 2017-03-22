@@ -42,6 +42,17 @@ int main(int argc, char **argv, char **env) {
 
     // Let's try reading from the input file
 
+    unsigned int in_0_0 = (unsigned int)fgetc(input_file);
+    unsigned int in_0_1 = (unsigned int)fgetc(input_file);
+    unsigned int in_1_0 = (unsigned int)fgetc(input_file);
+    unsigned int in_1_1 = (unsigned int)fgetc(input_file);
+
+    printf("Found four 8-bit input pixels 0x%04x 0x%04x 0x%04x 0x%04x\n",
+           in_0_0,
+           in_0_1,
+           in_1_0,
+           in_1_1);
+
 
     exit(-1);
 
