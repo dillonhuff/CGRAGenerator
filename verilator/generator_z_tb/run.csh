@@ -157,13 +157,18 @@ echo "# Build testbench"
 echo make -j -C obj_dir/ -f V${top}.mk V${top}
 make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
 
+# Prepare an input file
+set input = /tmp/input.raw
+stream io/gray_small.png > $input
+
 echo
 echo "# Run executable simulation"
 # echo "obj_dir/Vcounter"
 # obj_dir/Vcounter
 echo "obj_dir/V${top}"
 # obj_dir/V${top}
-obj_dir/V${top} -config tile_config.dat -input ifile || exit -1
+# obj_dir/V${top} -config tile_config.dat -input ifile || exit -1
+obj_dir/V${top} -config tile_config.dat -input $input || exit -1
 
 if (`hostname` == "kiwi") then
 cat << eof

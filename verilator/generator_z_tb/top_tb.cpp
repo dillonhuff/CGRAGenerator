@@ -16,23 +16,18 @@ int main(int argc, char **argv, char **env) {
 
     for (int i=1; i< argc; i++) {
         // printf("    arg%d is maybe %s\n\n", argv[i]);
-        if (! strcmp(argv[i], "-config")) {
-            config_filename = argv[++i];
-            printf("Found config filename '%s'\n", config_filename);
-        }
-        else if (! strcmp(argv[i], "-input")) {
-            input_filename = argv[++i];
-            printf("Found input filename '%s'\n", input_filename);
-        }
+        if      (! strcmp(argv[i], "-config")) { config_filename = argv[++i]; }
+        else if (! strcmp(argv[i], "-input" )) { input_filename  = argv[++i]; }
     }
+
     printf("Found config filename '%s'\n", config_filename);
-    printf("Found input filename '%s'\n", input_filename);
 
     if (input_filename == NULL) {
         printf("WARNING No input file specified.\n");
         printf("WARNING I will generate random numbers instead of input.\n");
     }
     else {
+        printf("Found input filename '%s'\n", input_filename);
 
         // FIXME fopen has no corresponding fclose()!
         FILE *input_file = fopen(input_filename, "r");
@@ -45,7 +40,10 @@ int main(int argc, char **argv, char **env) {
 
     }
 
+    // Let's try reading from the input file
 
+
+    exit(-1);
 
     // return(-1);
 
