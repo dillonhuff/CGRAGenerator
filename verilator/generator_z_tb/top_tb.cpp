@@ -8,6 +8,9 @@ int main(int argc, char **argv, char **env) {
     char *config_filename;
     char *input_filename;
 
+    FILE *input_file;
+
+
     printf("\n\nHi there!  I am the simulatory thingy.\n");
     // printf("    arg0 is maybe %s\n", argv[0]);  // "obj_dir/Vtop"
     // printf("    arg1 is maybe %s\n", argv[1]);  // "-config"
@@ -30,7 +33,7 @@ int main(int argc, char **argv, char **env) {
         printf("Found input filename '%s'\n", input_filename);
 
         // FIXME fopen has no corresponding fclose()!
-        FILE *input_file = fopen(input_filename, "r");
+        *input_file = fopen(input_filename, "r");
         if (input_file == NULL) {
             fflush(stdout);
             fprintf(stderr,"\n\nERROR: Could not open input file '%s'\n\n", input_filename);
