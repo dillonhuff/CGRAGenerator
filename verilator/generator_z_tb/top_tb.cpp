@@ -11,14 +11,20 @@ int main(int argc, char **argv, char **env) {
     printf("    arg2 is maybe %s\n", argv[2]);  // "../../hardware/generator_z/top_tb/tile_config.dat"
     printf("\n");
 
+    char *config_file;
+    char *input_file;
+
     for (int i=1; i< argc; i++) {
         char *a = argv[i];
         // printf("    arg%d is maybe %s\n\n", argv[i]);
         printf("    arg%d is maybe %s\n\n", a);
         if (! strcmp(a, "-config")) {
             printf("Found '-config'\n");
+            i = i + 1;
+            config_file = a;
         }
     }
+    printf("Found config filename '%s'\n", config_file);
 
     /////////////////////////////////////////////////////////
     // Clock and reset
