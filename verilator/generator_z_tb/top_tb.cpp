@@ -5,9 +5,11 @@
 // #include "verilated_vcd_c.h"
 
 int main(int argc, char **argv, char **env) {
-    printf("\n\nHi there!  I am the simulatory thingy.\n\n");
-    printf("\n\narg1 is maybe %s\n\n", argv[0]);
-    printf("\n\narg2 is maybe %s\n\n", argv[0]);
+    printf("\n\nHi there!  I am the simulatory thingy.\n");
+    printf("    arg0 is maybe %s\n\n", argv[0]);
+    printf("    arg1 is maybe %s\n\n", argv[1]);
+    printf("    arg2 is maybe %s\n\n", argv[2]);
+    printf("\n");
 
 
     /////////////////////////////////////////////////////////
