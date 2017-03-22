@@ -16,11 +16,11 @@ int main(int argc, char **argv, char **env) {
 
     for (int i=1; i< argc; i++) {
         // printf("    arg%d is maybe %s\n\n", argv[i]);
-        if (! strcmp(a, "-config")) {
+        if (! strcmp(argv[i], "-config")) {
             config_file = argv[++i];
             printf("Found config filename '%s'\n", config_file);
         }
-        else if (! strcmp(a, "-input")) {
+        else if (! strcmp(argv[i], "-input")) {
             input_file = argv[++i];
             printf("Found input filename '%s'\n", input_file);
         }
