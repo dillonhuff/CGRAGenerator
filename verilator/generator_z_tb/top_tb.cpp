@@ -5,8 +5,8 @@
 // #include "verilated_vcd_c.h"
 
 int main(int argc, char **argv, char **env) {
-    char *config_file;
-    char *input_file;
+    char *config_filename;
+    char *input_filename;
 
     printf("\n\nHi there!  I am the simulatory thingy.\n");
     // printf("    arg0 is maybe %s\n", argv[0]);  // "obj_dir/Vtop"
@@ -17,16 +17,16 @@ int main(int argc, char **argv, char **env) {
     for (int i=1; i< argc; i++) {
         // printf("    arg%d is maybe %s\n\n", argv[i]);
         if (! strcmp(argv[i], "-config")) {
-            config_file = argv[++i];
-            printf("Found config filename '%s'\n", config_file);
+            config_filename = argv[++i];
+            printf("Found config filename '%s'\n", config_filename);
         }
         else if (! strcmp(argv[i], "-input")) {
-            input_file = argv[++i];
-            printf("Found input filename '%s'\n", input_file);
+            input_filename = argv[++i];
+            printf("Found input filename '%s'\n", input_filename);
         }
     }
-    printf("Found config filename '%s'\n", config_file);
-    printf("Found input filename '%s'\n", input_file);
+    printf("Found config filename '%s'\n", config_filename);
+    printf("Found input filename '%s'\n", input_filename);
     // return(-1);
 
     /////////////////////////////////////////////////////////
@@ -99,7 +99,7 @@ int main(int argc, char **argv, char **env) {
     ///    end
 
     // config_data_file = fopen("tile_config.dat", "r");
-    config_data_file = fopen(config_file, "r");
+    config_data_file = fopen(config_filename, "r");
 
     if (config_data_file == NULL) {
         fflush(stdout);

@@ -162,7 +162,8 @@ echo "# Run executable simulation"
 # echo "obj_dir/Vcounter"
 # obj_dir/Vcounter
 echo "obj_dir/V${top}"
-obj_dir/V${top} -config tile_config.dat -input ifile
+# obj_dir/V${top}
+obj_dir/V${top} -config tile_config.dat -input ifile || exit -1
 
 if (`hostname` == "kiwi") then
 cat << eof
