@@ -27,6 +27,26 @@ int main(int argc, char **argv, char **env) {
     }
     printf("Found config filename '%s'\n", config_filename);
     printf("Found input filename '%s'\n", input_filename);
+
+    if (input_filename == NULL) {
+        printf("WARNING No input file specified.\n");
+        printf("WARNING I will generate random numbers instead of input.\n");
+    }
+    else {
+
+        // FIXME fopen has no corresponding fclose()!
+        FILE *input_file = fopen(input_filename, "r");
+        if (input_file == NULL) {
+            fflush(stdout);
+            fprintf(stderr,"\n\nERROR: Could not open input file '%s'\n\n", input_filename);
+            exit(-1);
+        }
+
+
+    }
+
+
+
     // return(-1);
 
     /////////////////////////////////////////////////////////
@@ -98,12 +118,13 @@ int main(int argc, char **argv, char **env) {
     ///      end
     ///    end
 
+    // FIXME fopen has no corresponding fclose()!
     // config_data_file = fopen("tile_config.dat", "r");
     config_data_file = fopen(config_filename, "r");
 
     if (config_data_file == NULL) {
         fflush(stdout);
-        fprintf(stderr,"\n\nERROR: Could not open 'config_data_file'\n\n");
+        fprintf(stderr,"\n\nERROR: Could not open config file '%s'\n\n", config_filename);
         exit(-1);
     }
 
