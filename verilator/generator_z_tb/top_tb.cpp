@@ -17,7 +17,7 @@ int main(int argc, char **argv, char **env) {
     for (int i=1; i< argc; i++) {
         char *a = argv[i];
         // printf("    arg%d is maybe %s\n\n", argv[i]);
-        printf("    arg%d is maybe %s\n\n", a);
+        printf("    arg%d is maybe %s\n\n", i, a);
         if (! strcmp(a, "-config")) {
             printf("Found '-config'\n");
             i = i + 1;
@@ -25,6 +25,7 @@ int main(int argc, char **argv, char **env) {
         }
     }
     printf("Found config filename '%s'\n", config_file);
+    return(-1);
 
     /////////////////////////////////////////////////////////
     // Clock and reset
