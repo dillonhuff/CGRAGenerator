@@ -19,10 +19,15 @@ int main(int argc, char **argv, char **env) {
         // printf("    arg%d is maybe %s\n\n", argv[i]);
         printf("    arg%d is maybe %s\n\n", i, a);
         if (! strcmp(a, "-config")) {
-            printf("Found '-config'\n");
-            i = i + 1;
-            config_file = a;
+            config_file = argv[++i];
+            printf("Found config filename '%s'\n", config_file);
         }
+        else if (! strcmp(a, "-input")) {
+            input_file = argv[++i];
+            printf("Found input filename '%s'\n", input_file);
+        }
+
+
     }
     printf("Found config filename '%s'\n", config_file);
     return(-1);
