@@ -155,7 +155,7 @@ if ($verilator_exit_status != 0) exit -1
 echo
 echo "# Build testbench"
 echo make -j -C obj_dir/ -f V${top}.mk V${top}
-make -j -C obj_dir/ -f V${top}.mk V${top}
+make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
 
 echo
 echo "# Run executable simulation"
