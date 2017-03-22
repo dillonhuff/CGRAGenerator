@@ -6,11 +6,14 @@
 
 int main(int argc, char **argv, char **env) {
     printf("\n\nHi there!  I am the simulatory thingy.\n");
-    printf("    arg0 is maybe %s\n\n", argv[0]);
-    printf("    arg1 is maybe %s\n\n", argv[1]);
-    printf("    arg2 is maybe %s\n\n", argv[2]);
+    printf("    arg0 is maybe %s\n\n", argv[0]);  // "obj_dir/Vtop"
+    printf("    arg1 is maybe %s\n\n", argv[1]);  // "-config"
+    printf("    arg2 is maybe %s\n\n", argv[2]);  // "../../hardware/generator_z/top_tb/tile_config.dat"
     printf("\n");
 
+    for (i=1; i< argc; i++) {
+        printf("    arg%d is maybe %s\n\n", argv[i]);
+    }
 
     /////////////////////////////////////////////////////////
     // Clock and reset
