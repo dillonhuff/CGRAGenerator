@@ -6,13 +6,18 @@
 
 int main(int argc, char **argv, char **env) {
     printf("\n\nHi there!  I am the simulatory thingy.\n");
-    printf("    arg0 is maybe %s\n\n", argv[0]);  // "obj_dir/Vtop"
-    printf("    arg1 is maybe %s\n\n", argv[1]);  // "-config"
-    printf("    arg2 is maybe %s\n\n", argv[2]);  // "../../hardware/generator_z/top_tb/tile_config.dat"
+    printf("    arg0 is maybe %s\n", argv[0]);  // "obj_dir/Vtop"
+    printf("    arg1 is maybe %s\n", argv[1]);  // "-config"
+    printf("    arg2 is maybe %s\n", argv[2]);  // "../../hardware/generator_z/top_tb/tile_config.dat"
     printf("\n");
 
     for (i=1; i< argc; i++) {
-        printf("    arg%d is maybe %s\n\n", argv[i]);
+        char *a = argv[i];
+        // printf("    arg%d is maybe %s\n\n", argv[i]);
+        printf("    arg%d is maybe %s\n\n", a);
+        if (! strcmp(a, "-config")) {
+            printf("Found '-config'\n");
+        }
     }
 
     /////////////////////////////////////////////////////////
