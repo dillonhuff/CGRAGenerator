@@ -17,6 +17,8 @@ end
 # set gdir = ../../hardware/generator_z/top
   set gdir = ../../hardware/generator_z
 
+set nclocks = ''
+
 # Process command-line switches.
 set GENERATE
 while ($#argv)
@@ -31,6 +33,11 @@ while ($#argv)
   else if ("$1" == "-input") then
     shift
     set input = "$1"
+  else if ("$1" == "-nclocks") then
+    shift
+    # will accept e.g. "1,000,031" or "41K" or "3M"
+    set nclocks = `echo $1 | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
+    set nclocks = "-nclocks $nclocks"
   else
     set testbench = "$1"
   endif
@@ -189,6 +196,7 @@ if ($?input) then
   endif
 
   set in = "-input /tmp/input.raw"
+
   echo "First few lines of input file for comparison..."
   # set cmd = "od -t x1 /tmp/input.raw"
   # echo $cmd
@@ -196,6 +204,7 @@ if ($?input) then
   set echo
     od -t x1 /tmp/input.raw | head
   unset echo >& /dev/null
+
 endif
 
 echo
@@ -209,19 +218,31 @@ echo "# Run executable simulation"
 # obj_dir/V${top} -config tile_config.dat $in || exit -1
 set cmd = "obj_dir/V${top} -config tile_config.dat $in"
 
+# echo $cmd
+# $cmd || exit -1
 
 set echo
-  obj_dir/V${top} -config tile_config.dat $in -output /tmp/output.raw
-  od -t x1 /tmp/input.raw | head
-  od -t x1 /tmp/output.raw | head
+  obj_dir/V${top} \
+    -config tile_config.dat \
+    $in \
+    -output /tmp/output.raw \
+    $nclocks \
+    || exit -1
 unset echo >& /dev/null
 
+if ($?input) then
+  echo
+  set cmd = "od -t x1 /tmp/input.raw"
+  set cmd = "od -t u1 /tmp/input.raw"
+  echo $cmd; $cmd | head
+
+  echo
+  set cmd = "od -t u1 /tmp/output.raw"
+  echo $cmd; $cmd | head
+endif
 
 
 
-
-echo $cmd
-$cmd || exit -1
 
 if (`hostname` == "kiwi") then
 cat << eof

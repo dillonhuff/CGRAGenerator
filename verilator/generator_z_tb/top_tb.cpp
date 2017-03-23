@@ -12,7 +12,12 @@ int main(int argc, char **argv, char **env) {
     FILE *input_file = NULL;
     FILE *output_file = NULL;
 
+    // Run simulation for NCLOCKS clock periods (default = 40)
+    int NCLOCKS = 40;
+
     printf("\n\nHi there!  I am the simulatory thingy.\n");
+    fflush(stdout);
+
     // printf("    arg0 is maybe %s\n", argv[0]);  // "obj_dir/Vtop"
     // printf("    arg1 is maybe %s\n", argv[1]);  // "-config"
     // printf("    arg2 is maybe %s\n", argv[2]);  // "../../hardware/generator_z/top_tb/tile_config.dat"
@@ -20,11 +25,15 @@ int main(int argc, char **argv, char **env) {
 
     for (int i=1; i< argc; i++) {
         // printf("    arg%d is maybe %s\n\n", argv[i]);
-        if      (! strcmp(argv[i], "-config")) { config_filename = argv[++i]; }
-        else if (! strcmp(argv[i], "-input" )) { input_filename  = argv[++i]; }
-        else if (! strcmp(argv[i], "-output" )) { output_filename  = argv[++i]; }
+        if      (! strcmp(argv[i], "-config")) { config_filename  = argv[++i]; }
+        else if (! strcmp(argv[i], "-input" )) { input_filename   = argv[++i]; }
+        else if (! strcmp(argv[i], "-output" )) { output_filename = argv[++i]; }
+        else if (! strcmp(argv[i], "-nclocks")) { 
+                sscanf(argv[++i], "%d", &NCLOCKS);
+        }
     }
 
+    printf("  - Will run for %d cycles or until eof(input)\n", NCLOCKS);
     printf("  - Found config filename '%s'\n", config_filename);
 
     if (input_filename == NULL) {
@@ -153,7 +162,6 @@ int main(int argc, char **argv, char **env) {
     config_data_file = fopen(config_filename, "r");
 
     if (config_data_file == NULL) {
-        fflush(stdout);
         fprintf(stderr,"\n\nERROR: Could not open config file '%s'\n\n", config_filename);
         exit(-1);
     }
@@ -165,8 +173,6 @@ int main(int argc, char **argv, char **env) {
 
     int nprints = 0;
 
-  // Run simulation for NCLOCKS clock periods
-  int NCLOCKS = 40;
   for (int i=0; i<NCLOCKS; i++) {
       char what_i_did[256] = "";
       // sprintf(what_i_did, "");
@@ -205,7 +211,7 @@ int main(int argc, char **argv, char **env) {
 
           ///    always @(posedge clk) begin
           ///      if (!reset) begin
-          ///        $fscanf(config_data_file, "%h %h", config_addr_i,config_data_i); 
+          ///        $fscanf(config_data_file, "%h %h", &config_addr_i,&config_data_i); 
           ///        if (!$feof(config_data_file)) begin
           ///          config_addr <= config_addr_i;
           ///          config_data <= config_data_i;
@@ -236,13 +242,36 @@ int main(int argc, char **argv, char **env) {
                       in_0_1 = random() & 0xff;
                       in_1_0 = random() & 0xff;
                       in_1_1 = random() & 0xff;
+
+
+                      in_0_0 = random() & 0xff;
+                      in_0_1 = in_0_0;
+                      in_1_0 = 0;
+                      in_1_1 = 0;
+
+
                   }
                   else {
+
+                      // in_0_0 = (unsigned int)fgetc(input_file);
+                      // in_0_1 = (unsigned int)fgetc(input_file);
+                      // in_1_0 = (unsigned int)fgetc(input_file);
+                      // in_1_1 = (unsigned int)fgetc(input_file);
+                      // // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
+
+                      // out = 2 * in
                       in_0_0 = (unsigned int)fgetc(input_file);
-                      in_0_1 = (unsigned int)fgetc(input_file);
-                      in_1_0 = (unsigned int)fgetc(input_file);
-                      in_1_1 = (unsigned int)fgetc(input_file);
+                      in_0_1 = in_0_0;
+                      in_1_0 = 0;
+                      in_1_1 = 0;
                       // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
+
+                      if (feof(input_file)) {
+                          printf("\nINFO Simulation ran for %d cycles\n\n", i);
+                          fclose(input_file);
+                          if (output_file) { fclose(output_file); }
+                          exit(0);
+                      }
                   }
               }
           }
@@ -271,8 +300,9 @@ int main(int argc, char **argv, char **env) {
           top->wire_0_m1_BUS16_S0_T0 = in_0_0;
           top->wire_m1_0_BUS16_S1_T0 = in_0_1;
           top->wire_1_m1_BUS16_S0_T2 = in_1_0;
-       // top->wire_2_0_BUS16_S3_T2  = in_1_1;
+          // top->wire_2_0_BUS16_S3_T2  = in_1_1;
           top->wire_4_0_BUS16_S3_T2  = in_1_1;
+
 
           top->config_addr = config_addr;
           top->config_data = config_data;
@@ -292,34 +322,66 @@ int main(int argc, char **argv, char **env) {
       } // for (clk)
       if (!reset && tile_config_done) {
           nprints++;
-          sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
-                  in_0_0, in_0_1, in_1_0, in_1_1,
-                  top->wire_0_1_BUS16_S0_T4,
-                  (in_0_0 + in_0_1 + in_1_0 + in_1_1),
-                  top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
-                  );
-      }
-      // Output to output file if specified.
-      if (output_file != NULL) {
-          char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xf);
-          fputc(c, output_file);
+
+          // Only print info for first 40 cycles, see how that goes
+          if (i == 40) { sprintf(what_i_did, "..."); }
+          else if (i < 40) {
+              if (0) { // out = sum(4in)
+                  sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
+                          in_0_0, in_0_1, in_1_0, in_1_1,
+                          top->wire_0_1_BUS16_S0_T4,
+                          (in_0_0 + in_0_1 + in_1_0 + in_1_1),
+                          top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
+                          );
+              }
+              else { // out = 2in
+                  sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
+                          in_0_0, in_0_1, in_1_0, in_1_1,
+                          top->wire_0_1_BUS16_S0_T4,
+                          (in_0_0 + in_0_1 + in_1_0 + in_1_1),
+                          top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
+                          );
+              }
+          }
+
+          // Output to output file if specified.
+          if (output_file != NULL) {
+              char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
+              // printf("\nemit %d to output file\n", c);
+              fputc(c, output_file);
+          }
+
+
       }
       if (nprints==1) {
           printf("\n");
       }
-      // printf("cy.clk %05d.%d: ", i, top->clk);
-      printf("%05d: ", i);
-      printf("%s\n", what_i_did);
+
+      if (i <= 40) {
+          // printf("cy.clk %05d.%d: ", i, top->clk);
+          printf("%05d: ", i);
+          printf("%s\n", what_i_did);
+      }
+
+      // FIXME/TODO maybe build a "close_all_and_exit" subroutine and call it before exit(s)
+      if (input_filename != NULL) {
+          if (feof(input_file)) {
+              printf("\n\nINFO Simulation ran for %d cycles\n\n", i);
+              fclose(input_file);
+              if (output_file) { fclose(output_file); }
+              exit(0);
+          }
+      }
+
+
 
   } // for (i)
-  if (input_filename != NULL) {
-      if (feof(input_file)) {
-          fclose(input_file);
-          if (output_file) { fclose(output_file); }
-          exit(0);
-      }
+
+  if (Verilated::gotFinish()) {
+      if (input_file)  { fclose(input_file ); }
+      if (output_file) { fclose(output_file); }
+      exit(0);
   }
-  if (Verilated::gotFinish()) exit(0);
 } // main()
 
 /////////////////////////////////////////////////////////
