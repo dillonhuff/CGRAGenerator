@@ -33,6 +33,9 @@ while ($#argv)
   else if ("$1" == "-input") then
     shift
     set input = "$1"
+  else if ("$1" == "-output") then
+    shift
+    set output = "$1"
   else if ("$1" == "-nclocks") then
     shift
     # will accept e.g. "1,000,031" or "41K" or "3M"
@@ -207,6 +210,11 @@ if ($?input) then
 
 endif
 
+set out = ''
+if ($?output) then
+  set out = "-output $output"
+endif
+
 echo
 echo "# Run executable simulation"
 # echo "obj_dir/Vcounter"
@@ -221,11 +229,14 @@ set cmd = "obj_dir/V${top} -config tile_config.dat $in"
 # echo $cmd
 # $cmd || exit -1
 
+#    -output /tmp/output.raw \
+
+
 set echo
   obj_dir/V${top} \
     -config tile_config.dat \
     $in \
-    -output /tmp/output.raw \
+    $out \
     $nclocks \
     || exit -1
 unset echo >& /dev/null
