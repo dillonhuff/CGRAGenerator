@@ -190,9 +190,12 @@ if ($?input) then
 
   set in = "-input /tmp/input.raw"
   echo "First few lines of input file for comparison..."
-  set cmd = "od -t x1 /tmp/input.raw"
-  echo $cmd
-  $cmd | head
+  # set cmd = "od -t x1 /tmp/input.raw"
+  # echo $cmd
+  # $cmd | head
+  set echo
+    od -t x1 /tmp/input.raw | head
+  unset echo >& /dev/null
 endif
 
 echo
@@ -205,6 +208,18 @@ echo "# Run executable simulation"
 # obj_dir/V${top} -config tile_config.dat -input $input || exit -1
 # obj_dir/V${top} -config tile_config.dat $in || exit -1
 set cmd = "obj_dir/V${top} -config tile_config.dat $in"
+
+
+set echo
+  obj_dir/V${top} -config tile_config.dat $in -output /tmp/output.raw
+  od -t x1 /tmp/input.raw | head
+  od -t x1 /tmp/output.raw | head
+unset echo >& /dev/null
+
+
+
+
+
 echo $cmd
 $cmd || exit -1
 
