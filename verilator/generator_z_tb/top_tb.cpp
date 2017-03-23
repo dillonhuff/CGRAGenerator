@@ -372,12 +372,10 @@ int main(int argc, char **argv, char **env) {
               exit(0);
           }
       }
-
-
-
   } // for (i)
 
   if (Verilated::gotFinish()) {
+      printf("\n\nINFO Simulation ran for %d cycles\n\n", NCLOCKS);
       if (input_file)  { fclose(input_file ); }
       if (output_file) { fclose(output_file); }
       exit(0);

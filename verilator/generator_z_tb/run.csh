@@ -177,7 +177,6 @@ make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
 # # convert io/gray_small.png /tmp/input.raw
 # io/myconvert.csh io/gray_small.png /tmp/gray_small.raw
 
-
 # Prepare an input file
 
 if (! $?input) then
@@ -200,13 +199,13 @@ if ($?input) then
 
   set in = "-input /tmp/input.raw"
 
-  echo "First few lines of input file for comparison..."
-  # set cmd = "od -t x1 /tmp/input.raw"
-  # echo $cmd
-  # $cmd | head
-  set echo
-    od -t x1 /tmp/input.raw | head
-  unset echo >& /dev/null
+  # echo "First few lines of input file for comparison..."
+  # # set cmd = "od -t x1 /tmp/input.raw"
+  # # echo $cmd
+  # # $cmd | head
+  # set echo
+  #   od -t x1 /tmp/input.raw | head
+  # unset echo >& /dev/null
 
 endif
 
@@ -248,7 +247,8 @@ if ($?input) then
   echo $cmd; $cmd | head
 
   echo
-  set cmd = "od -t u1 /tmp/output.raw"
+  echo foo
+  set cmd = "od -t u1 $output"
   echo $cmd; $cmd | head
 endif
 
