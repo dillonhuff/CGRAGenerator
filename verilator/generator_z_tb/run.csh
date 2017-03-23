@@ -195,16 +195,18 @@ if ($?input) then
   $cmd | head
 endif
 
-
 echo
 echo "# Run executable simulation"
 # echo "obj_dir/Vcounter"
 # obj_dir/Vcounter
-echo "obj_dir/V${top}"
+# echo "obj_dir/V${top}"
 # obj_dir/V${top}
 # obj_dir/V${top} -config tile_config.dat -input ifile || exit -1
 # obj_dir/V${top} -config tile_config.dat -input $input || exit -1
-obj_dir/V${top} -config tile_config.dat $in || exit -1
+# obj_dir/V${top} -config tile_config.dat $in || exit -1
+set cmd = "obj_dir/V${top} -config tile_config.dat $in"
+echo $cmd
+$cmd || exit -1
 
 if (`hostname` == "kiwi") then
 cat << eof

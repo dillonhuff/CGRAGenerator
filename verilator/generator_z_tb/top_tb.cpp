@@ -5,11 +5,12 @@
 // #include "verilated_vcd_c.h"
 
 int main(int argc, char **argv, char **env) {
-    char *config_filename;
-    char *input_filename;
+    char *config_filename = NULL;
+    char *input_filename = NULL;
+    char *output_filename = NULL;
 
-    FILE *input_file;
-
+    FILE *input_file = NULL;
+    FILE *output_file = NULL;
 
     printf("\n\nHi there!  I am the simulatory thingy.\n");
     // printf("    arg0 is maybe %s\n", argv[0]);  // "obj_dir/Vtop"
@@ -21,6 +22,7 @@ int main(int argc, char **argv, char **env) {
         // printf("    arg%d is maybe %s\n\n", argv[i]);
         if      (! strcmp(argv[i], "-config")) { config_filename = argv[++i]; }
         else if (! strcmp(argv[i], "-input" )) { input_filename  = argv[++i]; }
+        else if (! strcmp(argv[i], "-output" )) { output_filename  = argv[++i]; }
     }
 
     printf("  - Found config filename '%s'\n", config_filename);
@@ -40,6 +42,24 @@ int main(int argc, char **argv, char **env) {
             exit(-1);
         }
     }
+
+    if (output_filename == NULL) {
+        printf("\n");
+        printf("WARNING No output file specified. I will write debug info only.\n");
+    }
+    else {
+        printf("  - Found output filename '%s'\n", output_filename);
+
+        // FIXME fopen has no corresponding fclose()!
+        output_file = fopen(output_filename, "w");
+        if (output_file == NULL) {
+            fflush(stdout);
+            fprintf(stderr,"\n\nERROR: Could not create output file '%s'\n\n", output_filename);
+            exit(-1);
+        }
+    }
+
+
     printf("\n");
 
     /*
@@ -272,11 +292,17 @@ int main(int argc, char **argv, char **env) {
       } // for (clk)
       if (!reset && tile_config_done) {
           nprints++;
-          sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)",
+          sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
                   in_0_0, in_0_1, in_1_0, in_1_1,
                   top->wire_0_1_BUS16_S0_T4,
-                  (in_0_0 + in_0_1 + in_1_0 + in_1_1)
+                  (in_0_0 + in_0_1 + in_1_0 + in_1_1),
+                  top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
                   );
+      }
+      // Output to output file if specified.
+      if (output_file != NULL) {
+          char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xf);
+          fputc(c, output_file);
       }
       if (nprints==1) {
           printf("\n");
@@ -286,6 +312,13 @@ int main(int argc, char **argv, char **env) {
       printf("%s\n", what_i_did);
 
   } // for (i)
+  if (input_filename != NULL) {
+      if (feof(input_file)) {
+          fclose(input_file);
+          if (output_file) { fclose(output_file); }
+          exit(0);
+      }
+  }
   if (Verilated::gotFinish()) exit(0);
 } // main()
 
