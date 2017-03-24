@@ -41,28 +41,35 @@ script:
   - pushd $cgroot; ./travis-test.csh; popd
 
   # PNR goes here
+  - cp $cgroot/bitstream/example3/PNRguys_mapped.xml $cgbuild/mapped.xml
+
+  # set bsdir = ../../bitstream
+  # perl $bsdir/example3/gen_bitstream.pl $bsdir/example3/PNRguys_mapped.xml PNRCONFIG
+  # set config = PNRCONFIG.dat
 
   # Bitstream build
   - echo "Build bitstream for programming CGRA" - `date`
-  - pushd $cgroot/bitstream
-  -   perl
-          ./bitstream_gen.pl
-          example/connectivity_4x4.xml
-          $cgbuild/config
-  -   ls -l example/config.dat $cgbuild/config.dat
-  -   diff  example/config.dat $cgbuild/config.dat
-  - popd
-
+  - BS_SCRIPT=$cgroot/bitstream/example3/gen_bitstream.pl
+  # - PNRMAP=example/connectivity_4x4.xml
+  # - PNRMAP=$cgroot/bitstream/example3/PNRguys_mapped.xml
+  - PNRMAP=$cgbuild/mapped.xml
+  #        
+  -   perl $BS_SCRIPT $PNRMAP $cgbuild/config
+  -   ls -l $cgroot/bitstream/example3/PNRguys_config.dat $cgbuild/config.dat
+  -   wc -l $cgroot/bitstream/example3/PNRguys_config.dat $cgbuild/config.dat
+  -   diff  $cgroot/bitstream/example3/PNRguys_config.dat $cgbuild/config.dat
 
   # CGRA program and run ((theoretically) uses output of pnr)
   - echo "CGRA program and run (uses output of pnr)" - `date`
 
+  # - CGRA_CONFIG=examples/config_mul2_nikhil_170323.dat
+  - CGRA_CONFIG=$cgbuild/config.dat
   - pushd $cgroot/verilator/generator_z_tb
   - ./run.csh top_tb.cpp -input io/gray_small.png
-        -config examples/config_mul2_nikhil_170323.dat
-        -input io/gray_small.png 
+        -config $CGRA_CONFIG
+        -input io/gray.png 
         -output /tmp/output.raw
-        -nclocks 1M
+        -nclocks 3M
   - popd
 
 # ./run.csh top_tb.cpp 

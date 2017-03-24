@@ -1,5 +1,7 @@
 #define INWIRE  top->wire_0_0_BUS16_S1_T0
-#define OUTWIRE top->wire_1_0_BUS16_S1_T0
+
+// #define OUTWIRE top->wire_1_0_BUS16_S1_T0
+#define OUTWIRE  top->wire_1_2_BUS16_S3_T0
 
 /// module tb();
 

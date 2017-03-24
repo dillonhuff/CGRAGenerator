@@ -194,17 +194,46 @@ wire_`$canvas_size{'height'}`_`$i`_`$bus`_S3_T`$t`,
 //; # I NEED this output for the verilator testbench.
 //; # (Only included if SR_VERILATOR env variable when Genesis is called).
 //; #
-//; if ( defined $ENV{'SR_VERILATOR'}) {
-  // Added for verilator testbench
-  // Note adding this output port causes a LOT of verilator "circular-logic" warnings!?
-           wire_0_1_BUS16_S0_T4,
-           //wire_0_3_BUS16_S2_T0,
-           //wire_1_2_BUS16_S3_T1,
-           //wire_0_2_BUS16_S0_T0,
-           wire_0_0_BUS16_S1_T0,
-           wire_1_0_BUS16_S1_T0,
-           
+//; my $verilator_portwires = "";
+//; my $verilator_inwires = "";
+//; my $verilator_outwires = "";
+//; if ( defined $ENV{'SR_VERILATOR_INWIRES'}) {
+//; 
+//;    # Build wires for portlist e.g.
+//;    #    SR_VERILATOR_INWIRES = "wire_0_1_BUS16_S0_T4 wire_0_0_BUS16_S1_T0"
+//;    #    SR_VERILATOR_OUTWIRES = "wire_1_0_BUS16_S1_T0"
+//;    #    => $verilator_portwires = 'wire_0_1_BUS16_S0_T4,wire_0_0_BUS16_S1_T0,wire_1_0_BUS16_S1_T0,'
+//;    my @verilator_portwires = (
+//;        split(" ", $ENV{'SR_VERILATOR_INWIRES'}),
+//;        split(" ", $ENV{'SR_VERILATOR_OUTWIRES'})
+//;    );
+//;    $verilator_portwires = join(",\n  ", @verilator_portwires) . ",";
+//;    my $bus_width_global = 16;  # FIXME hack
+//; 
+//;    # Input wires e.g.
+//;    #    input [15:0] wire_0_3_BUS16_S2_T0;
+//;    #    input [15:0] wire_0_0_BUS16_S1_T0;
+//;    my @verilator_inwires = split(" ", $ENV{'SR_VERILATOR_INWIRES'});
+//;    my $indecl = sprintf("input [%d:0] ", $bus_width_global-1);
+//;    $verilator_inwires = "  ".$indecl.join(";\n  ".$indecl, @verilator_inwires) . ";";
+//; 
+//;    # Output wires
+//;    my @verilator_outwires = split(" ", $ENV{'SR_VERILATOR_OUTWIRES'});
+//;    my $outdecl = sprintf("output [%d:0] ", $bus_width_global-1);
+//;    $verilator_outwires = "  ".$outdecl.join(";\n  ".$outdecl, @verilator_outwires) . ";";
 //; }
+
+
+//; if ( defined $ENV{'SR_VERILATOR_INWIRES'}) {
+  // Added for verilator testbench
+//; }
+  `$verilator_portwires`
+   // wire_0_1_BUS16_S0_T4,
+   // //wire_0_3_BUS16_S2_T0,
+   // //wire_1_2_BUS16_S3_T1,
+   // //wire_0_2_BUS16_S0_T0,
+   // wire_0_0_BUS16_S1_T0,
+   // wire_1_0_BUS16_S1_T0,
 //; ###################################################################################
 
 
@@ -220,13 +249,12 @@ config_data
   input [31:0] config_addr;
   input [31:0] config_data;
 
-//; if ( defined $ENV{'SR_VERILATOR'}) {
-  // Added for verilator testbench
-  // Note adding this output port causes a LOT of verilator "circular-logic" warnings!?
-  // ADD INPUTS HERE
-   //input [15:0] wire_0_3_BUS16_S2_T0;
-   //input [15:0] wire_1_2_BUS16_S3_T1;
-   input [15:0] wire_0_0_BUS16_S1_T0;
+//; if ( defined $ENV{'SR_VERILATOR_INWIRES'}) {
+   // Added for verilator testbench
+   `$verilator_inwires`
+   // //input [15:0] wire_0_3_BUS16_S2_T0;
+   // //input [15:0] wire_1_2_BUS16_S3_T1;
+   // input [15:0] wire_0_0_BUS16_S1_T0;
 //; }
 
 //;# Handle grid edge conditions for inter-tile wires
@@ -256,12 +284,13 @@ config_data
 //; # I NEED this output for the verilator testbench.
 //; # (Only included if SR_VERILATOR env variable when Genesis is called).
 //; #
-//; if ( defined $ENV{'SR_VERILATOR'}) {
+//; if ( defined $ENV{'SR_VERILATOR_OUTWIRES'}) {
   // Added for verilator testbench
   // Note adding this output port causes a LOT of verilator "circular-logic" warnings!?
-  output [15:0] wire_0_1_BUS16_S0_T4;
-  //output [15:0] wire_0_2_BUS16_S0_T0;
-   output [15:0] wire_1_0_BUS16_S1_T0;
+  // output [15:0] wire_0_1_BUS16_S0_T4;
+  // //output [15:0] wire_0_2_BUS16_S0_T0;
+  //  output [15:0] wire_1_0_BUS16_S1_T0;
+  `$verilator_outwires`
 //; }
 //; ###################################################################################
 

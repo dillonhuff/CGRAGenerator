@@ -73,19 +73,60 @@ if (! $?GENERATE) then
   goto NOGEN
 endif
 
+# set wirename1 = wire_0_3_BUS16_S2_T0
+# set wirename2 = wire_1_2_BUS16_S3_T1
+# 
+# set wirename1 = wire_0_0_BUS16_S1_T0
+# set wirename2 = foofoo
+
+
+# # add4 2x2
+# set inwires = (\
+#               wire_0_m1_BUS16_S0_T0 \
+#               wire_m1_0_BUS16_S1_T0 \
+#               wire_1_m1_BUS16_S0_T2 \
+#               wire_2_0_BUS16_S3_T2\
+# )
+# set outwires =  wire_0_1_BUS16_S0_T4
+
+# # add4 4x4
+# set inwires = (\
+#               wire_0_m1_BUS16_S0_T0\ 
+#               wire_m1_0_BUS16_S1_T0 \
+#               wire_1_m1_BUS16_S0_T2 \
+#               wire_4_0_BUS16_S3_T2  \
+# )
+# set outwires =  wire_0_1_BUS16_S0_T4
+
+
+# mul2/nikhil-config
+set inwires = (wire_0_0_BUS16_S1_T0)
+set outwires =  wire_1_0_BUS16_S1_T0
+
+# Maybe need this for a bit
+set outwires =  (wire_1_0_BUS16_S1_T0 wire_0_1_BUS16_S0_T4)
+
+set outwires =  (wire_0_1_BUS16_S0_T4 wire_1_2_BUS16_S3_T0)
+
+
+# set inwires = (wire_0_3_BUS16_S2_T0)
+
 # GENERATE (not needed for travis)
 # No need for GENERATE phase on travis because travis script does it already.
 if (`hostname` == "kiwi") then
   pushd $gdir/top
-    setenv SR_VERILATOR
+    # setenv SR_VERILATOR_INWIRES "top->wire_0_0_BUS16_S1_T0 top->wire_0_0_BUS16_S1_T77"
+    # setenv SR_VERILATOR_OUTWIRES "top->wire_0_0_BUS16_S1_T99"
+    setenv SR_VERILATOR_INWIRES "$inwires"
+    setenv SR_VERILATOR_OUTWIRES "$outwires"
     if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
     # pwd; ls
     ./run.csh
   popd
 endif
 
-NOGEN:
 
+NOGEN:
 
 set vdir = $gdir/top/genesis_verif
 if (! -e $vdir) then
@@ -111,12 +152,19 @@ set wirename1 = wire_0_0_BUS16_S1_T0
 set wirename2 = foofoo
 
 
+
+
 sed "s/\(.*[.]out.*\)$wirename1/\1/" $gdir/top/genesis_verif/top.v \
   | sed "s/\(.*[.]out.*\)$wirename2/\1/"  \
   > /tmp/tmp
 diff $gdir/top/genesis_verif/top.v /tmp/tmp
 mv /tmp/tmp $gdir/top/genesis_verif/top.v
 # exit
+
+
+
+
+
 
 if ($testbench == "top_tb.cpp") then
   if (! $?config) set config = $gdir/top_tb/tile_config.dat
@@ -268,7 +316,6 @@ if ($?input) then
   echo $cmd; $cmd | head
 
   echo
-  echo foo
   set cmd = "od -t u1 $output"
   echo $cmd; $cmd | head
 endif
