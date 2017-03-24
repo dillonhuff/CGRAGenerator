@@ -303,6 +303,9 @@ int main(int argc, char **argv, char **env) {
           // top->wire_2_0_BUS16_S3_T2  = in_1_1;
           top->wire_4_0_BUS16_S3_T2  = in_1_1;
 
+          // top->wire_0_3_BUS16_S2_T0 = 0x10;
+          // top->wire_1_2_BUS16_S3_T1 = 0x11;
+          top->wire_0_0_BUS16_S1_T0 = 0x22;
 
           top->config_addr = config_addr;
           top->config_data = config_data;
@@ -335,13 +338,28 @@ int main(int argc, char **argv, char **env) {
                           );
               }
               else { // out = 2in
+                  /*
                   sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
                           in_0_0, in_0_1, in_1_0, in_1_1,
                           top->wire_0_1_BUS16_S0_T4,
                           (in_0_0 + in_0_1 + in_1_0 + in_1_1),
                           top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
                           );
+                  */
+                  sprintf(what_i_did, " FOO %04x %04x %04x", 
+                          //top->wire_0_3_BUS16_S2_T0,
+                          //top->wire_1_2_BUS16_S3_T1,
+                          //top->wire_0_2_BUS16_S0_T0);
+                          -1,
+                          top->wire_0_0_BUS16_S1_T0,
+                          top->wire_1_0_BUS16_S1_T0);
+
+
+
+
               }
+
+
           }
 
           // Output to output file if specified.

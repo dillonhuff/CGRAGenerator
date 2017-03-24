@@ -197,7 +197,13 @@ wire_`$canvas_size{'height'}`_`$i`_`$bus`_S3_T`$t`,
 //; if ( defined $ENV{'SR_VERILATOR'}) {
   // Added for verilator testbench
   // Note adding this output port causes a LOT of verilator "circular-logic" warnings!?
-  wire_0_1_BUS16_S0_T4,
+           wire_0_1_BUS16_S0_T4,
+           //wire_0_3_BUS16_S2_T0,
+           //wire_1_2_BUS16_S3_T1,
+           //wire_0_2_BUS16_S0_T0,
+           wire_0_0_BUS16_S1_T0,
+           wire_1_0_BUS16_S1_T0,
+           
 //; }
 //; ###################################################################################
 
@@ -213,6 +219,15 @@ config_data
   input reset;
   input [31:0] config_addr;
   input [31:0] config_data;
+
+//; if ( defined $ENV{'SR_VERILATOR'}) {
+  // Added for verilator testbench
+  // Note adding this output port causes a LOT of verilator "circular-logic" warnings!?
+  // ADD INPUTS HERE
+   //input [15:0] wire_0_3_BUS16_S2_T0;
+   //input [15:0] wire_1_2_BUS16_S3_T1;
+   input [15:0] wire_0_0_BUS16_S1_T0;
+//; }
 
 //;# Handle grid edge conditions for inter-tile wires
 //; for (my $i=0; $i<$canvas_size{'height'}; $i++) {
@@ -245,6 +260,8 @@ config_data
   // Added for verilator testbench
   // Note adding this output port causes a LOT of verilator "circular-logic" warnings!?
   output [15:0] wire_0_1_BUS16_S0_T4;
+  //output [15:0] wire_0_2_BUS16_S0_T0;
+   output [15:0] wire_1_0_BUS16_S1_T0;
 //; }
 //; ###################################################################################
 

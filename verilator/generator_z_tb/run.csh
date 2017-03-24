@@ -104,6 +104,20 @@ if ($testbench == "tbsr1.cpp") then
   cp ./top_sr.v $gdir/top/genesis_verif/top.v
 endif
 
+set wirename1 = wire_0_3_BUS16_S2_T0
+set wirename2 = wire_1_2_BUS16_S3_T1
+
+set wirename1 = wire_0_0_BUS16_S1_T0
+set wirename2 = foofoo
+
+
+sed "s/\(.*[.]out.*\)$wirename1/\1/" $gdir/top/genesis_verif/top.v \
+  | sed "s/\(.*[.]out.*\)$wirename2/\1/"  \
+  > /tmp/tmp
+diff $gdir/top/genesis_verif/top.v /tmp/tmp
+mv /tmp/tmp $gdir/top/genesis_verif/top.v
+# exit
+
 if ($testbench == "top_tb.cpp") then
   if (! $?config) set config = $gdir/top_tb/tile_config.dat
   echo "Copy latest config file from $config..."
@@ -162,6 +176,9 @@ if ($verilator_exit_status != 0) exit -1
 # echo
 # echo "Good-bye!"
 # goto END
+
+
+
 
 # build C++ project
 # make -j -C obj_dir/ -f Vcounter.mk Vcounter
@@ -223,17 +240,21 @@ echo "# Run executable simulation"
 # obj_dir/V${top} -config tile_config.dat -input ifile || exit -1
 # obj_dir/V${top} -config tile_config.dat -input $input || exit -1
 # obj_dir/V${top} -config tile_config.dat $in || exit -1
-set cmd = "obj_dir/V${top} -config tile_config.dat $in"
+
+# set cmd = "obj_dir/V${top} -config tile_config.dat $in"
 
 # echo $cmd
 # $cmd || exit -1
 
 #    -output /tmp/output.raw \
 
+#    -config tile_config.dat \
+#    -config ~ankitan/CGRA/CONFIG_FIN.dat
+#    -config newconfig.dat\
 
 set echo
   obj_dir/V${top} \
-    -config tile_config.dat \
+    -config $config \
     $in \
     $out \
     $nclocks \
