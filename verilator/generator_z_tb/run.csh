@@ -116,16 +116,22 @@ set outwires =  (wire_0_1_BUS16_S0_T4 wire_1_2_BUS16_S3_T0)
 # OOPS no have to run generate twice or don't get in/out wires from mapper(!)
 # if (`hostname` == "kiwi") then
 
-  pushd $gdir/top
-    # setenv SR_VERILATOR_INWIRES "top->wire_0_0_BUS16_S1_T0 top->wire_0_0_BUS16_S1_T77"
-    # setenv SR_VERILATOR_OUTWIRES "top->wire_0_0_BUS16_S1_T99"
+  pushd ../..
     setenv SR_VERILATOR_INWIRES "$inwires"
     setenv SR_VERILATOR_OUTWIRES "$outwires"
-    if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
-    # pwd; ls
-    ./run.csh
+    ./travis-test.csh
   popd
-# endif
+
+#   pushd $gdir/top
+#     # setenv SR_VERILATOR_INWIRES "top->wire_0_0_BUS16_S1_T0 top->wire_0_0_BUS16_S1_T77"
+#     # setenv SR_VERILATOR_OUTWIRES "top->wire_0_0_BUS16_S1_T99"
+#     setenv SR_VERILATOR_INWIRES "$inwires"
+#     setenv SR_VERILATOR_OUTWIRES "$outwires"
+#     if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
+#     # pwd; ls
+#     ./run.csh
+#   popd
+# # endif
 
 
 NOGEN:
