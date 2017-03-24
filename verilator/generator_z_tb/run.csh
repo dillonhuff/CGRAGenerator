@@ -136,6 +136,12 @@ set outwires =  (wire_1_2_BUS16_S3_T0)
 
     cat $iofile
 
+    sed -n /source/,/wire_name/p $iofile > /tmp/tmp1
+    grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}'` > /tmp/tmp2
+    set inwires = `cat /tmp/tmp2`
+    echo $inwires
+   
+
     set echo
     set inwires = `set echo; sed -n /source/,/wire_name/p $iofile\
        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
