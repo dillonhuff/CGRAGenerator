@@ -128,7 +128,7 @@ if ($testbench == "top_tb.cpp") then
   if (! -e "$config") then
     echo
     echo "ERROR Config file does not exist!"
-    exit
+    exit -1
   endif       
   cp $config tile_config.dat
 endif
