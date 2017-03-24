@@ -67,7 +67,6 @@ script:
   - diff $cgbuild/config.dat $cgroot/verilator/generator_z/PNRCONFIG
   - pushd $cgroot/verilator/generator_z_tb
   - ./run.csh top_tb.cpp -input io/gray_small.png
-        -nogen
         -config $CGRA_CONFIG
         -input io/gray.png 
         -output /tmp/output.raw
