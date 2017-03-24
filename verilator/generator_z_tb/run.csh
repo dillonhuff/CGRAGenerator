@@ -113,7 +113,9 @@ set outwires =  (wire_0_1_BUS16_S0_T4 wire_1_2_BUS16_S3_T0)
 
 # GENERATE (not needed for travis)
 # No need for GENERATE phase on travis because travis script does it already.
-if (`hostname` == "kiwi") then
+# OOPS no have to run generate twice or don't get in/out wires from mapper(!)
+# if (`hostname` == "kiwi") then
+
   pushd $gdir/top
     # setenv SR_VERILATOR_INWIRES "top->wire_0_0_BUS16_S1_T0 top->wire_0_0_BUS16_S1_T77"
     # setenv SR_VERILATOR_OUTWIRES "top->wire_0_0_BUS16_S1_T99"
@@ -123,7 +125,7 @@ if (`hostname` == "kiwi") then
     # pwd; ls
     ./run.csh
   popd
-endif
+# endif
 
 
 NOGEN:
