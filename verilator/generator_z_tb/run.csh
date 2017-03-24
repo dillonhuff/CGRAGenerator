@@ -134,6 +134,8 @@ set outwires =  (wire_1_2_BUS16_S3_T0)
   if ($?iofile) then
     echo USING WIRE NAMES FROM FILE $iofile
 
+    cat $iofile
+
     set echo
     set inwires = `set echo; sed -n /source/,/wire_name/p $iofile\
        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
