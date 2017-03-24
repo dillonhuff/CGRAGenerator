@@ -197,7 +197,7 @@ make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
 # Prepare an input file
 
 if (! $?input) then
-  # testbench will use random numbers for its check (i think)
+  echo No input\; testbench will use random numbers for its check (i think)
   set in = ''
 endif
 

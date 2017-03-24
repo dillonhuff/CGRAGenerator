@@ -1,3 +1,6 @@
+#define INWIRE  top->wire_0_0_BUS16_S1_T0
+#define OUTWIRE top->wire_1_0_BUS16_S1_T0
+
 /// module tb();
 
 #include "Vtop.h"
@@ -194,7 +197,6 @@ int main(int argc, char **argv, char **env) {
       unsigned int in_1_0;
       unsigned int in_1_1;
 
-
       for (clk=0; clk<2; clk++) {
 
           //printf("CyNum-rst-clk %05d %d %d, ", i, reset, clk);
@@ -238,28 +240,29 @@ int main(int argc, char **argv, char **env) {
 
               if (!reset && tile_config_done) {
                   if (input_filename == NULL) {
-                      in_0_0 = random() & 0xff;
-                      in_0_1 = random() & 0xff;
-                      in_1_0 = random() & 0xff;
-                      in_1_1 = random() & 0xff;
 
+                      // add4, no input file, use four rando's
+                      in_0_0 = random() & 0xffff;
+                      in_0_1 = random() & 0xffff;
+                      in_1_0 = random() & 0xffff;
+                      in_1_1 = random() & 0xffff;
 
-                      in_0_0 = random() & 0xff;
+                      // add4 emulating mul2, no input file, use rando
+                      in_0_0 = random() & 0xffff;
                       in_0_1 = in_0_0;
                       in_1_0 = 0;
                       in_1_1 = 0;
-
-
                   }
                   else {
 
+                      // add4 w/input file
                       // in_0_0 = (unsigned int)fgetc(input_file);
                       // in_0_1 = (unsigned int)fgetc(input_file);
                       // in_1_0 = (unsigned int)fgetc(input_file);
                       // in_1_1 = (unsigned int)fgetc(input_file);
                       // // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
 
-                      // out = 2 * in
+                      // add4 emulating mul2 (out = 2 * in), w/input file
                       in_0_0 = (unsigned int)fgetc(input_file);
                       in_0_1 = in_0_0;
                       in_1_0 = 0;
@@ -297,15 +300,24 @@ int main(int argc, char **argv, char **env) {
           top->clk = clk;
           top->reset = reset;
 
-          top->wire_0_m1_BUS16_S0_T0 = in_0_0;
-          top->wire_m1_0_BUS16_S1_T0 = in_0_1;
-          top->wire_1_m1_BUS16_S0_T2 = in_1_0;
-          // top->wire_2_0_BUS16_S3_T2  = in_1_1;
-          top->wire_4_0_BUS16_S3_T2  = in_1_1;
+          if (0) {
+              // Using add4 config file
+              top->wire_0_m1_BUS16_S0_T0 = in_0_0;
+              top->wire_m1_0_BUS16_S1_T0 = in_0_1;
+              top->wire_1_m1_BUS16_S0_T2 = in_1_0;
+              // top->wire_2_0_BUS16_S3_T2  = in_1_1;
+              top->wire_4_0_BUS16_S3_T2  = in_1_1;
+          }
 
-          // top->wire_0_3_BUS16_S2_T0 = 0x10;
-          // top->wire_1_2_BUS16_S3_T1 = 0x11;
-          top->wire_0_0_BUS16_S1_T0 = 0x22;
+          else {
+              // mul2 config file
+              // top->wire_0_3_BUS16_S2_T0 = 0x10;
+              // top->wire_1_2_BUS16_S3_T1 = 0x11;
+              // top->wire_0_0_BUS16_S1_T0 = 0x22;
+              // INWIRE = 0x22;
+              INWIRE = in_0_0;
+          }
+
 
           top->config_addr = config_addr;
           top->config_data = config_data;
@@ -329,7 +341,8 @@ int main(int argc, char **argv, char **env) {
           // Only print info for first 40 cycles, see how that goes
           if (i == 40) { sprintf(what_i_did, "..."); }
           else if (i < 40) {
-              if (0) { // out = sum(4in)
+              if (0) {
+                  // out = sum(4in)
                   sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
                           in_0_0, in_0_1, in_1_0, in_1_1,
                           top->wire_0_1_BUS16_S0_T4,
@@ -337,38 +350,29 @@ int main(int argc, char **argv, char **env) {
                           top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
                           );
               }
-              else { // out = 2in
-                  /*
-                  sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
-                          in_0_0, in_0_1, in_1_0, in_1_1,
-                          top->wire_0_1_BUS16_S0_T4,
-                          (in_0_0 + in_0_1 + in_1_0 + in_1_1),
-                          top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
-                          );
-                  */
-                  sprintf(what_i_did, " FOO %04x %04x %04x", 
+              else {
+                  // out = 2in
+                  // int inwire  = top->wire_0_0_BUS16_S1_T0;
+                  // int outwire = top->wire_1_0_BUS16_S1_T0;
+
+                  sprintf(what_i_did, "Two times %d = %d ?   *%s*", 
                           //top->wire_0_3_BUS16_S2_T0,
                           //top->wire_1_2_BUS16_S3_T1,
                           //top->wire_0_2_BUS16_S0_T0);
-                          -1,
-                          top->wire_0_0_BUS16_S1_T0,
-                          top->wire_1_0_BUS16_S1_T0);
-
-
-
-
+                          INWIRE,
+                          OUTWIRE,
+                          OUTWIRE == 2*INWIRE ? "PASS" : "FAIL"
+                          );
               }
-
-
           }
 
           // Output to output file if specified.
           if (output_file != NULL) {
-              char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
+              // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
+              char c = (char)(OUTWIRE & 0xff);
               // printf("\nemit %d to output file\n", c);
               fputc(c, output_file);
           }
-
 
       }
       if (nprints==1) {
