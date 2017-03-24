@@ -66,10 +66,12 @@ script:
   - CGRA_CONFIG=$cgbuild/config.dat
   # - diff $cgbuild/config.dat $cgroot/verilator/generator_z/PNRCONFIG.dat
   - pushd $cgroot/verilator/generator_z_tb
+  - iofile=$cgroot/bitstream/example3/PNRguys_io.xml
   - ./run.csh top_tb.cpp -input io/gray_small.png
         -config $CGRA_CONFIG
         -input io/gray.png 
         -output /tmp/output.raw
+        -io $iofile
         -nclocks 3M
   - popd
 
