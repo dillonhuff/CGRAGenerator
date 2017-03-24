@@ -30,6 +30,9 @@ while ($#argv)
   else if ("$1" == "-config") then
     shift
     set config = "$1"
+  else if ("$1" == "-io") then
+    shift
+    set iofile = "$1"
   else if ("$1" == "-input") then
     shift
     set input = "$1"
@@ -106,7 +109,9 @@ set outwires =  wire_1_0_BUS16_S1_T0
 # Maybe need this for a bit
 set outwires =  (wire_1_0_BUS16_S1_T0 wire_0_1_BUS16_S0_T4)
 
-set outwires =  (wire_0_1_BUS16_S0_T4 wire_1_2_BUS16_S3_T0)
+set outwires =  (wire_0_1_BUS16_S0_T4)
+set outwires =  (wire_1_0_BUS16_S1_T0)
+set outwires =  (wire_1_2_BUS16_S3_T0)
 
 
 # set inwires = (wire_0_3_BUS16_S2_T0)
@@ -116,9 +121,25 @@ set outwires =  (wire_0_1_BUS16_S0_T4 wire_1_2_BUS16_S3_T0)
 # OOPS no have to run generate twice or don't get in/out wires from mapper(!)
 # if (`hostname` == "kiwi") then
 
+  if ($?iofile) then
+    echo USING WIRE NAMES FROM FILE $iofile
+    set wires = (`grep wire_name $iofile | sed 's/[<>]/ /g' | awk '{print $2}'`)
+
+    # setenv SR_VERILATOR_INWIRES  $wires[1]
+    # setenv SR_VERILATOR_OUTWIRES $wires[2]
+
+    set inwires  = $wires[1]
+    set outwires = $wires[2]
+
+  else
+    echo USING DEFAULT WIRE NAMES
+
+  endif
   pushd ../..
     setenv SR_VERILATOR_INWIRES "$inwires"
     setenv SR_VERILATOR_OUTWIRES "$outwires"
+    echo "inwires  = $SR_VERILATOR_INWIRES"
+    echo "outwires = $SR_VERILATOR_OUTWIRES"
     ./travis-test.csh
   popd
 
@@ -244,7 +265,10 @@ if ($verilator_exit_status != 0) exit -1
 echo
 echo "# Build testbench"
 echo make -j -C obj_dir/ -f V${top}.mk V${top}
-make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
+# make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
+make \
+  VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
+  -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
 
 
 # # set input = /tmp/input.raw

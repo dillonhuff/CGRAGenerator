@@ -1,7 +1,7 @@
-#define INWIRE  top->wire_0_0_BUS16_S1_T0
+// #define INWIRE  top->wire_0_0_BUS16_S1_T0
 
-// #define OUTWIRE top->wire_1_0_BUS16_S1_T0
-#define OUTWIRE  top->wire_1_2_BUS16_S3_T0
+//// #define OUTWIRE top->wire_1_0_BUS16_S1_T0
+// #define OUTWIRE  top->wire_1_2_BUS16_S3_T0
 
 /// module tb();
 
@@ -344,6 +344,7 @@ int main(int argc, char **argv, char **env) {
           if (i == 40) { sprintf(what_i_did, "..."); }
           else if (i < 40) {
               if (0) {
+                  /*
                   // out = sum(4in)
                   sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
                           in_0_0, in_0_1, in_1_0, in_1_1,
@@ -351,6 +352,7 @@ int main(int argc, char **argv, char **env) {
                           (in_0_0 + in_0_1 + in_1_0 + in_1_1),
                           top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
                           );
+                  */
               }
               else {
                   // out = 2in
