@@ -150,7 +150,7 @@ while (<$fh1>) {
        #<mux snk='out_BUS16_S0_T0' reg='1' configh='1' configl='0' configr='40'>
        elsif ($_ =~ m/^\s*<mux\s*snk='(\S+)'\s*reg='(\S+)'\s*configh='(\S+)'\s*configl='(\S+)'\s*\S*>/)
               {
-                   print $DEBUG "Entered here for mux_cnt $mux_cnt\n";
+                   print $DEBUG "mux_cnt : $mux_cnt\n";
                    $mux_idx = "mux_${mux_cnt}" ;
                    $DS{$TILE}{$feature}{$mux_idx}{snk} = $1;
                    $DS{$TILE}{$feature}{$mux_idx}{reg_sel} = $2;
