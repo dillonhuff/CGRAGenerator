@@ -64,6 +64,7 @@ script:
 
   # - CGRA_CONFIG=examples/config_mul2_nikhil_170323.dat
   - CGRA_CONFIG=$cgbuild/config.dat
+  - diff $cgbuild/config.dat $cgroot/verilator/generator_z/PNRCONFIG
   - pushd $cgroot/verilator/generator_z_tb
   - ./run.csh top_tb.cpp -input io/gray_small.png
         -config $CGRA_CONFIG

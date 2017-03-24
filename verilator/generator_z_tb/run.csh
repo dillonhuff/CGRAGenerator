@@ -162,6 +162,9 @@ mv /tmp/tmp $gdir/top/genesis_verif/top.v
 # exit
 
 
+  set bsdir = ../../bitstream
+  perl $bsdir/example3/gen_bitstream.pl $bsdir/example3/PNRguys_mapped.xml PNRCONFIG
+  set config = PNRCONFIG.dat
 
 
 
