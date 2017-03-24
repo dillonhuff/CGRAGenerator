@@ -50,6 +50,8 @@ while ($#argv)
   shift argv
 end
 
+echo TESTBENCH is $testbench 0
+
 # set testbench = top_tb.cpp
 # set testbench = $1
 if (! -e "$testbench") then
@@ -75,6 +77,9 @@ if (! $?GENERATE) then
   echo "No generate!"
   goto NOGEN
 endif
+
+echo TESTBENCH is $testbench 1
+
 
 # set wirename1 = wire_0_3_BUS16_S2_T0
 # set wirename2 = wire_1_2_BUS16_S3_T1
@@ -113,6 +118,11 @@ set outwires =  (wire_0_1_BUS16_S0_T4)
 set outwires =  (wire_1_0_BUS16_S1_T0)
 set outwires =  (wire_1_2_BUS16_S3_T0)
 
+# inwires  = wire_1_1_BUS16_S3_T0  SINK
+# outwires = wire_0_3_BUS16_S1_T0  SOURCE
+
+
+
 
 # set inwires = (wire_0_3_BUS16_S2_T0)
 
@@ -123,13 +133,21 @@ set outwires =  (wire_1_2_BUS16_S3_T0)
 
   if ($?iofile) then
     echo USING WIRE NAMES FROM FILE $iofile
-    set wires = (`grep wire_name $iofile | sed 's/[<>]/ /g' | awk '{print $2}'`)
+
+    set inwires = `sed -n /source/,/wire_name/p $iofile\
+       | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
+
+    set outwires = `sed -n /sink/,/wire_name/p $iofile\
+       | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
+
+
+    # set wires = (`grep wire_name $iofile | sed 's/[<>]/ /g' | awk '{print $2}'`)
+    # set inwires  = $wires[1]
+    # set outwires = $wires[2]
 
     # setenv SR_VERILATOR_INWIRES  $wires[1]
     # setenv SR_VERILATOR_OUTWIRES $wires[2]
 
-    set inwires  = $wires[1]
-    set outwires = $wires[2]
 
   else
     echo USING DEFAULT WIRE NAMES
@@ -154,6 +172,7 @@ set outwires =  (wire_1_2_BUS16_S3_T0)
 #   popd
 # # endif
 
+echo TESTBENCH is $testbench 3
 
 NOGEN:
 
@@ -195,6 +214,7 @@ mv /tmp/tmp $gdir/top/genesis_verif/top.v
   perl $bsdir/example3/gen_bitstream.pl $bsdir/example3/PNRguys_mapped.xml PNRCONFIG
   set config = PNRCONFIG.dat
 
+echo TESTBENCH is $testbench 4
 
 
 
@@ -215,6 +235,9 @@ endif
 
 # set vdir = $gdir/genesis_verif
 
+echo TESTBENCH is $testbench 5
+
+
 pushd $vdir >& /dev/null || echo Could not pushd $vdir
   # set vfiles = (*.v *.sv)
   set vfiles = (*.v)
@@ -227,6 +250,9 @@ echo
 echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
   | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
 echo
+
+echo TESTBENCH is $testbench 6
+
 
 verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
   >& /tmp/verilator.out
