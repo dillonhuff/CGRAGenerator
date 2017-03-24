@@ -59,13 +59,11 @@ script:
 
   - pushd $cgroot/verilator/generator_z_tb
   - ./run.csh top_tb.cpp -input io/gray_small.png
-        # -config ../../hardware/generator_z/top_tb/tile_config.dat
         -config examples/config_mul2_nikhil_170323.dat
         -input io/gray_small.png 
         -output /tmp/output.raw
         -nclocks 1M
   - popd
-
 
 # ./run.csh top_tb.cpp 
 # -config ../../hardware/generator_z/top_tb/tile_config.dat 
