@@ -13,6 +13,8 @@ if ($#argv == 0) then
   exit 0
 endif  
 
+
+
 echo
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
@@ -164,6 +166,12 @@ if (! -e $vdir) then
   exit -1
 endif
 
+
+#    // VERILATOR_IN1
+#    // VERILATOR_PORT1
+#    // VERILATOR_OUT1
+
+
 set top = top
 
 # The old switcharoo
@@ -172,21 +180,33 @@ if ($testbench == "tbsr1.cpp") then
   cp ./top_sr.v $gdir/top/genesis_verif/top.v
 endif
 
-set wirename1 = wire_0_3_BUS16_S2_T0
-set wirename2 = wire_1_2_BUS16_S3_T1
+# Disconnect "input" wires from internal net (and route to ports instead)
 
-set wirename1 = wire_0_0_BUS16_S1_T0
-set wirename2 = foofoo
+# set wirename1 = wire_0_3_BUS16_S2_T0
+# set wirename2 = wire_1_2_BUS16_S3_T1
+# 
+# set wirename1 = wire_0_0_BUS16_S1_T0
+# set wirename2 = foofoo
+# 
+# sed "s/\(.*[.]out.*\)$wirename1/\1/" $gdir/top/genesis_verif/top.v \
+#   | sed "s/\(.*[.]out.*\)$wirename2/\1/"  \
+#   > /tmp/tmp
+# diff $gdir/top/genesis_verif/top.v /tmp/tmp
+# mv /tmp/tmp $gdir/top/genesis_verif/top.v
+
+foreach inwire ($inwires)
+  echo "Disconnecting input $inwire from internal net..."
+  (egrep "out.*$inwire" $gdir/top/genesis_verif/top.v > /dev/null)\
+    || echo "    Wire not found in internal net of top.v"
+  sed "s/\(.*[.]out.*\)$inwire/\1/" $gdir/top/genesis_verif/top.v > /tmp/tmp
+  diff $gdir/top/genesis_verif/top.v /tmp/tmp | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
+  echo
+  mv /tmp/tmp $gdir/top/genesis_verif/top.v
+end
 
 
 
 
-sed "s/\(.*[.]out.*\)$wirename1/\1/" $gdir/top/genesis_verif/top.v \
-  | sed "s/\(.*[.]out.*\)$wirename2/\1/"  \
-  > /tmp/tmp
-diff $gdir/top/genesis_verif/top.v /tmp/tmp
-mv /tmp/tmp $gdir/top/genesis_verif/top.v
-# exit
 
 
   set bsdir = ../../bitstream
