@@ -167,41 +167,47 @@ if (! -e $vdir) then
 endif
 
 
-#    // VERILATOR_IN1
-#    // VERILATOR_PORT1
-#    // VERILATOR_OUT1
-
-
 set top = top
+set vtop = $gdir/top/genesis_verif/top.v
 
 # The old switcharoo
 if ($testbench == "tbsr1.cpp") then
-  mv $gdir/top/genesis_verif/top.v ./top.v.old
-  cp ./top_sr.v $gdir/top/genesis_verif/top.v
+  mv $vtop ./top.v.old
+  cp ./top_sr.v $vtop
 endif
+
+
+#    // VERILATOR_IN1
+#    // VERILATOR_OUT1
+
+cp $vtop /tmp/top.v.orig
+
+
+
+#    // VERILATOR_PORT1
+cp $vtop /tmp/top.v.orig
+set i = 0;
+echo "Adding ports for verilator inputs and outputs..."
+foreach port ($inwires $outwires)
+  echo "  $port..."
+  sed "s|// VERILATOR_PORT$i|// $port, // port added by verilator|" $vtop > /tmp/tmp
+  mv /tmp/tmp $vtop
+  @ i = $i + 1
+end
+# diff /tmp/tmp.orig $vtop | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
+diff /tmp/top.v.orig $vtop
+echo sdiff /tmp/top.v.orig $vtop
 
 # Disconnect "input" wires from internal net (and route to ports instead)
 
-# set wirename1 = wire_0_3_BUS16_S2_T0
-# set wirename2 = wire_1_2_BUS16_S3_T1
-# 
-# set wirename1 = wire_0_0_BUS16_S1_T0
-# set wirename2 = foofoo
-# 
-# sed "s/\(.*[.]out.*\)$wirename1/\1/" $gdir/top/genesis_verif/top.v \
-#   | sed "s/\(.*[.]out.*\)$wirename2/\1/"  \
-#   > /tmp/tmp
-# diff $gdir/top/genesis_verif/top.v /tmp/tmp
-# mv /tmp/tmp $gdir/top/genesis_verif/top.v
-
 foreach inwire ($inwires)
   echo "Disconnecting input $inwire from internal net..."
-  (egrep "out.*$inwire" $gdir/top/genesis_verif/top.v > /dev/null)\
+  (egrep "out.*$inwire" $vtop > /dev/null)\
     || echo "    Wire not found in internal net of top.v"
-  sed "s/\(.*[.]out.*\)$inwire/\1/" $gdir/top/genesis_verif/top.v > /tmp/tmp
-  diff $gdir/top/genesis_verif/top.v /tmp/tmp | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
+  sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > /tmp/tmp
+  diff $vtop /tmp/tmp | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
   echo
-  mv /tmp/tmp $gdir/top/genesis_verif/top.v
+  mv /tmp/tmp $vtop
 end
 
 
