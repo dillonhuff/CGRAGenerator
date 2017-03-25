@@ -1,21 +1,28 @@
 #!/bin/csh
 
-# TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...
+if ($#argv == 0) then
+  # Use these defaults
+  set echo
+  exec $0 top_tb.cpp \
+    -config   ../../bitstream/tmpconfigPNR.dat        \
+    -io       ../../bitstream/example3/PNRguys_io.xml \
+    -input    io/gray_small.png                       \
+    -nclocks  1M                                      \
+    -output   /tmp/output.raw                         \
+  || exit -1
+  exit 0
+endif  
+
+echo
+
+# TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
 # CLEANUP
-# if (-e obj_dir)         rm -rf obj_dir
-# if (-e counter.vcd)     rm -f  counter.vcd
-# if (-e tile_config.dat) rm -f  tile_config.dat
-
 foreach f (obj_dir counter.cvd tile_config.dat)
   if (-e $f) rm -rf $f
 end
 
-# set gdir = /nobackup/steveri/github/CGRAGenerator/verilator/generator_zsr/top
-# set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/top
-# set gdir = /nobackup/steveri/github/CGRAGenerator/hardware/generator_z
-# set gdir = ../../hardware/generator_z/top
-  set gdir = ../../hardware/generator_z
+set gdir = ../../hardware/generator_z
 
 set nclocks = ''
 
@@ -50,8 +57,6 @@ while ($#argv)
   shift argv
 end
 
-echo TESTBENCH is $testbench 0
-
 # set testbench = top_tb.cpp
 # set testbench = $1
 if (! -e "$testbench") then
@@ -78,63 +83,15 @@ if (! $?GENERATE) then
   goto NOGEN
 endif
 
-echo TESTBENCH is $testbench 1
-
-
-# set wirename1 = wire_0_3_BUS16_S2_T0
-# set wirename2 = wire_1_2_BUS16_S3_T1
-# 
-# set wirename1 = wire_0_0_BUS16_S1_T0
-# set wirename2 = foofoo
-
-
-# # add4 2x2
-# set inwires = (\
-#               wire_0_m1_BUS16_S0_T0 \
-#               wire_m1_0_BUS16_S1_T0 \
-#               wire_1_m1_BUS16_S0_T2 \
-#               wire_2_0_BUS16_S3_T2\
-# )
-# set outwires =  wire_0_1_BUS16_S0_T4
-
-# # add4 4x4
-# set inwires = (\
-#               wire_0_m1_BUS16_S0_T0\ 
-#               wire_m1_0_BUS16_S1_T0 \
-#               wire_1_m1_BUS16_S0_T2 \
-#               wire_4_0_BUS16_S3_T2  \
-# )
-# set outwires =  wire_0_1_BUS16_S0_T4
-
-
-# mul2/nikhil-config
-set inwires = (wire_0_0_BUS16_S1_T0)
-set outwires =  wire_1_0_BUS16_S1_T0
-
-# Maybe need this for a bit
-set outwires =  (wire_1_0_BUS16_S1_T0 wire_0_1_BUS16_S0_T4)
-
-set outwires =  (wire_0_1_BUS16_S0_T4)
-set outwires =  (wire_1_0_BUS16_S1_T0)
-set outwires =  (wire_1_2_BUS16_S3_T0)
-
-# inwires  = wire_1_1_BUS16_S3_T0  SINK
-# outwires = wire_0_3_BUS16_S1_T0  SOURCE
-
-
-
-
-# set inwires = (wire_0_3_BUS16_S2_T0)
-
 # GENERATE (not needed for travis)
 # No need for GENERATE phase on travis because travis script does it already.
 # OOPS no have to run generate twice or don't get in/out wires from mapper(!)
 # if (`hostname` == "kiwi") then
 
   if ($?iofile) then
-    echo USING WIRE NAMES FROM FILE $iofile
-
-    cat $iofile
+    echo USING WIRE NAMES FROM FILE $iofile":"
+    grep wire_name $iofile
+    echo ""
 
     sed -n /source/,/wire_name/p $iofile > /tmp/tmp1
     grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
@@ -145,29 +102,38 @@ set outwires =  (wire_1_2_BUS16_S3_T0)
     grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
     set outwires = `cat /tmp/tmp2`
     echo OUT $outwires
+    echo ""
 
-
-#     set echo
-#     set inwires = `set echo; sed -n /source/,/wire_name/p $iofile\
-#        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
-# 
-#     set outwires = `set echo; sed -n /sink/,/wire_name/p $iofile\
-#        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
-#     unset echo
-# 
-
-    # set wires = (`grep wire_name $iofile | sed 's/[<>]/ /g' | awk '{print $2}'`)
-    # set inwires  = $wires[1]
-    # set outwires = $wires[2]
-
-    # setenv SR_VERILATOR_INWIRES  $wires[1]
-    # setenv SR_VERILATOR_OUTWIRES $wires[2]
-
+    # Why the devil didn't this work!?
+    #     set inwires = `set echo; sed -n /source/,/wire_name/p $iofile\
+    #        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
+    # 
+    #     set outwires = `set echo; sed -n /sink/,/wire_name/p $iofile\
+    #        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
 
   else
     echo USING DEFAULT WIRE NAMES
 
+    # add4 2x2 (tile_config.dat)
+    # set inwires  = (wire_0_m1_BUS16_S0_T0 wire_m1_0_BUS16_S1_T0 wire_1_m1_BUS16_S0_T2 wire_2_0_BUS16_S3_T2)
+    # set outwires = (wire_0_1_BUS16_S0_T4)
+
+    # add4 4x4 (tile_config.dat)
+    # set inwires  = (wire_0_m1_BUS16_S0_T0 wire_m1_0_BUS16_S1_T0 wire_1_m1_BUS16_S0_T2 wire_4_0_BUS16_S3_T2)
+    # set outwires = (wire_0_1_BUS16_S0_T4)
+
+    # mul2/nikhil-config (PNRCONFIG.dat maybe)
+    set inwires  = (wire_0_0_BUS16_S1_T0)
+    set outwires = (wire_1_0_BUS16_S1_T0)
+
+    # ../../bitstream/tmpconfigPNR.dat
+    set inwires  = (wire_0_0_BUS16_S1_T0)
+    set outwires = (wire_1_2_BUS16_S3_T0)
   endif
+
+  # Build CGRA (again), using correct wire names this time
+  # SHOULD NOT HAPPEN HERE should instead hack top.v later below
+
   pushd ../..
     setenv SR_VERILATOR_INWIRES "$inwires"
     setenv SR_VERILATOR_OUTWIRES "$outwires"
@@ -186,8 +152,6 @@ set outwires =  (wire_1_2_BUS16_S3_T0)
 #     ./run.csh
 #   popd
 # # endif
-
-echo TESTBENCH is $testbench 3
 
 NOGEN:
 
@@ -229,9 +193,6 @@ mv /tmp/tmp $gdir/top/genesis_verif/top.v
   perl $bsdir/example3/gen_bitstream.pl $bsdir/example3/PNRguys_mapped.xml PNRCONFIG
   set config = PNRCONFIG.dat
 
-echo TESTBENCH is $testbench 4
-
-
 
 if ($testbench == "top_tb.cpp") then
   if (! $?config) set config = $gdir/top_tb/tile_config.dat
@@ -250,8 +211,6 @@ endif
 
 # set vdir = $gdir/genesis_verif
 
-echo TESTBENCH is $testbench 5
-
 
 pushd $vdir >& /dev/null || echo Could not pushd $vdir
   # set vfiles = (*.v *.sv)
@@ -265,8 +224,6 @@ echo
 echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
   | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
 echo
-
-echo TESTBENCH is $testbench 6
 
 
 verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
