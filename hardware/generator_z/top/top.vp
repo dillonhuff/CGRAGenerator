@@ -190,57 +190,19 @@ wire_`$canvas_size{'height'}`_`$i`_`$bus`_S3_T`$t`,
 //;   }
 //; }
 
-//; ###################################################################################
-//; # I NEED this output for the verilator testbench.
-//; # (Only included if SR_VERILATOR env variable when Genesis is called).
-//; #
-//; my $verilator_portwires = "";
-//; my $verilator_inwires = "";
-//; my $verilator_outwires = "";
-//; if ( defined $ENV{'SR_VERILATOR_INWIRES'}) {
-//; 
-//;    # Build wires for portlist e.g.
-//;    #    SR_VERILATOR_INWIRES = "wire_0_1_BUS16_S0_T4 wire_0_0_BUS16_S1_T0"
-//;    #    SR_VERILATOR_OUTWIRES = "wire_1_0_BUS16_S1_T0"
-//;    #    => $verilator_portwires = 'wire_0_1_BUS16_S0_T4,wire_0_0_BUS16_S1_T0,wire_1_0_BUS16_S1_T0,'
-//;    my @verilator_portwires = (
-//;        split(" ", $ENV{'SR_VERILATOR_INWIRES'}),
-//;        split(" ", $ENV{'SR_VERILATOR_OUTWIRES'})
-//;    );
-//;    $verilator_portwires = join(",\n  ", @verilator_portwires) . ",";
-//;    my $bus_width_global = 16;  # FIXME hack
-//; 
-//;    # Input wires e.g.
-//;    #    input [15:0] wire_0_3_BUS16_S2_T0;
-//;    #    input [15:0] wire_0_0_BUS16_S1_T0;
-//;    my @verilator_inwires = split(" ", $ENV{'SR_VERILATOR_INWIRES'});
-//;    my $indecl = sprintf("input [%d:0] ", $bus_width_global-1);
-//;    $verilator_inwires = "  ".$indecl.join(";\n  ".$indecl, @verilator_inwires) . ";";
-//; 
-//;    # Output wires
-//;    my @verilator_outwires = split(" ", $ENV{'SR_VERILATOR_OUTWIRES'});
-//;    my $outdecl = sprintf("output [%d:0] ", $bus_width_global-1);
-//;    $verilator_outwires = "  ".$outdecl.join(";\n  ".$outdecl, @verilator_outwires) . ";";
-//; }
-
-//; if ( defined $ENV{'SR_VERILATOR_INWIRES'}) {
-  // Added for verilator testbench
-//; }
-  `$verilator_portwires`
-
-   // PLACEHOLDERS FOR VERILATOR PORT WIRES
-   // VERILATOR_PORT0
-   // VERILATOR_PORT1
-   // VERILATOR_PORT2
-   // VERILATOR_PORT3
-   // VERILATOR_PORT4
-   // VERILATOR_PORT5
-   // VERILATOR_PORT6
-   // VERILATOR_PORT7
-   // VERILATOR_PORT8
-
-//; ###################################################################################
-
+// -------------------------------------
+// PLACEHOLDERS FOR VERILATOR PORT WIRES
+//
+// VERILATOR_PORT0
+// VERILATOR_PORT1
+// VERILATOR_PORT2
+// VERILATOR_PORT3
+// VERILATOR_PORT4
+// VERILATOR_PORT5
+// VERILATOR_PORT6
+// VERILATOR_PORT7
+// VERILATOR_PORT8
+// -------------------------------------
 
 config_addr,
 config_data
@@ -254,17 +216,15 @@ config_data
   input [31:0] config_addr;
   input [31:0] config_data;
 
-//; if ( defined $ENV{'SR_VERILATOR_INWIRES'}) {
-   // Added for verilator testbench
-   `$verilator_inwires`
-//; }
-
+   // --------------------------------------
    // PLACEHOLDERS FOR VERILATOR INPUT WIRES
+   // --------------------------------------
    // VERILATOR_IN0
    // VERILATOR_IN1
    // VERILATOR_IN2
    // VERILATOR_IN3
    // VERILATOR_IN4
+   // --------------------------------------
 
 //;# Handle grid edge conditions for inter-tile wires
 //; for (my $i=0; $i<$canvas_size{'height'}; $i++) {
@@ -289,25 +249,15 @@ config_data
 //;   }
 //; }
 
-//; ###################################################################################
-//; # I NEED this output for the verilator testbench.
-//; # (Only included if SR_VERILATOR env variable when Genesis is called).
-//; #
-//; if ( defined $ENV{'SR_VERILATOR_OUTWIRES'}) {
-  // Added for verilator testbench
-  // Note adding this output port causes a LOT of verilator "circular-logic" warnings!?
-  // output [15:0] wire_0_1_BUS16_S0_T4;
-  // //output [15:0] wire_0_2_BUS16_S0_T0;
-  //  output [15:0] wire_1_0_BUS16_S1_T0;
-  `$verilator_outwires`
-//; }
-
+   // ---------------------------------------
    // PLACEHOLDERS FOR VERILATOR OUTPUT WIRES
+   // ---------------------------------------
    // VERILATOR_OUT0
    // VERILATOR_OUT1
    // VERILATOR_OUT2
    // VERILATOR_OUT3
    // VERILATOR_OUT4
+   // ---------------------------------------
 
 //; ###################################################################################
 

@@ -88,7 +88,7 @@ endif
 # GENERATE (not needed for travis)
 # No need for GENERATE phase on travis because travis script does it already.
 # OOPS no have to run generate twice or don't get in/out wires from mapper(!)
-# if (`hostname` == "kiwi") then
+if (`hostname` == "kiwi") then
 
   if ($?iofile) then
     echo USING WIRE NAMES FROM FILE $iofile":"
@@ -133,14 +133,17 @@ endif
     set outwires = (wire_1_2_BUS16_S3_T0)
   endif
 
+echo "inwires  = $inwires"
+echo "outwires = $outwires"
+
   # Build CGRA (again), using correct wire names this time
   # SHOULD NOT HAPPEN HERE should instead hack top.v later below
 
   pushd ../..
-    setenv SR_VERILATOR_INWIRES "$inwires"
-    setenv SR_VERILATOR_OUTWIRES "$outwires"
-    echo "inwires  = $SR_VERILATOR_INWIRES"
-    echo "outwires = $SR_VERILATOR_OUTWIRES"
+    # setenv SR_VERILATOR_INWIRES "$inwires"
+    # setenv SR_VERILATOR_OUTWIRES "$outwires"
+    # echo "inwires  = $SR_VERILATOR_INWIRES"
+    # echo "outwires = $SR_VERILATOR_OUTWIRES"
     ./travis-test.csh
   popd
 
@@ -153,7 +156,7 @@ endif
 #     # pwd; ls
 #     ./run.csh
 #   popd
-# # endif
+endif
 
 NOGEN:
 
@@ -169,7 +172,7 @@ endif
 
 
 echo '------------------------------------------------------------------------'
-echo BEGIN vtop manipulation
+echo "BEGIN vtop manipulation (won't be needed after we figure out io pads..."
 
 set vtop = $gdir/top/genesis_verif/top.v
 cp $vtop /tmp/top.v.orig
@@ -183,39 +186,30 @@ endif
 
 # // VERILATOR_PORT1,2,3...
 # Build ports for verilator input and output signals
-set i = 0;
-echo "Adding ports for verilator inputs and outputs..."
+set i = 0; echo "Adding ports for verilator inputs and outputs..."
 foreach port ($inwires $outwires)
-  echo "  $port..."
-  sed "s|\(// VERILATOR_PORT$i\)|// $port,               \1|" $vtop > /tmp/tmp
-  mv /tmp/tmp $vtop
-  @ i = $i + 1
+  sed "s|\(// VERILATOR_PORT$i\)|$port,               \1|" $vtop > /tmp/tmp
+  echo "  $port..."; mv /tmp/tmp $vtop; @ i = $i + 1
 end
 echo
 # diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
 
 # // VERILATOR_IN1,2,3...
 # Declare verilator input signals...
-set i = 0;
-echo "Adding verilator input declarations..."
+set i = 0; echo "Adding verilator input declarations..."
 foreach wirename ($inwires)
-  echo "  $wirename..."
-  sed "s|\(// VERILATOR_IN$i\)|// input[15:0] $wirename; \1|" $vtop > /tmp/tmp
-  mv /tmp/tmp $vtop
-  @ i = $i + 1
+  sed "s|\(// VERILATOR_IN$i\)|input  [15:0] $wirename; \1|" $vtop > /tmp/tmp
+  echo "  $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
 end
 echo
 # diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
 
 # // VERILATOR_OUT1,2,3...
 # Declare verilator output signals...
-set i = 0;
-echo "Adding verilator output declarations..."
+set i = 0; echo "Adding verilator output declarations..."
 foreach wirename ($outwires)
-  echo "  $wirename..."
-  sed "s|\(// VERILATOR_OUT$i\)|// output[15:0]  $wirename; \1|" $vtop > /tmp/tmp
-  mv /tmp/tmp $vtop
-  @ i = $i + 1
+  sed "s|\(// VERILATOR_OUT$i\)|output [15:0]  $wirename; \1|" $vtop > /tmp/tmp
+  echo "  $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
 end
 echo
 # diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
@@ -223,29 +217,30 @@ echo
 # Disconnect "input" wires from internal net (and route to ports instead)
 echo "Disconnecting input wires from internal net..."
 foreach inwire ($inwires)
-  echo "  $inwire..."
   (egrep "out.*$inwire" $vtop > /dev/null)\
     || echo "    Wire not found in internal net of top.v"
   sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > /tmp/tmp
   # diff $vtop /tmp/tmp | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
-  echo
-  mv /tmp/tmp $vtop
+  echo "  $inwire..."; mv /tmp/tmp $vtop
 end
+echo
 
 # Show what we did
-echo Changes to top.v:
+echo Changes to top.v:; echo
   diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /' > /tmp/tmp
 
-  cat /tmp/tmp | egrep '^ *<' | egrep 'PORT'; echo
-  cat /tmp/tmp | egrep '^ *<' | egrep 'IN|OUT'; echo
-  cat /tmp/tmp | egrep '^ *<' | egrep -v 'VERILATOR'
-  echo "    ---"
-  cat /tmp/tmp | egrep '^ *>' | egrep 'PORT'; echo
-  cat /tmp/tmp | egrep '^ *>' | egrep 'IN|OUT'; echo
-  cat /tmp/tmp | egrep '^ *>' | egrep -v 'VERILATOR'
+  cat /tmp/tmp | egrep '^ *<' | egrep 'PORT'; echo "    ---"
+  cat /tmp/tmp | egrep '^ *>' | egrep 'PORT'; echo; echo
+
+  cat /tmp/tmp | egrep '^ *<' | egrep 'IN|OUT'; echo "    ---"
+  cat /tmp/tmp | egrep '^ *>' | egrep 'IN|OUT'; echo; echo
+
+  cat /tmp/tmp | egrep '^ *<' | egrep -v 'VERILATOR'; echo "    ---"
+  cat /tmp/tmp | egrep '^ *>' | egrep -v 'VERILATOR'; echo; echo
+
+
 
 # Suggestion for how to see all changes in context...
-echo
 echo To see all changes in context, try:
 echo "  diff --side-by-side -W 100 /tmp/top.v.orig $vtop | less"
 echo

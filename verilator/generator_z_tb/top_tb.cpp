@@ -359,7 +359,7 @@ int main(int argc, char **argv, char **env) {
                   // int inwire  = top->wire_0_0_BUS16_S1_T0;
                   // int outwire = top->wire_1_0_BUS16_S1_T0;
 
-                  sprintf(what_i_did, "Two times %d = %d ?   *%s*", 
+                  sprintf(what_i_did, "Two times %d = %d  *%s*", 
                           //top->wire_0_3_BUS16_S2_T0,
                           //top->wire_1_2_BUS16_S3_T1,
                           //top->wire_0_2_BUS16_S0_T0);
