@@ -261,10 +261,11 @@ echo END vtop manipulation
 echo '------------------------------------------------------------------------'
 
 
+if (`hostname` == "kiwi") then
   set bsdir = ../../bitstream
   perl $bsdir/example3/gen_bitstream.pl $bsdir/example3/PNRguys_mapped.xml PNRCONFIG
   set config = PNRCONFIG.dat
-
+endif
 
 if ($testbench == "top_tb.cpp") then
   if (! $?config) set config = $gdir/top_tb/tile_config.dat
