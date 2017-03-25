@@ -167,52 +167,92 @@ if (! -e $vdir) then
 endif
 
 
-set top = top
-set vtop = $gdir/top/genesis_verif/top.v
 
+echo '------------------------------------------------------------------------'
+echo BEGIN vtop manipulation
+
+set vtop = $gdir/top/genesis_verif/top.v
+cp $vtop /tmp/top.v.orig
+
+# Substitute in a complete new custom top.v
+# (We don't really do this these days...)
 # The old switcharoo
 if ($testbench == "tbsr1.cpp") then
-  mv $vtop ./top.v.old
   cp ./top_sr.v $vtop
 endif
 
-
-#    // VERILATOR_IN1
-#    // VERILATOR_OUT1
-
-cp $vtop /tmp/top.v.orig
-
-
-
-#    // VERILATOR_PORT1
-cp $vtop /tmp/top.v.orig
+# // VERILATOR_PORT1,2,3...
+# Build ports for verilator input and output signals
 set i = 0;
 echo "Adding ports for verilator inputs and outputs..."
 foreach port ($inwires $outwires)
   echo "  $port..."
-  sed "s|// VERILATOR_PORT$i|// $port, // port added by verilator|" $vtop > /tmp/tmp
+  sed "s|\(// VERILATOR_PORT$i\)|// $port,               \1|" $vtop > /tmp/tmp
   mv /tmp/tmp $vtop
   @ i = $i + 1
 end
-# diff /tmp/tmp.orig $vtop | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
-diff /tmp/top.v.orig $vtop
-echo sdiff /tmp/top.v.orig $vtop
+echo
+# diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+
+# // VERILATOR_IN1,2,3...
+# Declare verilator input signals...
+set i = 0;
+echo "Adding verilator input declarations..."
+foreach wirename ($inwires)
+  echo "  $wirename..."
+  sed "s|\(// VERILATOR_IN$i\)|// input[15:0] $wirename; \1|" $vtop > /tmp/tmp
+  mv /tmp/tmp $vtop
+  @ i = $i + 1
+end
+echo
+# diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+
+# // VERILATOR_OUT1,2,3...
+# Declare verilator output signals...
+set i = 0;
+echo "Adding verilator output declarations..."
+foreach wirename ($outwires)
+  echo "  $wirename..."
+  sed "s|\(// VERILATOR_OUT$i\)|// output[15:0]  $wirename; \1|" $vtop > /tmp/tmp
+  mv /tmp/tmp $vtop
+  @ i = $i + 1
+end
+echo
+# diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
 
 # Disconnect "input" wires from internal net (and route to ports instead)
-
+echo "Disconnecting input wires from internal net..."
 foreach inwire ($inwires)
-  echo "Disconnecting input $inwire from internal net..."
+  echo "  $inwire..."
   (egrep "out.*$inwire" $vtop > /dev/null)\
     || echo "    Wire not found in internal net of top.v"
   sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > /tmp/tmp
-  diff $vtop /tmp/tmp | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
+  # diff $vtop /tmp/tmp | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
   echo
   mv /tmp/tmp $vtop
 end
 
+# Show what we did
+echo Changes to top.v:
+  diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /' > /tmp/tmp
+
+  cat /tmp/tmp | egrep '^ *<' | egrep 'PORT'; echo
+  cat /tmp/tmp | egrep '^ *<' | egrep 'IN|OUT'; echo
+  cat /tmp/tmp | egrep '^ *<' | egrep -v 'VERILATOR'
+  echo "    ---"
+  cat /tmp/tmp | egrep '^ *>' | egrep 'PORT'; echo
+  cat /tmp/tmp | egrep '^ *>' | egrep 'IN|OUT'; echo
+  cat /tmp/tmp | egrep '^ *>' | egrep -v 'VERILATOR'
+
+# Suggestion for how to see all changes in context...
+echo
+echo To see all changes in context, try:
+echo "  diff --side-by-side -W 100 /tmp/top.v.orig $vtop | less"
+echo
 
 
-
+echo END vtop manipulation
+echo '------------------------------------------------------------------------'
 
 
   set bsdir = ../../bitstream
@@ -245,6 +285,8 @@ popd >& /dev/null
 
 # So many warnings it wants to DIE!
 set myswitches = '-Wno-fatal'
+
+set top = top
 
 echo
 echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
