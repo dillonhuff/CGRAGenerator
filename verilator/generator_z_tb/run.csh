@@ -90,51 +90,6 @@ endif
 # OOPS no have to run generate twice or don't get in/out wires from mapper(!)
 if (`hostname` == "kiwi") then
 
-  if ($?iofile) then
-    echo USING WIRE NAMES FROM FILE $iofile":"
-    grep wire_name $iofile
-    echo ""
-
-    sed -n /source/,/wire_name/p $iofile > /tmp/tmp1
-    grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
-    set inwires = `cat /tmp/tmp2`
-    echo IN $inwires
-   
-    sed -n /sink/,/wire_name/p $iofile > /tmp/tmp1
-    grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
-    set outwires = `cat /tmp/tmp2`
-    echo OUT $outwires
-    echo ""
-
-    # Why the devil didn't this work!?
-    #     set inwires = `set echo; sed -n /source/,/wire_name/p $iofile\
-    #        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
-    # 
-    #     set outwires = `set echo; sed -n /sink/,/wire_name/p $iofile\
-    #        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
-
-  else
-    echo USING DEFAULT WIRE NAMES
-
-    # add4 2x2 (tile_config.dat)
-    # set inwires  = (wire_0_m1_BUS16_S0_T0 wire_m1_0_BUS16_S1_T0 wire_1_m1_BUS16_S0_T2 wire_2_0_BUS16_S3_T2)
-    # set outwires = (wire_0_1_BUS16_S0_T4)
-
-    # add4 4x4 (tile_config.dat)
-    # set inwires  = (wire_0_m1_BUS16_S0_T0 wire_m1_0_BUS16_S1_T0 wire_1_m1_BUS16_S0_T2 wire_4_0_BUS16_S3_T2)
-    # set outwires = (wire_0_1_BUS16_S0_T4)
-
-    # mul2/nikhil-config (PNRCONFIG.dat maybe)
-    set inwires  = (wire_0_0_BUS16_S1_T0)
-    set outwires = (wire_1_0_BUS16_S1_T0)
-
-    # ../../bitstream/tmpconfigPNR.dat
-    set inwires  = (wire_0_0_BUS16_S1_T0)
-    set outwires = (wire_1_2_BUS16_S3_T0)
-  endif
-
-echo "inwires  = $inwires"
-echo "outwires = $outwires"
 
   # Build CGRA (again), using correct wire names this time
   # SHOULD NOT HAPPEN HERE should instead hack top.v later below
@@ -169,10 +124,66 @@ if (! -e $vdir) then
   exit -1
 endif
 
-
-
+echo ""
 echo '------------------------------------------------------------------------'
+echo "BEGIN find input and output wires"
+echo ""
+
+  if ($?iofile) then
+    echo "  USING WIRE NAMES FROM FILE '${iofile}':"
+    grep wire_name $iofile
+    echo ""
+
+    # Why the devil didn't this work in travis!?
+    #     set inwires = `set echo; sed -n /source/,/wire_name/p $iofile\
+    #        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
+    # 
+    #     set outwires = `set echo; sed -n /sink/,/wire_name/p $iofile\
+    #        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
+
+    sed -n /source/,/wire_name/p $iofile > /tmp/tmp1
+    grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
+    set inwires = `cat /tmp/tmp2`
+    echo "  IN $inwires"
+   
+    sed -n /sink/,/wire_name/p $iofile > /tmp/tmp1
+    grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
+    set outwires = `cat /tmp/tmp2`
+    echo "  OUT $outwires"
+    echo ""
+
+  else
+    echo "  USING DEFAULT WIRE NAMES"
+
+    # add4 2x2 (tile_config.dat)
+    # set inwires  = (wire_0_m1_BUS16_S0_T0 wire_m1_0_BUS16_S1_T0 wire_1_m1_BUS16_S0_T2 wire_2_0_BUS16_S3_T2)
+    # set outwires = (wire_0_1_BUS16_S0_T4)
+
+    # add4 4x4 (tile_config.dat)
+    # set inwires  = (wire_0_m1_BUS16_S0_T0 wire_m1_0_BUS16_S1_T0 wire_1_m1_BUS16_S0_T2 wire_4_0_BUS16_S3_T2)
+    # set outwires = (wire_0_1_BUS16_S0_T4)
+
+    # mul2/nikhil-config (PNRCONFIG.dat maybe)
+    set inwires  = (wire_0_0_BUS16_S1_T0)
+    set outwires = (wire_1_0_BUS16_S1_T0)
+
+    # ../../bitstream/tmpconfigPNR.dat
+    set inwires  = (wire_0_0_BUS16_S1_T0)
+    set outwires = (wire_1_2_BUS16_S3_T0)
+  endif
+
+  echo "  inwires  = $inwires"
+  echo "  outwires = $outwires"
+  echo ""
+
+echo "END find input and output wires"
+
+echo ""
+echo '------------------------------------------------------------------------'
+echo ""
+
 echo "BEGIN vtop manipulation (won't be needed after we figure out io pads..."
+echo ""
 
 set vtop = $gdir/top/genesis_verif/top.v
 cp $vtop /tmp/top.v.orig
@@ -186,47 +197,47 @@ endif
 
 # // VERILATOR_PORT1,2,3...
 # Build ports for verilator input and output signals
-set i = 0; echo "Adding ports for verilator inputs and outputs..."
+set i = 0; echo "  Adding ports for verilator inputs and outputs..."
 foreach port ($inwires $outwires)
   sed "s|\(// VERILATOR_PORT$i\)|$port,               \1|" $vtop > /tmp/tmp
-  echo "  $port..."; mv /tmp/tmp $vtop; @ i = $i + 1
+  echo "    $port..."; mv /tmp/tmp $vtop; @ i = $i + 1
 end
 echo
 # diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
 
 # // VERILATOR_IN1,2,3...
 # Declare verilator input signals...
-set i = 0; echo "Adding verilator input declarations..."
+set i = 0; echo "  Adding verilator input declarations..."
 foreach wirename ($inwires)
   sed "s|\(// VERILATOR_IN$i\)|input  [15:0] $wirename; \1|" $vtop > /tmp/tmp
-  echo "  $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
+  echo "    $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
 end
 echo
 # diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
 
 # // VERILATOR_OUT1,2,3...
 # Declare verilator output signals...
-set i = 0; echo "Adding verilator output declarations..."
+set i = 0; echo "  Adding verilator output declarations..."
 foreach wirename ($outwires)
   sed "s|\(// VERILATOR_OUT$i\)|output [15:0]  $wirename; \1|" $vtop > /tmp/tmp
-  echo "  $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
+  echo "    $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
 end
 echo
 # diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
 
 # Disconnect "input" wires from internal net (and route to ports instead)
-echo "Disconnecting input wires from internal net..."
+echo "  Disconnecting input wires from internal net..."
 foreach inwire ($inwires)
   (egrep "out.*$inwire" $vtop > /dev/null)\
     || echo "    Wire not found in internal net of top.v"
   sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > /tmp/tmp
   # diff $vtop /tmp/tmp | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
-  echo "  $inwire..."; mv /tmp/tmp $vtop
+  echo "    $inwire..."; mv /tmp/tmp $vtop
 end
 echo
 
 # Show what we did
-echo Changes to top.v:; echo
+echo Changes to top.v:  ; echo
   diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /' > /tmp/tmp
 
   cat /tmp/tmp | egrep '^ *<' | egrep 'PORT'; echo "    ---"
