@@ -41,8 +41,6 @@ foreach f (obj_dir counter.cvd tile_config.dat)
   if (-e $f) rm -rf $f
 end
 
-#BOOKMARK clean to here
-
 # Defaults
 set nclocks = ''
 
@@ -90,31 +88,25 @@ if (! -e "$testbench") then
   exit -1
 endif
 
-# LOCAL SETUP (not needed for travis)
-# /home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
-set t = `pwd`
-if (! `expr $t : /home/travis`) then
+# kiwi needs special setup for verilator
+# FIXME/TODO set up kiwi so that it doesn't need this!
 
-  # FIXME/TODO set up kiwi so that it doesn't need this!
+if (`hostname` == "kiwi") then
   echo
   echo Set verilator environment for kiwi
-  if (`hostname` == "kiwi") then
-
-    setenv VERILATOR_ROOT /var/local/verilator-3.900
-    set path = (/var/local/verilator-3.900/bin $path)
-  endif
-
+  setenv VERILATOR_ROOT /var/local/verilator-3.900
+  set path = (/var/local/verilator-3.900/bin $path)
 endif
-# END LOCAL SETUP (not needed for travis)
+
 
 # By default, we assume generate has already been done.
 # Otherwise, user must set "-gen" to make it happen here.
-if (! $?GENERATE) then
 
+echo
+if (! $?GENERATE) then
   echo "No generate!"
 
 else
-
   # Build CGRA 
   echo "Building CGRA because you asked for it with '-gen'..."
   pushd ../..
@@ -123,19 +115,27 @@ else
 
 endif
 
+# If config files has an xml extension, use Ankita's perl script
+# to turn it into a .dat/.txt configuration bitstream
+
+echo ""
 if ("$config:e" == "xml") then
   echo "Generating config bitstream 'tmpconfig.dat' from xml file '$config'..."
   perl ../../bitstream/example3/gen_bitstream.pl $config tmpconfig
   set config = tmpconfig.dat
+
 else
   echo "Use existing config bitstream '$config'..."
+
 endif
-echo ""
 
 echo ""
 echo '------------------------------------------------------------------------'
 echo "BEGIN find input and output wires"
 echo ""
+
+  # If io file specified, use it to find input and output wires.
+  # Otherwise, use default wire names and hope for the best.
 
   if ($?iofile) then
     echo "  USING WIRE NAMES FROM FILE '${iofile}':"
@@ -144,9 +144,6 @@ echo ""
 
     # Why the devil didn't this work in travis!?
     #     set inwires = `set echo; sed -n /source/,/wire_name/p $iofile\
-    #        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
-    # 
-    #     set outwires = `set echo; sed -n /sink/,/wire_name/p $iofile\
     #        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
 
     sed -n /source/,/wire_name/p $iofile > /tmp/tmp1
@@ -190,252 +187,178 @@ echo ""
 echo '------------------------------------------------------------------------'
 echo ""
 
-echo "BEGIN vtop manipulation (won't be needed after we figure out io pads..."
-echo ""
+# I doubt this works anymore...
+# # Substitute in a complete new custom top.v
+# # (We don't really do this these days...)
+# # The old switcharoo
+# if ($testbench == "tbsr1.cpp") then
+#   cp ./top_sr.v $gbuild/genesis_verif/top.v
+# endif
 
-set gdir = ../../hardware/generator_z
-set vtop = $gdir/top/genesis_verif/top.v
-cp $vtop /tmp/top.v.orig
-
-# Substitute in a complete new custom top.v
-# (We don't really do this these days...)
-# The old switcharoo
-if ($testbench == "tbsr1.cpp") then
-  cp ./top_sr.v $vtop
-endif
-
-# // VERILATOR_PORT1,2,3...
-# Build ports for verilator input and output signals
-set i = 0; echo "  Adding ports for verilator inputs and outputs..."
-foreach port ($inwires $outwires)
-  sed "s|\(// VERILATOR_PORT$i\)|$port,               \1|" $vtop > /tmp/tmp
-  echo "    $port..."; mv /tmp/tmp $vtop; @ i = $i + 1
-end
-echo
-# diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
-
-# // VERILATOR_IN1,2,3...
-# Declare verilator input signals...
-set i = 0; echo "  Adding verilator input declarations..."
-foreach wirename ($inwires)
-  sed "s|\(// VERILATOR_IN$i\)|input  [15:0] $wirename; \1|" $vtop > /tmp/tmp
-  echo "    $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
-end
-echo
-# diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
-
-# // VERILATOR_OUT1,2,3...
-# Declare verilator output signals...
-set i = 0; echo "  Adding verilator output declarations..."
-foreach wirename ($outwires)
-  sed "s|\(// VERILATOR_OUT$i\)|output [15:0]  $wirename; \1|" $vtop > /tmp/tmp
-  echo "    $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
-end
-echo
-# diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
-
-# Disconnect "input" wires from internal net (and route to ports instead)
-echo "  Disconnecting input wires from internal net..."
-foreach inwire ($inwires)
-  (egrep "out.*$inwire" $vtop > /dev/null)\
-    || echo "    Wire not found in internal net of top.v"
-  sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > /tmp/tmp
-  # diff $vtop /tmp/tmp | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
-  echo "    $inwire..."; mv /tmp/tmp $vtop
-end
-echo
-
-# Show what we did
-echo Changes to top.v:  ; echo
-  diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /' > /tmp/tmp
-
-  cat /tmp/tmp | egrep '^ *<' | egrep 'PORT'; echo "    ---"
-  cat /tmp/tmp | egrep '^ *>' | egrep 'PORT'; echo; echo
-
-  cat /tmp/tmp | egrep '^ *<' | egrep 'IN|OUT'; echo "    ---"
-  cat /tmp/tmp | egrep '^ *>' | egrep 'IN|OUT'; echo; echo
-
-  cat /tmp/tmp | egrep '^ *<' | egrep -v 'VERILATOR'; echo "    ---"
-  cat /tmp/tmp | egrep '^ *>' | egrep -v 'VERILATOR'; echo; echo
-
-
-
-# Suggestion for how to see all changes in context...
-echo To see all changes in context, try:
-echo "  diff --side-by-side -W 100 /tmp/top.v.orig $vtop | less"
-echo
-
-
-echo END vtop manipulation
-echo '------------------------------------------------------------------------'
-
-set vdir = $gdir/top/genesis_verif
+set vdir = ../../hardware/generator_z/top/genesis_verif
 if (! -e $vdir) then
   echo "ERROR: Could not find vfile directory"
   echo "       $vdir"
-  echo "Maybe do something like:"
+  echo "Maybe build it by doing something like:"
   echo "    (cd $vdir:h; ./run.csh; popd) |& tee tmp.log"
   exit -1
 endif
 
-pushd $vdir >& /dev/null
-  # set vfiles = (*.v *.sv)
-  set vfiles = (*.v)
-popd >& /dev/null
+echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
+echo ""
 
-# So many warnings it wants to DIE!
-set myswitches = '-Wno-fatal'
+  echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
+  echo
+  ./run-wirehack.csh \
+    -inwires "$inwires" \
+    -outwires "$outwires" \
+    -vtop "$vdir/top.v"
 
-set top = top
+echo END top.v manipulation
 
-echo
-echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
-  | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
-echo
+echo ''
+echo '------------------------------------------------------------------------'
+echo ''
+echo "Building the verilator simulator executable..."
 
+  # Build the necessary switches
 
-verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
-  >& /tmp/verilator.out
+  # Gather the verilog files for verilator command line
+  pushd $vdir >& /dev/null
+    # set vfiles = (*.v *.sv)
+    set vfiles = (*.v)
+  popd >& /dev/null
 
-set verilator_exit_status = $status
+  # So many warnings it wants to DIE!
+  set myswitches = '-Wno-fatal'
+  set top        = 'top'
 
-echo 'To get the flavor of all the warnings, just showing first 40 lines of output...'
-head -n 40 /tmp/verilator.out
+  # Run verilator to build the simulator.
 
-if ($verilator_exit_status != 0) exit -1
+  echo
+  echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+    | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
+  echo
 
+  verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+    >& /tmp/verilator.out
 
-# cat << eof
-# 
-# ****************************************************
-# NOTE: Currently (3/13) runscript only works to here.
-# To get the rest to work, someone is gonna have to
-# write a working test bench "tb.cpp" :)
-# ****************************************************
-# THEN: uncomment the got/bypass in run-travis.csh below.
-# ****************************************************
-# 
-# eof
+  set verilator_exit_status = $status
 
-# echo NOT DOING: make -j -C obj_dir/ -f V${top}.mk V${top}
-# echo NOT DOING: obj_dir/V${top}
-# echo
-# echo "Good-bye!"
-# goto END
+  echo 'To get the flavor of all the warnings, just showing first 40 lines of output...'
+  head -n 40 /tmp/verilator.out
 
+  if ($verilator_exit_status != 0) exit -1
 
+echo ''
+echo '------------------------------------------------------------------------'
+echo ''
+echo "Build the simulator..."
 
+  # build C++ project
 
-# build C++ project
-# make -j -C obj_dir/ -f Vcounter.mk Vcounter
-echo
-echo "# Build testbench"
-echo make -j -C obj_dir/ -f V${top}.mk V${top}
-# make -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
-make \
-  VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
-  -j -C obj_dir/ -f V${top}.mk V${top} || exit -1
+  echo
+  echo "# Build testbench"
 
+  echo
+  echo "make \"
+  echo "  VM_USER_CFLAGS='-DINWIRE=top->$inwires -DOUTWIRE=top->$outwires' \"
+  echo "  -j -C obj_dir/ -f V$top.mk V$top"
+  echo
+  echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
+  echo
+  make \
+    VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
+    -j -C obj_dir/ -f V$top.mk V$top || exit -1
 
-# # set input = /tmp/input.raw
-# set input = /tmp/gray_small.raw
-# # stream io/gray_small.png $input
-# # convert io/gray_small.png /tmp/input.raw
-# io/myconvert.csh io/gray_small.png /tmp/gray_small.raw
+echo ''
+echo '------------------------------------------------------------------------'
+echo ''
+echo "Run the simulator..."
+echo ''
+echo '  First prepare input and output files...'
 
-# Prepare an input file
+  # Prepare an input file
+  #   if no input file requested => use random numbers generated internally
+  #   if input file has extension ".png" => convert to raw
+  #   if input file has extension ".raw" => use input file as is
 
-if (! $?input) then
-  echo No input\; testbench will use random numbers for its check (i think)
-  set in = ''
-endif
+  if (! $?input) then
+    echo No input\; testbench will use random numbers for its check (i think)
+    set in = ''
 
-if ($?input) then
-  if ("$input:e" == "png") then
+  else if ("$input:e" == "png") then
     # Convert to raw format
+    echo "  Converting input file '$input' to '.raw'..."
+    echo "  io/myconvert.csh $input /tmp/input.raw"
     echo
+    echo -n "  "
     io/myconvert.csh $input /tmp/input.raw
-    echo
+    set in = "-input /tmp/input.raw"
+
   else if ("$input:e" == "raw") then
+    echo "Using raw input from '$input'..."
+    echo cp $input /tmp/input.raw
     cp $input /tmp/input.raw
+    set in = "-input /tmp/input.raw"
+
   else
     echo "ERROR Input file '$input' has invalid extension"
     exit -1
+
   endif
 
-  set in = "-input /tmp/input.raw"
-
   # echo "First few lines of input file for comparison..."
-  # # set cmd = "od -t x1 /tmp/input.raw"
-  # # echo $cmd
-  # # $cmd | head
-  # set echo
-  #   od -t x1 /tmp/input.raw | head
-  # unset echo >& /dev/null
+  # od -t x1 /tmp/input.raw | head
 
-endif
-
-set out = ''
-if ($?output) then
-  set out = "-output $output"
-endif
-
-echo
-echo "# Run executable simulation"
-# echo "obj_dir/Vcounter"
-# obj_dir/Vcounter
-# echo "obj_dir/V${top}"
-# obj_dir/V${top}
-# obj_dir/V${top} -config tile_config.dat -input ifile || exit -1
-# obj_dir/V${top} -config tile_config.dat -input $input || exit -1
-# obj_dir/V${top} -config tile_config.dat $in || exit -1
-
-# set cmd = "obj_dir/V${top} -config tile_config.dat $in"
-
-# echo $cmd
-# $cmd || exit -1
-
-#    -output /tmp/output.raw \
-
-#    -config tile_config.dat \
-#    -config ~ankitan/CGRA/CONFIG_FIN.dat
-#    -config newconfig.dat\
-
-set echo
-  obj_dir/V${top} \
-    -config $config \
-    $in \
-    $out \
-    $nclocks \
-    || exit -1
-unset echo >& /dev/null
-
-if ($?input) then
-  echo
-  set cmd = "od -t x1 /tmp/input.raw"
-  set cmd = "od -t u1 /tmp/input.raw"
-  echo $cmd; $cmd | head
+  # If no output requested, simulator will not create an output file.
+  if ($?output) then
+    set out = "-output $output"
+  else 
+    set out = ''
+  endif
 
   echo
-  set cmd = "od -t u1 $output"
-  echo $cmd; $cmd | head
-endif
+  echo "# Run executable simulation"
+
+  set echo
+    obj_dir/V$top \
+      -config $config \
+      $in \
+      $out \
+      $nclocks \
+      || exit -1
+  unset echo >& /dev/null
+
+  echo
+  echo "# Show output vs. input; output should be 2x input for most common testbench"
+
+  if ($?input) then
+    echo
+    set cmd = "od -t x1 /tmp/input.raw"
+    set cmd = "od -t u1 /tmp/input.raw"
+    echo $cmd; $cmd | head
+
+    echo
+    set cmd = "od -t u1 $output"
+    echo $cmd; $cmd | head
+  endif
 
 
-
-
-if (`hostname` == "kiwi") then
-cat << eof
+# Tell how to clean up (not necessary for travis VM of course)
+# if (`hostname` == "kiwi") then
+set pwd = `pwd`
+if (! `expr $pwd : /home/travis`) then
+  set gbuild = ../../hardware/generator_z/top
+  cat << eof
 
 ************************************************************************
 NOTE: If you want to clean up after yourself you'll want to do this:
 
   ./run.csh -clean
-  pushd $gdir/top; ./genesis_clean.cmd; popd
+  pushd $gbuild; ./genesis_clean.cmd; popd
 
 ************************************************************************
 
 eof
 endif
-
-# END:
