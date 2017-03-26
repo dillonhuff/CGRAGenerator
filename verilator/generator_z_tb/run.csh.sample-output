@@ -1,0 +1,327 @@
+exec ./run.csh top_tb.cpp -io ../../bitstream/example3/PNRguys_io.xml -input io/gray_small.png -nclocks 1M -output /tmp/output.raw
+./run.csh top_tb.cpp -io ../../bitstream/example3/PNRguys_io.xml -input io/gray_small.png -nclocks 1M -output /tmp/output.raw
+
+Set verilator environment for kiwi
+Generating local bitstream PRCONFIG from files in example3
+/nobackup/steveri/github/CGRAGenerator /nobackup/steveri/github/CGRAGenerator/verilator/generator_z_tb 
+
+
+-----------------------------------------------
+--- Genesis Is Starting Work On Your Design ---
+-----------------------------------------------
+
+-----------------------------------------------
+|            Genesis Release Info             |
+|  $Change: 11879 $ --- $Date: 2013/06/11 $   |
+-----------------------------------------------
+
+---------------------------------------------------------------------------
+    !! THIS VERSION OF GENESIS2 IS NOT FOR ANY COMMERCIAL USE !!
+     FOR COMMERCIAL LICENSE CONTACT SHACHAM@ALUMNI.STANFORD.EDU
+---------------------------------------------------------------------------
+
+Genesis2::Manager->execute: Starting Source File Parsing Phase
+Genesis2::Manager->parse_files: Now parsing file ../sb/sb.vp
+Genesis2::Manager->parse_files: Now parsing file ../cb/cb.vp
+Genesis2::Manager->parse_files: Now parsing file ../pe_tile/pe_tile.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory_tile/mem_tile_sb_cb.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory/mem_tile.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory/mem.vp
+Genesis2::Manager->parse_files: Now parsing file top.vp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_pe.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_mult_add.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_full_add.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_lut.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_opt_reg.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_tile_new/pe_tile_new.vp
+Genesis2::Manager->execute: Done With Source File Parsing Phase
+
+Genesis2::Manager->execute: Starting Verilog Code Generation Phase
+Using a hash as a reference is deprecated at /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/top/top.vp line 308.
+Genesis2::ConfigHandler->SetPrmOverrides: Now processing command line parameter overrides
+Genesis2::Manager->gen_verilog: Starting code generation from module top
+Using a hash as a reference is deprecated at /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/pe_tile_new/pe_tile_new.vp line 535.
+Using a hash as a reference is deprecated at /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/pe_tile_new/pe_tile_new.vp line 552.
+
+WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING
+WARNING While processing Genesis2 template 'pe_tile_new' at line 271 of file /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/pe_tile_new/pe_tile_new.vp
+WARNING while at instance top.t0_0_0.test_pe
+WARNING Message:
+	Parameter 'DataWidth' was passed to top.t0_0_0.test_pe but it was never actually declared/used in test_pe
+Continuing Genesis2 despite warning... 
+
+
+WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING    WARNING
+WARNING While processing Genesis2 template 'pe_tile_new' at line 271 of file /nobackup/steveri/github/CGRAGenerator/hardware/generator_z/pe_tile_new/pe_tile_new.vp
+WARNING while at instance top.t0_0_1.test_pe
+WARNING Message:
+	Parameter 'DataWidth' was passed to top.t0_0_1.test_pe but it was never actually declared/used in test_pe
+Continuing Genesis2 despite warning... 
+
+Genesis2::Manager->execute: Done With Verilog Code Generation Phase
+
+Genesis2::Manager->execute: Starting Auxiliary File Generation Phase
+Genesis2::Manager->execute: Done With Auxiliary File Generation Phase
+
+-----------------------------------------------
+--- Genesis Finished Generating Your Design ---
+-----------------------------------------------
+
+
+-------------------------------------------------------------------
+Here is what I built (it's supposed to look like an array of tiles).
+
+    --------------------
+    t0#0_0#0    t0#0_1#0    t0#0_2#0    t0#0_3#0    
+    t0#1_0#0    t0#1_1#0    t0#1_2#0    t0#1_3#0    
+    t0#2_0#0    t0#2_1#0    t0#2_2#0    t0#2_3#0    
+    t0#3_0#0    t0#3_1#0    t0#3_2#0    t0#3_3#0    
+    --------------------
+
+Each tile is designated as <tile_type>#<tile_loc(x,y)>#<tile_section>
+E.g. current default in top.vp calls stamp_pattern(top) where top is defined as
+
+   $tile_pattern {p1} = "t0_1_1";
+   $tile_pattern {top} = "p1_2_2";
+
+ resulting in a 2x2 grid of "t0" tiles, defined as follows
+
+    $tile_config->{ t0 } = {
+         type => pe_tile_new,
+         sides => $sides,
+         is_bidi => 0,
+         bus_config => $bus_config,
+         cb_connections => $cb_connections,
+         has_constant => 1,
+         tile_height => 1,
+         tile_width => 1,
+         reg_inputs => 0,
+         reg_out => 0, 
+         use_add => 1,
+         bool_inps => 1,
+         use_shift => 1,
+         mult_mode => 1,
+         sb_fs => $sb_fs,
+         all_segments_for_all_tiles => $all_segments_for_all_tiles
+   };
+-------------------------------------------------------------------
+
+/nobackup/steveri/github/CGRAGenerator/verilator/generator_z_tb 
+
+------------------------------------------------------------------------
+BEGIN find input and output wires
+
+  USING WIRE NAMES FROM FILE '../../bitstream/example3/PNRguys_io.xml':
+    <wire_name>wire_0_0_BUS16_S1_T0</wire_name>
+    <wire_name>wire_1_2_BUS16_S3_T0</wire_name>
+
+  IN wire_0_0_BUS16_S1_T0
+  OUT wire_1_2_BUS16_S3_T0
+
+  inwires  = wire_0_0_BUS16_S1_T0
+  outwires = wire_1_2_BUS16_S3_T0
+
+END find input and output wires
+
+------------------------------------------------------------------------
+
+BEGIN vtop manipulation (won't be needed after we figure out io pads...
+
+  Adding ports for verilator inputs and outputs...
+    wire_0_0_BUS16_S1_T0...
+    wire_1_2_BUS16_S3_T0...
+
+  Adding verilator input declarations...
+    wire_0_0_BUS16_S1_T0...
+
+  Adding verilator output declarations...
+    wire_1_2_BUS16_S3_T0...
+
+  Disconnecting input wires from internal net...
+    wire_0_0_BUS16_S1_T0...
+
+Changes to top.v:
+
+    < // VERILATOR_PORT0
+    < // VERILATOR_PORT1
+    ---
+    > wire_0_0_BUS16_S1_T0, // VERILATOR_PORT0
+    > wire_1_2_BUS16_S3_T0, // VERILATOR_PORT1
+
+
+    < // VERILATOR_IN0
+    < // VERILATOR_OUT0
+    ---
+    > input [15:0] wire_0_0_BUS16_S1_T0; // VERILATOR_IN0
+    > output [15:0] wire_1_2_BUS16_S3_T0; // VERILATOR_OUT0
+
+
+    < .out_BUS16_S1_T0(wire_0_0_BUS16_S1_T0),
+    ---
+    > .out_BUS16_S1_T0(),
+
+
+To see all changes in context, try:
+  diff --side-by-side -W 100 /tmp/top.v.orig ../../hardware/generator_z/top/genesis_verif/top.v | less
+
+END vtop manipulation
+------------------------------------------------------------------------
+Copy latest config file from PNRCONFIG.dat...
+
+verilator -Wno-fatal -Wall --cc --exe top_tb.cpp -y   \
+  ../../hardware/generator_z/top/genesis_verif cb_unq1.v cb_unq2.v   \
+  pe_tile_new_unq1.v pe_tile_new_unq2.v sb_unq1.v sb_unq2.v sb_unq3.v sb_unq4.v   \
+  top.v --top-module top  \
+
+To get the flavor of all the warnings, just showing first 40 lines of output...
+%Warning-PINCONNECTEMPTY: ../../hardware/generator_z/top/genesis_verif/top.v:1129: Cell pin connected by name with empty reference: out_BUS16_S1_T0
+%Warning-PINCONNECTEMPTY: Use "/* verilator lint_off PINCONNECTEMPTY */" and lint_on around source to disable this message.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h0' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h1' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h4' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h5' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h6' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h7' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h8' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'hf' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h10' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h11' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'hb' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'hc' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'hd' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h12' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h13' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h14' generates 5 bits.
+%Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:214: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h15' generates 5 bits.
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq1.v:272: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: *** See the manual before disabling this,
+%Warning-COMBDLY: else you may end up with different sim results.
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq1.v:305: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq1.v:318: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq1.v:332: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq1.v:345: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq1.v:358: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq2.v:272: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq2.v:305: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq2.v:318: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq2.v:332: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq2.v:345: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-COMBDLY: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq2.v:358: Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+%Warning-UNOPTFLAT: ../../hardware/generator_z/top/genesis_verif/sb_unq3.v:852: Signal unoptimizable: Feedback to clock or circular logic: top.t0_3_3.sb_wide.out_3_4_i
+%Warning-UNOPTFLAT:      Example path: ../../hardware/generator_z/top/genesis_verif/sb_unq3.v:852:  top.t0_3_3.sb_wide.out_3_4_i
+%Warning-UNOPTFLAT:      Example path: ../../hardware/generator_z/top/genesis_verif/cb_unq1.v:129:  ALWAYS
+%Warning-UNOPTFLAT:      Example path: ../../hardware/generator_z/top/genesis_verif/pe_tile_new_unq2.v:369:  top.t0_2_3.pe_inp_a
+%Warning-UNOPTFLAT:      Example path: ../../hardware/generator_z/top/genesis_verif/test_opt_reg.sv:65:  ASSIGNW
+%Warning-UNOPTFLAT:      Example path: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:75:  top.t0_2_3.test_pe.op_a
+%Warning-UNOPTFLAT:      Example path: ../../hardware/generator_z/top/genesis_verif/test_mult_add.sv:52:  ASSIGNW
+
+# Build testbench
+make -j -C obj_dir/ -f Vtop.mk Vtop
+make: Entering directory `/nobackup/steveri/github/CGRAGenerator/verilator/generator_z_tb/obj_dir'
+g++  -I.  -MMD -I/var/local/verilator-3.900/include -I/var/local/verilator-3.900/include/vltstd -DVL_PRINTF=printf -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -Wno-char-subscripts -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DINWIRE='top->wire_0_0_BUS16_S1_T0' -DOUTWIRE='top->wire_1_2_BUS16_S3_T0'  -c -o top_tb.o ../top_tb.cpp
+g++  -I.  -MMD -I/var/local/verilator-3.900/include -I/var/local/verilator-3.900/include/vltstd -DVL_PRINTF=printf -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -Wno-char-subscripts -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DINWIRE='top->wire_0_0_BUS16_S1_T0' -DOUTWIRE='top->wire_1_2_BUS16_S3_T0'  -c -o verilated.o /var/local/verilator-3.900/include/verilated.cpp
+/usr/bin/perl /var/local/verilator-3.900/bin/verilator_includer -DVL_INCLUDE_OPT=include Vtop.cpp Vtop_pe_tile_new_unq1.cpp Vtop_pe_tile_new_unq2.cpp > Vtop__ALLcls.cpp
+/usr/bin/perl /var/local/verilator-3.900/bin/verilator_includer -DVL_INCLUDE_OPT=include Vtop__Syms.cpp > Vtop__ALLsup.cpp
+g++  -I.  -MMD -I/var/local/verilator-3.900/include -I/var/local/verilator-3.900/include/vltstd -DVL_PRINTF=printf -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -Wno-char-subscripts -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DINWIRE='top->wire_0_0_BUS16_S1_T0' -DOUTWIRE='top->wire_1_2_BUS16_S3_T0'  -c -o Vtop__ALLsup.o Vtop__ALLsup.cpp
+g++  -I.  -MMD -I/var/local/verilator-3.900/include -I/var/local/verilator-3.900/include/vltstd -DVL_PRINTF=printf -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -Wno-char-subscripts -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable     -DINWIRE='top->wire_0_0_BUS16_S1_T0' -DOUTWIRE='top->wire_1_2_BUS16_S3_T0'  -c -o Vtop__ALLcls.o Vtop__ALLcls.cpp
+      Archiving Vtop__ALL.a ...
+ar r Vtop__ALL.a Vtop__ALLcls.o Vtop__ALLsup.o
+ar: creating Vtop__ALL.a
+ranlib Vtop__ALL.a
+g++    top_tb.o verilated.o Vtop__ALL.a    -o Vtop -lm -lstdc++  2>&1 | c++filt
+make: Leaving directory `/nobackup/steveri/github/CGRAGenerator/verilator/generator_z_tb/obj_dir'
+
+Converted io/gray_small.png to /tmp/input.raw...to verify result, do:
+  gwenview /tmp/verify.pgm
+
+
+# Run executable simulation
+obj_dir/Vtop -config PNRCONFIG.dat -input /tmp/input.raw -output /tmp/output.raw -nclocks 1000000
+
+
+Hi there!  I am the simulatory thingy.
+  - Will run for 1000000 cycles or until eof(input)
+  - Found config filename 'PNRCONFIG.dat'
+  - Found input filename '/tmp/input.raw'
+  - Found output filename '/tmp/output.raw'
+
+00000: reset=1
+00001: reset=1
+00002: reset=1
+00003: reset=1
+00004: reset=0
+
+00005: scanned config data 00050000 00000C00
+00006: scanned config data 01050000 00002100
+00007: scanned config data 00050001 00000002
+00008: scanned config data 01050001 00800100
+00009: scanned config data 00020004 00000000
+00010: scanned config data 00030004 00000005
+00011: scanned config data FF000004 0000F00B
+00012: scanned config data 00050004 00000C00
+00013: scanned config data FF000005 00000000
+00014: scanned config data F0000005 00000002
+00015: scanned config data F1000005 00000000
+00016: scanned config data 00050005 80300002
+00017: scanned config data 00020008 00000000
+00018: scanned config data 00050009 80000000
+
+00019: Two times 11 = 22  *PASS*
+00020: Two times 11 = 22  *PASS*
+00021: Two times 13 = 26  *PASS*
+00022: Two times 14 = 28  *PASS*
+00023: Two times 16 = 32  *PASS*
+00024: Two times 17 = 34  *PASS*
+00025: Two times 19 = 38  *PASS*
+00026: Two times 22 = 44  *PASS*
+00027: Two times 23 = 46  *PASS*
+00028: Two times 27 = 54  *PASS*
+00029: Two times 30 = 60  *PASS*
+00030: Two times 30 = 60  *PASS*
+00031: Two times 31 = 62  *PASS*
+00032: Two times 32 = 64  *PASS*
+00033: Two times 36 = 72  *PASS*
+00034: Two times 37 = 74  *PASS*
+00035: Two times 38 = 76  *PASS*
+00036: Two times 41 = 82  *PASS*
+00037: Two times 41 = 82  *PASS*
+00038: Two times 43 = 86  *PASS*
+00039: Two times 42 = 84  *PASS*
+00040: ...
+
+INFO Simulation ran for 109075 cycles
+
+unset echo
+
+od -t u1 /tmp/input.raw
+0000000  11  11  13  14  16  17  19  22  23  27  30  30  31  32  36  37
+0000020  38  41  41  43  42  43  41  43  45  46  45  45  46  46  46  45
+0000040  48  47  49  45  45  45  44  41  41  41  38  34  31  29  26  25
+0000060  25  24  22  18  17  15  14  12  12  12  10   9   7   6   5   5
+0000100   4   4   3   3   3   3   2   2   2   2   2   2   2   2   1   2
+0000120   1   1   1   1   2   2   2   2   3   2   3   5   4   4   6   7
+0000140  10  10  10  13  13  15  15  15  15  16  16  16  16  16  17  15
+0000160  14  13  13  14  13  13  11  13  10  12  11  11  11  11  11  10
+0000200  11  11  10  11   9   9   8   8   7   8   6   6   6   5   5   5
+0000220   6   6   6   5   5   6   5   5   6   6   6   6   5   4   4   5
+
+od -t u1 /tmp/output.raw
+0000000  22  22  26  28  32  34  38  44  46  54  60  60  62  64  72  74
+0000020  76  82  82  86  84  86  82  86  90  92  90  90  92  92  92  90
+0000040  96  94  98  90  90  90  88  82  82  82  76  68  62  58  52  50
+0000060  50  48  44  36  34  30  28  24  24  24  20  18  14  12  10  10
+0000100   8   8   6   6   6   6   4   4   4   4   4   4   4   4   2   4
+0000120   2   2   2   2   4   4   4   4   6   4   6  10   8   8  12  14
+0000140  20  20  20  26  26  30  30  30  30  32  32  32  32  32  34  30
+0000160  28  26  26  28  26  26  22  26  20  24  22  22  22  22  22  20
+0000200  22  22  20  22  18  18  16  16  14  16  12  12  12  10  10  10
+0000220  12  12  12  10  10  12  10  10  12  12  12  12  10   8   8  10
+
+************************************************************************
+NOTE: If you want to clean up after yourself you'll want to do this:
+
+  ./run.csh -clean
+  pushd ../../hardware/generator_z/top; ./genesis_clean.cmd; popd
+
+************************************************************************
+

@@ -4,7 +4,7 @@ if ($#argv == 0) then
   # Use these defaults
   set echo
   exec $0 top_tb.cpp \
-    -config   ../../bitstream/tmpconfigPNR.dat        \
+    # -config   ../../bitstream/tmpconfigPNR.dat        \
     -io       ../../bitstream/example3/PNRguys_io.xml \
     -input    io/gray_small.png                       \
     -nclocks  1M                                      \
@@ -12,8 +12,6 @@ if ($#argv == 0) then
   || exit -1
   exit 0
 endif  
-
-
 
 echo
 
@@ -72,48 +70,56 @@ if (! -e "$testbench") then
   exit -1
 endif
 
-# SETUP (not needed for travis)
+# LOCAL SETUP (not needed for travis)
 # /home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
-if (`hostname` == "kiwi") then
-  setenv VERILATOR_ROOT /var/local/verilator-3.900
-  set path = (/var/local/verilator-3.900/bin $path)
+set t = `pwd`
+if (! `expr $t : /home/travis`) then
+
+  # FIXME/TODO set up kiwi so that it doesn't need this!
+  echo Set verilator environment for kiwi
+  if (`hostname` == "kiwi") then
+
+    setenv VERILATOR_ROOT /var/local/verilator-3.900
+    set path = (/var/local/verilator-3.900/bin $path)
+  endif
+
+
+  echo Generating local bitstream PRCONFIG from files in example3
+  if ($?config) then
+    if ("$config" != "PRCONFIG.dat") then
+      echo ERROR Command line specified the wrong config file.
+      echo "ERROR See $0 for details (sorry!)"
+      exit -1
+    endif
+  endif
+  if (-e PRCONFIG.dat) rm PRCONFIG.dat
+  set bsdir = ../../bitstream
+  perl $bsdir/example3/gen_bitstream.pl $bsdir/example3/PNRguys_mapped.xml PNRCONFIG
+  set config = PNRCONFIG.dat
+
+  # Not strictly necessary at present (should be on by default)
+  set GENERATE
+
 endif
+# END LOCAL SETUP (not needed for travis)
 
 
 if (! $?GENERATE) then
   echo "No generate!"
-  goto NOGEN
-endif
+else
 
-# GENERATE (not needed for travis)
-# No need for GENERATE phase on travis because travis script does it already.
-# OOPS no have to run generate twice or don't get in/out wires from mapper(!)
-if (`hostname` == "kiwi") then
+  # GENERATE (not needed for travis)
+  # No need for GENERATE phase on travis because travis script does it already.
+  # OOPS no have to run generate twice or don't get in/out wires from mapper(!)
+  # if (`hostname` == "kiwi") then
 
-
-  # Build CGRA (again), using correct wire names this time
-  # SHOULD NOT HAPPEN HERE should instead hack top.v later below
+  # Build CGRA 
 
   pushd ../..
-    # setenv SR_VERILATOR_INWIRES "$inwires"
-    # setenv SR_VERILATOR_OUTWIRES "$outwires"
-    # echo "inwires  = $SR_VERILATOR_INWIRES"
-    # echo "outwires = $SR_VERILATOR_OUTWIRES"
     ./travis-test.csh
   popd
 
-#   pushd $gdir/top
-#     # setenv SR_VERILATOR_INWIRES "top->wire_0_0_BUS16_S1_T0 top->wire_0_0_BUS16_S1_T77"
-#     # setenv SR_VERILATOR_OUTWIRES "top->wire_0_0_BUS16_S1_T99"
-#     setenv SR_VERILATOR_INWIRES "$inwires"
-#     setenv SR_VERILATOR_OUTWIRES "$outwires"
-#     if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
-#     # pwd; ls
-#     ./run.csh
-#   popd
 endif
-
-NOGEN:
 
 set vdir = $gdir/top/genesis_verif
 if (! -e $vdir) then
@@ -260,12 +266,6 @@ echo
 echo END vtop manipulation
 echo '------------------------------------------------------------------------'
 
-
-if (`hostname` == "kiwi") then
-  set bsdir = ../../bitstream
-  perl $bsdir/example3/gen_bitstream.pl $bsdir/example3/PNRguys_mapped.xml PNRCONFIG
-  set config = PNRCONFIG.dat
-endif
 
 if ($testbench == "top_tb.cpp") then
   if (! $?config) set config = $gdir/top_tb/tile_config.dat
