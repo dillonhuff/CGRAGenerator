@@ -1,58 +1,38 @@
 #!/bin/csh
 
-# TODO
-#  -nogen should be default; must set -gen switch if want gen locally
+#  NOTE default is NOGEN; must set -gen if want gen locally
 
 # Travis flow (CGRAFlow/.travis.yml)
 #  travis script calls "travis-test" to do the initial generate
 #  travis script calls PNR to build map, io info from generated cgra_info.txt
-#  travis script calls run.csh
-#   - ./run.csh top_tb.cpp
-#         -config $cgbuild/config.dat
-#         -io     $cgbuild/io.xml
-#         -input  ${TRAVIS_BUILD_DIR}/build/input.png
-#         -output ${TRAVIS_BUILD_DIR}/build/CGRA_out.raw
-#         -nclocks 5M
+#  builds the full parrot
 
 # Travis flow (CGRAGenerator/.travis.yml)
 #  travis script calls "travis-test" to do the initial generate
 #  travis script copies pre-built io, map from example3 to $cgbuild
 #  travis script calls run.csh
-#   - ./run.csh top_tb.cpp -input io/gray_small.png
-#         -config $cgbuild/config.dat
-#         -io     $cgbuild/io.xml
-#         -input  io/gray.png 
-#         -output /tmp/output.raw
-#         -nclocks 3M
+#  builds small parrot
 
 # Local flow (test):
 #  run.csh calls travis-test to do the initial generate
 #  run.csh uses pre-built io, map files in bitstream/example3 to build config file
-#   run.csh
-#     -gen                                                  \
-#     -config   ../../bitstream/example3/PNRguys_mapped.xml \
-#     -io       ../../bitstream/example3/PNRguys_io.xml     \
-#     -input    io/gray_small.png                           \
-#     -nclocks  1M                                          \
-#     -output   /tmp/output.raw                             \
+# builds small parrot
 
 if ($#argv == 0) then
   # Use these defaults
   set echo
   exec $0 top_tb.cpp \
-    # -config   ../../bitstream/example3/PNRguys_config.dat \
     -gen                                                  \
+  # -config   ../../bitstream/example3/PNRguys_config.dat \
     -config   ../../bitstream/example3/PNRguys_mapped.xml \
     -io       ../../bitstream/example3/PNRguys_io.xml     \
     -input    io/gray_small.png                           \
-    -nclocks  1M                                          \
     -output   /tmp/output.raw                             \
+    -nclocks  1M                                          \
   || exit -1
   echo "ERROR This should never happen ("exec" should have replaced this shell)!"
   exit -1
 endif  
-
-echo
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
@@ -61,39 +41,42 @@ foreach f (obj_dir counter.cvd tile_config.dat)
   if (-e $f) rm -rf $f
 end
 
-set gdir = ../../hardware/generator_z
+#BOOKMARK clean to here
 
+# Defaults
 set nclocks = ''
 
-# Process command-line switches.
-unset GENERATE
 while ($#argv)
-  # echo "  found switch '$1'"
-  if ("$1" == "-clean") then
-    exit 0
-  else if ("$1" == "-gen") then
-    set GENERATE
-  else if ("$1" == "-config") then
-    shift
-    set config = "$1"
-  else if ("$1" == "-io") then
-    shift
-    set iofile = "$1"
-  else if ("$1" == "-input") then
-    shift
-    set input = "$1"
-  else if ("$1" == "-output") then
-    shift
-    set output = "$1"
-  else if ("$1" == "-nclocks") then
-    shift
-    # will accept e.g. "1,000,031" or "41K" or "3M"
-    set nclocks = `echo $1 | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
-    set nclocks = "-nclocks $nclocks"
-  else
-    set testbench = "$1"
-  endif
-  shift argv
+  switch ("$1")
+
+    case '-clean':
+      exit 0;
+
+    case '-gen':
+      set GENERATE; breaksw;
+
+    case '-config':
+      set config = "$2"; shift; breaksw
+
+    case -io:
+      set iofile = "$2"; shift; breaksw
+
+    case -input:
+      set input = "$2"; shift; breaksw
+
+    case -output:
+      set output = "$2"; shift; breaksw
+
+    case -nclocks:
+      # will accept e.g. "1,000,031" or "41K" or "3M"
+      set nclocks = `echo $2 | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
+      set nclocks = "-nclocks $nclocks"
+      shift; breaksw
+
+    default:
+      set testbench = "$1";
+  endsw
+  shift;
 end
 
 if (! -e "$testbench") then
@@ -113,6 +96,7 @@ set t = `pwd`
 if (! `expr $t : /home/travis`) then
 
   # FIXME/TODO set up kiwi so that it doesn't need this!
+  echo
   echo Set verilator environment for kiwi
   if (`hostname` == "kiwi") then
 
@@ -209,6 +193,7 @@ echo ""
 echo "BEGIN vtop manipulation (won't be needed after we figure out io pads..."
 echo ""
 
+set gdir = ../../hardware/generator_z
 set vtop = $gdir/top/genesis_verif/top.v
 cp $vtop /tmp/top.v.orig
 
