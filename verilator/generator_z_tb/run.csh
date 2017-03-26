@@ -18,30 +18,36 @@
 #  travis script calls "travis-test" to do the initial generate
 #  travis script copies pre-built io, map from example3 to $cgbuild
 #  travis script calls run.csh
-#   - ./run.csh top_tb.cpp
+#   - ./run.csh top_tb.cpp -input io/gray_small.png
 #         -config $cgbuild/config.dat
 #         -io     $cgbuild/io.xml
-#         -input  ${TRAVIS_BUILD_DIR}/build/input.png
-#         -output ${TRAVIS_BUILD_DIR}/build/CGRA_out.raw
-#         -nclocks 5M
+#         -input  io/gray.png 
+#         -output /tmp/output.raw
+#         -nclocks 3M
 
 # Local flow (test):
 #  run.csh calls travis-test to do the initial generate
-#  run.csh uses pre-built io, map files in bitstream/example3
-
-
+#  run.csh uses pre-built io, map files in bitstream/example3 to build config file
+#   run.csh
+#     -config   ../../bitstream/example3/PNRguys_mapped.xml \
+#     -io       ../../bitstream/example3/PNRguys_io.xml     \
+#     -input    io/gray_small.png                           \
+#     -nclocks  1M                                          \
+#     -output   /tmp/output.raw                             \
 
 if ($#argv == 0) then
   # Use these defaults
   set echo
   exec $0 top_tb.cpp \
-    # -config   ../../bitstream/tmpconfigPNR.dat        \
-    -io       ../../bitstream/example3/PNRguys_io.xml \
-    -input    io/gray_small.png                       \
-    -nclocks  1M                                      \
-    -output   /tmp/output.raw                         \
+    # -config   ../../bitstream/example3/PNRguys_config.dat \
+    -config   ../../bitstream/example3/PNRguys_mapped.xml \
+    -io       ../../bitstream/example3/PNRguys_io.xml     \
+    -input    io/gray_small.png                           \
+    -nclocks  1M                                          \
+    -output   /tmp/output.raw                             \
   || exit -1
-  exit 0
+  echo "ERROR This should never happen ("exec" should have replaced this shell)!"
+  exit -1
 endif  
 
 echo
@@ -88,8 +94,6 @@ while ($#argv)
   shift argv
 end
 
-# set testbench = top_tb.cpp
-# set testbench = $1
 if (! -e "$testbench") then
   echo ""
   echo "ERROR: Testbench '$testbench' not found."
@@ -114,26 +118,11 @@ if (! `expr $t : /home/travis`) then
     set path = (/var/local/verilator-3.900/bin $path)
   endif
 
-
-  echo Generating local bitstream PRCONFIG from files in example3
-  if ($?config) then
-    if ("$config" != "PRCONFIG.dat") then
-      echo ERROR Command line specified the wrong config file.
-      echo "ERROR See $0 for details (sorry!)"
-      exit -1
-    endif
-  endif
-  if (-e PRCONFIG.dat) rm PRCONFIG.dat
-  set bsdir = ../../bitstream
-  perl $bsdir/example3/gen_bitstream.pl $bsdir/example3/PNRguys_mapped.xml PNRCONFIG
-  set config = PNRCONFIG.dat
-
   # Not strictly necessary at present (should be on by default)
   set GENERATE
 
 endif
 # END LOCAL SETUP (not needed for travis)
-
 
 if (! $?GENERATE) then
   echo "No generate!"
@@ -152,14 +141,14 @@ else
 
 endif
 
-set vdir = $gdir/top/genesis_verif
-if (! -e $vdir) then
-  echo "ERROR: Could not find vfile directory"
-  echo "       $vdir"
-  echo "Maybe do something like:"
-  echo "    (cd $vdir:h; ./run.csh; popd) |& tee tmp.log"
-  exit -1
+if ("$config:e" == "xml") then
+  echo "Generating config bitstream 'tmpconfig.dat' from xml file '$config'..."
+  perl ../../bitstream/example3/gen_bitstream.pl $config tmpconfig
+  set config = tmpconfig.dat
+else
+  echo "Use existing config bitstream '$config'..."
 endif
+echo ""
 
 echo ""
 echo '------------------------------------------------------------------------'
@@ -181,7 +170,7 @@ echo ""
     sed -n /source/,/wire_name/p $iofile > /tmp/tmp1
     grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
     set inwires = `cat /tmp/tmp2`
-    echo "  IN $inwires"
+    echo "  IN  $inwires"
    
     sed -n /sink/,/wire_name/p $iofile > /tmp/tmp1
     grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
@@ -297,26 +286,16 @@ echo
 echo END vtop manipulation
 echo '------------------------------------------------------------------------'
 
-
-if ($testbench == "top_tb.cpp") then
-  if (! $?config) set config = $gdir/top_tb/tile_config.dat
-  echo "Copy latest config file from $config..."
-  # set echo
-  # pwd
-  # ls -l
-  # ls -l $config
-  if (! -e "$config") then
-    echo
-    echo "ERROR Config file does not exist!"
-    exit -1
-  endif       
-  cp $config tile_config.dat
+set vdir = $gdir/top/genesis_verif
+if (! -e $vdir) then
+  echo "ERROR: Could not find vfile directory"
+  echo "       $vdir"
+  echo "Maybe do something like:"
+  echo "    (cd $vdir:h; ./run.csh; popd) |& tee tmp.log"
+  exit -1
 endif
 
-# set vdir = $gdir/genesis_verif
-
-
-pushd $vdir >& /dev/null || echo Could not pushd $vdir
+pushd $vdir >& /dev/null
   # set vfiles = (*.v *.sv)
   set vfiles = (*.v)
 popd >& /dev/null
