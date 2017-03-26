@@ -29,6 +29,7 @@
 #  run.csh calls travis-test to do the initial generate
 #  run.csh uses pre-built io, map files in bitstream/example3 to build config file
 #   run.csh
+#     -gen                                                  \
 #     -config   ../../bitstream/example3/PNRguys_mapped.xml \
 #     -io       ../../bitstream/example3/PNRguys_io.xml     \
 #     -input    io/gray_small.png                           \
@@ -40,6 +41,7 @@ if ($#argv == 0) then
   set echo
   exec $0 top_tb.cpp \
     # -config   ../../bitstream/example3/PNRguys_config.dat \
+    -gen                                                  \
     -config   ../../bitstream/example3/PNRguys_mapped.xml \
     -io       ../../bitstream/example3/PNRguys_io.xml     \
     -input    io/gray_small.png                           \
@@ -64,13 +66,13 @@ set gdir = ../../hardware/generator_z
 set nclocks = ''
 
 # Process command-line switches.
-set GENERATE
+unset GENERATE
 while ($#argv)
   # echo "  found switch '$1'"
   if ("$1" == "-clean") then
     exit 0
-  else if ("$1" == "-nogen") then
-    unset GENERATE
+  else if ("$1" == "-gen") then
+    set GENERATE
   else if ("$1" == "-config") then
     shift
     set config = "$1"
@@ -118,23 +120,19 @@ if (! `expr $t : /home/travis`) then
     set path = (/var/local/verilator-3.900/bin $path)
   endif
 
-  # Not strictly necessary at present (should be on by default)
-  set GENERATE
-
 endif
 # END LOCAL SETUP (not needed for travis)
 
+# By default, we assume generate has already been done.
+# Otherwise, user must set "-gen" to make it happen here.
 if (! $?GENERATE) then
+
   echo "No generate!"
+
 else
 
-  # GENERATE (not needed for travis)
-  # No need for GENERATE phase on travis because travis script does it already.
-  # OOPS no have to run generate twice or don't get in/out wires from mapper(!)
-  # if (`hostname` == "kiwi") then
-
   # Build CGRA 
-
+  echo "Building CGRA because you asked for it with '-gen'..."
   pushd ../..
     ./travis-test.csh
   popd
