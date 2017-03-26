@@ -1,5 +1,36 @@
 #!/bin/csh
 
+# TODO
+#  -nogen should be default; must set -gen switch if want gen locally
+
+# Travis flow (CGRAFlow/.travis.yml)
+#  travis script calls "travis-test" to do the initial generate
+#  travis script calls PNR to build map, io info from generated cgra_info.txt
+#  travis script calls run.csh
+#   - ./run.csh top_tb.cpp
+#         -config $cgbuild/config.dat
+#         -io     $cgbuild/io.xml
+#         -input  ${TRAVIS_BUILD_DIR}/build/input.png
+#         -output ${TRAVIS_BUILD_DIR}/build/CGRA_out.raw
+#         -nclocks 5M
+
+# Travis flow (CGRAGenerator/.travis.yml)
+#  travis script calls "travis-test" to do the initial generate
+#  travis script copies pre-built io, map from example3 to $cgbuild
+#  travis script calls run.csh
+#   - ./run.csh top_tb.cpp
+#         -config $cgbuild/config.dat
+#         -io     $cgbuild/io.xml
+#         -input  ${TRAVIS_BUILD_DIR}/build/input.png
+#         -output ${TRAVIS_BUILD_DIR}/build/CGRA_out.raw
+#         -nclocks 5M
+
+# Local flow (test):
+#  run.csh calls travis-test to do the initial generate
+#  run.csh uses pre-built io, map files in bitstream/example3
+
+
+
 if ($#argv == 0) then
   # Use these defaults
   set echo
