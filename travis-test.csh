@@ -17,24 +17,16 @@ perl --version | head -1
 # TODO/FIXME project: maybe bring in genesis from github instead of using local copy?
 
 
-# Used to do this...
-# OLD
-# set whereami = `pwd`
-# # echo $whereami
-# setenv GENESIS_HOME "$whereami/Genesis2Tools"
-
-
 # Alternatively could maybe do this...
 # If running locally, use existing Genesis2 install...
 # if (hostname == kiwi) setenv GENESIS_HOME /cad/genesis2/r11879/Genesis2Tools/
 
 # Clone Genesis2 from github
 # NEW
-# pushd /tmp
 git clone https://github.com/StanfordVLSI/Genesis2.git /tmp/Genesis2
 setenv GENESIS_HOME /tmp/Genesis2/Genesis2Tools
-#
-# huh.
+
+# huh.  seems to break if don't remove distrib Zlib?
 # Compress::Raw::Zlib object version 2.060 does not match bootstrap parameter 2.033 at /tmp/Genesis2/Genesis2Tools/PerlLibs/ExtrasForOldPerlDistributions/Compress/Raw/Zlib.pm line 98.
 /bin/rm -rf /tmp/Genesis2/Genesis2Tools/PerlLibs/ExtrasForOldPerlDistributions/Compress
 #
