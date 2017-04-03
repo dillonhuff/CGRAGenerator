@@ -1,10 +1,16 @@
 #!/bin/csh -f
 
-# goto TMP
-# exit
+# This travis-script helper sets up the Genesis2 run environment,
+# then uses Genesis2 to build the CGRA.  Note this is only used
+# for the CGRAGenerator travis script, not CGRAFlow
+#
+# FIXME/TODO: use Genesis2 from github instead maybe...
 
-# perl -f tmp.pl DUH!  Why/how did this ever work!?
 perl --version | head -1
+
+##############################################################################
+# Set up to run Genesis2
+# TODO/FIXME project: maybe bring in genesis from github instead of using local copy?
 
 set whereami = `pwd`
 # echo $whereami
@@ -16,22 +22,32 @@ setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 
 # echo path=$path
 
+
+
+##############################################################################
+# SR_VERILATOR tells generator to do verilator-specific optimizations
+# TODO/FIXME I think this is no longer used; take it out and see if it still works.
+# 
 setenv SR_VERILATOR
 # printenv | sort
 
-# hardware/generator_z/top/run.csh
+
+##############################################################################
+# Run the generator, but first clean up from prior runs.  Die if gen error.
+
 cd hardware/generator_z/top
+
 if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
+
 ./run.csh || exit -1
 
-# pwd
-# ls -R
 
-TMP:
+
+
+##############################################################################
+# Use resulting top.v to print out information about what was built.
 
 set top=./genesis_verif/top.v
-# cat $top
-
 if (! -e $top) then
   echo "Cannot find TOP '$top'"
   exit -1
@@ -63,8 +79,6 @@ egrep '^//t' $top  | sed 's/^../    /'
 #     print "    " row "|";\
 #   }\
 # END { printf "    "; for (i=0; i<length(row); i++) printf "-"; print "" }'
-
-
 
 echo "    --------------------"
 echo ''
