@@ -10,27 +10,36 @@ perl --version | head -1
 
 ##############################################################################
 # Trying a thang
-pushd /tmp
-  git clone https://github.com/StanfordVLSI/Genesis2.git
-  ls /tmp/Genesis2
-popd
 
 
 ##############################################################################
 # Set up to run Genesis2
 # TODO/FIXME project: maybe bring in genesis from github instead of using local copy?
 
-set whereami = `pwd`
-# echo $whereami
 
-setenv GENESIS_HOME "$whereami/Genesis2Tools"
+# Used to do this...
+# OLD
+# set whereami = `pwd`
+# # echo $whereami
+# setenv GENESIS_HOME "$whereami/Genesis2Tools"
+
+
+# Alternatively could maybe do this...
+# If running locally, use existing Genesis2 install...
+# if (hostname == kiwi) setenv GENESIS_HOME /cad/genesis2/r11879/Genesis2Tools/
+
+# Clone Genesis2 from github
+# NEW
+# pushd /tmp
+git clone https://github.com/StanfordVLSI/Genesis2.git /tmp/Genesis2
+setenv GENESIS_HOME /tmp/Genesis2/Genesis2Tools
+# popd
+
 set path=(. $GENESIS_HOME/bin $GENESIS_HOME/gui/bin $path)
 # setenv PERL5LIB "$PERL5LIB":$GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 
 # echo path=$path
-
-#  - git clone https://github.com/jameshegarty/rigel.git
 
 
 
@@ -50,6 +59,7 @@ cd hardware/generator_z/top
 
 if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
 
+which Genesis2.pl
 ./run.csh || exit -1
 
 
