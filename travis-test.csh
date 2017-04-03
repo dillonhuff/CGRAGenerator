@@ -33,7 +33,14 @@ perl --version | head -1
 # pushd /tmp
 git clone https://github.com/StanfordVLSI/Genesis2.git /tmp/Genesis2
 setenv GENESIS_HOME /tmp/Genesis2/Genesis2Tools
+#
+# huh.
+# Compress::Raw::Zlib object version 2.060 does not match bootstrap parameter 2.033 at /tmp/Genesis2/Genesis2Tools/PerlLibs/ExtrasForOldPerlDistributions/Compress/Raw/Zlib.pm line 98.
+/bin/rm -rf /tmp/Genesis2/Genesis2Tools/PerlLibs/ExtrasForOldPerlDistributions/Compress
+#
 # popd
+
+
 
 set path=(. $GENESIS_HOME/bin $GENESIS_HOME/gui/bin $path)
 # setenv PERL5LIB "$PERL5LIB":$GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
