@@ -8,8 +8,10 @@ if (-e counter.vcd) rm -f  counter.vcd
 if ("$1" == "-clean") exit 0
 
 # setup
-setenv VERILATOR_ROOT /var/local/verilator-3.900
-set path = (/var/local/verilator-3.900/bin $path)
+# Verilator should already be in path if installed via apt-get
+# setenv VERILATOR_ROOT /var/local/verilator-3.900
+# set path = (/var/local/verilator-3.900/bin $path)
+# which verilator
 
 # set testbench = tb_remote.cpp
 
