@@ -89,14 +89,14 @@ if (! -e "$testbench") then
 endif
 
 # kiwi needs special setup for verilator
-# FIXME/TODO set up kiwi so that it doesn't need this!
-
-if (`hostname` == "kiwi") then
-  echo
-  echo Set verilator environment for kiwi
-  setenv VERILATOR_ROOT /var/local/verilator-3.900
-  set path = (/var/local/verilator-3.900/bin $path)
-endif
+# FIXME/TODO set up kiwi so that it doesn't need this! DONE 04/2017
+# if (`hostname` == "kiwi") then
+#   echo
+#   echo Set verilator environment for kiwi
+#   setenv VERILATOR_ROOT /var/local/verilator-3.900
+#   set path = (/var/local/verilator-3.900/bin $path)
+# endif
+which verilator
 
 
 # By default, we assume generate has already been done.

@@ -11,8 +11,9 @@ if (-e counter.vcd) rm -f  counter.vcd
 
 if ("$1" == "-clean") exit 0
 
-setenv VERILATOR_ROOT /var/local/verilator-3.900
-set path = (/var/local/verilator-3.900/bin $path)
+# Verilator should already be in path if installed via apt-get
+# setenv VERILATOR_ROOT /var/local/verilator-3.900
+# set path = (/var/local/verilator-3.900/bin $path)
 
 # # Here's my first attempt; it's just gonna be, like, "hello world" and stuff.
 # set testbench = counter_tb_hello.cpp
