@@ -1,8 +1,7 @@
 #!/bin/csh -f
 
 # This travis-script helper sets up the Genesis2 run environment,
-# then uses Genesis2 to build the CGRA.  Note this is only used
-# for the CGRAGenerator travis script, not CGRAFlow
+# then uses Genesis2 to build the CGRA.
 #
 # FIXME/TODO: use Genesis2 from github instead maybe...
 
@@ -23,7 +22,9 @@ perl --version | head -1
 
 # Clone Genesis2 from github
 # NEW
-git clone https://github.com/StanfordVLSI/Genesis2.git /tmp/Genesis2
+if (! -d /tmp/Genesis2/) then
+  git clone https://github.com/StanfordVLSI/Genesis2.git /tmp/Genesis2
+endif
 setenv GENESIS_HOME /tmp/Genesis2/Genesis2Tools
 
 # huh.  seems to break if don't remove distrib Zlib?

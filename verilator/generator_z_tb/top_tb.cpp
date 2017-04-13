@@ -7,12 +7,22 @@
 
 #include "Vtop.h"
 #include "verilated.h"
-// #include "verilated_vcd_c.h"
+
+// If trace requested, verilator will set VM_TRACE to 1, else 0
+#if VM_TRACE > 0
+#include "verilated_vcd_c.h"
+#define CLOSETRACE if (trace_filename != NULL) { tfp->close(); }
+#else
+#define CLOSETRACE
+#endif
 
 int main(int argc, char **argv, char **env) {
     char *config_filename = NULL;
-    char *input_filename = NULL;
+    char  *input_filename = NULL;
     char *output_filename = NULL;
+    char  *trace_filename = NULL;
+
+    char default_trace_filename[128] = "top_tb.vcd";
 
     FILE *input_file = NULL;
     FILE *output_file = NULL;
@@ -33,8 +43,19 @@ int main(int argc, char **argv, char **env) {
         if      (! strcmp(argv[i], "-config")) { config_filename  = argv[++i]; }
         else if (! strcmp(argv[i], "-input" )) { input_filename   = argv[++i]; }
         else if (! strcmp(argv[i], "-output" )) { output_filename = argv[++i]; }
+        else if (! strcmp(argv[i], "-buildtrace" )) { trace_filename = argv[++i]; }
         else if (! strcmp(argv[i], "-nclocks")) { 
                 sscanf(argv[++i], "%d", &NCLOCKS);
+        }
+        else if (! strcmp(argv[i], "--help" )) {
+            fprintf(stderr, "Usage: %s\n%s%s%s%s%s\n",
+                    argv[0],
+                    "  -config <config_filename>\n",
+                    "  -input  <input_filename>\n",
+                    "  -output <output_filename>\n",
+                    "  [-buildtrace <trace_filename>]\n",
+                    "  -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>\n"
+                    );
         }
     }
 
@@ -48,7 +69,6 @@ int main(int argc, char **argv, char **env) {
     else {
         printf("  - Found input filename '%s'\n", input_filename);
 
-        // FIXME fopen has no corresponding fclose()!
         input_file = fopen(input_filename, "r");
         if (input_file == NULL) {
             fflush(stdout);
@@ -64,7 +84,6 @@ int main(int argc, char **argv, char **env) {
     else {
         printf("  - Found output filename '%s'\n", output_filename);
 
-        // FIXME fopen has no corresponding fclose()!
         output_file = fopen(output_filename, "w");
         if (output_file == NULL) {
             fflush(stdout);
@@ -73,6 +92,19 @@ int main(int argc, char **argv, char **env) {
         }
     }
 
+#if VM_TRACE > 0
+    if (trace_filename == NULL) {
+        printf("\n");
+        // trace_filename = "top_tb.vcd";
+        trace_filename = default_trace_filename;
+        printf("WARNING No trace file specified. I am using default '%s'\n", trace_filename);
+    }
+    else {
+        printf("  - Found trace filename '%s' for output waveforms\n", trace_filename);
+    }
+#else
+    printf("NOTE no trace file was requested.\n");
+#endif
 
     printf("\n");
 
@@ -107,6 +139,19 @@ int main(int argc, char **argv, char **env) {
 
     Verilated::commandArgs(argc, argv);
     Vtop* top = new Vtop;
+
+#if VM_TRACE > 0
+    // Prepare to build waveform file
+    // Verilated::commandArgs(argc, argv); // ?
+    Verilated::traceEverOn(true);
+    VerilatedVcdC* tfp = new VerilatedVcdC;
+    if (trace_filename != NULL) {
+        top->trace(tfp, 99); // What is 99?  I don't know!  FIXME
+        tfp->open(trace_filename);
+    }
+#endif
+
+
 
     ///    initial begin
     ///      clk<=1'b1;
@@ -162,8 +207,6 @@ int main(int argc, char **argv, char **env) {
     ///      end
     ///    end
 
-    // FIXME fopen has no corresponding fclose()!
-    // config_data_file = fopen("tile_config.dat", "r");
     config_data_file = fopen(config_filename, "r");
 
     if (config_data_file == NULL) {
@@ -200,6 +243,11 @@ int main(int argc, char **argv, char **env) {
       unsigned int in_1_1;
 
       for (clk=0; clk<2; clk++) {
+
+#if VM_TRACE > 0
+          // dump variables into VCD file
+          tfp->dump (2*i+clk);
+#endif
 
           //printf("CyNum-rst-clk %05d %d %d, ", i, reset, clk);
           // char prefix[256];
@@ -273,8 +321,9 @@ int main(int argc, char **argv, char **env) {
 
                       if (feof(input_file)) {
                           printf("\nINFO Simulation ran for %d cycles\n\n", i);
-                          fclose(input_file);
-                          if (output_file) { fclose(output_file); }
+                          if (input_file)       { fclose(input_file ); }
+                          if (output_file)      { fclose(output_file); }
+                          if (config_data_file) { fclose(config_data_file); }
                           exit(0);
                       }
                   }
@@ -393,8 +442,12 @@ int main(int argc, char **argv, char **env) {
       if (input_filename != NULL) {
           if (feof(input_file)) {
               printf("\n\nINFO Simulation ran for %d cycles\n\n", i);
-              fclose(input_file);
-              if (output_file) { fclose(output_file); }
+              // fclose(input_file);
+              // if (output_file) { fclose(output_file); }
+              if (input_file)       { fclose(input_file ); }
+              if (output_file)      { fclose(output_file); }
+              if (config_data_file) { fclose(config_data_file); }
+              // CLOSETRACE // why not? FIXME: tell my why not and/or put it in and see what happens...
               exit(0);
           }
       }
@@ -402,10 +455,13 @@ int main(int argc, char **argv, char **env) {
 
   if (Verilated::gotFinish()) {
       printf("\n\nINFO Simulation ran for %d cycles\n\n", NCLOCKS);
-      if (input_file)  { fclose(input_file ); }
-      if (output_file) { fclose(output_file); }
+      if (input_file)       { fclose(input_file ); }
+      if (output_file)      { fclose(output_file); }
+      if (config_data_file) { fclose(config_data_file); }
+      // CLOSETRACE // why not? FIXME: tell my why not and/or put it in and see what happens...
       exit(0);
   }
+  CLOSETRACE
 } // main()
 
 /////////////////////////////////////////////////////////

@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/csh -f
 
 #  NOTE default is NOGEN; must set -gen if want gen locally
 
@@ -18,8 +18,33 @@
 #  run.csh uses pre-built io, map files in bitstream/example3 to build config file
 # builds small parrot
 
+if ($#argv == 1) then
+  if ($argv[1] == '--help') then
+    echo "Usage:"
+    echo "    $0 <textbench.cpp> [-gen]"
+    echo "        -config     <config_filename>"
+    echo "        -io         <io_filename>"
+    echo "        -input      <input_filename>"
+    echo "        -output     <output_filename>"
+    echo "       [-buildtrace <trace_filename>]"
+    echo "        -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>"
+    echo
+    echo "Defaults:"
+    echo "    $0 top_tb.cpp"
+    echo "        -config   ../../bitstream/example3/PNRguys_mapped.xml"
+    echo "        -io       ../../bitstream/example3/PNRguys_io.xml    "
+    echo "        -input    io/gray_small.png                          "
+    echo "        -output   /tmp/output.raw                            "
+    echo "        -nclocks  1M                                         "
+    echo
+    exit 0
+  endif
+endif
+
+# If no args, then run (exec) using the preset defaults below.
 if ($#argv == 0) then
   # Use these defaults
+  echo "Running with the following defaults:"
   set echo
   exec $0 top_tb.cpp \
     -gen                                                  \
@@ -28,6 +53,8 @@ if ($#argv == 0) then
     -io       ../../bitstream/example3/PNRguys_io.xml     \
     -input    io/gray_small.png                           \
     -output   /tmp/output.raw                             \
+    # Default = don't build a trace/waveform file         \
+    # -buildtrace top_tb.vcd                              \
     -nclocks  1M                                          \
   || exit -1
   echo "ERROR This should never happen ("exec" should have replaced this shell)!"
@@ -64,6 +91,9 @@ while ($#argv)
 
     case -output:
       set output = "$2"; shift; breaksw
+
+    case -buildtrace:
+      set tracefile = "$2"; shift; breaksw
 
     case -nclocks:
       # will accept e.g. "1,000,031" or "41K" or "3M"
@@ -233,14 +263,17 @@ echo "Building the verilator simulator executable..."
   set myswitches = '-Wno-fatal'
   set top        = 'top'
 
+  # Add trace switch if trace requested
+  if ($?tracefile) set myswitches = "$myswitches --trace"
+
   # Run verilator to build the simulator.
 
   echo
-  echo verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+  echo verilator -Wall $myswitches --cc --exe $testbench -y $vdir $vfiles --top-module $top \
     | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
   echo
 
-  verilator $myswitches -Wall --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+  verilator $myswitches -Wall $myswitches --cc --exe $testbench -y $vdir $vfiles --top-module $top \
     >& /tmp/verilator.out
 
   set verilator_exit_status = $status
@@ -312,10 +345,15 @@ echo '  First prepare input and output files...'
   # od -t x1 /tmp/input.raw | head
 
   # If no output requested, simulator will not create an output file.
+  set out = ''
   if ($?output) then
-    set out = "-output $output"
-  else 
-    set out = ''
+      set out = "-output $output"
+  endif
+
+  # If no trace requested, simulator will not create a waveform file.
+  set trace = ''
+  if ($?tracefile) then
+    set trace = "-buildtrace $tracefile"
   endif
 
   echo
@@ -326,6 +364,7 @@ echo '  First prepare input and output files...'
       -config $config \
       $in \
       $out \
+      $trace \
       $nclocks \
       || exit -1
   unset echo >& /dev/null
