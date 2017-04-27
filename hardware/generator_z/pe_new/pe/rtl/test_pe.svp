@@ -259,7 +259,10 @@ always_comb begin : proc_alu
   res_p_w = 'hX;
 //;}
 
-  case (op_code[5:0])
+//; # case (op_code[5:0])
+//; # %Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:213: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h0' generates 5 bits.
+  case (op_code[4:0])
+
 //; if($use_add > 0) {
     5'h0: begin
         ;
