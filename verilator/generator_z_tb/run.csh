@@ -248,7 +248,7 @@ if (! -e $vdir) then
   exit -1
 endif
 
-if ($?GENERATE) then
+# if ($?GENERATE) then
     echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
     echo ""
 
@@ -260,7 +260,7 @@ if ($?GENERATE) then
         -vtop "$vdir/top.v"
 
     echo END top.v manipulation
-endif
+# endif
 
 echo ''
 echo '------------------------------------------------------------------------'

@@ -24,6 +24,14 @@ while ($#argv)
   shift;
 end
 
+# Don't do it if it's already done!
+unset already_done
+egrep 'wire.*VERILATOR_PORT' $vtop > /dev/null && set already_done
+if ($?already_done) then
+  echo 'WARNING: wirehack appears to already be done, will not do again.'
+  exit 0
+endif
+
 cp $vtop /tmp/top.v.orig
 
 # // VERILATOR_PORT1,2,3...
