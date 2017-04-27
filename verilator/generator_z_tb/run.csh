@@ -30,14 +30,24 @@ if ($#argv == 1) then
     echo "        -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>"
     echo
     echo "Defaults:"
-    echo "    $0 top_tb.cpp"
-    echo "        -config   ../../bitstream/example3/PNRguys_mapped.xml"
-    echo "        -io       ../../bitstream/example3/PNRguys_io.xml    "
-    echo "        -input    io/gray_small.png                          "
-    echo "        -output   /tmp/output.raw                            "
-    echo "        -nclocks  1M                                         "
+    echo "    $0 top_tb.cpp -gen \"
+    echo "        -config   ../../bitstream/example3/PNRguys_mapped.xml\"
+    echo "        -io       ../../bitstream/example3/PNRguys_io.xml    \"
+    echo "        -input    io/gray_small.png                          \"
+    echo "        -output   /tmp/output.raw                            \"
+    echo "        -nclocks  1M                                         \"
     echo
     exit 0
+  endif
+endif
+
+set genswitch = '-gen'
+
+# Little hacky wack
+if ($#argv == 1) then
+  if ("$1" == "-nogen") then
+    set genswitch = '-nogen'
+    shift
   endif
 endif
 
@@ -47,7 +57,8 @@ if ($#argv == 0) then
   echo "Running with the following defaults:"
   set echo
   exec $0 top_tb.cpp \
-    -gen                                                  \
+  # -gen                                                  \
+    $genswitch                                            \
   # -config   ../../bitstream/example3/PNRguys_config.dat \
     -config   ../../bitstream/example3/PNRguys_mapped.xml \
     -io       ../../bitstream/example3/PNRguys_io.xml     \
@@ -79,6 +90,9 @@ while ($#argv)
 
     case '-gen':
       set GENERATE; breaksw;
+
+    case '-nogen':
+      echo "'nogen' is the default already"; breaksw;
 
     case '-config':
       set config = "$2"; shift; breaksw
@@ -234,17 +248,19 @@ if (! -e $vdir) then
   exit -1
 endif
 
-echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
-echo ""
+if ($?GENERATE) then
+    echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
+    echo ""
 
-  echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
-  echo
-  ./run-wirehack.csh \
-    -inwires "$inwires" \
-    -outwires "$outwires" \
-    -vtop "$vdir/top.v"
+      echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
+      echo
+      ./run-wirehack.csh \
+        -inwires "$inwires" \
+        -outwires "$outwires" \
+        -vtop "$vdir/top.v"
 
-echo END top.v manipulation
+    echo END top.v manipulation
+endif
 
 echo ''
 echo '------------------------------------------------------------------------'
