@@ -113,12 +113,12 @@ tile_id
    reg config_en_pe;
    always @(*) begin
      if (reset) begin
-        config_en_pe <= 1'b0;
+        config_en_pe = 1'b0;
      end else begin
         if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-          config_en_pe <= 1'b1;
+          config_en_pe = 1'b1;
         end else begin
-          config_en_pe <= 1'b0;
+          config_en_pe = 1'b0;
         end
      end
    end
@@ -151,16 +151,17 @@ tile_id
 //;   address => $intra_tile_addr
 //; };
 
+//; # (Per verilator lint-warnings,) assignments in non-clocked block should have '=' not '<='
 //;$intra_tile_addr+=1;
   reg config_en_cb1;
   always @(*) begin
     if (reset) begin
-       config_en_cb1 <= 1'b0;
+       config_en_cb1 = 1'b0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         config_en_cb1 <= 1'b1;
+         config_en_cb1 = 1'b1;
        end else begin
-         config_en_cb1 <= 1'b0;
+         config_en_cb1 = 1'b0;
        end
     end
   end
@@ -172,12 +173,12 @@ tile_id
   reg config_en_cb2;
   always @(*) begin
     if (reset) begin
-       config_en_cb2 <= 1'b0;
+       config_en_cb2 = 1'b0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         config_en_cb2 <= 1'b1;
+         config_en_cb2 = 1'b1;
        end else begin
-         config_en_cb2 <= 1'b0;
+         config_en_cb2 = 1'b0;
        end
     end
   end
@@ -190,12 +191,12 @@ tile_id
   reg config_en_cb3;
   always @(*) begin
     if (reset) begin
-       config_en_cb3 <= 1'b0;
+       config_en_cb3 = 1'b0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         config_en_cb3 <= 1'b1;
+         config_en_cb3 = 1'b1;
        end else begin
-         config_en_cb3 <= 1'b0;
+         config_en_cb3 = 1'b0;
        end
     end
   end
@@ -208,12 +209,12 @@ tile_id
   reg config_en_cb4;
   always @(*) begin
     if (reset) begin
-       config_en_cb4 <= 1'b0;
+       config_en_cb4 = 1'b0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         config_en_cb4 <= 1'b1;
+         config_en_cb4 = 1'b1;
        end else begin
-         config_en_cb4 <= 1'b0;
+         config_en_cb4 = 1'b0;
        end
     end
   end
@@ -225,12 +226,12 @@ tile_id
   reg config_en_sb1;
   always @(*) begin
     if (reset) begin
-       config_en_sb1 <= 1'b0;
+       config_en_sb1 = 1'b0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         config_en_sb1 <= 1'b1;
+         config_en_sb1 = 1'b1;
        end else begin
-         config_en_sb1 <= 1'b0;
+         config_en_sb1 = 1'b0;
        end
     end
   end
@@ -242,12 +243,12 @@ tile_id
   reg config_en_sb2;
   always @(*) begin
     if (reset) begin
-       config_en_sb2 <= 1'b0;
+       config_en_sb2 = 1'b0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         config_en_sb2 <= 1'b1;
+         config_en_sb2 = 1'b1;
        end else begin
-         config_en_sb2 <= 1'b0;
+         config_en_sb2 = 1'b0;
        end
     end
   end
