@@ -305,7 +305,8 @@ config_data
 //;     my $tile_id = "${tile_type}_${tile_loc}";
 //;#Add PE specific parameters from the tile config to the generate command
 //;#All paramters in the tile_config hash except type, tile_height/width are passed to the generator
-//;     while( my ($f, $v) = each %$tile_config->{ $tile_type } ) {
+//;     # while( my ($f, $v) = each %$tile_config->{ $tile_type } ) { # ref use DEPRECATED
+//;     while( my ($f, $v) = each $tile_config->{ $tile_type } ) {
 //;#       print "$f : $v\n";
 //;       if (($f!~m/type/) && ($f!~m/tile_height/) && ($f!~m/tile_width/)) {
 //;         $options .= " $f => \"$v\",";
