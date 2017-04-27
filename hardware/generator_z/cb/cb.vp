@@ -24,11 +24,11 @@ config_en
   input  config_en;
   input [31:0] config_data;
 
-  // Bits [31:24] are for switch box, [23:0] for connection box.
-  // So we have to let the linter know (verilator directives below) or it complains:
-  // %Warning-UNUSED: .../cb_unq1.v:73: Bits of signal are not used: config_addr[23:0]
-  // FIXME Owner please confirm that this is correct and delete this FIXME line (but keep the rest)
-  // FIXME someday? Maybe shouldn't bring in all 32 bits if we're not going to use them?
+  //; # Bits [31:24] are for switch box, [23:0] for connection box.
+  //; # So we have to let the linter know (verilator directives below) or it complains:
+  //; # %Warning-UNUSED: .../cb_unq1.v:73: Bits of signal are not used: config_addr[23:0]
+  //; # FIXME Owner please confirm that this is correct and delete this FIXME line (but keep the rest)
+  //; # FIXME someday? Maybe shouldn't bring in all 32 bits if we're not going to use them?
 
   /* verilator lint_off UNUSED */
   input [31:0] config_addr;
@@ -53,11 +53,11 @@ config_en
 //; my $config_bit_count = $mux_sel_bit_count + $constant_bit_count;
 //; my $config_reg_width = int(ceil($config_bit_count/32.0)*32);
 
-  // Note not all config bits are used by this module.  Is this on purpose?
-  // As a result, however, verilator needs lint directives or it complains:
-  // %Warning-UNUSED: .../cb_unq1.v:91: Bits of signal are not used: config_cb[31:20]
-  // %Warning-UNUSED: .../cb_unq2.v:91: Bits of signal are not used: config_cb[31:5]
-  // [FIXME Owner please confirm that this is correct and delete this FIXME line]
+  //; # Note not all config bits are used by this module.  Is this on purpose?
+  //; # As a result, however, verilator needs lint directives or it complains:
+  //; # %Warning-UNUSED: .../cb_unq1.v:91: Bits of signal are not used: config_cb[31:20]
+  //; # %Warning-UNUSED: .../cb_unq2.v:91: Bits of signal are not used: config_cb[31:5]
+  //; # [FIXME Owner please confirm that this is correct and delete this FIXME line]
 
   /* verilator lint_off UNUSED */
   reg [`$config_reg_width-1`:0] config_cb;
@@ -67,9 +67,9 @@ config_en
   always @(posedge clk) begin
     if (reset==1'b1) begin
 
-      // Seems like the entire register should be initialized, not just a subset of the bits, yes?
-      // FIXME Owner please check that this is still correct!
-      // config_cb <= `$config_bit_count`'d0;
+      //; # Seems like the entire register should be initialized, not just a subset of the bits, yes?
+      //; # FIXME Owner please check that this is still correct!
+      //; # config_cb <= `$config_bit_count`'d0;
       config_cb <= `$config_reg_width`'d0;
 
     end else begin
@@ -107,15 +107,17 @@ config_en
 //; my $sel=0;
   always @(*) begin
     case (config_cb[`$mux_sel_bit_count - 1`:0])
+
+        //; # Lint fix: verilator didn't like assignments in loop below
+        //; # default: out <= `$width`'d0;
+        //; # %Warning-COMBDLY: .../cb_unq1.v:134:
+        //; # Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+        //; # Was:
+        //; # `$mux_sel_bit_count`'d`$sel`: out <= in_`$i`;
+        //; # default: out <= config_cb[`$mux_sel_bit_count+$constant_bit_count-1`:`$mux_sel_bit_count`];
+
 //; for(my $i=0; $i<($num_tracks*2); $i++) {
 //;   if ($feedthrough[$i%$num_tracks]==1) {
-
-        // FIXME: Owner please verify that this lint fix won't break anything.
-        // default: out <= `$width`'d0;
-        // %Warning-COMBDLY: .../cb_unq1.v:134:
-        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
-
-        // `$mux_sel_bit_count`'d`$sel`: out <= in_`$i`;
         `$mux_sel_bit_count`'d`$sel`: out = in_`$i`;
 //;     print CBINFO "          <src sel='$sel'>in_$i</src>\n";
 //;     $sel++;
@@ -123,22 +125,16 @@ config_en
 //; }
 //;   if ($has_constant==1) {
 
-        // FIXME: Owner please verify that this lint fix won't break anything.
-        // default: out <= `$width`'d0;
-        // %Warning-COMBDLY: .../cb_unq1.v:134:
-        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
-
-        // default: out <= config_cb[`$mux_sel_bit_count+$constant_bit_count-1`:`$mux_sel_bit_count`];
         default: out = config_cb[`$mux_sel_bit_count+$constant_bit_count-1`:`$mux_sel_bit_count`];
 
 //;     $sel++;
 //;   } else {
 
-        // FIXME: verify that this is the correct fix...
-        // %Warning-COMBDLY: .../cb_unq1.v:134:
-        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
+        //; # FIXME: verify that this is the correct fix...
+        //; # %Warning-COMBDLY: .../cb_unq1.v:134:
+        //; # Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
 
-        // default: out <= `$width`'d0;
+        //; # default: out <= `$width`'d0;
         default: out = `$width`'d0;
 
 //;   }
