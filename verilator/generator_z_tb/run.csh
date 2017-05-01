@@ -294,8 +294,13 @@ echo "Building the verilator simulator executable..."
 
   set verilator_exit_status = $status
 
-  echo 'To get the flavor of all the warnings, just showing first 40 lines of output...'
-  head -n 40 /tmp/verilator.out
+  echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
+  echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
+  echo '%Warning3 See /tmp/verilator.out for full log.'
+  echo
+  cat /tmp/verilator.out \
+    | awk -f ./run-verilator-warning-filter.awk \
+    | head -n 40 
 
   if ($verilator_exit_status != 0) exit -1
 
