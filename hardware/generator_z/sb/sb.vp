@@ -39,12 +39,11 @@ config_en
   input  config_en;
   input [31:0] config_data;
 
+  // FIXME
   // Bits [31:24] are for switch box, [23:0] for connection box.
-  // So we have to let the linter know (verilator directives below) or it complains:
+  // So bits  [23:0] go unused in this module.  Until this is fixed,
+  // we have to let the linter know (verilator directives below) or it complains:
   // %Warning-UNUSED: .../sb_unq1.v:115: Bits of signal are not used: config_addr[23:0]
-  // FIXME Owner please confirm that this is correct and delete this FIXME line (but keep the rest)
-  // FIXME someday? Maybe shouldn't bring in all 32 bits if we're not going to use them?
-
   /* verilator lint_off UNUSED */
   input [31:0] config_addr;
   /* verilator lint_on UNUSED */
@@ -94,9 +93,9 @@ config_en
   always @(posedge clk) begin
     if (reset==1'b1) begin
 
-      // Seems like the entire register should be initialized, not just a subset of the bits, yes?
-      // FIXME Owner please check that this is still correct!
-      // config_sb <= `$config_bit_count`'d0;
+   // Seems like the entire register should be initialized, not just a subset of the bits, yes?
+   // FIXME Owner please check that this is still correct!
+   // config_sb <= `$config_bit_count`'d0;
       config_sb <= `$config_reg_width`'d0;
 
     end else begin
@@ -158,22 +157,11 @@ config_en
 //;        my $sel = 0;
 //;        for(my $k=0; $k<$sides; $k++) {
 //;          if ($k == $i) {next;}
-
-        // FIXME: verify that this change is okay...
-        // %Warning-COMBDLY:
-        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
-
-        // `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i <= in_`$k`_`$j`;
         `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i = in_`$k`_`$j`;
 //;          print SBINFO "          <src sel='$sel'>in_${k}_${j}</src>\n";
 //;          $sel++;
 //;        }
 //;        for(my $k=0; $k<$pe_output_count; $k++) {
-        // FIXME: verify that this change is okay...
-        // %Warning-COMBDLY:
-        // Delayed assignments (<=) in non-clocked (non flop or latch) block; suggest blocking assignments (=).
-
-        // `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i <= pe_output_`$k`;
         `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i = pe_output_`$k`;
 
 //;          print SBINFO "          <src sel='$sel'>pe_output_${k}</src>\n";
