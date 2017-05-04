@@ -273,18 +273,25 @@ always_comb begin : proc_alu
 //; # %Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:213: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h0' generates 5 bits.
   case (op_code[4:0])
 
-//; if($use_add > 0) {
-    5'h00: begin
-        ;
-//; if($use_sad) {
-        add_c_in[1] = add_c_out[0];
-//;}
+//; # NOTE (from above): my $use_sad  = $use_add > 1;
+//; if ($use_add == 1) { # One ALU
+    5'h00: begin // ADD out = a + b
       end
-    5'h01: begin
-//; if($use_sad) {
-        add_c_in[1] = add_c_out[0];
-//;}
+    5'h01: begin // SUB out = a - b
       end
+//; }
+
+//; if ($use_add > 1) { # Two ALUs
+  // Two ALUs: out = a + b + c
+    5'h00: begin // ADD out = a + b + c
+        add_c_in[1] = add_c_out[0];
+      end
+    5'h01: begin // SUB out = a - b + c (?)
+        add_c_in[1] = add_c_out[0];
+      end
+//; }
+
+//; if ($use_add > 0) { # At least one ALU exists
     5'h04: begin
         res_w   = add_res_0[DataWidth-1] ? op_a : op_b;
         res_p_w = ~add_res_0[DataWidth-1];
@@ -305,6 +312,7 @@ always_comb begin : proc_alu
         res_w = op_d_p ? op_a : op_b;
       end
 //; }
+
 //; if($use_sad) {
     5'h0A: begin
         add_a[1]    = add_res_0[DataWidth-1] ? ~add_res[0] : add_res[0];
