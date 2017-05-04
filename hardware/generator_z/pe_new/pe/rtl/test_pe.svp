@@ -264,50 +264,50 @@ always_comb begin : proc_alu
   case (op_code[4:0])
 
 //; if($use_add > 0) {
-    5'h0: begin
+    5'h00: begin
         ;
 //; if($use_sad) {
         add_c_in[1] = add_c_out[0];
 //;}
       end
-    5'h1: begin
+    5'h01: begin
 //; if($use_sad) {
         add_c_in[1] = add_c_out[0];
 //;}
       end
-    5'h4: begin
+    5'h04: begin
         res_w   = add_res_0[DataWidth-1] ? op_a : op_b;
         res_p_w = ~add_res_0[DataWidth-1];
       end
-    5'h5: begin
+    5'h05: begin
         res_w   = ~add_res_0[DataWidth-1] ? op_a : op_b;
         res_p_w = add_res_0[DataWidth-1];
       end
-    5'h6: begin
+    5'h06: begin
         res_p_w = ~|(op_a ^ op_b);
         res_w   = op_b;
       end
-    5'h7: begin
+    5'h07: begin
         res_p_w = |(op_a ^ op_b);
         res_w   = op_a;
       end
-    5'h8: begin
+    5'h08: begin
         res_w = op_d_p ? op_a : op_b;
       end
 //; }
 //; if($use_sad) {
-    5'hA: begin
+    5'h0A: begin
         add_a[1]    = add_res_0[DataWidth-1] ? ~add_res[0] : add_res[0];
         add_c_in[1] = add_res_0[DataWidth-1];
       end
 //; }
 //; if($use_lut) {
-    5'h9: begin
+    5'h09: begin
          res_w = res_lut;
        end
 //; }
 //; if($use_shift > 0) {
-    5'hF: begin
+    5'h0F: begin
         res_w = op_a >> op_b[3:0];
       end
     5'h10: begin
@@ -318,15 +318,15 @@ always_comb begin : proc_alu
       end
 //; }
 //; if($mult_mode > 0) {
-    5'hB: begin
+    5'h0B: begin
         res_w   = mult_res[15:0];
         res_p_w = mult_c_out;
       end
-    5'hC: begin
+    5'h0C: begin
         res_w   = mult_res[23:8];
         res_p_w = mult_c_out;
       end
-    5'hD: begin
+    5'h0D: begin
         res_w   = mult_res[31:16];
         res_p_w = mult_c_out;
       end
