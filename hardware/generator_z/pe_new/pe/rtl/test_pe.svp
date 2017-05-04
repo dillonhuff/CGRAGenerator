@@ -244,20 +244,30 @@ end
 //;}
 
 always_comb begin : proc_alu
-//; if($use_add > 0) {
 
-//; if($use_sad) {
+//; if ($use_add <= 0) {
+  // No ALU
+  res_w = 'hX;
+  res_p_w = 'hX;
+//; }
+
+//; # NOTE (from above): my $use_sad  = $use_add > 1;
+//; elsif (($use_add > 0) && (! $use_sad)) {
+  // One ALU: out = a + b
+  res_w   = add_res[ADD_MSB];
+  res_p_w = add_c_out[ADD_MSB];
+//; }
+
+//; elsif (($use_add > 0) && ($use_sad)) {
+  // Two ALUs: out = a + b + c
   add_a[1] = add_res[0];
   add_b[1] = op_c;
   add_c_in[1] = 1'b0;
-//;}
-
   res_w   = add_res[ADD_MSB];
   res_p_w = add_c_out[ADD_MSB];
-//; } else {
-  res_w = 'hX;
-  res_p_w = 'hX;
-//;}
+//; }
+
+//; else { print "ERROR unknown case in test_pe.svp\n"; }   
 
 //; # case (op_code[5:0])
 //; # %Warning-WIDTH: ../../hardware/generator_z/top/genesis_verif/test_pe_unq1.sv:213: Operator CASE expects 6 bits on the Case Item, but Case Item's CONST '5'h0' generates 5 bits.
