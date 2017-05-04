@@ -285,10 +285,10 @@ always_comb begin : proc_alu
 
 //; if ($use_add > 1) { # Two ALUs
   // Two ALUs: out = a + b + c
-    5'h00: begin // ADD out = a + b + c
+    5'h00: begin // ADD3 out = a + b + c
         add_c_in[1] = add_c_out[0];
       end
-    5'h01: begin // SUB out = a - b + c (?)
+    5'h01: begin // SUB3 out = a - b + c (?)
         add_c_in[1] = add_c_out[0];
       end
 //; }
@@ -307,30 +307,48 @@ always_comb begin : proc_alu
         res_w   = add_res_0[DataWidth-1] ? op_a : op_b;
         res_p_w = add_res_0[DataWidth-1];
       end
-    5'h06: begin
+    5'h06: begin // XNOR reduction out = ~|(a^b)
         res_p_w = ~|(op_a ^ op_b);
         res_w   = op_b;
       end
-    5'h07: begin
+    5'h07: begin // XOR reduction out = |(a^b)
         res_p_w = |(op_a ^ op_b);
         res_w   = op_a;
       end
-    5'h08: begin
+    5'h08: begin // MUX out = d ? a : b
         res_w = op_d_p ? op_a : op_b;
       end
 //; }
 
-//; if($use_sad) {
+//; if($use_lut) {
+    5'h09: begin // LUT
+         res_w = res_lut;
+       end
+//; }
+//; if($use_add > 1) { // SUB3 out = a - b - c (?)
     5'h0A: begin
         add_a[1]    = add_res_0[DataWidth-1] ? ~add_res[0] : add_res[0];
         add_c_in[1] = add_res_0[DataWidth-1];
       end
 //; }
-//; if($use_lut) {
-    5'h09: begin
-         res_w = res_lut;
-       end
+//; if($mult_mode > 0) {
+    5'h0B: begin // MULL out = a * b (low 16 bits)
+        res_w   = mult_res[15:0];
+        res_p_w = mult_c_out;
+      end
+    5'h0C: begin // MULCRAZY out = a * b (bits [23:8])
+        res_w   = mult_res[23:8];
+        res_p_w = mult_c_out;
+      end
+    5'h0D: begin // MULH out = a * b (high 16 bits)
+        res_w   = mult_res[31:16];
+        res_p_w = mult_c_out;
+      end
 //; }
+
+    5'h0E: begin // RESERVED?
+      end
+
 //; if($use_shift > 0) {
     5'h0F: begin
         res_w = op_a >> op_b[3:0];
@@ -340,20 +358,6 @@ always_comb begin : proc_alu
       end
     5'h11: begin
         res_w = op_a <<< op_b[3:0];
-      end
-//; }
-//; if($mult_mode > 0) {
-    5'h0B: begin
-        res_w   = mult_res[15:0];
-        res_p_w = mult_c_out;
-      end
-    5'h0C: begin
-        res_w   = mult_res[23:8];
-        res_p_w = mult_c_out;
-      end
-    5'h0D: begin
-        res_w   = mult_res[31:16];
-        res_p_w = mult_c_out;
       end
 //; }
 //; if($use_bool) {
