@@ -277,18 +277,18 @@ always_comb begin : proc_alu
 //; # NOTE (from above): my $use_sad  = $use_add > 1;
 
 //; if ($use_add == 1) { 
-    5'h00: begin // op ADD out = a + b
+    5'h00: begin // op ADD        out = a + b
       end
-    5'h01: begin // op SUB out = a - b
+    5'h01: begin // op SUB        out = a - b
       end
 //; }
 
 //; if ($use_add > 1) { # Two ALUs
   // Two ALUs: out = a + b + c
-    5'h00: begin // op ADD3 out = a + b + c
+    5'h00: begin // op ADD3       out = a + b + c
         add_c_in[1] = add_c_out[0];
       end
-    5'h01: begin // op SUB3 out = a - b + c (?)
+    5'h01: begin // op SUB3       out = a - b + c (?)
         add_c_in[1] = add_c_out[0];
       end
 //; }
@@ -307,11 +307,11 @@ always_comb begin : proc_alu
         res_w   = add_res_0[DataWidth-1] ? op_a : op_b;
         res_p_w = add_res_0[DataWidth-1];
       end
-    5'h06: begin // op XNOR reduction out = ~|(a^b)
+    5'h06: begin // op XNOR-REDUCE out = ~|(a^b)
         res_p_w = ~|(op_a ^ op_b);
         res_w   = op_b;
       end
-    5'h07: begin // op XOR reduction out = |(a^b)
+    5'h07: begin // op XOR-REDUCE  out =  |(a^b)
         res_p_w = |(op_a ^ op_b);
         res_w   = op_a;
       end
@@ -349,28 +349,28 @@ always_comb begin : proc_alu
       end
 
 //; if($use_shift > 0) {
-    5'h0F: begin // op LSHR out = a >> b[3:0]
+    5'h0F: begin // op LSHR  out = a  >> b[3:0]
         res_w = op_a >> op_b[3:0];
       end
-    5'h10: begin // op ASHR out = a >>> b[3:0]
+    5'h10: begin // op ASHR  out = a >>> b[3:0]
         res_w = $signed(op_a) >>> op_b[3:0];
       end
-    5'h11: begin // op SHL out = a <<< b[3:0]
+    5'h11: begin // op SHL   out = a <<< b[3:0]
         res_w = op_a <<< op_b[3:0];
       end
 //; }
 //; if($use_bool) {
-    5'h12: begin // op OR out = a | b
+    5'h12: begin // op OR    out = a | b
         res_w = op_a | op_b;
       end
-    5'h13: begin // op AND out = a & b
+    5'h13: begin // op AND   out = a & b
         res_w = op_a & op_b;
       end
-    5'h14: begin // op XOR out = a ^ b
+    5'h14: begin // op XOR   out = a ^ b
         res_w = op_a ^ op_b;
       end
-    5'h15: begin // op NOT out = ~a
-        res_w = ~op_a;
+    5'h15: begin // op NOT   out = ~a
+        res_w = ~op_a; 
       end
 //; }
 
