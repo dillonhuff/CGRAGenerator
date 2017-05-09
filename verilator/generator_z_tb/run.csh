@@ -18,6 +18,16 @@
 #  run.csh uses pre-built io, map files in bitstream/example3 to build config file
 # builds small parrot
 
+# DEFAULTS
+set testbench = top_tb.cpp
+set GENERATE = "-gen"
+set config = ../../bitstream/example3/PNRguys_mapped.xml
+set iofile = ../../bitstream/example3/PNRguys_io.xml
+set input  = io/gray_small.png
+set output = /tmp/output.raw
+unset tracefile
+set nclocks = "1M"
+
 if ($#argv == 1) then
   if ($argv[1] == '--help') then
     echo "Usage:"
@@ -30,47 +40,21 @@ if ($#argv == 1) then
     echo "        -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>"
     echo
     echo "Defaults:"
-    echo "    $0 top_tb.cpp -gen \"
-    echo "        -config   ../../bitstream/example3/PNRguys_mapped.xml\"
-    echo "        -io       ../../bitstream/example3/PNRguys_io.xml    \"
-    echo "        -input    io/gray_small.png                          \"
-    echo "        -output   /tmp/output.raw                            \"
-    echo "        -nclocks  1M                                         \"
+    echo "    $0 top_tb.cpp \"
+    echo "       $GENERATE            \"
+    echo "       -config   $config \"
+    echo "       -io       $iofile \"
+    echo "       -input    $input                           \"
+    echo "       -output   $output                             \"
+    if ($?tracefile) then
+      echo "       -buildtrace $tracefile \"
+    endif
+    echo "       -nclocks  $nclocks                                          \"
     echo
     exit 0
   endif
 endif
 
-set genswitch = '-gen'
-
-# Little hacky wack
-if ($#argv == 1) then
-  if ("$1" == "-nogen") then
-    set genswitch = '-nogen'
-    shift
-  endif
-endif
-
-# If no args, then run (exec) using the preset defaults below.
-if ($#argv == 0) then
-  # Use these defaults
-  echo "Running with the following defaults:"
-  set echo
-  exec $0 top_tb.cpp \
-  # -gen                                                  \
-    $genswitch                                            \
-  # -config   ../../bitstream/example3/PNRguys_config.dat \
-    -config   ../../bitstream/example3/PNRguys_mapped.xml \
-    -io       ../../bitstream/example3/PNRguys_io.xml     \
-    -input    io/gray_small.png                           \
-    -output   /tmp/output.raw                             \
-    # Default = don't build a trace/waveform file         \
-    # -buildtrace top_tb.vcd                              \
-    -nclocks  1M                                          \
-  || exit -1
-  echo "ERROR This should never happen ("exec" should have replaced this shell)!"
-  exit -1
-endif  
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
@@ -80,21 +64,30 @@ foreach f (obj_dir counter.cvd tile_config.dat)
 end
 
 # Defaults
-set nclocks = ''
+# set nclocks = ''
+
+
 
 while ($#argv)
+  echo $1
   switch ("$1")
 
     case '-clean':
       exit 0;
 
     case '-gen':
-      set GENERATE; breaksw;
+      set GENERATE = '-gen'; breaksw;
 
     case '-nogen':
-      echo "'nogen' is the default already"; breaksw;
+      # echo "'nogen' is the default already"; breaksw;
+      set GENERATE = '-nogen'; breaksw;
+      
 
     case '-config':
+      set config = "$2"; shift; breaksw
+
+    # "bitstream" is an alias for "config"
+    case '-bitstream':
       set config = "$2"; shift; breaksw
 
     case -io:
@@ -111,8 +104,7 @@ while ($#argv)
 
     case -nclocks:
       # will accept e.g. "1,000,031" or "41K" or "3M"
-      set nclocks = `echo $2 | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
-      set nclocks = "-nclocks $nclocks"
+      set nclocks = $2;
       shift; breaksw
 
     default:
@@ -132,6 +124,24 @@ if (! -e "$testbench") then
   exit -1
 endif
 
+echo "Running with the following switches:"
+echo "$0 top_tb.cpp \"
+echo "   $GENERATE                                   \"
+echo "   -config   $config \"
+echo "   -io       $iofile     \"
+echo "   -input    $input                           \"
+echo "   -output   $output                             \"
+if ($?tracefile) then
+  echo "   -buildtrace $tracefile \"
+endif
+echo "   -nclocks  $nclocks                                        \"
+
+# Turn nclocks into an integer.
+set nclocks = `echo $nclocks | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
+set nclocks = "-nclocks $nclocks"
+
+
+
 # kiwi needs special setup for verilator
 # FIXME/TODO set up kiwi so that it doesn't need this! DONE 04/2017
 # if (`hostname` == "kiwi") then
@@ -147,7 +157,8 @@ which verilator
 # Otherwise, user must set "-gen" to make it happen here.
 
 echo
-if (! $?GENERATE) then
+# if (! $?GENERATE) then
+if ("$GENERATE" == "-nogen") then
   echo "No generate!"
 
 else
@@ -172,6 +183,10 @@ else
   echo "Use existing config bitstream '$config'..."
 
 endif
+
+echo "BITSTREAM:"
+cat $config
+
 
 echo ""
 echo '------------------------------------------------------------------------'
@@ -248,7 +263,7 @@ if (! -e $vdir) then
   exit -1
 endif
 
-# if ($?GENERATE) then
+# if ("$GENERATE" == "-gen") then
     echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
     echo ""
 
