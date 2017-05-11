@@ -11,11 +11,10 @@
 #     3: out_s0t0 <=  pe_out    // (r0 & 00000003) == 00000003
 # ...
 # case(sb[39:38]) // TRACK 4
-#     0: out_s3t4 <= in_s0t3    // (r1 & 000000C0) == 00000000
-#     1: out_s3t4 <= in_s1t3    // (r1 & 000000C0) == 00000040
-#     2: out_s3t4 <= in_s2t3    // (r1 & 000000C0) == 00000080
+#     0: out_s3t4 <= in_s0t4    // (r1 & 000000C0) == 00000000
+#     1: out_s3t4 <= in_s1t4    // (r1 & 000000C0) == 00000040
+#     2: out_s3t4 <= in_s2t4    // (r1 & 000000C0) == 00000080
 #     3: out_s3t4 <=  pe_out    // (r1 & 000000C0) == 000000C0
-# 
 # 
 # // SIDE 0 pipelining
 #   sb[40]: enable pipereg for out_0_0   // (r1 & 00000100) == 00000100
@@ -76,11 +75,10 @@ echo $out; head -n 5 $out; echo "..."; echo; echo
 ##############################################################################
 # Build /tmp/sb_decoder.mux.final
 # 
-#     if ((r0 & 0x00000003) == 0x00000000):   connex.append( "in_s1t0 -> out_s0t0" );
-#     if ((r0 & 0x00000003) == 0x00000001):   connex.append( "in_s2t0 -> out_s0t0" );
-#     if ((r0 & 0x00000003) == 0x00000002):   connex.append( "in_s3t0 -> out_s0t0" );
-#     if ((r0 & 0x00000003) == 0x00000003):   connex.append( "pe_out -> out_s0t0" );
-#     if ((r0 & 0x0000000C) == 0x00000000):   connex.append( "in_s1t0 -> out_s0t1" );
+#     if ((r0 & 0x00000003) == 0x00000000):   connex.append( "out_s0t0 <= in_s1t0" );
+#     if ((r0 & 0x00000003) == 0x00000001):   connex.append( "out_s0t0 <= in_s2t0" );
+#     if ((r0 & 0x00000003) == 0x00000002):   connex.append( "out_s0t0 <= in_s3t0" );
+#     if ((r0 & 0x00000003) == 0x00000003):   connex.append( "out_s0t0 <= pe_out" );
 #     ...
 
 set in = $out
@@ -88,7 +86,8 @@ set out = /tmp/sb_decoder.mux.final
 
 cat $in \
   | awk -F ',' '\
-      {printf("    if (%s):   connex.append( \"%s -> %s\" );\n", $3, $2, $1)} \
+      # {printf("    if (%s):   connex.append( \"%s -> %s\" );\n", $3, $2, $1)} \
+      {printf("    if (%s):   connex.append( \"%s <= %s\" );\n", $3, $1, $2)} \
   '\
   > $out
 
@@ -101,11 +100,11 @@ echo $out; head -4 $out; echo "    ..."; tail -4 $out; echo; echo
 ##############################################################################
 # Build /tmp/sb_decoder.reg.final
 # 
-#     if ((r1 & 0x00000100) == 0x00000100):   connex.append("out_0_0");
-#     if ((r1 & 0x00000200) == 0x00000200):   connex.append("out_0_1");
-#     if ((r1 & 0x00000400) == 0x00000400):   connex.append("out_0_2");
-#     if ((r1 & 0x00000800) == 0x00000800):   connex.append("out_0_3");
-#     if ((r1 & 0x00001000) == 0x00001000):   connex.append("out_0_4");
+#     if ((r1 & 0x00000100) == 0x00000100):   connex.append("reg out_s0t0");
+#     if ((r1 & 0x00000200) == 0x00000200):   connex.append("reg out_s0t1");
+#     if ((r1 & 0x00000400) == 0x00000400):   connex.append("reg out_s0t2");
+#     if ((r1 & 0x00000800) == 0x00000800):   connex.append("reg out_s0t3");
+#     if ((r1 & 0x00001000) == 0x00001000):   connex.append("reg out_s0t4");
 # ...
 
 set out = /tmp/sb_decoder.reg.final
@@ -144,11 +143,11 @@ echo $out; head -n 5 $out; echo "..."; echo; echo
 # 
 # def sb_decode_r0(r0):
 #     connex = [];
-#     if ((r0 & 0x00000003) == 0x00000000):   connex.append( "in_s1t0 -> out_s0t0" );
+#     if ((r0 & 0x00000003) == 0x00000000):   connex.append( "out_s0t0 <= in_s1t0" );
 #     ...
-#     if ((r0 & 0xC0000000) == 0x40000000):   connex.append( "in_s1t3 -> out_s3t0" );
-#     if ((r0 & 0xC0000000) == 0x80000000):   connex.append( "in_s2t3 -> out_s3t0" );
-#     if ((r0 & 0xC0000000) == 0xC0000000):   connex.append( "pe_out -> out_s3t0" );
+#     if ((r0 & 0xC0000000) == 0x40000000):   connex.append( "out_s3t0 <= in_s1t0" );
+#     if ((r0 & 0xC0000000) == 0x80000000):   connex.append( "out_s3t0 <= in_s2t0" );
+#     if ((r0 & 0xC0000000) == 0xC0000000):   connex.append( "out_s3t0 <= pe_out" );
 #     return connex;
 
 set in  = "/tmp/sb_decoder.mux.final /tmp/sb_decoder.reg.final"
@@ -172,11 +171,11 @@ head -8 $out; echo "    ..."; tail -4 $out; echo; echo
 # 
 # def sb_decode_r1(r1):
 #     connex = [];
-#     if ((r1 & 0x00000003) == 0x00000000):   connex.append( "in_s1t0 -> out_s0t0" );
+#     if ((r1 & 0x00000003) == 0x00000000):   connex.append( "out_s3t1 <= in_s0t1" );
 #     ...
-#     if ((r1 & 0xC0000000) == 0x40000000):   connex.append( "in_s1t3 -> out_s3t0" );
-#     if ((r1 & 0xC0000000) == 0x80000000):   connex.append( "in_s2t3 -> out_s3t0" );
-#     if ((r1 & 0xC0000000) == 0xC0000000):   connex.append( "pe_out -> out_s3t0" );
+#     if ((r1 & 0x02000000) == 0x02000000):   connex.append("reg out_s3t2");
+#     if ((r1 & 0x04000000) == 0x04000000):   connex.append("reg out_s3t3");
+#     if ((r1 & 0x08000000) == 0x08000000):   connex.append("reg out_s3t4");
 #     return connex;
 
 set in  = "/tmp/sb_decoder.mux.final /tmp/sb_decoder.reg.final"
@@ -196,17 +195,20 @@ head -8 $out; echo "    ..."; tail -4 $out; echo; echo
 
 
 ##############################################################################
-
-
-##############################################################################
 # Build /tmp/sb_decode_5tracks.py
-# 
 
 set out = /tmp/sb_decode_${ntracks}tracks.py
-echo '#\!/usr/bin/python' > $out
+# echo '#\!/usr/bin/python' > $out
+cat << eof > $out
+#!/usr/bin/python
+
+def sb_decode(rnum, data):
+  if (rnum == 0): return sb_decode_r0(data)
+  if (rnum == 1): return sb_decode_r1(data)
+
+eof
 cat /tmp/sb_decode_r0.py >> $out
 (echo; echo)             >> $out
 cat /tmp/sb_decode_r1.py >> $out
 echo                     >> $out
-
 echo "Final sb decoder is here: $out"
