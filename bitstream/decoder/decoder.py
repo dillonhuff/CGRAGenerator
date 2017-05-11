@@ -7,6 +7,21 @@ import re;
 
 from lib.sb_decode_5tracks import *
 
+scriptname = sys.argv[0];
+args = sys.argv[1:];
+
+usage = "\n"\
+  + "Decodes/annotates the indicated bitstream file\n"\
+  + "Usage:\n"\
+  + "   %s <bitstream-file>\n" % scriptname\
+  + "   %s --help\n" % scriptname\
+  + ""
+
+if (len(args) < 1):      print usage; sys.exit(-1);
+if (args[0] == '--help'): print usage; sys.exit(0);
+bitstream_filename = args[0];
+
+
 # def sb_decode(reg_num, reg_contents):
 #   if (reg_num == 0): return sb_decode_r0(reg_contents);
 #   if (reg_num == 1): return sb_decode_r1(reg_contents);
@@ -170,6 +185,8 @@ def pe_decode(RR, DDDDDDDD):
         sys.stderr.write("\n\nERROR Unknown register code for PE");
         sys.exit(-1);
 
+    # (Note default value for all tiles is opcode = 16'h0000 (ADD)
+
     ########################################################################
     # Figure out sources for A, B inputs
 
@@ -189,6 +206,8 @@ def pe_decode(RR, DDDDDDDD):
     # xxxx,xx0x => (always) read D from reg_d
     # xxxx,xx1x => (always) read D from wire op_d_in
     # xxxx,xxx1 => (always) load reg a from wire op_d_in
+
+    # (Note default value for all tiles is opcode = 16'h0000 (ADD, src=reg, reg=wire)
 
     if (dddd & 0x80): asrc = "wireA";
     if (dddd & 0x40): areg = "wireA";
@@ -326,7 +345,8 @@ def pe_decode(RR, DDDDDDDD):
 ##############################################################################
 # MAIN
 prevtile = -1
-inputstream = sys.stdin;
+# inputstream = sys.stdin;
+inputstream = open(bitstream_filename);
 # print inputstream.next();
 for line in inputstream:
     line = line.strip(); # Ugh "strip is the worst...ugly but necessary.
@@ -385,6 +405,8 @@ for line in inputstream:
 
     else:
         print "";
+
+inputstream.close();
 
 # prettyprint(sb_decode_r0(0));
 # sys.exit(0);
