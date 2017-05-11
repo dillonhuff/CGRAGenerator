@@ -201,8 +201,8 @@ print ""
 bitno = 0;
 for s_out in {0,1,2,3}:
   print "// SIDE %d" % s_out;
-  for t in range(0, ntracks):
-    outbus = "out_s%dt%d" % (s_out, t);
+  for track in range(0, ntracks):
+    outbus = "out_s%dt%d" % (s_out, track);
 
     # abbrev = 1;
     # if (abbrev == 0):
@@ -211,12 +211,13 @@ for s_out in {0,1,2,3}:
     # where abc = {123,023,013,012} for sides S = {0,1,2,3} respectively
     input_set = [];
     for i in {0,1,2,3}:
-        input_set.append("in_s%dt%d" % (i, s_out));
+        # input_set.append("in_s%dt%d" % (i, s_out));
+        input_set.append("in_s%dt%d" % (i, track));
     del input_set[s_out];
     input_set.append(" pe_out");
 
     if (abbrev):
-        # sb[ 1: 0]:  out_0_0 <= {in_0_0, in_1_0, in_3_0, pe_output_0}
+     # sb[ 1: 0]:  out_s0t0 <= {in_s1t0, in_s2t0, in_s3t0,  pe_out}
 
         print "  sb[%2d:%2d]: " % (bitno+1, bitno),
         print "%s <= {%s, %s, %s, %s}" % (outbus, input_set[0], input_set[1], input_set[2], input_set[3]);
@@ -228,7 +229,7 @@ for s_out in {0,1,2,3}:
         #     2: out_s0t0 <= in_s3t0    // (r0 & 00000003) == 00000002
         #     3: out_s0t0 <=  pe_out    // (r0 & 00000003) == 00000003
 
-        print "case(sb[%d:%d]) // TRACK %d" % (bitno+1, bitno, t);
+        print "case(sb[%d:%d]) // TRACK %d" % (bitno+1, bitno, track);
         for i in [0,1,2,3]:
 
             # vlog = "0: out_s0t0 <= in_s1t0"
