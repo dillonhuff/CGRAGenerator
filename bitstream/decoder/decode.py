@@ -126,12 +126,31 @@ def cb_decode(EE, DDDDDDDD):
     st["03.00000008"] = "wireB <= in_s2t8"
     st["03.00000009"] = "wireB <= in_s2t9"
 
-    return st[EE + '.' + DDDDDDDD]
+    cb_connection = st[EE + '.' + DDDDDDDD]
 
-def sb_print(RR, DDDDDDDD):
+    # return st[EE + '.' + DDDDDDDD]
+    return cb_connection
+
+def sb_iohack_find_pe_out(connection_list):
+    # Find the wire that's connected to pe_out
+    # An item in the list should look like this: "out_s1t0 <= pe_out"
+    for c in connection_list:
+        # print "FOO " + c;
+        pe_out = re.search("([A-z_0-9]+).*pe_out$", c);
+        if (pe_out):
+            iohack_pe_out = pe_out.group(1);
+            # print "FOUND IT! (%s); " % c,
+            # print "pe connects to %s" % iohack_pe_out
+            return iohack_pe_out;
+
+    return 0;
+
+# def sb_print(RR, DDDDDDDD):
+def sb_print(connection_list):
     # if (RR == "00"): connection_list = sb_decode_r0(int(DDDDDDDD, 16));
     # if (RR == "01"): connection_list = sb_decode_r1(int(DDDDDDDD, 16));
-    connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
+
+    # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
 
     # Connection list should contain fifteen items
     # ['in_s1t0 -> out_s0t0', 'in_s1t0 -> out_s0t1', 'in_s1t0 -> out_s0t2',
@@ -367,6 +386,9 @@ prevtile = -1
 # inputstream = sys.stdin;
 inputstream = open(bitstream_filename);
 # print inputstream.next();
+iohack_cb_out = {};
+iohack_pe_out = {};
+iohack_io_tiles = {};
 for line in inputstream:
     line = line.strip(); # Ugh "strip is the worst...ugly but necessary.
 
@@ -407,16 +429,43 @@ for line in inputstream:
                               ),
 
     # Processing element
-    if (EE == "00"): pe_decode(RR, DDDDDDDD);
+    if (EE == "00"):
+        pe_decode(RR, DDDDDDDD);
+
+        # IO hack
+        op = DDDDDDDD[6:8] # last two hex digits
+        if ( (RR=="FF") and (op=="FF") ): iohack_io_tiles[thistile] = "output";
+        if ( (RR=="FF") and (op=="F0") ): iohack_io_tiles[thistile] = "input";
+            # print "\n\nFOO input\n\n"
+            # print "\n\nFOO output\n\n"
+            
+
+            
+
 
     # Connection box
     elif (EE == "02" or EE == "03"):
         # print "%s   # %s" % (line, cb_decode(EE,DDDDDDDD));
-        print "%s" % (cb_decode(EE,DDDDDDDD));
+        cb_connection = cb_decode(EE,DDDDDDDD);  # E.g. "wireA <= in_s1t0"
+        print "%s" % (cb_connection);
+
+        # Support for io hack
+        # Last 7 chars of string I guess e.g. iohack_cb_out[4] = "in_s1t0"
+        # global iohack_cb_out[];
+        iohack_cb_out[thistile] = cb_connection[-7:]
 
     elif (EE == "05"):
         # print "";
-        sb_print(RR, DDDDDDDD);
+        # sb_print(RR, DDDDDDDD);
+        connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
+        sb_print(connection_list);
+        pe_out = sb_iohack_find_pe_out(connection_list);
+        if (pe_out):
+            print "FOUND IT! pe connects to %s" % pe_out
+            iohack_pe_out[thistile] = pe_out;
+            
+
+
         # print "";
     #     if (EE == "05"):
     #         if (RR == "00"): prettyprint(sb_decode_r0(int(DDDDDDDD, 16)));
@@ -424,6 +473,21 @@ for line in inputstream:
 
     else:
         print "";
+
+# OUTPUT tiles go to wire indicated by iohack_cb_out
+# INPUT tiles take input from wire idicated by sb[pe_out]
+
+for i in iohack_cb_out:
+    print "FOO iohack_cb_out[%d] = %s" % (i, iohack_cb_out[i])
+    
+
+
+for i in iohack_io_tiles:
+    print "FOO iohack_io_tiles[%d] = %s" % (i, iohack_io_tiles[i])
+    io = iohack_io_tiles[i]
+    if (io == "input" ): print "  input from ?%s?" % (iohack_pe_out[i])
+    if (io == "output"): print "  output to ?%s?"  % (iohack_cb_out[i])
+
 
 inputstream.close();
 
