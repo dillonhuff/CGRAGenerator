@@ -181,6 +181,7 @@ def pe_decode(RR, DDDDDDDD):
 
     # Only other valid option is "FF" (load opcode)
     if (RR != "FF"):
+        print "ERROR Unknown register code for PE"
         sys.stdout.flush()
         sys.stderr.write("\n\nERROR Unknown register code for PE");
         sys.exit(-1);
@@ -273,9 +274,7 @@ def pe_decode(RR, DDDDDDDD):
 # 
 #     print opstr;
 
-
-
-
+    iohack = 0;
 
     op = DDDDDDDD[6:8] # last two hex digits
     A = "A"; B = "B";
@@ -311,12 +310,32 @@ def pe_decode(RR, DDDDDDDD):
     elif (op == "14"): opstr = "XOR(%s,%s)" % (A,B)
     elif (op == "15"): opstr = "NOT(%s,%s)" % (A,B)
 
+    elif (op == "F0"):
+        # IO hack/inputs
+        #   FF00xxxx 000000F0    # (op==F0): pe_out is input to CGRA
+        #   F000xxxx FFFFFFFF   # IO input pad: ignore pe_in_a
+        #   F100xxxx FFFFFFFF   # IO input pad: ignore pe_in_b
+
+        opstr = "IO hack: pe_out is CGRA INPUT"; iohack = 1;
+        opstr = opstr + "\n                                     " + \
+                "(IN  wire_0_0_BUS16_S1_T0) (out_s1t0)"
+
+    elif (op == "FF"):
+        # IO hack/outputs
+        #   FF00xxxx 000000FF    # (op==FF): pe_in_a (wireA) is CGRA output
+        #   F1000004 00000000    # IO output pad: ignore pe_in_b
+        opstr = "IO hack: pe_in_a (wireA) is CGRA OUTPUT"; iohack = 1;
+        opstr = opstr + "\n                                     " + \
+                "(OUT wire_1_0_BUS16_S1_T0) (in_s1t0)"
+
     else:
+        print "ERROR Unknown/invalid opcode for PE"
         sys.stdout.flush()
         sys.stderr.write("\n\nERROR Unknown/invalid opcode for PE");
         sys.exit(-1);
 
-    print "pe_out <= " + opstr;
+    if (iohack): print opstr
+    else:        print "pe_out <= " + opstr;
 
     indent = "%8s %8s %20s" % ('','','')
     if (areg == "wireA"): print indent + "regA <= wireA (always)"
