@@ -35,21 +35,135 @@ bitstream_filename = args[0];
 # print list[3:20:5]
 
 
+#       "                           \n"+\
+#       "          0    4    8    12\n"+\
+#       "                           \n"+\
+#       "          1    5    9    13\n"+\
+#       "                           \n"+\
+#       "          2    6    10   14\n"+\
+#       "                           \n"+\
+#       "          3    7    11   15\n"+\
+#       "";
+
+
+# TBD this (below) could be a separate "print_intro()" function like
 print "";
 print "Assume 4x4 grid of tiles numbered like so:\n"+\
-      "                           \n"+\
-      "          0    4    8    12\n"+\
-      "                           \n"+\
-      "          1    5    9    13\n"+\
-      "                           \n"+\
-      "          2    6    10   14\n"+\
-      "                           \n"+\
-      "          3    7    11   15\n"+\
-      "";
+    "                                           \n"+\
+    "    tileno                    r,c          \n"+\
+    "  0  4   8  12      (0,0) (0,1) (0,2) (0,3)\n"+\
+    "  1  5   9  13      (1,0) (1,1) (1,2) (1,3)\n"+\
+    "  2  6  10  14      (2,0) (2,1) (2,2) (2,3)\n"+\
+    "  3  7  11  15      (3,0) (3,1) (3,2) (3,3)\n"+\
+    "";
+
+
 print "Assume all tiles have 2-input PEs";
 print "";
 print "'s1t3' means 'side 1 track 3' where sides [0123] map to [ESWN] respectively"
 print "";
+
+def tileno2rc(tileno):
+    # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown above.
+    # Given tile number tileno return the (row,column) equivalent
+    #
+    #    tileno                    r,c
+    #  0  4   8  12      (0,0) (0,1) (0,2) (0,3)
+    #  1  5   9  13      (1,0) (1,1) (1,2) (1,3)
+    #  2  6  10  14      (2,0) (2,1) (2,2) (2,3)
+    #  3  7  11  15      (3,0) (3,1) (3,2) (3,3)
+    #
+    row = tileno%4
+    col = int(tileno/4)
+    return [row, col];
+
+def find_source(row, col, wirename):
+    # Given tile number (r,c) in a 4x4 grid as shown...
+    #
+    #    (0,0) (0,1) (0,2) (0,3)
+    #    (1,0) (1,1) (1,2) (1,3)
+    #    (2,0) (2,1) (2,2) (2,3)
+    #    (3,0) (3,1) (3,2) (3,3)
+    #
+    # ...and a wire name of indicated side and track e.g. "in_s1t0" or "out_s3t2",
+    # return wire source encoded in a string "wire_<r>_<c>_BUS16_S<s>_T<t>",
+    # where now r, c and s are the row, column and side of the tile that
+    # sources the wire.
+    # 
+    # "out" wires are sourced in same tile so have same row, col, side and track number.
+    # "in" wires come from neighboring tiles e.g. side 1 "in" wire comes
+    # from bottom-side neighbor's side 3.  (Note sides [0123] map to [ESWN].)
+    # E.g.
+    # tile (0,3) out_s1t0 => wire_0_3_BUS16_S1_T0
+    # tile (0,1)  in_s1t0 => wire_1_1_BUS16_S3_T0
+
+    # print "FOO " + wirename
+    # deconstruct = re.search("(in|out)_s([0-9]+)_t([0-9]+)", wirename)
+    deconstruct = re.search("(in|out)_s([0-9]+)t([0-9]+)", wirename)
+    in_or_out = deconstruct.group(1)
+    side      = deconstruct.group(2)
+    track     = deconstruct.group(3)
+
+    # print "%s %s" % (wirename, in_or_out)
+    if (in_or_out == "in"):
+        if   (side=='0'): col = col + 1; side = '2'
+        elif (side=='1'): row = row + 1; side = '3'
+        elif (side=='2'): col = col - 1; side = '0'
+        elif (side=='3'): row = row - 1; side = '1'
+        if   (row == -1): row = "m1";
+        elif (col == -1): col = "m1";
+
+    sourcewire = "wire_%s_%s_BUS16_S%s_T%s" % \
+                 (str(row), str(col), side, track)
+    return sourcewire
+
+[row, col] = [0, 0]
+for wirename in ["in_s0t0", "in_s1t0", "in_s2t0", "in_s3t0"]:
+    print "TEST find_source(%d,%d,%s) = %s" % (row, col, wirename, find_source(row, col, wirename))
+print ""
+
+[row, col] = [3, 0]
+for wirename in ["in_s0t0", "in_s1t0", "in_s2t0", "in_s3t0"]:
+    print "TEST find_source(%d,%d,%s) = %s" % (row, col, wirename, find_source(row, col, wirename))
+print ""
+
+[row, col] = [0, 3]
+for wirename in ["in_s0t0", "in_s1t0", "in_s2t0", "in_s3t0"]:
+    print "TEST find_source(%d,%d,%s) = %s" % (row, col, wirename, find_source(row, col, wirename))
+print ""
+
+[row, col] = [3, 3]
+for wirename in ["in_s0t0", "in_s1t0", "in_s2t0", "in_s3t0"]:
+    print "TEST find_source(%d,%d,%s) = %s" % (row, col, wirename, find_source(row, col, wirename))
+print ""
+
+
+
+[row, col] = [0, 0]
+for wirename in ["out_s0t0", "out_s1t0", "out_s2t0", "out_s3t0"]:
+    print "TEST find_source(%d,%d,%s) = %s" % (row, col, wirename, find_source(row, col, wirename))
+print ""
+
+[row, col] = [3, 0]
+for wirename in ["out_s0t0", "out_s1t0", "out_s2t0", "out_s3t0"]:
+    print "TEST find_source(%d,%d,%s) = %s" % (row, col, wirename, find_source(row, col, wirename))
+print ""
+
+[row, col] = [0, 3]
+for wirename in ["out_s0t0", "out_s1t0", "out_s2t0", "out_s3t0"]:
+    print "TEST find_source(%d,%d,%s) = %s" % (row, col, wirename, find_source(row, col, wirename))
+print ""
+
+[row, col] = [3, 3]
+for wirename in ["out_s0t0", "out_s1t0", "out_s2t0", "out_s3t0"]:
+    print "TEST find_source(%d,%d,%s) = %s" % (row, col, wirename, find_source(row, col, wirename))
+print ""
+
+sys.exit()
+
+# for i in range (0,16):
+#     print tileno2rc(i)
+# sys.exit()
 
 def EE_decode(EE):
     # Given string EE = one of "00", "01", ... "07", return element name
@@ -166,6 +280,11 @@ def sb_print(connection_list):
     #     in_s1t0 -> out_s0t2    in_s0t1 -> out_s1t2    in_s0t2 -> out_s2t2
     #     in_s1t0 -> out_s0t3    in_s0t1 -> out_s1t3    in_s0t2 -> out_s2t3
     #     in_s1t0 -> out_s0t4    in_s0t1 -> out_s1t4    in_s0t2 -> out_s2t4
+
+    # TBD/FIXME list should actually have sixteen items (in the case of RR=00)
+    # plus four more for RR==01, for a total of 4x5=20, plus pipe connections for RR=01
+    # !!!!!
+
     col1 = connection_list[0:5];   # print col1;
     col2 = connection_list[5:10];  # print col2;
     col3 = connection_list[10:15]; # print col3;
@@ -337,7 +456,7 @@ def pe_decode(RR, DDDDDDDD):
 
         opstr = "IO hack: pe_out is CGRA INPUT"; iohack = 1;
         opstr = opstr + "\n                                     " + \
-                "(IN  wire_0_0_BUS16_S1_T0) (out_s1t0)"
+                "(IN  wire_0_3_BUS16_S1_T0) (out_s1t0)"
 
     elif (op == "FF"):
         # IO hack/outputs
@@ -345,7 +464,7 @@ def pe_decode(RR, DDDDDDDD):
         #   F1000004 00000000    # IO output pad: ignore pe_in_b
         opstr = "IO hack: pe_in_a (wireA) is CGRA OUTPUT"; iohack = 1;
         opstr = opstr + "\n                                     " + \
-                "(OUT wire_1_0_BUS16_S1_T0) (in_s1t0)"
+                "(OUT wire_1_1_BUS16_S3_T0) (in_s1t0)"
 
     else:
         print "ERROR Unknown/invalid opcode for PE"
@@ -477,16 +596,28 @@ for line in inputstream:
 # OUTPUT tiles go to wire indicated by iohack_cb_out
 # INPUT tiles take input from wire idicated by sb[pe_out]
 
-for i in iohack_cb_out:
-    print "FOO iohack_cb_out[%d] = %s" % (i, iohack_cb_out[i])
+# for i in iohack_cb_out:
+#     print "FOO iohack_cb_out[%d] = %s" % (i, iohack_cb_out[i])
     
+# for i in iohack_io_tiles:
+#     print "FOO iohack_io_tiles[%d] = %s" % (i, iohack_io_tiles[i])
+#     io = iohack_io_tiles[i]
+#     if (io == "input" ): print "  input from ?%s?" % (iohack_pe_out[i])
+#     if (io == "output"): print "  output to ?%s?"  % (iohack_cb_out[i])
+# 
+# print "HEYYY"
 
+print "# I/O Summary:"
+for t in iohack_io_tiles:
+    io = iohack_io_tiles[t]
+    [r,c] = tileno2rc(t)
+    rc = "(%d,%d)" % (r,c)
 
-for i in iohack_io_tiles:
-    print "FOO iohack_io_tiles[%d] = %s" % (i, iohack_io_tiles[i])
-    io = iohack_io_tiles[i]
-    if (io == "input" ): print "  input from ?%s?" % (iohack_pe_out[i])
-    if (io == "output"): print "  output to ?%s?"  % (iohack_cb_out[i])
+    if (io == "input" ): print "# INPUT  tile %2d (%d,%d) / %8s" % (t, r, c, iohack_pe_out[t])
+    if (io == "output"): print "# OUTPUT tile %2d (%d,%d) / %8s" % (t, r, c, iohack_cb_out[t])
+
+find_source(1,1,"out_s1t0")
+find_source(1,1,"in_s1t0")
 
 
 inputstream.close();
