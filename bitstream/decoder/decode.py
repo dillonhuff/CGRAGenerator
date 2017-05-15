@@ -429,31 +429,19 @@ def pe_decode(RR, DDDDDDDD):
         sys.stderr.write("\n\nERROR Unknown/invalid opcode for PE");
         sys.exit(-1);
 
-    if (iohack): print opstr
-    else:        print "pe_out <= " + opstr;
+    # PRINT:
+    # "pe_out <= MUL(wireA,wireB) ; regA <= wireA (always) ; regB <= wireB (always)"
 
-    indent = "%8s %8s %20s" % ('','','')
-    if (areg == "wireA"): print indent + "regA <= wireA (always)"
-    if (breg == "wireB"): print indent + "regB <= wireB (always)"
-    if (creg == "wireC"): print indent + "regC <= wireC (always)"
-    if (dreg == "wireD"): print indent + "regD <= wireD (always)"
+    if (iohack): print opstr,
+    else:        print "pe_out <= " + opstr,
 
-
-#     print "\n"
-#     print "\n"
-# 
-# 
-
-
-
-
-
-
-
-
-# Maybe do this:
-# FF000008 0000F00B # rFF e00 (pe)  :: pe_out <= MUL(pe_A,reg_B)
-#                                   :: reg_A <= pe_A, reg_B <= pe_B
+    # indent = "%8s %8s %6s" % ('','','')
+    indent = "; "
+    if (areg == "wireA"): print indent + "regA <= wireA (always)",
+    if (breg == "wireB"): print indent + "regB <= wireB (always)",
+    if (creg == "wireC"): print indent + "regC <= wireC (always)",
+    if (dreg == "wireD"): print indent + "regD <= wireD (always)",
+    print ""
 
 
 ##############################################################################
@@ -560,15 +548,16 @@ for line in inputstream:
 # 
 # print "HEYYY"
 
+if (iohack_io_tiles == {}):
+    inputstream.close();
+    sys.exit(0);
+
+
 print "# I/O Summary:"
 for t in iohack_io_tiles:
     io = iohack_io_tiles[t];
     [r,c] = tileno2rc(t); rc = "(%d,%d)" % (r,c);
     tile = "tile %2d (%d,%d)" % (t, r, c);
-
-
-
-
     if (io == "input" ):
         inwire = iohack_pe_out[t]
         input_wirename  = "%8s / %s" % ( inwire, find_source(r,c, inwire))
