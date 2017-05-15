@@ -241,6 +241,34 @@ def sb_print(connection_list):
     # plus four more for RR==01, for a total of 4x5=20, plus pipe connections for RR=01
     # !!!!!
 
+    # print connection_list
+    # print "\n".join(connection_list)
+
+    first_out = connection_list[0][0:8]
+    if (first_out[0:8] == "out_s3t1"):
+
+        # Things are different if the switchbox reg is R1 instead of R0.
+        # The connection list will have exactly FOUR "out" connections,
+        # followed by an indeterminate number of "reg" directives:
+        # 
+        # ['out_s3t1 <= in_s0t1', 'out_s3t2 <= in_s0t2', 'out_s3t3 <= in_s0t3',
+        #  'out_s3t4 <= in_s0t4', 'reg out_s0t0', 'reg out_s1t0']
+
+        # Is this terrible code?  I think it might be.  Can't really tell anymore... :)
+
+        col1 = connection_list[0:4];  # Four output connections
+        col2 = connection_list[4:];   # Reg directives, presumably few.
+        # print col1; print col2
+        nlines = max( len(col1), len(col2) )
+        for i in range (0,nlines):
+            f1 = ""; f2 = "";
+            if (i < len(col1)): f1 = col1[i]
+            if (i < len(col2)): f2 = col2[i]
+            if (i): print "%8s %8s %5s" % ("", "", ""),
+            print "%-19s    %-19s" % (f1, f2);
+        return;
+
+
     col1 = connection_list[0:5];   # print col1;
     col2 = connection_list[5:10];  # print col2;
     col3 = connection_list[10:15]; # print col3;
@@ -506,10 +534,6 @@ for line in inputstream:
             # print "\n\nFOO input\n\n"
             # print "\n\nFOO output\n\n"
             
-
-            
-
-
     # Connection box
     elif (EE == "02" or EE == "03"):
         # print "%s   # %s" % (line, cb_decode(EE,DDDDDDDD));
