@@ -73,7 +73,7 @@ def sb_decode_r0(r0):
     return connex;
 
 
-def sb_decode_br1(r1):
+def sb_decode_r1(r1):
     connex = [];
     if ((r1 & 0x00000003) == 0x00000000):   connex.append( "out_s3t1 <= in_s0t1" );
     if ((r1 & 0x00000003) == 0x00000001):   connex.append( "out_s3t1 <= in_s1t1" );

@@ -182,7 +182,7 @@ set in  = "/tmp/sb_decoder.mux.final /tmp/sb_decoder.reg.final"
 set out = "/tmp/sb_decode_r1.py"
 
 cat << eof > $out
-def sb_decode_br1(r1):
+def sb_decode_r1(r1):
     connex = [];
 eof
 cat $in | grep r1 >> $out
