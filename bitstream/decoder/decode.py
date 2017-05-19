@@ -1,15 +1,15 @@
 #!/usr/bin/python
-import os, sys;
+import sys;
 import re;
 
-
-print os.path.dirname(__file__)
-print os.path.join(os.path.dirname(__file__), ".")
-# 
-# 
-# # sys.path.append(os.path.join(os.path.dirname(__file__), "."))
-sys.path.append(os.path.dirname(__file__))
-print "\n".join(sys.path)
+# import os;
+# print os.path.dirname(__file__)
+# print os.path.join(os.path.dirname(__file__), ".")
+# # 
+# # 
+# # # sys.path.append(os.path.join(os.path.dirname(__file__), "."))
+# sys.path.append(os.path.dirname(__file__))
+# print "\n".join(sys.path)
 
 # To use: decoder.py < examples/bitstream.ankita
 
