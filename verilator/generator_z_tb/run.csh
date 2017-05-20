@@ -124,6 +124,33 @@ if (! -e "$testbench") then
   exit -1
 endif
 
+unset embedded_io
+grep "FFFFFFFF" $config && set embedded_io
+if ($?embedded_io) then
+  echo "Bitstream appears to have embedded i/o information"
+
+  # IO file
+  echo "Will generate io file '/tmp/io.xml' from bitstream"
+  echo "instead of existing default '$iofile'"
+  set decode = ../bitstream/decoder/decode.py
+  $decode $config > /tmp/$config.decoded
+  sed -n '/ioin/,$p' /tmp/$config.decoded > /tmp/io.xml
+  set iofile = /tmp/io.xml
+  echo "$iofile looks like this:"; cat $iofile
+  echo
+
+  # Clean bitstream
+  set newconfig = /tmp/bs.txt
+  echo "Will strip out IO hack to create clean bitstream '$newconfig'"
+  echo "instead of existing default '$config'"
+  grep -v HACK /tmp/$config.decoded | sed -n '/TILE/,$p' | sed -n '/^[0-9A-F]/p' > $newconfig
+  diff $config $newconfig
+  set config = $newconfig
+  echo
+
+endif
+
+
 echo "Running with the following switches:"
 echo "$0 top_tb.cpp \"
 echo "   $GENERATE                                   \"

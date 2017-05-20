@@ -306,8 +306,10 @@ def pe_decode(RR, DDDDDDDD):
     if (RR == "F2"): creg = dstring; k="C"
     if (RR == "F3"): dreg = dstring; k="D"; print "\n\nFOOOOOOOOOOOOOOO\n\n"
     if (k):
+        iohack = "";
+        if (DDDDDDDD == "FFFFFFFF"): iohack = "IO HACK: "
         # print "\n\nFOOAA %s\n\n" % breg
-        print "reg%s <= %s" % (k, dstring);
+        print "%sreg%s <= %s" % (iohack, k, dstring);
         return;
 
     # Only other valid option is "FF" (load opcode)
@@ -598,5 +600,31 @@ for t in iohack_io_tiles:
         outwire = iohack_cb_out[t];
         output_wirename = "%8s / %s" % (outwire, find_source(r,c,outwire));
         print "# OUTPUT %s / %8s" % (tile, output_wirename)
+
+########################################################################
+# In io.xml format:
+#   <io name='ioin' type='source'>
+#     <wire_name>wire_0_0_BUS16_S1_T0</wire_name>
+#   <io name='ioout' type='sink'>
+#     <wire_name>wire_1_0_BUS16_S1_T5</wire_name>
+
+print "  <io name='ioin' type='source'>"
+for t in iohack_io_tiles:
+    io = iohack_io_tiles[t];
+    [r,c] = tileno2rc(t);
+    if (io == "input" ):
+        inwire = iohack_pe_out[t]
+        input_wirename  = find_source(r,c, inwire)
+        print "    <wire_name>%s</wire_name>" % (input_wirename)
+
+
+print "  <io name='ioout' type='sink'>"
+for t in iohack_io_tiles:
+    io = iohack_io_tiles[t];
+    [r,c] = tileno2rc(t);
+    if (io == "output" ):
+        outwire = iohack_cb_out[t];
+        output_wirename = find_source(r,c,outwire)
+        print "    <wire_name>%s</wire_name>" % (output_wirename)
 
 inputstream.close();
