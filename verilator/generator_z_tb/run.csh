@@ -66,10 +66,8 @@ end
 # Defaults
 # set nclocks = ''
 
-
-
 while ($#argv)
-  echo $1
+  echo "Found switch '$1'"
   switch ("$1")
 
     case '-clean':
@@ -125,26 +123,29 @@ if (! -e "$testbench") then
 endif
 
 unset embedded_io
-grep "FFFFFFFF" $config && set embedded_io
+grep "FFFFFFFF" $config > /dev/null && set embedded_io
 if ($?embedded_io) then
-  echo "Bitstream appears to have embedded i/o information"
+  echo; echo "Bitstream appears to have embedded i/o information."
 
   # IO file
-  echo "Will generate io file '/tmp/io.xml' from bitstream"
+  set newbs = /tmp/io.xml
+  echo "Will generate io file '$newbs' from bitstream"
   echo "instead of existing default '$iofile'"
-  set decode = ../bitstream/decoder/decode.py
-  $decode $config > /tmp/$config.decoded
-  sed -n '/ioin/,$p' /tmp/$config.decoded > /tmp/io.xml
-  set iofile = /tmp/io.xml
-  echo "$iofile looks like this:"; cat $iofile
+  set decode = ../../bitstream/decoder/decode.py
+  set decoded = {$config:t}.decoded
+  $decode $config > $decoded
+  sed -n '/ioin/,$p' $decoded > $newbs
+  set iofile = $newbs
+  echo "$iofile looks like this:"; echo; cat $iofile
   echo
 
   # Clean bitstream
   set newconfig = /tmp/bs.txt
-  echo "Will strip out IO hack to create clean bitstream '$newconfig'"
-  echo "instead of existing default '$config'"
-  grep -v HACK /tmp/$config.decoded | sed -n '/TILE/,$p' | sed -n '/^[0-9A-F]/p' > $newconfig
-  diff $config $newconfig
+  echo -n "Will strip out IO hack to create clean bitstream '$newconfig'"
+  echo "instead of existing default"
+  echo "  '$config'"
+  grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newconfig
+  diff $config $newconfig | grep -v d
   set config = $newconfig
   echo
 
