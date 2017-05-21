@@ -18,6 +18,9 @@
 #  run.csh uses pre-built io, map files in bitstream/example3 to build config file
 # builds small parrot
 
+# FIXME should change/remove "example3" dependences (below)
+# Also no longer need "-io" in future yes?
+
 # DEFAULTS
 set testbench = top_tb.cpp
 set GENERATE = "-gen"
@@ -67,7 +70,7 @@ end
 # set nclocks = ''
 
 while ($#argv)
-  echo "Found switch '$1'"
+  # echo "Found switch '$1'"
   switch ("$1")
 
     case '-clean':
@@ -138,7 +141,7 @@ if ($?embedded_io) then
   echo "instead of existing default '$iofile'"
   sed -n '/ioin/,$p' $decoded > $newbs
   set iofile = $newbs
-  echo "$iofile looks like this:"; echo; cat $iofile
+  echo "Done.  $iofile looks like this:"; echo; cat $iofile
   echo
 
   # Clean bitstream
