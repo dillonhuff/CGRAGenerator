@@ -188,11 +188,11 @@ def cb_decode(EE, DDDDDDDD):
     st["02.00000004"] = "wireA <= in_s1t4"
 
     # input A side 3 (N)
-    st["02.00000005"] = "wireA <= in_s3t5"
-    st["02.00000006"] = "wireA <= in_s3t6"
-    st["02.00000007"] = "wireA <= in_s3t7"
-    st["02.00000008"] = "wireA <= in_s3t8"
-    st["02.00000009"] = "wireA <= in_s3t9"
+    st["02.00000005"] = "wireA <= in_s3t0"
+    st["02.00000006"] = "wireA <= in_s3t1"
+    st["02.00000007"] = "wireA <= in_s3t2"
+    st["02.00000008"] = "wireA <= in_s3t3"
+    st["02.00000009"] = "wireA <= in_s3t4"
 
     # input B side 0 (E)
     st["03.00000000"] = "wireB <= in_s0t0"
@@ -202,11 +202,11 @@ def cb_decode(EE, DDDDDDDD):
     st["03.00000004"] = "wireB <= in_s0t4"
 
     # input B side 2 (W)
-    st["03.00000005"] = "wireB <= in_s2t5"
-    st["03.00000006"] = "wireB <= in_s2t6"
-    st["03.00000007"] = "wireB <= in_s2t7"
-    st["03.00000008"] = "wireB <= in_s2t8"
-    st["03.00000009"] = "wireB <= in_s2t9"
+    st["03.00000005"] = "wireB <= in_s2t0"
+    st["03.00000006"] = "wireB <= in_s2t1"
+    st["03.00000007"] = "wireB <= in_s2t2"
+    st["03.00000008"] = "wireB <= in_s2t3"
+    st["03.00000009"] = "wireB <= in_s2t4"
 
     cb_connection = st[EE + '.' + DDDDDDDD]
 
