@@ -34,27 +34,38 @@ script:
   - echo "CGRA generate (generates CGRA + connection matrix for pnr)" - `date`
   - pushd $cgroot; ./travis-test.csh; popd
 
-  # PNR goes here
-  - cp $cgroot/bitstream/example3/PNRguys_mapped.xml $cgbuild/mapped.xml
-  - cp $cgroot/bitstream/example3/PNRguys_io.xml     $cgbuild/io.xml
+#   # PNR goes here
+#   - cp $cgroot/bitstream/example3/PNRguys_mapped.xml $cgbuild/mapped.xml
+#   - cp $cgroot/bitstream/example3/PNRguys_io.xml     $cgbuild/io.xml
+# 
+#   # Bitstream build
+#   - echo "Build bitstream for programming CGRA" - `date`
+#   - cd $cgbuild
+#   - perl $cgroot/bitstream/example3/gen_bitstream.pl
+#        $cgbuild/mapped.xml
+#        $cgbuild/config
+# 
+#   # CGRA program and run ((theoretically) uses output of pnr)
+#   - echo "CGRA program and run (uses output of pnr)" - `date`
+#   - pushd $cgroot/verilator/generator_z_tb
+#   - ./run.csh top_tb.cpp -input io/gray_small.png
+#         -config $cgbuild/config.dat
+#         -io     $cgbuild/io.xml
+#         -input  io/gray.png 
+#         -output /tmp/output.raw
+#         -nclocks 3M
+#   - popd
 
-  # Bitstream build
-  - echo "Build bitstream for programming CGRA" - `date`
-  - cd $cgbuild
-  - perl $cgroot/bitstream/example3/gen_bitstream.pl
-       $cgbuild/mapped.xml
-       $cgbuild/config
-
-  # CGRA program and run ((theoretically) uses output of pnr)
+  # CGRA program and run uses bitstream produced by PNR guys
   - echo "CGRA program and run (uses output of pnr)" - `date`
   - pushd $cgroot/verilator/generator_z_tb
   - ./run.csh top_tb.cpp -input io/gray_small.png
-        -config $cgbuild/config.dat
-        -io     $cgbuild/io.xml
+        -config $cgroot/bitstream/example_calebscript/calebscript.bs
         -input  io/gray.png 
         -output /tmp/output.raw
         -nclocks 3M
   - popd
+
 
 # ./run.csh top_tb.cpp 
 # -config ../../hardware/generator_z/top_tb/tile_config.dat 
