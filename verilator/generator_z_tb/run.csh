@@ -127,13 +127,15 @@ grep "FFFFFFFF" $config > /dev/null && set embedded_io
 if ($?embedded_io) then
   echo; echo "Bitstream appears to have embedded i/o information."
 
+  set decode = ../../bitstream/decoder/decode.py
+  set decoded = /tmp/{$config:t}.decoded
+  $decode $config > $decoded
+
+
   # IO file
   set newbs = /tmp/io.xml
   echo "Will generate io file '$newbs' from bitstream"
   echo "instead of existing default '$iofile'"
-  set decode = ../../bitstream/decoder/decode.py
-  set decoded = {$config:t}.decoded
-  $decode $config > $decoded
   sed -n '/ioin/,$p' $decoded > $newbs
   set iofile = $newbs
   echo "$iofile looks like this:"; echo; cat $iofile
