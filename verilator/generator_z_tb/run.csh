@@ -1,7 +1,5 @@
 #!/bin/csh -f
 
-#  NOTE default is NOGEN; must set -gen if want gen locally
-
 # Travis flow (CGRAFlow/.travis.yml)
 #  travis script calls "travis-test" to do the initial generate
 #  travis script calls PNR to build map, io info from generated cgra_info.txt
@@ -9,8 +7,7 @@
 
 # Travis flow (CGRAGenerator/.travis.yml)
 #  travis script calls "travis-test" to do the initial generate
-#  travis script copies pre-built io, map from example3 to $cgbuild
-#  travis script calls run.csh
+#  travis script calls run.csh using pre-built bitstream w/embedded io info
 #  builds small parrot
 
 # Local flow (test):
@@ -18,28 +15,20 @@
 #  run.csh uses pre-built io, map files in bitstream/example3 to build config file
 # builds small parrot
 
-# FIXME should change/remove "example3" dependences (below)
-# Also no longer need "-io" in future yes?
-
 # DEFAULTS
 set testbench = top_tb.cpp
-set GENERATE = "-gen"
-
-# set config = ../../bitstream/example3/PNRguys_mapped.xml
-# set iofile = ../../bitstream/example3/PNRguys_io.xml
-
-set config = ../../bitstream/examples/calebscript.bs
-set input  = io/gray_small.png
-set output = /tmp/output.raw
+set GENERATE  = "-gen"
+set config    = ../../bitstream/examples/calebscript.bs
+set input     = io/gray_small.png
+set output    = /tmp/output.raw
+set nclocks   = "1M"
 unset tracefile
-set nclocks = "1M"
 
 if ($#argv == 1) then
   if ($argv[1] == '--help') then
     echo "Usage:"
     echo "    $0 <textbench.cpp> [-gen]"
     echo "        -config     <config_filename>"
-    echo "        -io         <io_filename>"
     echo "        -input      <input_filename>"
     echo "        -output     <output_filename>"
     echo "       [-buildtrace <trace_filename>]"
@@ -47,11 +36,10 @@ if ($#argv == 1) then
     echo
     echo "Defaults:"
     echo "    $0 top_tb.cpp \"
-    echo "       $GENERATE            \"
+    echo "       $GENERATE         \"
     echo "       -config   $config \"
-#    echo "       -io       $iofile \"
-    echo "       -input    $input                           \"
-    echo "       -output   $output                             \"
+    echo "       -input    $input  \"
+    echo "       -output   $output \"
     if ($?tracefile) then
       echo "       -buildtrace $tracefile \"
     endif
@@ -68,9 +56,6 @@ endif
 foreach f (obj_dir counter.cvd tile_config.dat)
   if (-e $f) rm -rf $f
 end
-
-# Defaults
-# set nclocks = ''
 
 while ($#argv)
   # echo "Found switch '$1'"
@@ -131,53 +116,46 @@ endif
 
 unset embedded_io
 grep "FFFFFFFF" $config > /dev/null && set embedded_io
-if ($?embedded_io) then
-  echo; echo "Bitstream appears to have embedded i/o information."
-
-  set decode = ../../bitstream/decoder/decode.py
-  set decoded = /tmp/{$config:t}.decoded
-  $decode $config > $decoded
-
-
-  # IO file
-  set newbs = /tmp/io.xml
-  echo "Will generate io file '$newbs' from bitstream"
-  # echo "instead of existing default '$iofile'"
-  sed -n '/ioin/,$p' $decoded > $newbs
-  set iofile = $newbs
-  echo "Done.  $iofile looks like this:"; echo; cat $iofile
-  echo
-
-  # Clean bitstream
-  set newconfig = /tmp/bs.txt
-  echo -n "Will strip out IO hack to create clean bitstream '$newconfig'"
-  echo "instead of existing default"
-  echo "  '$config'"
-  grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newconfig
-  diff $config $newconfig | grep -v d
-  set config = $newconfig
-  echo
-
-else
-
-  echo "bitstream appears to have no embedded i/o information"
+if (! $?embedded_io) then
+  echo "bitstream appears to have no embedded i/o information."
   echo "we don't support that no more"
   exit -1
-
 endif
 
+echo; echo "Bitstream appears to have embedded i/o information."
 
+set decoded = /tmp/{$config:t}.decoded
+../../bitstream/decoder/decode.py $config > $decoded
+
+# IO file derived from bitstream
+set iofile = /tmp/io.xml
+echo "Will generate io file '$iofile' from bitstream."
+sed -n '/ioin/,$p' $decoded > $iofile
+echo; echo "Done.  $iofile looks like this:"; echo; cat $iofile
+echo
+
+# Clean bitstream (strip out hacked-in IO info)
+set newbs = /tmp/bs.txt
+echo "Will strip out IO hack from '$config'"
+echo "to create clean bitstream '$newbs'"
+echo
+grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
+diff $config $newbs | grep -v d
+set config = $newbs
+echo
+
+# Backslashes line up better when printed...
 echo "Running with the following switches:"
 echo "$0 top_tb.cpp \"
-echo "   $GENERATE                                   \"
-echo "   -config   $config \"
-echo "   -io       $iofile     \"
-echo "   -input    $input                           \"
-echo "   -output   $output                             \"
+echo "   $GENERATE                    \"
+echo "   -config   $config   \"
+echo "   -io       $iofile   \"
+echo "   -input    $input  \"
+echo "   -output   $output    \"
 if ($?tracefile) then
   echo "   -buildtrace $tracefile \"
 endif
-echo "   -nclocks  $nclocks                                        \"
+echo "   -nclocks  $nclocks                 \"
 
 # Turn nclocks into an integer.
 set nclocks = `echo $nclocks | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
@@ -221,10 +199,9 @@ if ("$config:e" == "xml") then
   echo "Generating config bitstream 'tmpconfig.dat' from xml file '$config'..."
   perl ../../bitstream/example3/gen_bitstream.pl $config tmpconfig
   set config = tmpconfig.dat
-
 else
   echo "Use existing config bitstream '$config'..."
-
+  echo
 endif
 
 echo "BITSTREAM:"
