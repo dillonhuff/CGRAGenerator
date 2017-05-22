@@ -35,7 +35,7 @@ setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 # SR_VERILATOR tells generator to do verilator-specific optimizations
 # TODO/FIXME I think this is no longer used; take it out and see if it still works.
 # 
-setenv SR_VERILATOR
+# setenv SR_VERILATOR
 # printenv | sort
 
 
