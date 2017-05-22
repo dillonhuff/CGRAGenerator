@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+
+# set top = ../genesis_verif/top.v
 set top = $1
 
 if (! -e $top) then
@@ -7,11 +9,10 @@ if (! -e $top) then
   exit -1
 endif
 
-echo ''
-echo '-------------------------------------------------------------------'
+echo
+echo "--------------------------------------------------------------------"
 echo "Here is what I built (it's supposed to look like an array of tiles)."
-echo ""
-
+echo
 echo "    --------------------------------------------"
 egrep '^//t' $top  | sed 's/^../    /'
 echo "    --------------------------------------------"

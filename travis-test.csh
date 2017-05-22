@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+set whereami = `pwd`
+
 # This travis-script helper brings in Genesis2 from the github
 # then uses Genesis2 to build the CGRA.
 
@@ -52,7 +54,8 @@ which Genesis2.pl
 ##############################################################################
 # Use resulting top.v to print out information about what was built.
 
-set top=./genesis_verif/top.v
-bin/find_cgra_info.csh $top
+# set top= ./genesis_verif/top.v
+set top= `pwd`/genesis_verif/top.v
+$whereami/bin/find_cgra_info.csh $top || exit -1
 
 
