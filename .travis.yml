@@ -21,7 +21,7 @@ script:
 
   # CGRA generate
   - echo "CGRA generate (generates CGRA + connection matrix for pnr)" - `date`
-  - pushd $cgroot; ./travis-test.csh; popd
+  - pushd $cgroot; ./travis-test.csh || exit -1; popd
 
   # CGRA program and run uses bitstream produced by PNR guys
   - echo "CGRA program and run (uses output of pnr)" - `date`
