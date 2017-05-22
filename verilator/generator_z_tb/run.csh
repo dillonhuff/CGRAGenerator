@@ -95,6 +95,7 @@ while ($#argv)
       set config = "$2"; shift; breaksw
 
     case -io:
+      echo "WARNING -io no longer supported; this switch will be ignored."
       set iofile = "$2"; shift; breaksw
 
     case -input:
