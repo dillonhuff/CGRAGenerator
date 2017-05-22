@@ -117,22 +117,18 @@ endif
 unset embedded_io
 grep "FFFFFFFF" $config > /dev/null && set embedded_io
 if (! $?embedded_io) then
-  echo "bitstream appears to have no embedded i/o information."
-  echo "we don't support that no more"
+  echo "Bitstream appears NOT to have embedded I/O information."
+  echo "We don't support that no more."
   exit -1
 endif
 
-echo; echo "Bitstream appears to have embedded i/o information."
+echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
 
 set decoded = /tmp/{$config:t}.decoded
 ../../bitstream/decoder/decode.py $config > $decoded
 
-# IO file derived from bitstream
-set iofile = /tmp/io.xml
-echo "Will generate io file '$iofile' from bitstream."
-sed -n '/ioin/,$p' $decoded > $iofile
-echo; echo "Done.  $iofile looks like this:"; echo; cat $iofile
-echo
+# Show IO info derived from bitstream
+echo; sed -n '/O Summary/,$p' $decoded; echo
 
 # Clean bitstream (strip out hacked-in IO info)
 set newbs = /tmp/bs.txt
@@ -149,7 +145,7 @@ echo "Running with the following switches:"
 echo "$0 top_tb.cpp \"
 echo "   $GENERATE                    \"
 echo "   -config   $config   \"
-echo "   -io       $iofile   \"
+#echo "   -io       $iofile   \"
 echo "   -input    $input  \"
 echo "   -output   $output    \"
 if ($?tracefile) then
@@ -162,15 +158,6 @@ set nclocks = `echo $nclocks | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'
 set nclocks = "-nclocks $nclocks"
 
 
-
-# kiwi needs special setup for verilator
-# FIXME/TODO set up kiwi so that it doesn't need this! DONE 04/2017
-# if (`hostname` == "kiwi") then
-#   echo
-#   echo Set verilator environment for kiwi
-#   setenv VERILATOR_ROOT /var/local/verilator-3.900
-#   set path = (/var/local/verilator-3.900/bin $path)
-# endif
 which verilator
 
 
@@ -213,66 +200,30 @@ echo '------------------------------------------------------------------------'
 echo "BEGIN find input and output wires"
 echo ""
 
-  # If io file specified, use it to find input and output wires.
-  # Otherwise, use default wire names and hope for the best.
-
-  if ($?iofile) then
-    echo "  USING WIRE NAMES FROM FILE '${iofile}':"
-    grep wire_name $iofile
+    echo "  USING I/O WIRE NAMES DERIVED FROM BITSTREAM"
     echo ""
 
-    # Why the devil didn't this work in travis!?
-    #     set inwires = `set echo; sed -n /source/,/wire_name/p $iofile\
-    #        | grep wire_name | sed 's/[<>]/ /g' | awk '{print $2}'`
-
-    sed -n /source/,/wire_name/p $iofile > /tmp/tmp1
-    grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
-    set inwires = `cat /tmp/tmp2`
-    echo "  IN  $inwires"
+    # This is what we're looking for:
+    #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
+    #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
+    #     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
    
-    sed -n /sink/,/wire_name/p $iofile > /tmp/tmp1
-    grep wire_name /tmp/tmp1 | sed 's/[<>]/ /g' | awk '{print $2}' > /tmp/tmp2
-    set outwires = `cat /tmp/tmp2`
+    set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
+    echo "  IN  $inwires"
+
+    set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
     echo "  OUT $outwires"
-    echo ""
 
-  else
-    echo "  USING DEFAULT WIRE NAMES"
-
-    # add4 2x2 (tile_config.dat)
-    # set inwires  = (wire_0_m1_BUS16_S0_T0 wire_m1_0_BUS16_S1_T0 wire_1_m1_BUS16_S0_T2 wire_2_0_BUS16_S3_T2)
-    # set outwires = (wire_0_1_BUS16_S0_T4)
-
-    # add4 4x4 (tile_config.dat)
-    # set inwires  = (wire_0_m1_BUS16_S0_T0 wire_m1_0_BUS16_S1_T0 wire_1_m1_BUS16_S0_T2 wire_4_0_BUS16_S3_T2)
-    # set outwires = (wire_0_1_BUS16_S0_T4)
-
-    # mul2/nikhil-config (PNRCONFIG.dat maybe)
-    set inwires  = (wire_0_0_BUS16_S1_T0)
-    set outwires = (wire_1_0_BUS16_S1_T0)
-
-    # ../../bitstream/tmpconfigPNR.dat
-    set inwires  = (wire_0_0_BUS16_S1_T0)
-    set outwires = (wire_1_2_BUS16_S3_T0)
-  endif
-
-  echo "  inwires  = $inwires"
-  echo "  outwires = $outwires"
-  echo ""
+    echo
+    echo "  inwires  = $inwires"
+    echo "  outwires = $outwires"
+    echo
 
 echo "END find input and output wires"
 
 echo ""
 echo '------------------------------------------------------------------------'
 echo ""
-
-# I doubt this works anymore...
-# # Substitute in a complete new custom top.v
-# # (We don't really do this these days...)
-# # The old switcharoo
-# if ($testbench == "tbsr1.cpp") then
-#   cp ./top_sr.v $gbuild/genesis_verif/top.v
-# endif
 
 set vdir = ../../hardware/generator_z/top/genesis_verif
 if (! -e $vdir) then
@@ -283,19 +234,16 @@ if (! -e $vdir) then
   exit -1
 endif
 
-# if ("$GENERATE" == "-gen") then
-    echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
-    echo ""
-
-      echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
-      echo
-      ./run-wirehack.csh \
+echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
+    echo
+    echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
+    echo
+    ./run-wirehack.csh \
         -inwires "$inwires" \
         -outwires "$outwires" \
         -vtop "$vdir/top.v"
 
-    echo END top.v manipulation
-# endif
+echo END top.v manipulation
 
 echo ''
 echo '------------------------------------------------------------------------'
