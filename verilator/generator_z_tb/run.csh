@@ -24,8 +24,11 @@
 # DEFAULTS
 set testbench = top_tb.cpp
 set GENERATE = "-gen"
-set config = ../../bitstream/example3/PNRguys_mapped.xml
-set iofile = ../../bitstream/example3/PNRguys_io.xml
+
+# set config = ../../bitstream/example3/PNRguys_mapped.xml
+# set iofile = ../../bitstream/example3/PNRguys_io.xml
+
+set config = ../../bitstream/examples/calebscript.bs
 set input  = io/gray_small.png
 set output = /tmp/output.raw
 unset tracefile
@@ -46,7 +49,7 @@ if ($#argv == 1) then
     echo "    $0 top_tb.cpp \"
     echo "       $GENERATE            \"
     echo "       -config   $config \"
-    echo "       -io       $iofile \"
+#    echo "       -io       $iofile \"
     echo "       -input    $input                           \"
     echo "       -output   $output                             \"
     if ($?tracefile) then
@@ -138,7 +141,7 @@ if ($?embedded_io) then
   # IO file
   set newbs = /tmp/io.xml
   echo "Will generate io file '$newbs' from bitstream"
-  echo "instead of existing default '$iofile'"
+  # echo "instead of existing default '$iofile'"
   sed -n '/ioin/,$p' $decoded > $newbs
   set iofile = $newbs
   echo "Done.  $iofile looks like this:"; echo; cat $iofile
@@ -153,6 +156,12 @@ if ($?embedded_io) then
   diff $config $newconfig | grep -v d
   set config = $newconfig
   echo
+
+else
+
+  echo "bitstream appears to have no embedded i/o information"
+  echo "we don't support that no more"
+  exit -1
 
 endif
 
