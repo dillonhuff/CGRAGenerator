@@ -11,17 +11,6 @@ addons:
       - verilator
     # - build-essential
 
-##############################################################################
-# Here's how James does Verilator:
-# 
-#  # verilator
-#   - sudo apt-get install verilator
-#   - export PKG_CONFIG_PATH=/home/travis/build/jameshegarty/rigel/platform/verilator
-
-# maybe this should be done as before-script/before-install?
-# - export PKG_CONFIG_PATH=/home/travis/build/StanfordAHA/CGRAGenerator/platform/verilator
-
-
 script:
 
   # CGRA setup
@@ -44,27 +33,9 @@ script:
         -nclocks 3M
   - popd
 
-# ./run.csh top_tb.cpp 
-# -config ../../hardware/generator_z/top_tb/tile_config.dat 
-
-#  - cd verilator/generator_z_tb
-#  - ./run.csh top_tb.cpp -config ../../hardware/generator_z/top_tb/tile_config.dat
-
-#  - export SR_VERILATOR
-#  - ./run-travis.csh tb_remote.cpp
-
-##############################################################################
 ##############################################################################
 # NOTES
 # 
-# Maybe someday we'll want/need this:
+# Maybe someday we'll want/need:
 # perl:
 # - "5.18"
-# 
-# OLD
-# script:
-#   - which csh
-#   - ./travis-test.csh
-#   - perl -f tmp.pl
-#   - hardware/generator_z/top/run.csh
-

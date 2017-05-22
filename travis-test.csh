@@ -1,27 +1,19 @@
 #!/bin/csh -f
 
-# This travis-script helper sets up the Genesis2 run environment,
+# This travis-script helper brings in Genesis2 from the github
 # then uses Genesis2 to build the CGRA.
-#
-# FIXME/TODO: use Genesis2 from github instead maybe...
 
 perl --version | head -1
 
 ##############################################################################
-# Trying a thang
-
-
-##############################################################################
 # Set up to run Genesis2
-# TODO/FIXME project: maybe bring in genesis from github instead of using local copy?
-
 
 # Alternatively could maybe do this...
 # If running locally, use existing Genesis2 install...
 # if (hostname == kiwi) setenv GENESIS_HOME /cad/genesis2/r11879/Genesis2Tools/
 
 # Clone Genesis2 from github
-# NEW
+
 if (! -d /tmp/Genesis2/) then
   git clone https://github.com/StanfordVLSI/Genesis2.git /tmp/Genesis2
 endif
@@ -33,16 +25,11 @@ setenv GENESIS_HOME /tmp/Genesis2/Genesis2Tools
 #
 # popd
 
-
-
 set path=(. $GENESIS_HOME/bin $GENESIS_HOME/gui/bin $path)
 # setenv PERL5LIB "$PERL5LIB":$GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 
 # echo path=$path
-
-
-
 
 ##############################################################################
 # SR_VERILATOR tells generator to do verilator-specific optimizations
