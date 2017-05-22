@@ -55,7 +55,7 @@ which Genesis2.pl
 # Use resulting top.v to print out information about what was built.
 
 # set top= ./genesis_verif/top.v
-set top= `pwd`/genesis_verif/top.v
+set top = `pwd`/genesis_verif/top.v
 $whereami/bin/find_cgra_info.csh $top || exit -1
 
 
