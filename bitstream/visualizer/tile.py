@@ -48,6 +48,8 @@ ARRAY_PAD = 60
 # FIXME: LENGTH? or HEIGHT?
 PORT_WIDTH  = 8;
 PORT_HEIGHT = 16;
+PORT_LENGTH = PORT_HEIGHT # Because sometimes I forget
+
 
 # PORT_PAD = PORT_WIDTH/2
 PORT_PAD = PORT_WIDTH/2
@@ -65,56 +67,68 @@ REG_HEIGHT = 2;
 CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
+def draw_rectilinear_arrow(cr, al, ahl,ahw,dir,fill):
+    # Draw an arrow of total length al and line_width aw
+    # Arrowhead on the end is a triangle of length ahl, width ahw
+    # if "fill" is true, fill in the triangle.
+    # Arrow starts at location (0,0); use cr.translate() to place it to (x,y)
+    # E.g.
+    # cr.save()
+    #   cr.translate(x,y)
+    #   draw_rectilinear_arrow(al,aw,ahl,ahw,fill)
+    # cr.restore()
+    PI = 3.1416
+
+    cr.save()
+    if (dir=='left'): cr.rotate(PI)
+    if (dir=='down'): cr.rotate(PI/2)
+    if (dir=='up'):   cr.rotate(3*PI/2)
+
+    # Uses aw,al,ahw,ahl
+
+#         graylevel = 0.9
+#         cr.set_source_rgb(graylevel,graylevel,graylevel)
+
+    cr.move_to(0,0)
+    cr.line_to(al-ahl,0)
+    cr.stroke()
+
+    if (fill): cr.set_line_width(1);
+
+    cr.move_to(al-ahl,     -ahw/2)
+    cr.line_to(al, 0)
+    cr.line_to(al-ahl,     ahw/2)
+
+    if (fill):
+        cr.close_path()
+        cr.fill()
+
+    cr.stroke()
+    cr.restore()
 
 def draw_big_ghost_arrows(cr):
 
     # Ghost Arrow parms, used by big_ghost_arrow(), 
-
     apad = 10; # how far arrow sticks outon each side
-
     ahl = 20 # length of arrowhead
-    al = 2*CANVAS_WIDTH + 2*apad - ahl/2  # length of line
-
+    al = 2*CANVAS_WIDTH + 2*apad + ahl/2  # length of line
     # aw = 30 # width of line
     aw = 10 # width of line
     # ahw = 2*aw # width of arrowhead
     ahw = 3*aw # width of arrowhead
 
+    def draw_big_ghost_arrow(cr,x,y,dir):
 
-
-    def big_ghost_arrow(cr,x,y,dir):
-
+        fill = True;
         cr.save()
         cr.translate(x,y)
-        if (dir=='left'): cr.rotate(PI)
-        if (dir=='down'): cr.rotate(PI/2)
-        if (dir=='up'):   cr.rotate(3*PI/2)
-
-        # Uses aw,al,ahw,ahl
-
-    #         graylevel = 0.9
-    #         cr.set_source_rgb(graylevel,graylevel,graylevel)
-
         cr.set_line_width(aw);
-        cr.move_to(0,0)
-        cr.line_to(al,0)
-        cr.stroke()
-
-        cr.set_line_width(1);
-
-        cr.move_to(al+ahl, 0)
-        cr.line_to(al, -ahw/2)
-        cr.line_to(al, ahw/2)
-        cr.close_path()
-        cr.fill()
-        cr.stroke()
+        draw_rectilinear_arrow(cr,al,ahl,ahw,dir,fill)
         cr.restore()
-
-
-
 
     offset = 22
     offset = 28
+    h_offset = PORT_LENGTH + 2 * PORT_WIDTH
 
     # All arrows are 'aw' wide and 'al+ahl' long etc.
 
@@ -125,26 +139,24 @@ def draw_big_ghost_arrows(cr):
     graylevel = 0.9
     cr.set_source_rgb(graylevel,graylevel,graylevel)
 
+    # Right-pointing arrows start apad back from left edge of the tile array,
+    # and h_offset down from the top
+
     # right/left arrows
-    leftstart = -apad;  rightstart = -apad+al+ahl/2
-    big_ghost_arrow(cr, leftstart, offset+aw/2,               'right')
-    big_ghost_arrow(cr, leftstart, offset+aw/2+CANVAS_HEIGHT, 'right')
-    big_ghost_arrow(cr, rightstart,   CANVAS_HEIGHT-offset-aw/2, 'left')
-    big_ghost_arrow(cr, rightstart, 2*CANVAS_HEIGHT-offset-aw/2, 'left')
+    ra_start = -apad;  la_start = -apad+al-ahl/2
+    # draw_big_ghost_arrow(cr, ra_start, offset+aw/2,               'right')
+    draw_big_ghost_arrow(cr, ra_start, h_offset   ,               'right')
+    draw_big_ghost_arrow(cr, ra_start, offset+aw/2+CANVAS_HEIGHT, 'right')
+    draw_big_ghost_arrow(cr, la_start,   CANVAS_HEIGHT-offset-aw/2, 'left')
+    draw_big_ghost_arrow(cr, la_start, 2*CANVAS_HEIGHT-offset-aw/2, 'left')
 
 
     # up/down arrows
-    topstart = leftstart;  botstart = rightstart;
-    big_ghost_arrow(cr, offset+aw/2,                topstart,'down')
-    big_ghost_arrow(cr, offset+aw/2+CANVAS_WIDTH,   topstart, 'down')
-    big_ghost_arrow(cr, CANVAS_WIDTH-offset-aw/2,   botstart, 'up')
-    big_ghost_arrow(cr, 2*CANVAS_WIDTH-offset-aw/2, botstart, 'up')
-
-#         big_ghost_arrow(cr, CANVAS_WIDTH-offset-aw/2,   2*CANVAS_HEIGHT+20, 'up')
-#         big_ghost_arrow(cr, 2*CANVAS_WIDTH-offset-aw/2, 2*CANVAS_HEIGHT+20, 'up')
-
-
-
+    topstart = ra_start;  botstart = la_start;
+    draw_big_ghost_arrow(cr, offset+aw/2,                topstart,'down')
+    draw_big_ghost_arrow(cr, offset+aw/2+CANVAS_WIDTH,   topstart, 'down')
+    draw_big_ghost_arrow(cr, CANVAS_WIDTH-offset-aw/2,   botstart, 'up')
+    draw_big_ghost_arrow(cr, 2*CANVAS_WIDTH-offset-aw/2, botstart, 'up')
 
 
 
