@@ -27,6 +27,7 @@ NTRACKS_PE_WIRE_V = 0;
 # ARROWHEAD_LENGTH = 2; ARROWHEAD_WIDTH = 4; # meh
 ARROWHEAD_LENGTH = 3; ARROWHEAD_WIDTH = 2; # this is nice
 
+ARRAY_PAD = 60
 
 # Should be something like:
 #
@@ -49,18 +50,28 @@ PORT_WIDTH  = 8;
 PORT_HEIGHT = 16;
 
 # PORT_PAD = PORT_WIDTH/2
-PORT_PAD = PORT_WIDTH
+PORT_PAD = PORT_WIDTH/2
 
 REG_WIDTH  = PORT_WIDTH - 2;
 REG_HEIGHT = 2;
 
-CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 1.5*PORT_PAD
-CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 1.5*PORT_PAD
+# Canvas size for displaying a single tile edge-to-edge w/ no padding
+#   How big is a tile canvas?  Refer to diagram in doc
+#   Short answer is:
+#     Canvas width  = 2*plen + 2*ntracks_v*pwid + 3*pwid
+#     Canvas height = 2*plen + 2*ntracks_h*pwid + 3*pwid
+#   where each port is an arrow in a box that's portlength long and portwidth wide
+#   and ntracks_v = ntracks_bus_v + ntracks_wire_v etc.
+CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
+CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
+
+apad = 10; # how far arrow sticks outon each side
+
+ahl = 20 # length of arrowhead
+al = 2*CANVAS_WIDTH + 2*apad - ahl/2  # length of line
 
 # aw = 30 # width of line
 aw = 10 # width of line
-al = 2*CANVAS_WIDTH+40  # length of line
-ahl = 20 # length of arrowhead
 # ahw = 2*aw # width of arrowhead
 ahw = 3*aw # width of arrowhead
 
@@ -163,14 +174,12 @@ class CGRATilePE:
         PLPW   = plen + pwid
         PLPWPW = plen + pwid
 
-
-
         # 'corner' = Distance from edge of canvas to edge of tile
         # 'pad'    = Distance from edge of tile to first port
         # '2*pad'  = Distance between last outport and first inport
 
-        corner = PORT_HEIGHT
-        pad    = PORT_PAD
+        # corner = PORT_HEIGHT
+        # pad    = PORT_PAD
 
         # side 0: no rotate
         #   out = (cw-pl, pl+t*pw)
@@ -531,16 +540,21 @@ class CGRATilePE:
                     wirename = "%s_s%dt%d" % (dir, side, track)
                     self.drawport(cr, wirename, options="ghost")
 
-                         
-    def big_ghost_arrow(self,cr):
+    def big_ghost_arrow(self,cr,x,y,dir):
+
+        cr.save()
+        cr.translate(x,y)
+        if (dir=='left'): cr.rotate(PI)
+        if (dir=='down'):  cr.rotate(PI/2)
+        if (dir=='up'):    cr.rotate(3*PI/2)
 
 #         aw = 40 # width of line
 #         al = 2*CANVAS_WIDTH+40  # length of line
 #         ahl = 20 # length of arrowhead
 #         ahw = 60 # width of arrowhead
 
-        graylevel = 0.9
-        cr.set_source_rgb(graylevel,graylevel,graylevel)
+#         graylevel = 0.9
+#         cr.set_source_rgb(graylevel,graylevel,graylevel)
 
         cr.set_line_width(aw);
         cr.move_to(0,0)
@@ -558,21 +572,25 @@ class CGRATilePE:
 #         cr.stroke()
 
         # arrowhead
-        cr.set_source_rgb(graylevel,graylevel,graylevel)
+
+#         cr.set_source_rgb(graylevel,graylevel,graylevel)
         cr.set_line_width(1);
-        cr.move_to(-ahl, 0)
-        cr.line_to(0, -ahw/2)
-        cr.line_to(0, ahw/2)
+
+        cr.move_to(al+ahl, 0)
+        cr.line_to(al, -ahw/2)
+        cr.line_to(al, ahw/2)
         cr.close_path()
         cr.fill()
         cr.stroke()
+        cr.restore()
 
 
     def callback(self, widget, cr):
         print widget
         print cr
 
-        cr.translate(100,100)
+        # cr.translate(100,100)
+        cr.translate(ARRAY_PAD, ARRAY_PAD)
 
         # Draw at 4x requested size
         # cr.scale(4,4)
@@ -586,53 +604,32 @@ class CGRATilePE:
         offset = 22
         offset = 28
 
-        cr.save()
-        cr.translate(-20,CANVAS_HEIGHT-offset-aw/2)
-        self.big_ghost_arrow(cr)
-        cr.restore()
+        # All arrows are 'aw' wide and 'al+ahl' long etc.
 
-        cr.save()
-        cr.translate(al-ahl,offset+aw/2)
-        cr.rotate(3.1416)
-        self.big_ghost_arrow(cr)
-        cr.restore()
+        # Ghost arrow begins at (-20,CANVAS_HEIGHT-offset-aw/2) and points LEFT
+        # self.big_ghost_arrow(cr, -20, CANVAS_HEIGHT-offset-aw/2, 'left')
+#         cr.set_source_rgb(0,1,0)
+
+        graylevel = 0.9
+        cr.set_source_rgb(graylevel,graylevel,graylevel)
+
+        # right/left arrows
+        leftstart = -apad;  rightstart = -apad+al+ahl/2
+        self.big_ghost_arrow(cr, leftstart, offset+aw/2,               'right')
+        self.big_ghost_arrow(cr, leftstart, offset+aw/2+CANVAS_HEIGHT, 'right')
+        self.big_ghost_arrow(cr, rightstart,   CANVAS_HEIGHT-offset-aw/2, 'left')
+        self.big_ghost_arrow(cr, rightstart, 2*CANVAS_HEIGHT-offset-aw/2, 'left')
 
 
-        cr.save()
-        cr.translate(-20,2*CANVAS_HEIGHT-offset-aw/2)
-        self.big_ghost_arrow(cr)
-        cr.restore()
+        # up/down arrows
+        topstart = leftstart;  botstart = rightstart;
+        self.big_ghost_arrow(cr, offset+aw/2,                topstart,'down')
+        self.big_ghost_arrow(cr, offset+aw/2+CANVAS_WIDTH,   topstart, 'down')
+        self.big_ghost_arrow(cr, CANVAS_WIDTH-offset-aw/2,   botstart, 'up')
+        self.big_ghost_arrow(cr, 2*CANVAS_WIDTH-offset-aw/2, botstart, 'up')
 
-        cr.save()
-        cr.translate(al-ahl,offset+aw/2+CANVAS_HEIGHT)
-        cr.rotate(3.1416)
-        self.big_ghost_arrow(cr)
-        cr.restore()
-
-        # vert arrows
-        cr.save()
-        cr.translate(offset+aw/2,-20)
-        cr.rotate(3.1416/2)
-        self.big_ghost_arrow(cr)
-        cr.restore()
-
-        cr.save()
-        cr.translate(CANVAS_WIDTH-offset-aw/2, 2*CANVAS_HEIGHT+20)
-        cr.rotate(-3.1416/2)
-        self.big_ghost_arrow(cr)
-        cr.restore()
-
-        cr.save()
-        cr.translate(offset+aw/2+CANVAS_WIDTH,-20)
-        cr.rotate(3.1416/2)
-        self.big_ghost_arrow(cr)
-        cr.restore()
-
-        cr.save()
-        cr.translate(2*CANVAS_WIDTH-offset-aw/2, 2*CANVAS_HEIGHT+20)
-        cr.rotate(-3.1416/2)
-        self.big_ghost_arrow(cr)
-        cr.restore()
+#         self.big_ghost_arrow(cr, CANVAS_WIDTH-offset-aw/2,   2*CANVAS_HEIGHT+20, 'up')
+#         self.big_ghost_arrow(cr, 2*CANVAS_WIDTH-offset-aw/2, 2*CANVAS_HEIGHT+20, 'up')
 
         cr.save()
 
@@ -720,24 +717,8 @@ class CGRATilePE:
 
     def drawme_standalone(self):
 
-        # How big is a tile?  Refer to diagram in doc
-        # Short answer is:
-        # Canvas width  = 2*plen + 2*ntracks_v*pwid + 3*pwid
-        # Canvas height = 2*plen + 2*ntracks_h*pwid + 3*pwid
-        # where each port is an arrow in a box that's portlength long and portwidth wide
-        # and ntracks_v = ntracks_bus_v + ntracks_wire_v etc.
-
-        ntracks_v = NTRACKS_PE_BUS_V + NTRACKS_PE_WIRE_V
-        ntracks_h = NTRACKS_PE_BUS_H + NTRACKS_PE_WIRE_H
-
-        pwid = PORT_WIDTH; plen = PORT_HEIGHT
-        # canvas_width  = 2*plen + 2*ntracks_v*pwid + 3*pwid
-        # canvas_height = 2*plen + 2*ntracks_h*pwid + 3*pwid
-        canvas_width  = CANVAS_WIDTH
-        canvas_height = CANVAS_HEIGHT
-
         print "This is where I build a canvas of width %d and height %d" \
-              % (canvas_width, canvas_height)
+              % (CANVAS_WIDTH, CANVAS_HEIGHT)
 
         win = Gtk.Window()
         win.set_title("Tilesy")
@@ -746,17 +727,15 @@ class CGRATilePE:
         print dir(win.props)
 
         # This should all be in __init__ maybe
-        # win.da = Gtk.DrawingArea(height_request=400, width_request=500)
 
         # Big enough to draw 2x2 grid at double-scale, plus 100 margin all around
-        (w,h) = (4*CANVAS_WIDTH+200,4*CANVAS_HEIGHT+200)
+        # (w,h) = (4*CANVAS_WIDTH+200,4*CANVAS_HEIGHT+200)
+        (w,h) = (4*CANVAS_WIDTH+2*ARRAY_PAD,4*CANVAS_HEIGHT+2*ARRAY_PAD)
         win.da = Gtk.DrawingArea(height_request=h, width_request=w)
         win.add(win.da)
         print dir(win.da.props)
 
-
         handler_id = win.da.connect("draw", self.callback)
-
 
         win.connect("delete-event", Gtk.main_quit)
 
@@ -772,24 +751,27 @@ class CGRATilePE:
             # % (self.arrwidth, self.arrheight);
 
 
-ntiles = GRID_WIDTH * GRID_HEIGHT;
+# ntiles = GRID_WIDTH * GRID_HEIGHT;
+# 
+# tile = range(0,ntiles)
+# for i in range (0,ntiles):
+#     tile[i] = CGRATilePE(i)
+# 
+# for i in range (0,ntiles):
+#     tile[i] = CGRATilePE(i)
+# 
+# for i in range (0,ntiles):
+#     tile[i].info();
+# 
+# tile[i].drawme_standalone()
+# 
+# sys.exit(0)
+# 
 
-tile = range(0,ntiles)
-for i in range (0,ntiles):
-    tile[i] = CGRATilePE(i)
+# tile = CGRATilePE(0)
+# tile.drawme_standalone()
 
-
-for i in range (0,ntiles):
-    tile[i] = CGRATilePE(i)
-
-for i in range (0,ntiles):
-    tile[i].info();
-
-tile[i].drawme_standalone()
-
-sys.exit(0)
-
-
+CGRATilePE(0).drawme_standalone()
 
 
 # tile[0].connect("in_s0t0", "out_s1t0")
