@@ -65,15 +65,83 @@ REG_HEIGHT = 2;
 CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
-apad = 10; # how far arrow sticks outon each side
 
-ahl = 20 # length of arrowhead
-al = 2*CANVAS_WIDTH + 2*apad - ahl/2  # length of line
+def draw_big_ghost_arrows(cr):
 
-# aw = 30 # width of line
-aw = 10 # width of line
-# ahw = 2*aw # width of arrowhead
-ahw = 3*aw # width of arrowhead
+    # Ghost Arrow parms, used by big_ghost_arrow(), 
+
+    apad = 10; # how far arrow sticks outon each side
+
+    ahl = 20 # length of arrowhead
+    al = 2*CANVAS_WIDTH + 2*apad - ahl/2  # length of line
+
+    # aw = 30 # width of line
+    aw = 10 # width of line
+    # ahw = 2*aw # width of arrowhead
+    ahw = 3*aw # width of arrowhead
+
+
+
+    def big_ghost_arrow(cr,x,y,dir):
+
+        cr.save()
+        cr.translate(x,y)
+        if (dir=='left'): cr.rotate(PI)
+        if (dir=='down'): cr.rotate(PI/2)
+        if (dir=='up'):   cr.rotate(3*PI/2)
+
+        # Uses aw,al,ahw,ahl
+
+    #         graylevel = 0.9
+    #         cr.set_source_rgb(graylevel,graylevel,graylevel)
+
+        cr.set_line_width(aw);
+        cr.move_to(0,0)
+        cr.line_to(al,0)
+        cr.stroke()
+
+        cr.set_line_width(1);
+
+        cr.move_to(al+ahl, 0)
+        cr.line_to(al, -ahw/2)
+        cr.line_to(al, ahw/2)
+        cr.close_path()
+        cr.fill()
+        cr.stroke()
+        cr.restore()
+
+
+
+
+    offset = 22
+    offset = 28
+
+    # All arrows are 'aw' wide and 'al+ahl' long etc.
+
+    # Ghost arrow begins at (-20,CANVAS_HEIGHT-offset-aw/2) and points LEFT
+    # self.big_ghost_arrow(cr, -20, CANVAS_HEIGHT-offset-aw/2, 'left')
+#         cr.set_source_rgb(0,1,0)
+
+    graylevel = 0.9
+    cr.set_source_rgb(graylevel,graylevel,graylevel)
+
+    # right/left arrows
+    leftstart = -apad;  rightstart = -apad+al+ahl/2
+    big_ghost_arrow(cr, leftstart, offset+aw/2,               'right')
+    big_ghost_arrow(cr, leftstart, offset+aw/2+CANVAS_HEIGHT, 'right')
+    big_ghost_arrow(cr, rightstart,   CANVAS_HEIGHT-offset-aw/2, 'left')
+    big_ghost_arrow(cr, rightstart, 2*CANVAS_HEIGHT-offset-aw/2, 'left')
+
+
+    # up/down arrows
+    topstart = leftstart;  botstart = rightstart;
+    big_ghost_arrow(cr, offset+aw/2,                topstart,'down')
+    big_ghost_arrow(cr, offset+aw/2+CANVAS_WIDTH,   topstart, 'down')
+    big_ghost_arrow(cr, CANVAS_WIDTH-offset-aw/2,   botstart, 'up')
+    big_ghost_arrow(cr, 2*CANVAS_WIDTH-offset-aw/2, botstart, 'up')
+
+#         big_ghost_arrow(cr, CANVAS_WIDTH-offset-aw/2,   2*CANVAS_HEIGHT+20, 'up')
+#         big_ghost_arrow(cr, 2*CANVAS_WIDTH-offset-aw/2, 2*CANVAS_HEIGHT+20, 'up')
 
 
 
@@ -540,51 +608,6 @@ class CGRATilePE:
                     wirename = "%s_s%dt%d" % (dir, side, track)
                     self.drawport(cr, wirename, options="ghost")
 
-    def big_ghost_arrow(self,cr,x,y,dir):
-
-        cr.save()
-        cr.translate(x,y)
-        if (dir=='left'): cr.rotate(PI)
-        if (dir=='down'):  cr.rotate(PI/2)
-        if (dir=='up'):    cr.rotate(3*PI/2)
-
-#         aw = 40 # width of line
-#         al = 2*CANVAS_WIDTH+40  # length of line
-#         ahl = 20 # length of arrowhead
-#         ahw = 60 # width of arrowhead
-
-#         graylevel = 0.9
-#         cr.set_source_rgb(graylevel,graylevel,graylevel)
-
-        cr.set_line_width(aw);
-        cr.move_to(0,0)
-        cr.line_to(al,0)
-        cr.stroke()
-
-#         # arrowhead
-#         cr.set_source_rgb(graylevel,graylevel,graylevel)
-#         cr.set_line_width(1);
-#         cr.move_to(al+ahl, 0)
-#         cr.line_to(al, -ahw/2)
-#         cr.line_to(al, ahw/2)
-#         cr.close_path()
-#         cr.fill()
-#         cr.stroke()
-
-        # arrowhead
-
-#         cr.set_source_rgb(graylevel,graylevel,graylevel)
-        cr.set_line_width(1);
-
-        cr.move_to(al+ahl, 0)
-        cr.line_to(al, -ahw/2)
-        cr.line_to(al, ahw/2)
-        cr.close_path()
-        cr.fill()
-        cr.stroke()
-        cr.restore()
-
-
     def callback(self, widget, cr):
         print widget
         print cr
@@ -601,35 +624,10 @@ class CGRATilePE:
         ########################################################################
         # Big ghost arrow(s)
         
-        offset = 22
-        offset = 28
-
-        # All arrows are 'aw' wide and 'al+ahl' long etc.
-
-        # Ghost arrow begins at (-20,CANVAS_HEIGHT-offset-aw/2) and points LEFT
-        # self.big_ghost_arrow(cr, -20, CANVAS_HEIGHT-offset-aw/2, 'left')
-#         cr.set_source_rgb(0,1,0)
-
-        graylevel = 0.9
-        cr.set_source_rgb(graylevel,graylevel,graylevel)
-
-        # right/left arrows
-        leftstart = -apad;  rightstart = -apad+al+ahl/2
-        self.big_ghost_arrow(cr, leftstart, offset+aw/2,               'right')
-        self.big_ghost_arrow(cr, leftstart, offset+aw/2+CANVAS_HEIGHT, 'right')
-        self.big_ghost_arrow(cr, rightstart,   CANVAS_HEIGHT-offset-aw/2, 'left')
-        self.big_ghost_arrow(cr, rightstart, 2*CANVAS_HEIGHT-offset-aw/2, 'left')
-
-
-        # up/down arrows
-        topstart = leftstart;  botstart = rightstart;
-        self.big_ghost_arrow(cr, offset+aw/2,                topstart,'down')
-        self.big_ghost_arrow(cr, offset+aw/2+CANVAS_WIDTH,   topstart, 'down')
-        self.big_ghost_arrow(cr, CANVAS_WIDTH-offset-aw/2,   botstart, 'up')
-        self.big_ghost_arrow(cr, 2*CANVAS_WIDTH-offset-aw/2, botstart, 'up')
-
-#         self.big_ghost_arrow(cr, CANVAS_WIDTH-offset-aw/2,   2*CANVAS_HEIGHT+20, 'up')
-#         self.big_ghost_arrow(cr, 2*CANVAS_WIDTH-offset-aw/2, 2*CANVAS_HEIGHT+20, 'up')
+        ########################################################################
+        # Big ghost arrow(s)
+        
+        draw_big_ghost_arrows(cr)
 
         cr.save()
 
@@ -721,6 +719,7 @@ class CGRATilePE:
               % (CANVAS_WIDTH, CANVAS_HEIGHT)
 
         win = Gtk.Window()
+        win.move(0,0) # put window at top left corner of screen
         win.set_title("Tilesy")
         # win.props.height_request=canvas_height
         # win.props.width_request =canvas_width
