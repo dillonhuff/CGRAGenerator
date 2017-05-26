@@ -15,7 +15,7 @@ def deg2rad(rad): return rad*180/PI
 # TODO Need tileno-to-RC conversion
 
 GRID_WIDTH  = 2;
-GRID_HEIGHT = 4;
+GRID_HEIGHT = 2;
 
 # Could/should derive these from "BUS!^:5" etc.
 NTRACKS_PE_BUS_H = 5;
@@ -128,7 +128,6 @@ def draw_big_ghost_arrows(cr):
 
     offset = 22
     offset = 28
-    h_offset = PORT_LENGTH + 2 * PORT_WIDTH
 
     # All arrows are 'aw' wide and 'al+ahl' long etc.
 
@@ -141,12 +140,14 @@ def draw_big_ghost_arrows(cr):
 
     # Right-pointing arrows start apad back from left edge of the tile array,
     # and h_offset down from the top
+    ra_start = -apad; h_offset = PORT_LENGTH + 2 * PORT_WIDTH
+#     for tile in range (0, GRID_HEIGHT):
 
     # right/left arrows
     ra_start = -apad;  la_start = -apad+al-ahl/2
     # draw_big_ghost_arrow(cr, ra_start, offset+aw/2,               'right')
-    draw_big_ghost_arrow(cr, ra_start, h_offset   ,               'right')
-    draw_big_ghost_arrow(cr, ra_start, offset+aw/2+CANVAS_HEIGHT, 'right')
+    draw_big_ghost_arrow(cr, ra_start, h_offset,               'right')
+    draw_big_ghost_arrow(cr, ra_start, CANVAS_HEIGHT - h_offset, 'right')
     draw_big_ghost_arrow(cr, la_start,   CANVAS_HEIGHT-offset-aw/2, 'left')
     draw_big_ghost_arrow(cr, la_start, 2*CANVAS_HEIGHT-offset-aw/2, 'left')
 
