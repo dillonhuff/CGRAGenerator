@@ -83,16 +83,26 @@ def draw_rectilinear_arrow(cr, al, ahl,ahw,fill):
 
     # Uses aw,al,ahw,ahl
 
+    # To get exact offset I'd have to do math :( with sin and cos or sumpm
+    if (not fill):
+        SQ2 = 1.4142
+        offset = cr.get_line_width()/SQ2
+        al = al - offset
+        ahw = ahw - 2*offset
+
     # The line
     cr.move_to(0,0)
-    cr.line_to(al-ahl,0)
+    if (fill): cr.line_to(al-ahl,0)
+    else:      cr.line_to(al,0)
     cr.stroke()
+
+    # print "Found linewidth " + str(cr.get_line_width())
 
     # The arrowhead
     if (fill): cr.set_line_width(1);
-    cr.move_to(al-ahl,     -ahw/2)
-    cr.line_to(al, 0)
-    cr.line_to(al-ahl,     ahw/2)
+    cr.move_to(al-ahl, -ahw/2)
+    cr.line_to(al,     0)
+    cr.line_to(al-ahl, ahw/2)
     if (fill):
         cr.close_path()
         cr.fill()
