@@ -44,6 +44,13 @@ ARROWHEAD_LENGTH = 3; ARROWHEAD_WIDTH = 2; # this is nice
 
 ARRAY_PAD = 60
 
+# Here's a dumb way to pass information from the button-press handler to the draw-event handler
+ZOOM_TO_TILE = -1;
+
+# An equally dumb wayof keeping track of the current window and drawing area widget
+CUR_WIN         = -1
+CUR_DRAW_WIDGET = -1
+
 # Should be something like:
 #
 #    <--PW-->
@@ -532,9 +539,9 @@ def connectwires(cr, connection):
     drawport(cr, w1)
     drawport(cr, w2)
 
-
-    print "connection = " + connection
-    print "Connecting wires '%s' and '%s'\n" % (w1,w2)
+    # TODO add a "if (DBG)" here maybe
+    # print "connection = " + connection
+    # print "Connecting wires '%s' and '%s'\n" % (w1,w2)
 
     # 1. Find join point of the two wires
     # 1a. Find each wires connection point at tile's edge
@@ -630,8 +637,19 @@ def draw_all_ports(cr):
 
 def draw_handler(widget, cr):
     # print widget; print cr
-    if (1): draw_all_tiles(cr);
-    if (0): draw_one_tile(cr,0);
+
+    global CUR_CR; CUR_CR = cr;
+    global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = widget;
+
+    global ZOOM_TO_TILE
+    tileno = ZOOM_TO_TILE
+    if (tileno == -1):
+        draw_all_tiles(cr);
+    else:
+        draw_one_tile(cr, tileno);
+
+#     if (1): draw_all_tiles(cr);
+#     if (0): draw_one_tile(cr,0);
 
 def draw_one_tile(cr, tileno):
     cr.save()
@@ -652,12 +670,14 @@ def draw_one_tile(cr, tileno):
     global SCALE_FACTOR; SCALE_FACTOR = 4
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
 
+    print "Drawing tile %s!" % str(tileno)
     tile[tileno].draw(cr)
     cr.restore()
 
 
 def draw_all_tiles(cr):
 
+    print "Draw all tiles!"
     cr.save()
     # Make a little whitespace margin at top and left
     # cr.translate(100,100)
@@ -733,6 +753,9 @@ def main():
     win.add(win.da)
     print dir(win.da.props)
 
+    global CUR_WINDOW;      CUR_WINDOW = win;
+    global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = win.da;
+
     # "draw" event results in drawing everything on drawing area da
     # handler_id = win.da.connect("draw", draw_all_tiles)
     # handler_id = win.da.connect("draw", draw_all_tiles)
@@ -752,12 +775,67 @@ def main():
     Gtk.main()
 
 def button_press_handler(widget, event):
-    print "FOO reading SCALE_FACTOR"
-    print SCALE_FACTOR
+    print ""
+    print "SCALE_FACTOR %s" % SCALE_FACTOR
     print event.x, ' ', event.y
+    x = event.x; y = event.y
 
-    # print cr.get_scale_factor()
-    print "matrix = " + str(CR_GLOBAL.get_matrix())
+    # Subtract off the scale-independent paddings and
+    # divide by scale factor I guess
+    x = (x - ARRAY_PAD)/SCALE_FACTOR; y = (y - ARRAY_PAD)/SCALE_FACTOR;
+    print "Transformed x,y = (%d,%d)" % (x,y)
+    print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
+
+    row = y/CANVAS_WIDTH; col = x/CANVAS_HEIGHT;
+    row = int(row); col = int(col)
+
+    tileno = GRID_WIDTH*col + row
+    print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
+
+    global ZOOM_TO_TILE;
+    if (ZOOM_TO_TILE == -1):
+        print "Zoom in to tile %s!" % str(tileno)
+        ZOOM_TO_TILE = tileno;
+        draw_one_tile(CUR_CR, tileno)
+    else:
+        print "Zoom out!"
+        ZOOM_TO_TILE = -1;
+        draw_all_tiles(CUR_CR)
+
+    # How do I manually trigger an event with PyGTK event handler?
+    # https://stackoverflow.com/questions/13667394/how-do-i-manually-trigger-an-event-with-pygtk-event-handler
+    # Use the emit method on the widget, e.g.
+    #  button.emit("clicked").
+
+    # https://stackoverflow.com/questions/8280775/refresh-drawing-area-in-gtk
+    # gtk_widget_queue_draw_area is gtk.Widget.queue_draw_area
+    # & for gdk_window_invalidate_rect is gtk.gdk.Window.invalidate_rect
+
+#     draw_one_tile(CUR_CR, 0)
+# 
+      # CUR_DRAW_WIDGET.invalidate_rect(0,0,500,500)
+#     # CUR_DRAW_WIDGET.emit("draw")
+    print "Qdraw"
+    CUR_DRAW_WIDGET.queue_draw()
+# 
+#     # http://pygtk.org/pygtk2reference/class-gtkwidget.html#properties-gtkwidget
+#     # To cause the redraw to be done immediately, follow that call with a call
+#     # to the gtk.gdk.Window.process_updates() method.
+#     # CUR_WINDOW.process_updates(True);
+#     # Gdk.Window.process_updates(widget,True)
+#     # Gdk.Window.process_updates(Gdk.GDK_WINDOW(widget),True)
+#     # Gdk.Window.process_updates(CUR_WINDOW,True)
+#     print "Process updates"
+#     Gdk.Window.process_updates(Gdk.get_default_root_window(),False)
+#     # .process_updates(True)
+
+
+    # http://pygtk.org/pygtk2reference/class-gdkwindow.html
+    # def process_updates(update_children)
+    # update_children: if True process updates for child windows
+
+
+
 
 
 
@@ -786,13 +864,18 @@ class Tile:
     def connect(self,connection):  self.connectionlist.append(connection)
 
     def printprops(self):
-        print "Tile %d (%d,%d)" % (self.id, self.row, self.col)
+        print "Tile %d (r%d,c%d)" % (self.id, self.row, self.col)
         indent = "                "
         print indent + ("\n"+indent).join(self.connectionlist)
 
+    # Todo: maybe two separate routines, one for draw-in-grid and one for draw-standalone etc
     def draw(self, cr):
+        
         cr.save()
-        cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
+
+        if (ZOOM_TO_TILE == -1):
+            cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
+
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
         drawtile(cr)
