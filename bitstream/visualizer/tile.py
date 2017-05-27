@@ -822,43 +822,44 @@ def build_tile_array(w,h):
     for i in range(0,w*h): tile[i] = Tile(i)
     return tile
 
-# This will be "example1"
-# Enable these commands maybe:
+
+def example1():
+
+    # This will be "example1"
+    # Enable these commands maybe:
+
+    tile[0].connect("in_s3t1 => out_s2t1")
+    tile[0].connect("in_s3t1 connects to out_s1t1")
+    tile[0].connect("in_s3t0 => out_s0t0")
+    tile[0].printprops()
+
+
+
+    tile[1].connect("in_s3t1 => out_s2t1")
+    tile[1].connect("in_s3t1 => out_s1t1")
+    tile[1].connect("in_s3t1 => out_s0t1")
+    tile[1].printprops()
+
+
+
+    tile[2].connect("in_s2t0 => out_s0t0")
+    tile[2].connect("in_s1t1 => out_s0t1")
+    tile[2].printprops()
+
+
+    tile[3].connect("in_s2t1 => out_s3t1")
+    tile[3].printprops()
+
+
+
+# This has to be global (for now at least)
 tile = build_tile_array(GRID_WIDTH,GRID_HEIGHT)
 
-tile[0].connect("in_s3t1 => out_s2t1")
-tile[0].connect("in_s3t1 connects to out_s1t1")
-tile[0].connect("in_s3t0 => out_s0t0")
-tile[0].printprops()
-# tag
-
-
-
-tile[1].connect("in_s3t1 => out_s2t1")
-tile[1].connect("in_s3t1 => out_s1t1")
-tile[1].connect("in_s3t1 => out_s0t1")
-tile[1].printprops()
-
-
-
-tile[2].connect("in_s2t0 => out_s0t0")
-tile[2].connect("in_s1t1 => out_s0t1")
-tile[2].printprops()
-
-
-tile[3].connect("in_s2t1 => out_s3t1")
-tile[3].printprops()
-
-
-# print tile[0].id
-# sys.exit(0)
-# ...
-# drawtiles() # (calls main())
+# Set up the tiles, make the connections
+example1()
 
 # Set up the main window and connect to callback routine that draws everything.
 main()
-# tile[0].draw()
-
 
 
 
