@@ -15,11 +15,6 @@ import cairo
 # - read the bitstream file and set up the tiles
 # - 
 
-# Currently does this:
-#  Builds a CGRATilePE with id 0
-#  Calls 
-
-
 PI = 3.1416
 def deg2rad(rad): return rad*180/PI
 
@@ -223,18 +218,6 @@ def drawdot(cr,x,y):
 def errmsg(m):
     sys.stdout.write("ERROR: %s\n" % (m))
     sys.exit(-1)
-
-class CGRATilePE:
-
-    # Depends on having access to globals GRID_WIDTH, GRID_HEIGHT etc.
-
-    def __init__(self, tileno):
-        self.tileno = tileno
-
-#     def connectionpoint(self, wirename):
-#         print "Find wirename connection point"
-
-
 
 
 
@@ -637,29 +620,44 @@ def draw_all_ports(cr):
                 wirename = "%s_s%dt%d" % (dir, side, track)
                 drawport(cr, wirename, options="ghost")
 
-def draw_all_tiles(widget, cr):
-    print widget
-    print cr
 
+def draw_handler(widget, cr):
+    # print widget; print cr
+    draw_all_tiles(cr);
+    # draw_one_tile(cr,0);
+
+def draw_one_tile(cr, tileno):
+    cr.save()
+
+    # Make a little whitespace margin at top and left
+    # cr.translate(ARRAY_PAD, ARRAY_PAD)
+    cr.translate(50,50)
+
+    # scalefactor = 10 # zoom in for debugging
+    # cr.scale(scalefactor,scalefactor)
+
+    # Draw at 4x requested size
+    cr.scale(4,4)
+    tile[tileno].draw(cr)
+    cr.restore()
+
+
+def draw_all_tiles(cr):
+
+    cr.save()
+    # Make a little whitespace margin at top and left
     # cr.translate(100,100)
     cr.translate(ARRAY_PAD, ARRAY_PAD)
 
     # Draw at 4x requested size
     # cr.scale(4,4)
+    # cr.scale(2,2)
     # cr.scale(1,1)
     cr.scale(2,2)
 
-    ########################################################################
-    # Big ghost arrow(s)
-
     draw_big_ghost_arrows(cr)
 
-    cr.save()
-
     # http://pycairo.readthedocs.io/en/latest/reference/context.html?highlight=set_dash#cairo.Context.set_dash
-
-
-    # drawgrid(cr)
 
     if (0):
         drawport(cr, "in_s0t0", options="foo,bar,baz")
@@ -679,76 +677,11 @@ def draw_all_tiles(widget, cr):
     if (0):
         draw_all_ports(cr)
 
-# #         drawport(cr, "in_s3t0")
-# #         drawport(cr, "in_s3t1")
-# #         drawport(cr, "out_s0t0")
-# #         drawport(cr, "out_s1t1")
-# #         drawport(cr, "out_s2t1")
-# 
-# #         # connectwires(cr, "in_s3t0", "out_s2t3")
-# #         connectwires(cr, "in_s3t0 => out_s2t3")
-# #         connectwires(cr, "in_s3t0 out_s2t3")
-# #         connectwires(cr, "in_s3t0 connects to out_s2t3")
-# #         connectwires(cr, "  in_s3t0 connects to out_s2t3  ")
-#     # sys.exit(0)
-#     connectwires(cr, "in_s3t1 => out_s2t1")
-#     connectwires(cr, "in_s3t1 connects to out_s1t1")
-#     connectwires(cr, "in_s3t0 => out_s0t0")
-# 
-#     drawtile(cr);
-#     cr.restore()
-
     tile[0].draw(cr)
     tile[1].draw(cr)
     tile[2].draw(cr)
     tile[3].draw(cr)
-
-
-#     ########################################################################
-#     # TILE1 SW corner
-#     cr.save()
-#     cr.translate(0,CANVAS_HEIGHT)
-# 
-#     draw_all_ports(cr)
-# 
-#     connectwires(cr, "in_s3t1 => out_s2t1")
-#     connectwires(cr, "in_s3t1 => out_s1t1")
-#     connectwires(cr, "in_s3t1 => out_s0t1")
-# 
-#     drawtile(cr);
-#     cr.restore()
-# 
-#     # OR:
-#     # tile[0] = Tile(0,0)
-#     # tile[0].connections = {"in_s3t1 => out_s2t1","in_s3t1 => out_s2t1","in_s3t1 => out_s2t1")
-#     # tile[0].drawtile()
-# 
-# 
-# 
-#     ########################################################################
-#     # TILE2 NE corner
-#     cr.save()
-#     cr.translate(CANVAS_WIDTH, 0)
-# 
-#     draw_all_ports(cr)
-# 
-#     connectwires(cr, "in_s2t0 => out_s0t0")
-#     connectwires(cr, "in_s1t1 => out_s0t1")
-# 
-#     drawtile(cr);
-#     cr.restore()
-# 
-#     ########################################################################
-#     # TILE3 SE corner
-#     cr.save()
-#     cr.translate(CANVAS_WIDTH, CANVAS_HEIGHT)
-# 
-#     draw_all_ports(cr)
-# 
-#     connectwires(cr, "in_s2t1 => out_s3t1")
-# 
-#     drawtile(cr);
-#     cr.restore()
+    cr.restore()
 
 
 
@@ -783,7 +716,9 @@ def main():
     print dir(win.da.props)
 
     # "draw" event results in drawing everything on drawing area da
-    handler_id = win.da.connect("draw", draw_all_tiles)
+    # handler_id = win.da.connect("draw", draw_all_tiles)
+    # handler_id = win.da.connect("draw", draw_all_tiles)
+    handler_id = win.da.connect("draw", draw_handler)
 
     win.connect("delete-event", Gtk.main_quit)
 
@@ -817,12 +752,6 @@ class Tile:
         cr.restore()
 
 
-def build_tile_array(w,h):
-    tile = range(0, w*h)
-    for i in range(0,w*h): tile[i] = Tile(i)
-    return tile
-
-
 def example1():
 
     # This will be "example1"
@@ -833,24 +762,24 @@ def example1():
     tile[0].connect("in_s3t0 => out_s0t0")
     tile[0].printprops()
 
-
-
     tile[1].connect("in_s3t1 => out_s2t1")
     tile[1].connect("in_s3t1 => out_s1t1")
     tile[1].connect("in_s3t1 => out_s0t1")
     tile[1].printprops()
 
-
-
     tile[2].connect("in_s2t0 => out_s0t0")
     tile[2].connect("in_s1t1 => out_s0t1")
     tile[2].printprops()
-
 
     tile[3].connect("in_s2t1 => out_s3t1")
     tile[3].printprops()
 
 
+
+def build_tile_array(w,h):
+    tile = range(0, w*h)
+    for i in tile: tile[i] = Tile(i)
+    return tile
 
 # This has to be global (for now at least)
 tile = build_tile_array(GRID_WIDTH,GRID_HEIGHT)
@@ -861,41 +790,6 @@ example1()
 # Set up the main window and connect to callback routine that draws everything.
 main()
 
-
-
-##############################################################################
-
-# ntiles = GRID_WIDTH * GRID_HEIGHT;
-# 
-# tile = range(0,ntiles)
-# for i in range (0,ntiles):
-#     tile[i] = CGRATilePE(i)
-# 
-# for i in range (0,ntiles):
-#     tile[i] = CGRATilePE(i)
-# 
-# for i in range (0,ntiles):
-#     tile[i].info();
-# 
-# tile[i].drawme_standalone()
-# 
-# sys.exit(0)
-# 
-
-# tile = CGRATilePE(0)
-# tile.drawme_standalone()
-
-# CGRATilePE(0).drawme_standalone()
-
-
-# tile[0].connect("in_s0t0", "out_s1t0")
-# ...
-
-
-
-# def draw_array():
-    # for i in range (0,NTILES):
-        # tile[i].zoom_out();
 
 
 # # Zoom in on a single tile
