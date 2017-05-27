@@ -6,10 +6,15 @@ import re
 # In gridarray view, each tile should be labeled with tile number maybe
 # Put FU in each tile and connections to/from FU
 
+# pygobjects
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk,Gdk
 import cairo
+
+# FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
+# print Gdk.EventMask.BUTTON_PRESS_MASK
+# sys.exit(0)
 
 # Should be doing this maybe:
 # - read the bitstream file and set up the tiles
@@ -21,6 +26,8 @@ def deg2rad(rad): return rad*180/PI
 
 
 # TODO Need tileno-to-RC conversion
+
+SCALE_FACTOR = 0;
 
 GRID_WIDTH  = 2;
 GRID_HEIGHT = 2;
@@ -623,21 +630,28 @@ def draw_all_ports(cr):
 
 def draw_handler(widget, cr):
     # print widget; print cr
-    draw_all_tiles(cr);
-    # draw_one_tile(cr,0);
+    if (1): draw_all_tiles(cr);
+    if (0): draw_one_tile(cr,0);
 
 def draw_one_tile(cr, tileno):
     cr.save()
 
-    # Make a little whitespace margin at top and left
-    # cr.translate(ARRAY_PAD, ARRAY_PAD)
-    cr.translate(50,50)
+#     # Make a little whitespace margin at top and left
+#     # cr.translate(ARRAY_PAD, ARRAY_PAD)
+#     pad = ARRAY_PAD * SCALE_FACTOR;
+#     cr.translate(pad,pad)
 
     # scalefactor = 10 # zoom in for debugging
     # cr.scale(scalefactor,scalefactor)
 
+    # Make a little whitespace margin at top and left (scale independent)
+    cr.translate(ARRAY_PAD, ARRAY_PAD)
+
     # Draw at 4x requested size
-    cr.scale(4,4)
+    # cr.scale(4,4)
+    global SCALE_FACTOR; SCALE_FACTOR = 4
+    cr.scale(SCALE_FACTOR,SCALE_FACTOR)
+
     tile[tileno].draw(cr)
     cr.restore()
 
@@ -647,13 +661,16 @@ def draw_all_tiles(cr):
     cr.save()
     # Make a little whitespace margin at top and left
     # cr.translate(100,100)
+ 
+    # Make a little whitespace margin at top and left (scale independent)
     cr.translate(ARRAY_PAD, ARRAY_PAD)
 
     # Draw at 4x requested size
     # cr.scale(4,4)
     # cr.scale(2,2)
     # cr.scale(1,1)
-    cr.scale(2,2)
+    global SCALE_FACTOR; SCALE_FACTOR = 2
+    cr.scale(SCALE_FACTOR,SCALE_FACTOR)
 
     draw_big_ghost_arrows(cr)
 
@@ -711,6 +728,7 @@ def main():
     # Big enough to draw 2x2 grid at double-scale, plus 100 margin all around
     # (w,h) = (4*CANVAS_WIDTH+200,4*CANVAS_HEIGHT+200)
     (w,h) = (4*CANVAS_WIDTH+2*ARRAY_PAD,4*CANVAS_HEIGHT+2*ARRAY_PAD)
+
     win.da = Gtk.DrawingArea(height_request=h, width_request=w)
     win.add(win.da)
     print dir(win.da.props)
@@ -718,12 +736,41 @@ def main():
     # "draw" event results in drawing everything on drawing area da
     # handler_id = win.da.connect("draw", draw_all_tiles)
     # handler_id = win.da.connect("draw", draw_all_tiles)
-    handler_id = win.da.connect("draw", draw_handler)
+    draw_handler_id = win.da.connect("draw", draw_handler)
+
+    # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
+    # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
+    button_press_handler_id = win.da.connect("button-press-event", button_press_handler)
+
+    # FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
+    win.da.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+
 
     win.connect("delete-event", Gtk.main_quit)
 
     win.show_all()
     Gtk.main()
+
+def button_press_handler(widget, event):
+    print "FOO reading SCALE_FACTOR"
+    print SCALE_FACTOR
+    print event.x, ' ', event.y
+
+    # print cr.get_scale_factor()
+    print "matrix = " + str(CR_GLOBAL.get_matrix())
+
+
+
+# https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
+#         self.drawing_area.connect('button-press-event', self.on_drawing_area_button_press)
+#     def on_drawing_area_button_press(self, widget, event):
+#         print event.x, ' ', event.y
+# Also needs mask I guess:
+# self.drawing_area.set_events(gtk.gdk.BUTTON_PRESS_MASK)
+#
+# http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
+# drawing_area.connect("button_press_event", button_press_handler)
+
 
 class Tile:
 #     id = -1;
