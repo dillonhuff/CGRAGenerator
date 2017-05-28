@@ -511,21 +511,22 @@ def drawport(cr, wirename, **keywords):
 
     cr.restore()
 
-# Put a big ghost-number in the middle of the tile
-# See https://www.cairographics.org/manual/cairo-text.html#cairo-text-extents
 def drawtileno(cr, tileno):
+
+    # Put a big ghost-number in the middle of the tile
+    # See https://www.cairographics.org/manual/cairo-text.html#cairo-text-extents
 
     tilestr = str(tileno)
 
     cr.save()
-    # tileno = 0
+
     # Ghost color= light gray
-    graylevel = 0.9
-    cr.set_source_rgb(graylevel,graylevel,graylevel)
+    graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
 
     cr.set_font_size(20)
     cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-    print cr.text_extents(tilestr)
+    # print cr.text_extents(tilestr)
+
     # E.g. cr.text_extents("100") => (3, -15, 38, 15, 42, 0) => (UL(x,y), w, h, begin_next(x,y)
     (ULx, ULy, w, h, nextx, nexty) = cr.text_extents(tilestr)
 
@@ -676,7 +677,7 @@ def draw_all_ports(cr):
 def draw_handler(widget, cr):
     # print widget; print cr
 
-    global DRAW_HANDLER_CR; DRAW_HANDLER_CR = cr;
+    # global DRAW_HANDLER_CR; DRAW_HANDLER_CR = cr;
     global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = widget;
 
     global ZOOM_TO_TILE
@@ -717,30 +718,27 @@ def draw_one_tile(cr, tileno):
     SCALE_FACTOR = float(4*CANVAS_WIDTH - 4*PORT_LENGTH)\
                   /float(  CANVAS_WIDTH - 2*PORT_LENGTH)
 
-
-    # Make a little whitespace margin at top and left (scale independent)
-    # cr.translate(ARRAY_PAD, ARRAY_PAD)
-
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
 
+    ########################################################################
+    # Translate, so as to
+    # make a little whitespace margin at top and left
 
-    unscaled_window_size = (4*CANVAS_WIDTH+2*ARRAY_PAD)
-    scaled_window_size   = (4*CANVAS_WIDTH+2*ARRAY_PAD)/SCALE_FACTOR
-    scaled_tile_size     = CANVAS_WIDTH # now that we'v scaled
-    print "uws=%d sws=%d sts=%d" % (unscaled_window_size,scaled_window_size,scaled_tile_size)
+    # OLD: cr.translate(ARRAY_PAD, ARRAY_PAD)
 
-    # ONETILE_PAD = (unscaled_window_size - SCALE_FACTOR*unscaled_tile_size)/2
-    ONETILE_PAD = (scaled_window_size - scaled_tile_size)/2
-    print "OP= " + str(ONETILE_PAD)
+    # NEW: Want corners to match.
+    # Original window size (before scaling) was 4c+2a
+    unscaled_window_size   = (4*CANVAS_WIDTH+2*ARRAY_PAD)/SCALE_FACTOR
+
+    # New window holds a single canvas after scaling which, if we center it,
+    # should match grid outlines because of carefully crafted scale factor above.
+    ONETILE_PAD = (unscaled_window_size - CANVAS_WIDTH)/2
+
     cr.translate(ONETILE_PAD, ONETILE_PAD)
 
 
-
-
-
-
     print "Drawing tile %s!" % str(tileno)
-    print "...at scale factor %d/%d = %f." \
+    if (0): print "...at scale factor %d/%d = %f." \
         % ((2*CANVAS_WIDTH-2*PORT_LENGTH),(CANVAS_WIDTH-2*PORT_LENGTH), SCALE_FACTOR)
     tile[tileno].draw(cr)
     cr.restore()
@@ -844,17 +842,21 @@ def main():
     Gtk.main()
 
 def button_press_handler(widget, event):
+    DBG = 0
+
     print ""
-    print "matrix = " + str(DRAW_HANDLER_CR.get_matrix())
+    # if (0): print "matrix = " + str(DRAW_HANDLER_CR.get_matrix()) # it's always (1,0,0,1,0,0)
     print "SCALE_FACTOR %s" % SCALE_FACTOR
-    print event.x, ' ', event.y
+    print ""
+
+    # print event.x, ' ', event.y
     x = event.x; y = event.y
 
     # Subtract off the scale-independent paddings and
     # divide by scale factor I guess
     x = (x - ARRAY_PAD)/SCALE_FACTOR; y = (y - ARRAY_PAD)/SCALE_FACTOR;
-    print "Transformed x,y = (%d,%d)" % (x,y)
-    print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
+    # print "Transformed x,y = (%d,%d)" % (x,y)
+    # print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
 
     row = y/CANVAS_WIDTH; col = x/CANVAS_HEIGHT;
     row = int(row); col = int(col)
@@ -864,15 +866,15 @@ def button_press_handler(widget, event):
 
     global ZOOM_TO_TILE;
     if (ZOOM_TO_TILE == -1):
-        print "Zoom in to tile %s!" % str(tileno)
+        if (DBG): print "Zoom in to tile %s!" % str(tileno)
         ZOOM_TO_TILE = tileno;
-        draw_one_tile(DRAW_HANDLER_CR, tileno)
+        # draw_one_tile(DRAW_HANDLER_CR, tileno)
     else:
-        print "Zoom out!"
+        if (DBG): print "Zoom out!"
         ZOOM_TO_TILE = -1;
-        draw_all_tiles(DRAW_HANDLER_CR)
+        # draw_all_tiles(DRAW_HANDLER_CR)
 
-    print "Qdraw"
+    # Redraw (after every button push?) (yes, for now)
     CUR_DRAW_WIDGET.queue_draw()
 
 class Tile:
