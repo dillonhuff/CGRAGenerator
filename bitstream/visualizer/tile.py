@@ -24,10 +24,7 @@ def tileno2rc(tileno): return (tileno % GRID_HEIGHT, int(tileno / GRID_WIDTH))
 # button-press events
 SCALE_FACTOR = 0;
 
-# cleanup bookmark 5/28 11am
-
-
-# Could/should derive these from "BUS!^:5" etc.
+# Could/should derive these from "BUS:5" etc.
 NTRACKS_PE_BUS_H = 5;
 NTRACKS_PE_BUS_V = 5;
 
@@ -40,11 +37,9 @@ ARROWHEAD_LENGTH = 3; ARROWHEAD_WIDTH = 2; # this is nice
 # Here's a dumb way to pass information from the button-press handler to the draw-event handler
 ZOOM_TO_TILE = -1;
 
-# An equally dumb way of keeping track of the current window and drawing area widget
-# CUR_WIN         = -1
-# CUR_DRAW_WIDGET = -1
-
-# Should be something like:
+# Diagram below shows dimensions for PORT_WIDTH (PW) 
+# PORT_HEIGHT (PH) (aka PORT_LENGTH),
+# REG_WIDTH (RW) and REG_HEIGHT (RH)
 #
 #    <--PW-->
 #
@@ -60,22 +55,17 @@ ZOOM_TO_TILE = -1;
 #
 #     <-RW->
 
-# FIXME: LENGTH? or HEIGHT?
 PORT_WIDTH  = 8;
 PORT_HEIGHT = 16;
 PORT_LENGTH = PORT_HEIGHT # Because sometimes I forget
 
-
-# PORT_PAD = PORT_WIDTH/2
-PORT_PAD = PORT_WIDTH/2
+PORT_PAD = PORT_WIDTH/2   # Padding before and between groups of ports
 
 REG_WIDTH  = PORT_WIDTH - 2;
 REG_HEIGHT = 2;
 
-# Edge of first tile in array view is ARRAY_PAD + 2PH
-# Edge of first tile in onetile view is AP+4PH
+# Edge of first tile in array (grid) view is ARRAY_PAD + PORT_HEIGHT
 ARRAY_PAD = 60
-ONETILE_PAD = ARRAY_PAD - 2*PORT_HEIGHT
 
 # Canvas size for displaying a single tile edge-to-edge w/ no padding
 #   How big is a tile canvas?  Refer to diagram in doc
@@ -91,82 +81,78 @@ def draw_arrow(cr, al, ahl,ahw,fill):
     # Draw an arrow of total length al and line_width aw
     # Arrowhead on the end is a triangle of length ahl, width ahw
     # if "fill" is true, fill in the triangle.
-    # Arrow starts at location (0,0); use cr.translate() to place it to (x,y)
-    # E.g.
+    # Arrow starts at location (0,0);
+    # use cr.translate() and rotate() to place and rotate it
+    # E.g. for down arrow starting at (x,y)
     # cr.save()
-    #   cr.translate(x,y)
+    #   cr.translate(x,y); cr.rotate(-PI/2)
     #   draw_arrow(al,aw,ahl,ahw,fill)
     # cr.restore()
     PI = 3.1416
 
     cr.save()
+    if (1):
 
-    # Uses aw,al,ahw,ahl
+        # To get exact offset I'd have to do math :( with sin and cos or sumpm
+        if (not fill):
+            SQ2 = 1.4142
+            offset = cr.get_line_width()/SQ2
+            al = al - offset
+            ahw = ahw - 2*offset
 
-    # To get exact offset I'd have to do math :( with sin and cos or sumpm
-    if (not fill):
-        SQ2 = 1.4142
-        offset = cr.get_line_width()/SQ2
-        al = al - offset
-        ahw = ahw - 2*offset
+        # The line
+        cr.move_to(0,0)
+        if (fill): cr.line_to(al-ahl,0)
+        else:      cr.line_to(al,0)
+        cr.stroke()
 
-    # The line
-    cr.move_to(0,0)
-    if (fill): cr.line_to(al-ahl,0)
-    else:      cr.line_to(al,0)
-    cr.stroke()
+        # The arrowhead
+        if (fill): cr.set_line_width(1);
+        cr.move_to(al-ahl, -ahw/2)
+        cr.line_to(al,     0)
+        cr.line_to(al-ahl, ahw/2)
+        if (fill):
+            cr.close_path()
+            cr.fill()
 
-    # print "Found linewidth " + str(cr.get_line_width())
-
-    # The arrowhead
-    if (fill): cr.set_line_width(1);
-    cr.move_to(al-ahl, -ahw/2)
-    cr.line_to(al,     0)
-    cr.line_to(al-ahl, ahw/2)
-    if (fill):
-        cr.close_path()
-        cr.fill()
-
-    cr.stroke()
+        cr.stroke()
     cr.restore()
 
+# Big ghost arrows in background of grid view show prevailing port direction
 def draw_big_ghost_arrows(cr):
 
     # Ghost Arrow parms, used by big_ghost_arrow(), 
-    apad = 10; # how far arrow sticks outon each side
-    ahl = 20 # length of arrowhead
-    al = 2*CANVAS_WIDTH + 2*apad + ahl/2  # length of line
-    # aw = 30 # width of line
-    aw = 10 # width of line
-    # ahw = 2*aw # width of arrowhead
-    ahw = 3*aw # width of arrowhead
+    aw = 10                # line width
+    ahl = 20; ahw = 3*aw   # arrowhead length, width
+
+    # Arrow goes across two tiles, sticks out apad on one side and (apad + ahl/2) on the other
+    apad = 10;
+    al = 2*CANVAS_WIDTH + 2*apad + ahl/2  # length of arrow
+
+    fill = True;  # For solid filled-in arrowhead
+
+    # Ghost arrows are ghooooostly graaaaaay, woooooooo!
+    graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
 
     def draw_big_ghost_arrow(cr,x,y,dir):
 
-        fill = True;
         cr.save()
-        cr.translate(x,y)
-        cr.set_line_width(aw);
-        if (dir=='left'): cr.rotate(PI)
-        if (dir=='down'): cr.rotate(PI/2)
-        if (dir=='up'):   cr.rotate(3*PI/2)
-        draw_arrow(cr,al,ahl,ahw,fill)
+        if (1):
+            cr.translate(x,y)
+            cr.set_line_width(aw);
+            if (dir=='left'): cr.rotate(PI)
+            if (dir=='down'): cr.rotate(PI/2)
+            if (dir=='up'):   cr.rotate(3*PI/2)
+            draw_arrow(cr,al,ahl,ahw,fill)
         cr.restore()
 
-    # Ghost arrow begins at (-20,CANVAS_HEIGHT-offset-aw/2) and points LEFT
-    # big_ghost_arrow(cr, -20, CANVAS_HEIGHT-offset-aw/2, 'left')
-#         cr.set_source_rgb(0,1,0)
-
-    graylevel = 0.9
-    cr.set_source_rgb(graylevel,graylevel,graylevel)
-
-    # Right-pointing arrows start apad back from left edge of the tile,
-    # and h_offset down from the top
+    # Right-pointing arrows start apad back from left edge of the tile
+    # and ra_v_offset down from the top
     ra_start    = -apad;
     ra_v_offset = PORT_LENGTH + 2 * PORT_WIDTH
 
-    # Left-pointing arrows start apad beyond the right edge of the tile,
-    # and v_offset up from the bottom
+    # Left-pointing arrows start apad beyond the right edge of the tile
+    # and ra_h_offset up from the bottom
     la_start    = GRID_WIDTH*CANVAS_WIDTH + apad;
     la_v_offset = CANVAS_HEIGHT - ra_v_offset
 
@@ -183,6 +169,8 @@ def draw_big_ghost_arrows(cr):
     for tilecol in range (0, GRID_HEIGHT):
         draw_big_ghost_arrow(cr, da_h_offset + tilecol*CANVAS_WIDTH, da_start, 'down')
         draw_big_ghost_arrow(cr, ua_h_offset + tilecol*CANVAS_WIDTH, ua_start, 'up')
+
+# cleanup bookmark 5/28 11am
 
 def parse_wirename(wirename):
     rval = {}
@@ -693,11 +681,6 @@ def draw_handler(widget, cr):
 def draw_one_tile(cr, tileno):
     cr.save()
 
-#     # Make a little whitespace margin at top and left
-#     # cr.translate(ARRAY_PAD, ARRAY_PAD)
-#     pad = ARRAY_PAD * SCALE_FACTOR;
-#     cr.translate(pad,pad)
-
     # scalefactor = 10 # zoom in for debugging
     # cr.scale(scalefactor,scalefactor)
 
@@ -810,7 +793,7 @@ def main():
     win.set_title("Tilesy")
     # win.props.height_request=canvas_height
     # win.props.width_request =canvas_width
-    print dir(win.props)
+    # print dir(win.props)
 
     # This should all be in __init__ maybe
 
@@ -820,7 +803,7 @@ def main():
 
     win.da = Gtk.DrawingArea(height_request=h, width_request=w)
     win.add(win.da)
-    print dir(win.da.props)
+    # print dir(win.da.props)
 
     # An dumb way to keep track of the current window and drawing area widget
     # global CUR_WINDOW;      CUR_WINDOW = win;
