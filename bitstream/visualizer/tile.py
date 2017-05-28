@@ -77,6 +77,24 @@ ARRAY_PAD = 60
 CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
+##############################################################################
+# These could all be part of a Wire class if we wanted to...
+
+# E.g. given "out_s1t3", rval['inout'] = "out", rval['side'] = 1 and rval['track'] = 3
+def parse_wirename(wirename):
+    rval = {}
+    decode = re.search('(in|out)_s(.*)t(.*)', wirename);
+    rval['inout'] = str(decode.group(1))
+    rval['side']  = int(decode.group(2))
+    rval['track'] = int(decode.group(3))
+    return rval
+    
+def inout(wirename): return parse_wirename(wirename)['inout']
+def side(wirename): return parse_wirename(wirename)['side']
+def track(wirename): return parse_wirename(wirename)['track']
+##############################################################################
+
+# This could be an extension of cr's class I suppose
 def draw_arrow(cr, al, ahl,ahw,fill):
     # Draw an arrow of total length al and line_width aw
     # Arrowhead on the end is a triangle of length ahl, width ahw
@@ -132,7 +150,8 @@ def draw_big_ghost_arrows(cr):
     fill = True;  # For solid filled-in arrowhead
 
     # Ghost arrows are ghooooostly graaaaaay, woooooooo!
-    graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
+    # graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
+    setcolor(cr, "ghostgray")
 
     def draw_big_ghost_arrow(cr,x,y,dir):
 
@@ -172,36 +191,46 @@ def draw_big_ghost_arrows(cr):
 
 # cleanup bookmark 5/28 11am
 
-def parse_wirename(wirename):
-    rval = {}
-    decode = re.search('(in|out)_s(.*)t(.*)', wirename);
-    rval['inout'] = str(decode.group(1))
-    rval['side']  = int(decode.group(2))
-    rval['track'] = int(decode.group(3))
-    return rval
-    
+def setcolor(cr, colorname):
+    colordict = {}
 
-def side(wirename):
-#     decode = re.search('(in|out)_s(.*)t(.*)', wirename);
-#     inout = str(decode.group(1))
-#     side  = int(decode.group(2))
-#     track = int(decode.group(3))
-    return parse_wirename(wirename)['side']
+    # Sixteen "official" HTML colors
+    # https://en.wikipedia.org/wiki/Web_colors#HTML_color_names
 
-def track(wirename):
-    dict = parse_wirename(wirename)
-    return dict['track']
+    colordict["white"]   = ( 1.00, 1.00, 1.00)
+    colordict["silver"]  = ( 0.75, 0.75, 0.75)
+    colordict["gray"]    = ( 0.50, 0.50, 0.50)
+    colordict["black"]   = ( 0.00, 0.00, 0.00)
+    colordict["red"]     = ( 1.00, 0.00, 0.00)
+    colordict["maroon"]  = ( 0.50, 0.00, 0.00)
+    colordict["yellow"]  = ( 1.00, 1.00, 0.00)
+    colordict["olive"]   = ( 0.50, 0.50, 0.00)
+    colordict["lime"]    = ( 0.00, 1.00, 0.00)
+    colordict["green"]   = ( 0.00, 0.50, 0.00)
+    colordict["aqua"]    = ( 0.00, 1.00, 1.00)
+    colordict["teal"]    = ( 0.00, 0.50, 0.50)
+    colordict["blue"]    = ( 0.00, 0.00, 1.00)
+    colordict["navy"]    = ( 0.00, 0.00, 0.50)
+    colordict["fuchsia"] = ( 1.00, 0.00, 1.00)
+    colordict["purple"]  = ( 0.50, 0.00, 0.50)
 
-def inout(wirename):
-    decode = re.search('(in|out)_s(.*)t(.*)', wirename);
-    inout = str(decode.group(1))
-    side  = int(decode.group(2))
-    track = int(decode.group(3))
-    return inout;
+    # What, no orange!?
+    colordict["orange"]  = ( 1.00, 0.50, 0.00)
 
+    # My own ghostly gray
+    graylevel = 0.9;
+    colordict["ghostgray"] = (graylevel,graylevel,graylevel)
 
+    # return colordict[colorname]
+    (r,g,b) = colordict[colorname];
+    cr.set_source_rgb(r,g,b)
+
+# This could be an extension of cr's class I suppose
 # def build_dot(cr,x,y):
-def drawdot(cr,x,y):
+def drawdot(cr, x, y, color):
+
+    # For debugging purposes, draw a colorful dot at location (x,y)
+
     dotsize = 1.0
     dotsize = 0.8
     # cr.set_line_width (10.0);
@@ -333,7 +362,7 @@ def drawport(cr, wirename, **keywords):
 
     # TODO don't need w,h,rot
     (x,y,  w,h,  rot) = connectionpoint(wirename)
-    # drawdot(cr,x,y)
+    # drawdot(cr,x,y, "black")
     cr.stroke()
 
     cr.save()
@@ -355,7 +384,8 @@ def drawport(cr, wirename, **keywords):
 
     # if (s==2): rot = 0;
 
-    cr.set_source_rgb(0,0,1) # blue
+    # cr.set_source_rgb(0,0,1) # blue
+    setcolor(cr, 'blue')
     cr.set_line_width(.2)
 
     # Should be like "if ('box' in options):"
@@ -384,11 +414,10 @@ def drawport(cr, wirename, **keywords):
     # cr.set_source_rgb(0,0,1) # blue
     if ('ghost' in optionlist):
         # print "AH!  A GHOST!"
-        cr.set_source_rgb(.8,.8,1) # blue
+        cr.set_source_rgb(.8,.8,1) # slightly darker ghost
     else:
-        cr.set_source_rgb(0,0,1) # blue
-
-
+        # cr.set_source_rgb(0,0,1) # blue
+        setcolor(cr, 'blue')
 
     # For demonstration purposes,
     # tracks 0-2 are buses (thick) and tracks 3,4 are wires (thin)
@@ -449,7 +478,8 @@ def drawport(cr, wirename, **keywords):
 
     ########################################################################
     # Register
-    cr.set_source_rgb(1,0,0) # red
+    # cr.set_source_rgb(1,0,0) # red
+    setcolor(cr, 'red')
     # (rx,ry) = (-REG_HEIGHT, (PORT_WIDTH-REG_WIDTH)/2)
     (rx,ry) = (-REG_HEIGHT, (-REG_WIDTH)/2)
 
@@ -475,8 +505,8 @@ def drawport(cr, wirename, **keywords):
     # Position: one pixel in, and just high enough to clear the arrowhead
     # (x,y) = (1, -2.5)
     (x,y) = (1, -ARROWHEAD_WIDTH)
-    # drawdot(cr,x,y)
-    # drawdot(cr,0,0)
+    # drawdot(cr,x,y,"blue")
+    # drawdot(cr,0,0,"red")
 
     # "input" wires get moved to right ot get out of the way of the arrowhead
     if (inout(wirename) == "in"):
@@ -509,7 +539,8 @@ def drawtileno(cr, tileno):
     cr.save()
 
     # Ghost color= light gray
-    graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
+    # graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
+    setcolor(cr, 'ghostgray')
 
     cr.set_font_size(20)
     cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
@@ -524,9 +555,9 @@ def drawtileno(cr, tileno):
     x = centerx - w/2 - ULx
     y = centery + h/2
 
-    # cr.set_source_rgb(1,0,0); drawdot(cr, centerx, centery) # red
-    # cr.set_source_rgb(0,0,1); drawdot(cr, x+ULx, y+ULy) # blue
-    # cr.set_source_rgb(1,0,1); drawdot(cr, x, y) # poiple
+    # cr.set_source_rgb(1,0,0); drawdot(cr, centerx, centery, 'red'
+    # cr.set_source_rgb(0,0,1); drawdot(cr, x+ULx, y+ULy, 'blue')
+    # cr.set_source_rgb(1,0,1); drawdot(cr, x, y, 'purple')
 
     cr.move_to(x,y)
     cr.show_text(tilestr)
@@ -542,7 +573,8 @@ def drawtileno(cr, tileno):
 
 def drawtile(cr):
     cr.save()
-    cr.set_source_rgb(0,0,0) # black
+    # cr.set_source_rgb(0,0,0) # black
+    setcolor(cr,'black')
     cr.set_line_width(.5)
     w = CANVAS_WIDTH  - 2*PORT_HEIGHT
     h = CANVAS_HEIGHT - 2*PORT_HEIGHT
@@ -582,9 +614,9 @@ def connectwires(cr, connection):
     y2 = ULrotpoint2[1]
 
 
-    # dot = drawdot(cr,x1,y1)
-    # drawdot(cr,x1,y1)
-    # drawdot(cr,x2,y2)
+    # dot = drawdot(cr,x1,y1,'red')
+    # drawdot(cr,x1,y1,'red')
+    # drawdot(cr,x2,y2,'red')
 
     # Okay now connect the dots!
     cr.save()
@@ -592,9 +624,10 @@ def connectwires(cr, connection):
     if (x1 == PORT_HEIGHT): interior = (x2,y1)
     else:                   interior = (x1,y2)
 
-    cr.set_source_rgb(0,0,1) # blue
+    # cr.set_source_rgb(0,0,1) # blue
+    setcolor(cr,'blue')
     cr.set_line_width(.5)
-    drawdot(cr,interior[0],interior[1])
+    drawdot(cr,interior[0],interior[1],'blue')
     cr.move_to(x1,y1)
     cr.line_to(interior[0],interior[1])
     cr.line_to(x2,y2)
@@ -615,9 +648,9 @@ def drawgrid(cr):
     cr.set_line_width(.1)
     # cr.set_dash((1,1), 0) # on/off array, length of dashes, begin
     b = 0.8 # brightness
-    cr.set_source_rgb(b,b,0) # yellow
-    cr.set_source_rgb(0,0,0) # black (for debug)
-
+    # cr.set_source_rgb(b,b,0) # ghostly yellow
+    # cr.set_source_rgb(0,0,0)
+    setcolor(cr,'black') # black for debug
 
     ntracks_v = NTRACKS_PE_BUS_V + NTRACKS_PE_WIRE_V
     ntracks_h = NTRACKS_PE_BUS_H + NTRACKS_PE_WIRE_H
