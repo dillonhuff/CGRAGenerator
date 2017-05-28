@@ -703,37 +703,23 @@ def draw_one_tile(cr, tileno):
     ########################################################################
     # Scale and translate
 
+    global SCALE_FACTOR;
+    
     # For now, unzoomed (grid) view is scaled to 2x.
     # And zoomed (onetile) view is 2x of that.  Ish.
     # Except that, for no good reason, want the zoomed tile
     # to occupy the same space as four unzoomed tiles.
 
-    # width of unscaled tile = 1*(CW - 2PH
-    # width of gridded tile  = 2*(2CW - 2PH)
-    # width of zoomed tile   = 4*(CW - 2PH)
-
-    # Scale factor for gridded tile = 
-
-    # Grid    view, tile edge to tile edge = 2*(2CW-2PH)
-    # Onetile view, tile edge to tile edge =    (CW-2PH)/4
-
-    global SCALE_FACTOR;
-    
     # OLD: Draw at 4x requested size
-    SCALE_FACTOR = 4
+    # SCALE_FACTOR = 4
 
     # New (see above):
+    SCALE_FACTOR = float(4*CANVAS_WIDTH - 4*PORT_LENGTH)\
+                  /float(  CANVAS_WIDTH - 2*PORT_LENGTH)
 
-    edge2edge_grid    =   2*(2*CANVAS_WIDTH-2*PORT_LENGTH)
-    edge2edge_onetile = 2*2*2*(  CANVAS_WIDTH-2*PORT_LENGTH)
-    SCALE_FACTOR = 2.0*float(edge2edge_onetile)/float(edge2edge_grid)
-    SCALE_FACTOR = 2.0*float(2*CANVAS_WIDTH-2*PORT_LENGTH)/float(CANVAS_WIDTH-2*PORT_LENGTH)
-    # SCALE_FACTOR = 2.0*(edge2edge_grid)/(edge2edge_onetile)
-    
+
     # Make a little whitespace margin at top and left (scale independent)
     # cr.translate(ARRAY_PAD, ARRAY_PAD)
-
-
 
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
 
