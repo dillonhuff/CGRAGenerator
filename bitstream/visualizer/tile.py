@@ -24,7 +24,7 @@ def tileno2rc(tileno): return (tileno % GRID_HEIGHT, int(tileno / GRID_WIDTH))
 # button-press events
 SCALE_FACTOR = 0;
 
-
+# cleanup bookmark 5/28 11am
 
 
 # Could/should derive these from "BUS!^:5" etc.
@@ -700,28 +700,58 @@ def draw_one_tile(cr, tileno):
     # scalefactor = 10 # zoom in for debugging
     # cr.scale(scalefactor,scalefactor)
 
-    # Draw at 4x requested size
-    # cr.scale(4,4)
-    global SCALE_FACTOR; SCALE_FACTOR = 4
+    ########################################################################
+    # Scale and translate
 
-    # Old size, tile edge to tile edge = 2(2CW-2PH)
-    # New size, tile edge to tile edge = 4(CW-2PH)
+    # For now, unzoomed (grid) view is scaled to 2x.
+    # And zoomed (onetile) view is 2x of that.  Ish.
+    # Except that, for no good reason, want the zoomed tile
+    # to occupy the same space as four unzoomed tiles.
 
+    # width of unscaled tile = 1*(CW - 2PH
+    # width of gridded tile  = 2*(2CW - 2PH)
+    # width of zoomed tile   = 4*(CW - 2PH)
+
+    # Scale factor for gridded tile = 
+
+    # Grid    view, tile edge to tile edge = 2*(2CW-2PH)
+    # Onetile view, tile edge to tile edge =    (CW-2PH)/4
+
+    global SCALE_FACTOR;
+    
+    # OLD: Draw at 4x requested size
+    SCALE_FACTOR = 4
+
+    # New (see above):
+
+    edge2edge_grid    =   2*(2*CANVAS_WIDTH-2*PORT_LENGTH)
+    edge2edge_onetile = 2*2*2*(  CANVAS_WIDTH-2*PORT_LENGTH)
+    SCALE_FACTOR = 2.0*float(edge2edge_onetile)/float(edge2edge_grid)
     SCALE_FACTOR = 2.0*float(2*CANVAS_WIDTH-2*PORT_LENGTH)/float(CANVAS_WIDTH-2*PORT_LENGTH)
+    # SCALE_FACTOR = 2.0*(edge2edge_grid)/(edge2edge_onetile)
     
     # Make a little whitespace margin at top and left (scale independent)
     # cr.translate(ARRAY_PAD, ARRAY_PAD)
 
-    unscaled_window_size = (4*CANVAS_WIDTH+2*ARRAY_PAD)
-    scaled_tile_size   = CANVAS_WIDTH * SCALE_FACTOR
-    # print "uws=%d uts=%d sts=%d" % (unscaled_window_size,scaled_tile_size)
 
-    ONETILE_PAD = (unscaled_window_size - SCALE_FACTOR*unscaled_tile_size)/2
+
+    cr.scale(SCALE_FACTOR,SCALE_FACTOR)
+
+
+    unscaled_window_size = (4*CANVAS_WIDTH+2*ARRAY_PAD)
+    scaled_window_size   = (4*CANVAS_WIDTH+2*ARRAY_PAD)/SCALE_FACTOR
+    scaled_tile_size     = CANVAS_WIDTH # now that we'v scaled
+    print "uws=%d sws=%d sts=%d" % (unscaled_window_size,scaled_window_size,scaled_tile_size)
+
+    # ONETILE_PAD = (unscaled_window_size - SCALE_FACTOR*unscaled_tile_size)/2
+    ONETILE_PAD = (scaled_window_size - scaled_tile_size)/2
+    print "OP= " + str(ONETILE_PAD)
     cr.translate(ONETILE_PAD, ONETILE_PAD)
 
 
 
-    cr.scale(SCALE_FACTOR,SCALE_FACTOR)
+
+
 
     print "Drawing tile %s!" % str(tileno)
     print "...at scale factor %d/%d = %f." \
