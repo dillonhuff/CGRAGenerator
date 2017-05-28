@@ -20,6 +20,8 @@ GRID_HEIGHT = 2;
 # tileno-to-RC conversion
 def tileno2rc(tileno): return (tileno % GRID_HEIGHT, int(tileno / GRID_WIDTH))
 
+# A really dumb way to keep track of current scale factor, for
+# button-press events
 SCALE_FACTOR = 0;
 
 
@@ -34,8 +36,6 @@ NTRACKS_PE_WIRE_V = 0;
 
 # ARROWHEAD_LENGTH = 2; ARROWHEAD_WIDTH = 4; # meh
 ARROWHEAD_LENGTH = 3; ARROWHEAD_WIDTH = 2; # this is nice
-
-ARRAY_PAD = 60
 
 # Here's a dumb way to pass information from the button-press handler to the draw-event handler
 ZOOM_TO_TILE = -1;
@@ -71,6 +71,11 @@ PORT_PAD = PORT_WIDTH/2
 
 REG_WIDTH  = PORT_WIDTH - 2;
 REG_HEIGHT = 2;
+
+# Edge of first tile in array view is ARRAY_PAD + 2PH
+# Edge of first tile in onetile view is AP+4PH
+ARRAY_PAD = 60
+ONETILE_PAD = ARRAY_PAD - 2*PORT_HEIGHT
 
 # Canvas size for displaying a single tile edge-to-edge w/ no padding
 #   How big is a tile canvas?  Refer to diagram in doc
@@ -671,7 +676,7 @@ def draw_all_ports(cr):
 def draw_handler(widget, cr):
     # print widget; print cr
 
-    global CUR_CR; CUR_CR = cr;
+    global DRAW_HANDLER_CR; DRAW_HANDLER_CR = cr;
     global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = widget;
 
     global ZOOM_TO_TILE
@@ -695,15 +700,32 @@ def draw_one_tile(cr, tileno):
     # scalefactor = 10 # zoom in for debugging
     # cr.scale(scalefactor,scalefactor)
 
-    # Make a little whitespace margin at top and left (scale independent)
-    cr.translate(ARRAY_PAD, ARRAY_PAD)
-
     # Draw at 4x requested size
     # cr.scale(4,4)
     global SCALE_FACTOR; SCALE_FACTOR = 4
+
+    # Old size, tile edge to tile edge = 2(2CW-2PH)
+    # New size, tile edge to tile edge = 4(CW-2PH)
+
+    SCALE_FACTOR = 2.0*float(2*CANVAS_WIDTH-2*PORT_LENGTH)/float(CANVAS_WIDTH-2*PORT_LENGTH)
+    
+    # Make a little whitespace margin at top and left (scale independent)
+    # cr.translate(ARRAY_PAD, ARRAY_PAD)
+
+    unscaled_window_size = (4*CANVAS_WIDTH+2*ARRAY_PAD)
+    scaled_tile_size   = CANVAS_WIDTH * SCALE_FACTOR
+    # print "uws=%d uts=%d sts=%d" % (unscaled_window_size,scaled_tile_size)
+
+    ONETILE_PAD = (unscaled_window_size - SCALE_FACTOR*unscaled_tile_size)/2
+    cr.translate(ONETILE_PAD, ONETILE_PAD)
+
+
+
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
 
     print "Drawing tile %s!" % str(tileno)
+    print "...at scale factor %d/%d = %f." \
+        % ((2*CANVAS_WIDTH-2*PORT_LENGTH),(CANVAS_WIDTH-2*PORT_LENGTH), SCALE_FACTOR)
     tile[tileno].draw(cr)
     cr.restore()
 
@@ -807,6 +829,7 @@ def main():
 
 def button_press_handler(widget, event):
     print ""
+    print "matrix = " + str(DRAW_HANDLER_CR.get_matrix())
     print "SCALE_FACTOR %s" % SCALE_FACTOR
     print event.x, ' ', event.y
     x = event.x; y = event.y
@@ -827,11 +850,11 @@ def button_press_handler(widget, event):
     if (ZOOM_TO_TILE == -1):
         print "Zoom in to tile %s!" % str(tileno)
         ZOOM_TO_TILE = tileno;
-        draw_one_tile(CUR_CR, tileno)
+        draw_one_tile(DRAW_HANDLER_CR, tileno)
     else:
         print "Zoom out!"
         ZOOM_TO_TILE = -1;
-        draw_all_tiles(CUR_CR)
+        draw_all_tiles(DRAW_HANDLER_CR)
 
     print "Qdraw"
     CUR_DRAW_WIDGET.queue_draw()
