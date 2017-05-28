@@ -6,7 +6,7 @@ import re
 # In gridarray view, each tile should be labeled with tile number maybe
 # Put FU in each tile and connections to/from FU
 
-# pygobjects
+# gi a.k.a. pygobjects, pygtk
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk,Gdk
@@ -47,9 +47,9 @@ ARRAY_PAD = 60
 # Here's a dumb way to pass information from the button-press handler to the draw-event handler
 ZOOM_TO_TILE = -1;
 
-# An equally dumb wayof keeping track of the current window and drawing area widget
-CUR_WIN         = -1
-CUR_DRAW_WIDGET = -1
+# An equally dumb way of keeping track of the current window and drawing area widget
+# CUR_WIN         = -1
+# CUR_DRAW_WIDGET = -1
 
 # Should be something like:
 #
@@ -89,7 +89,7 @@ REG_HEIGHT = 2;
 CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
-def draw_rectilinear_arrow(cr, al, ahl,ahw,fill):
+def draw_arrow(cr, al, ahl,ahw,fill):
     # Draw an arrow of total length al and line_width aw
     # Arrowhead on the end is a triangle of length ahl, width ahw
     # if "fill" is true, fill in the triangle.
@@ -97,7 +97,7 @@ def draw_rectilinear_arrow(cr, al, ahl,ahw,fill):
     # E.g.
     # cr.save()
     #   cr.translate(x,y)
-    #   draw_rectilinear_arrow(al,aw,ahl,ahw,fill)
+    #   draw_arrow(al,aw,ahl,ahw,fill)
     # cr.restore()
     PI = 3.1416
 
@@ -152,7 +152,7 @@ def draw_big_ghost_arrows(cr):
         if (dir=='left'): cr.rotate(PI)
         if (dir=='down'): cr.rotate(PI/2)
         if (dir=='up'):   cr.rotate(3*PI/2)
-        draw_rectilinear_arrow(cr,al,ahl,ahw,fill)
+        draw_arrow(cr,al,ahl,ahw,fill)
         cr.restore()
 
     # Ghost arrow begins at (-20,CANVAS_HEIGHT-offset-aw/2) and points LEFT
@@ -480,38 +480,78 @@ def drawport(cr, wirename, **keywords):
     ########################################################################
     # Label
 
-
-    # cr.set_source_rgb(1,0,0) # red
+    # Label color: light gray for "ghost" text, otherwise just red
     if ('ghost' in optionlist):
-        cr.set_source_rgb(1,.8,.8)
+        cr.set_source_rgb(1,.8,.8)  # light gray
     else:
-        cr.set_source_rgb(1,0,0)
+        cr.set_source_rgb(1,0,0)    # red
 
-
-    # Could I think use "text_path" to e.g. right-justify labels etc.
-    cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-    # cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-    fs = 2.5
-    cr.set_font_size(fs)
-
-    (x,y) = (1, -2.5)
+    # Position: one pixel in, and just high enough to clear the arrowhead
+    # (x,y) = (1, -2.5)
     (x,y) = (1, -ARROWHEAD_WIDTH)
     # drawdot(cr,x,y)
     # drawdot(cr,0,0)
 
-
+    # "input" wires get moved to right ot get out of the way of the arrowhead
     if (inout(wirename) == "in"):
-        if (side(wirename) != 2): x = x + 4
+        # if (side(wirename) != 2): x = x + 4
+        if (side(wirename) != 2): x = x + (ARROWHEAD_LENGTH + 1)
 
+    # Ports on side 2 (W side) should not be upside-down!
     if (side(wirename)==2):
         cr.rotate(PI);
         cr.translate(-PORT_HEIGHT, 0)
 
+    cr.set_font_size(2.5)
+
+    # Could I think use "text_path" to e.g. right-justify labels etc.
+    # cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+    cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
     cr.move_to(x,y)
     cr.show_text(wirename)
     cr.stroke()
 
     cr.restore()
+
+# Put a big ghost-number in the middle of the tile
+# See https://www.cairographics.org/manual/cairo-text.html#cairo-text-extents
+def drawtileno(cr, tileno):
+
+    tilestr = str(tileno)
+
+    cr.save()
+    # tileno = 0
+    # Ghost color= light gray
+    graylevel = 0.9
+    cr.set_source_rgb(graylevel,graylevel,graylevel)
+
+    cr.set_font_size(20)
+    cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+    print cr.text_extents(tilestr)
+    # E.g. cr.text_extents("100") => (3, -15, 38, 15, 42, 0) => (UL(x,y), w, h, begin_next(x,y)
+    (ULx, ULy, w, h, nextx, nexty) = cr.text_extents(tilestr)
+
+    centerx = CANVAS_WIDTH/2
+    centery = CANVAS_HEIGHT/2
+
+    x = centerx - w/2 - ULx
+    y = centery + h/2
+
+    # cr.set_source_rgb(1,0,0); drawdot(cr, centerx, centery) # red
+    # cr.set_source_rgb(0,0,1); drawdot(cr, x+ULx, y+ULy) # blue
+    # cr.set_source_rgb(1,0,1); drawdot(cr, x, y) # poiple
+
+    cr.move_to(x,y)
+    cr.show_text(tilestr)
+    cr.stroke()
+    cr.restore()
+
+    # sys.exit(0)
+
+#     x = CANVAS_WIDTH/2
+#     cr.move_to(x,y)
+#     cr.show_text(wirename)
+
 
 def drawtile(cr):
     cr.save()
@@ -753,12 +793,11 @@ def main():
     win.add(win.da)
     print dir(win.da.props)
 
-    global CUR_WINDOW;      CUR_WINDOW = win;
+    # An dumb way to keep track of the current window and drawing area widget
+    # global CUR_WINDOW;      CUR_WINDOW = win;
     global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = win.da;
 
     # "draw" event results in drawing everything on drawing area da
-    # handler_id = win.da.connect("draw", draw_all_tiles)
-    # handler_id = win.da.connect("draw", draw_all_tiles)
     draw_handler_id = win.da.connect("draw", draw_handler)
 
     # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
@@ -767,7 +806,6 @@ def main():
 
     # FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
     win.da.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-
 
     win.connect("delete-event", Gtk.main_quit)
 
@@ -802,53 +840,8 @@ def button_press_handler(widget, event):
         ZOOM_TO_TILE = -1;
         draw_all_tiles(CUR_CR)
 
-    # How do I manually trigger an event with PyGTK event handler?
-    # https://stackoverflow.com/questions/13667394/how-do-i-manually-trigger-an-event-with-pygtk-event-handler
-    # Use the emit method on the widget, e.g.
-    #  button.emit("clicked").
-
-    # https://stackoverflow.com/questions/8280775/refresh-drawing-area-in-gtk
-    # gtk_widget_queue_draw_area is gtk.Widget.queue_draw_area
-    # & for gdk_window_invalidate_rect is gtk.gdk.Window.invalidate_rect
-
-#     draw_one_tile(CUR_CR, 0)
-# 
-      # CUR_DRAW_WIDGET.invalidate_rect(0,0,500,500)
-#     # CUR_DRAW_WIDGET.emit("draw")
     print "Qdraw"
     CUR_DRAW_WIDGET.queue_draw()
-# 
-#     # http://pygtk.org/pygtk2reference/class-gtkwidget.html#properties-gtkwidget
-#     # To cause the redraw to be done immediately, follow that call with a call
-#     # to the gtk.gdk.Window.process_updates() method.
-#     # CUR_WINDOW.process_updates(True);
-#     # Gdk.Window.process_updates(widget,True)
-#     # Gdk.Window.process_updates(Gdk.GDK_WINDOW(widget),True)
-#     # Gdk.Window.process_updates(CUR_WINDOW,True)
-#     print "Process updates"
-#     Gdk.Window.process_updates(Gdk.get_default_root_window(),False)
-#     # .process_updates(True)
-
-
-    # http://pygtk.org/pygtk2reference/class-gdkwindow.html
-    # def process_updates(update_children)
-    # update_children: if True process updates for child windows
-
-
-
-
-
-
-# https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
-#         self.drawing_area.connect('button-press-event', self.on_drawing_area_button_press)
-#     def on_drawing_area_button_press(self, widget, event):
-#         print event.x, ' ', event.y
-# Also needs mask I guess:
-# self.drawing_area.set_events(gtk.gdk.BUTTON_PRESS_MASK)
-#
-# http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
-# drawing_area.connect("button_press_event", button_press_handler)
-
 
 class Tile:
 #     id = -1;
@@ -876,6 +869,7 @@ class Tile:
         if (ZOOM_TO_TILE == -1):
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
+        drawtileno(cr, self.id)
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
         drawtile(cr)
