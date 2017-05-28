@@ -2,35 +2,28 @@
 import sys
 import re
 
-#TODO
-# In gridarray view, each tile should be labeled with tile number maybe
-# Put FU in each tile and connections to/from FU
-
 # gi a.k.a. pygobjects, pygtk
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk,Gdk
 import cairo
 
-# FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
-# print Gdk.EventMask.BUTTON_PRESS_MASK
-# sys.exit(0)
-
-# Should be doing this maybe:
-# - read the bitstream file and set up the tiles
-# - 
+#TODO
+# Put FU in each tile and connections to/from FU
 
 PI = 3.1416
 def deg2rad(rad): return rad*180/PI
 
+GRID_WIDTH  = 2;
+GRID_HEIGHT = 2;
 
-
-# TODO Need tileno-to-RC conversion
+# tileno-to-RC conversion
+def tileno2rc(tileno): return (tileno % GRID_HEIGHT, int(tileno / GRID_WIDTH))
 
 SCALE_FACTOR = 0;
 
-GRID_WIDTH  = 2;
-GRID_HEIGHT = 2;
+
+
 
 # Could/should derive these from "BUS!^:5" etc.
 NTRACKS_PE_BUS_H = 5;
@@ -850,8 +843,9 @@ class Tile:
 
     def __init__(self, id):
         self.id = id
-        self.row = id % GRID_HEIGHT
-        self.col = int(id / GRID_WIDTH)
+        # self.row = id % GRID_HEIGHT
+        # self.col = int(id / GRID_WIDTH)
+        (self.row,self.col) = tileno2rc(id)
         self.connectionlist = []
 
     def connect(self,connection):  self.connectionlist.append(connection)
