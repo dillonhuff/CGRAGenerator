@@ -26,7 +26,11 @@ def rc2tileno(x,y):    return GRID_WIDTH*col + row
 
 # A really dumb way to keep track of current scale factor, for
 # button-press events
-SCALE_FACTOR = 0;
+SCALE_FACTOR = 1;
+SF_ALL       = 1; # No zoom when displaying all tiles in a window
+SF_ALL_2x2   = 2; # Zoom 2x when displaying 2x2 grid
+
+
 
 # Could/should derive these from "BUS:5" etc.
 NTRACKS_PE_BUS_H = 5;
@@ -617,7 +621,7 @@ def draw_one_tile(cr, tileno):
     
     # OLD: Draw at 4x requested size; SCALE_FACTOR = 4
     # NEW:
-    #   For now, unzoomed (grid) view is scaled to 2x.
+    #   For now, unzoomed (grid) view is scaled to 2x (USF=2).
     #   And zoomed (onetile) view is 2x of that.  Ish.
     #   Except that, for no good reason, want the zoomed tile
     #   to occupy the same space as four unzoomed tiles.
@@ -625,8 +629,9 @@ def draw_one_tile(cr, tileno):
     # Canvas width = tile width + length of ports on each side
     # In zoomed view, want width of one tile to match
     # (two tiles + gap) in unzoomed (2x) view
+    USF = 2 # Scale factor for unzoomed tiles
     tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
-    two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*2
+    two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*USF
     fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
     SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
@@ -658,8 +663,9 @@ def draw_one_tile(cr, tileno):
 
 def draw_all_tiles(cr):
 
-    SCALE_FACTOR = 2                      # Draw at 2x (for now at least)
-    global SCALE_FACTOR;                  # Others need to know
+    SCALE_FACTOR = 1
+    if (GRID_WIDTH <= 2): SCALE_FACTOR = 2 # Why squint if you don't need to?
+    global SCALE_FACTOR;                   # Others need to know
 
     print "Draw all tiles!"
     cr.save()
@@ -826,7 +832,9 @@ def build_and_launch_main_window():
     win.show_all()
     Gtk.main()
 
-def demo1_connections():
+def demo_connections_2x2():
+
+    # Connections make sense for a 2x2 grid
 
     tile = TILE_LIST; # A convenient handle
 
@@ -847,28 +855,76 @@ def demo1_connections():
     tile[3].connect("in_s2t1 => out_s3t1")
     tile[3].printprops()
 
-def initialize_tile_list():
-    # tile = range(0, NTILES)           # Initialize tile array
+def demo_connections_4x4():
+
+    # Connections make sense for a 4x4 grid
+    # Note same as 2x2 except tiles numbered differently
+
+    tile = TILE_LIST; # A convenient handle
+
+    tile[0].connect("in_s3t1 => out_s2t1")
+    tile[0].connect("in_s3t1 connects to out_s1t1")
+    tile[0].connect("in_s3t0 => out_s0t0")
+    tile[0].printprops()
+
+    tile[1].connect("in_s3t1 => out_s2t1")
+    tile[1].connect("in_s3t1 => out_s1t1")
+    tile[1].connect("in_s3t1 => out_s0t1")
+    tile[1].printprops()
+
+    tile[4].connect("in_s2t0 => out_s0t0")
+    tile[4].connect("in_s1t1 => out_s0t1")
+    tile[4].printprops()
+
+    tile[5].connect("in_s2t1 => out_s3t1")
+    tile[5].printprops()
+
+def initialize_tile_list(w, h):
+
+    global GRID_WIDTH
+    global GRID_HEIGHT
+    global NTILES     
+    global TILE_LIST  
+
+    GRID_WIDTH  = w
+    GRID_HEIGHT = h
+    NTILES      = w * h
+    TILE_LIST   = range(0, NTILES)
+    
     for i in TILE_LIST: TILE_LIST[i] = Tile(i)
-    return TILE_LIST
+    # return TILE_LIST
 
 ##############################################################################
 # Actual runcode starts here!  (FINALLY)
 
-# (Always) initialize tile array
-initialize_tile_list()
+scenario = "demo2"
+if (scenario == "demo1"):
 
-# Demo 1 assumes a 2x2 grid and makes some connections
-demo1_connections()
+    # Initialize a 2x2 tile array
+    initialize_tile_list(2,2)
 
-# Set up the main window and connect to callback routine that draws everything.
-# Currently builds a window such that 2x2 grid fits in window at 2x scale
-build_and_launch_main_window()
+    # Demo 1 assumes a 2x2 grid and makes some connections
+    demo_connections_2x2()
 
-# TBD: demo2 builds sample connections for a 4x4 grid at 1x scale (demo1 was 2x)
+    # Set up the main window and connect to callback routine that draws everything.
+    # Currently builds a window such that 2x2 grid fits in window at 2x scale
+    build_and_launch_main_window()
 
 
+    # TBD: demo2 builds sample connections for a 4x4 grid at 1x scale (demo1 was 2x)
 
+
+if (scenario == "demo2"):
+
+    # Initialize 4x4 tile array
+    initialize_tile_list(4,4)
+
+    # Demo 2 makes same connections as 2x2 except in a 4x4 grid now
+    demo_connections_4x4()
+
+    # Set up the main window and connect to callback routine that draws everything.
+    # Currently builds a window such that 2x2 grid fits in window at 2x scale
+    build_and_launch_main_window()
 
 ##############################################################################
 # Notes
