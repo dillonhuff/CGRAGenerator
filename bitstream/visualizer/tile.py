@@ -160,6 +160,7 @@ def draw_big_ghost_arrows(cr):
     # Arrow goes across two tiles, sticks out apad on one side and (apad + ahl/2) on the other
     apad = 10;
     al = 2*CANVAS_WIDTH + 2*apad + ahl/2  # length of arrow
+    al = GRID_WIDTH*CANVAS_WIDTH + 2*apad + ahl/2  # length of arrow
 
     fill = True;  # For solid filled-in arrowhead
 
