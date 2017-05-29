@@ -249,8 +249,6 @@ def drawdot(cr, x, y, color):
     # and then return the path for later use e.g. "cr.append_path(path); cr.stroke()"
     
 
-# cleanup bookmark
-
 def connectionpoint(wirename):
 
     # Given wirename e.g. "out_s0t0", return x,y coords of its connection
@@ -299,22 +297,24 @@ def connectionpoint(wirename):
 
     return (x,y);
 
-# What's this?  What's THIS???
-# >>> def opt_fun(x1, x2, *positional_parameters, **keyword_parameters):
-# ...     if ('optional' in keyword_parameters):
-# ...         print 'optional parameter found, it is ', keyword_parameters['optional']
-# ...     else:
-# ...         print 'no optional parameter, sorry'
+# TODO/FIXME need at least one more pass on drawport() below!
 
-# E.g. "drawport(cr, "in_s0t0")
-# E.g. "drawport(cr, "in_s0t0", options="reg,arrowhead,box")
-
-
+# E.g. 'drawport(cr, "out_s1t0")' or 'drawport(cr, wirename, options="ghost")'
 def drawport(cr, wirename, **keywords):
     DBG = 0;
 
+    # Draw the port for the indicated wire in the context of the current canvas
+    # Ports are labeled arrows; input ports point in to the tile and
+    # output ports point out.
+    # connectionpoint() will tell where to start (for outputs) or end (for inputs)
+    # [Optionally] attach a register to the port inside the tile.
+    # [Optionally] leave off the label
+
     if (DBG): print "Drawing port for wire '%s'..." % (wirename)
 
+    # Only valid option so far is "ghost", meaning draw the port in light background color
+    # TODO: options for reg/noreg, label/nolabel
+    
     optionlist = []
     if ('options' in keywords):
         if (DBG): print 'options parameter found, it is ', keywords['options']
@@ -324,189 +324,126 @@ def drawport(cr, wirename, **keywords):
     else:
         if (DBG): print 'no options parameter, sorry'
 
-    # x,y coords below are NW (UL) corner
-
-
-    # TODO don't need w,h
-    # (x,y,  w,h,  rot) = connectionpoint(wirename)
-
-    # TODO don't need w,h,rot
-    (x,y) = connectionpoint(wirename)
-    # drawdot(cr,x,y, "black")
-    cr.stroke()
-
     cr.save()
 
-    # Translate an rotate the world...
-    #         if (DBG): print "Translate to %d,%d" % (x,y),
-    cr.translate(x,y)
-    s = side(wirename)
-    rot = s * 3.1416/2
-    if (DBG): print "rotate %d degrees\n" % int(180*rot/3.1416)
-    cr.rotate(rot)
+    if (1):
+        # Translate and rotate the world...
+        # if (DBG): print "Translate to %d,%d" % (x,y),
+        (x,y) = connectionpoint(wirename)
+        cr.translate(x,y)
+        drawdot(cr, 0, 0, "black") # Mark the connection point with a black dot
 
-    # Now origin is connection point and world is oriented to the appropriate side
+        # Side 0,1,2,3 out-wires point E, S, W and N respectively
+        s = side(wirename)
+        rot = s * 3.1416/2
+        if (DBG): print "rotate %d degrees\n" % int(180*rot/3.1416)
+        cr.rotate(rot)
 
-#         if (s==0): y = y - PORT_WIDTH/2 
-#         if (s==1): x = x + PORT_WIDTH/2
-#         if (s==2): y = y + PORT_WIDTH/2 
-#         if (s==3): x = x - PORT_WIDTH/2
+        # Now origin is connection point and world is oriented to the appropriate side
 
-    # if (s==2): rot = 0;
+        # This should be, like "if (arrow)"
+        if (1):
+            ########################################################################
+            # Arrow
 
-    # cr.set_source_rgb(0,0,1) # blue
-    setcolor(cr, 'blue')
-    cr.set_line_width(.2)
+            cr.save()
+            setcolor(cr, 'blue') # Blue arrows (unless ghost)
+            if ('ghost' in optionlist): cr.set_source_rgb(.8,.8,1) # slightly darker ghost
 
-    # Should be like "if ('box' in options):"
-    pwid = PORT_WIDTH; plen = PORT_HEIGHT
-    # if (0): cr.rectangle(0,0,  plen,pwid)      # ULx, ULy, width, height
-    if (0): cr.rectangle(0, -PORT_WIDTH/2,  plen,pwid)      # ULx, ULy, width, height
+            # Thick and thin arrows for buses vs. tracks
+            # For demonstration purposes,
+            # tracks 0-2 are buses (thick) and tracks 3,4 are wires (thin)
+            # FIXME maybe should hav global parms LINEWIDTH_BUS LINEWIDTH_WIRE
+            if (track(wirename) < 3): linewidth = 1.0;
+            else:                     linewidth = 0.5;
+            cr.set_line_width(linewidth)
 
-    cr.stroke()
+            (ahl,ahw) = (ARROWHEAD_LENGTH, ARROWHEAD_WIDTH)
 
+            margin = 2*linewidth
 
+            # Flip the sense of the arrow for "in" wires
+            flip = False;
+            if (inout(wirename) == "in"): flip = (not flip);
 
-#         # FIXME maybe should instead be "side = get_side(wirename)"
-#         decode = re.search('(in|out)_s(.*)t.*', wirename);
-#         inout = str(decode.group(1))
-#         side  = int(decode.group(2))
+            if (flip):
+                cr.translate(PORT_HEIGHT,0)
+                cr.rotate(3.1416)
 
+            fill = False
+            ahl = ahl + margin
+            # FIXME shouldn't need margin...right? Should be baked in to draw_arrow...yessss?
+            draw_arrow(cr, PORT_HEIGHT-margin, ahl, 2*ahw, fill)
+            cr.restore()
 
-    ########################################################################
-    # Arrow
-    # FIXME side 2 wires are pointing the wrong way!!
-    cr.save()
+        if (1):
+            ########################################################################
+            # Register
+            cr.save()
+            cr.set_line_width(.2)
+            setcolor(cr, 'red')
 
+            # From side 0 (unrotated) POV,
+            # reg corner is rh IN and rw/2 UP from connection point.
+            # Sides 1, 2, 3 rotate appropriately.
+            (ULx,ULy) = (-REG_HEIGHT, -REG_WIDTH/2)
 
-    # FIXME this should be a build_arrow subroutine that returns a path
-    cr.new_path()
-    # cr.set_source_rgb(0,0,1) # blue
-    if ('ghost' in optionlist):
-        # print "AH!  A GHOST!"
-        cr.set_source_rgb(.8,.8,1) # slightly darker ghost
-    else:
-        # cr.set_source_rgb(0,0,1) # blue
-        setcolor(cr, 'blue')
+            # Draw the register
+            cr.rectangle(ULx,ULy,  REG_HEIGHT, REG_WIDTH) # ULx, ULy, width, height
 
-    # For demonstration purposes,
-    # tracks 0-2 are buses (thick) and tracks 3,4 are wires (thin)
+            # Draw the little triangle for the clock
+            cr.move_to(ULx,ULy);
+            cr.line_to(ULx+REG_HEIGHT/2,ULy+1);
+            cr.line_to(ULx+REG_HEIGHT,ULy)
 
-    # FIXME maybe should hav global parms LINEWIDTH_BUS LINEWIDTH_WIRE
-    if (track(wirename) < 3): linewidth = 1.0;
-    else:                     linewidth = 0.5;
-    cr.set_line_width(linewidth)
+            cr.stroke()
+            cr.restore()
 
-    #         cr.move_to(0,           PORT_WIDTH/2)
-    #         cr.line_to(PORT_HEIGHT, PORT_WIDTH/2)
-    (arrlen,arrwid) = (ARROWHEAD_LENGTH, ARROWHEAD_WIDTH)
+        # should be "if (option[label])
+        if (1):
+            ########################################################################
+            # Label
 
-    margin = 2*linewidth
+            cr.save() # Save early, save often
 
-    cr.move_to(0,0)
-    cr.line_to(PORT_HEIGHT-margin,0)
-    # cr.line_to(PORT_HEIGHT-2, -1)
-    # cr.line_to(PORT_HEIGHT-3, -1)
-    cr.line_to(PORT_HEIGHT-margin-arrlen, -arrwid/2)
+            # Label color: light gray for "ghost" text, otherwise just red
+            # FIXME Areall the ghostgrays different!!?  Should they be??
+            setcolor(cr, 'red')
+            if ('ghost' in optionlist): cr.set_source_rgb(1,.8,.8)  # darker light gray
 
-    cr.move_to(PORT_HEIGHT-margin,0)
-    cr.line_to(PORT_HEIGHT-margin-arrlen, arrwid/2)
+            # Position: one pixel in, and just high enough to clear the arrowhead
+            (x,y) = (1, -ARROWHEAD_WIDTH)
+            # drawdot(cr,x,y,"blue"); drawdot(cr,0,0,"red")
 
-    path = cr.copy_path()
-    cr.new_path()
-    ########################################################################
+            # Unrotate side 2 (west) else they will be upsie-down!
+            if (side(wirename)==2):
+                cr.rotate(PI);
+                cr.translate(-PORT_HEIGHT, 0)
 
-    # cr.new_path()
+            # "input" wires get moved to right to get out of the way of the arrowhead
+            # Unless they're on the W side (side 2) in which case they're okay b/c unrotate above
+            if (inout(wirename) == "in"):
+                if (side(wirename) != 2): x = x + (ARROWHEAD_LENGTH + 1)
 
-    flip = False;
-
-    # Flip the sense of the arrow for "in" wires
-    if (inout(wirename) == "in"): flip = (not flip);
-
-    # Flip the sense of the arrow for side==2
-    # if (side(wirename) == 2): flip = (not flip);
-
-
-
-    # Set origin to center left side of box
-    # cr.translate(0, PORT_WIDTH/2)
-
-    # Input wires start at opposite end of box and point i
-    # if (inout(wirename) == "in"):
-
-    # "flipped" arrows start at opposite end of box and point in
-    if (flip):
-        cr.translate(PORT_HEIGHT,0)
-        cr.rotate(3.1416)
-
-    cr.append_path(path)
-    cr.stroke()
-    # cr.cairo_path_destroy(path)
-
-    cr.restore()
-
-
-    ########################################################################
-    # Register
-    # cr.set_source_rgb(1,0,0) # red
-    setcolor(cr, 'red')
-    # (rx,ry) = (-REG_HEIGHT, (PORT_WIDTH-REG_WIDTH)/2)
-    (rx,ry) = (-REG_HEIGHT, (-REG_WIDTH)/2)
-
-    if (side==2): rx = PORT_HEIGHT;
-
-    # Draw the register
-    cr.rectangle(rx,ry,  REG_HEIGHT, REG_WIDTH) # ULx, ULy, width, height
-
-    # Draw the little triangle for the clock
-    cr.move_to(rx,ry); cr.line_to(rx+REG_HEIGHT/2,ry+1); cr.line_to(rx+REG_HEIGHT,ry)
-    cr.stroke()
-
-
-    ########################################################################
-    # Label
-
-    # Label color: light gray for "ghost" text, otherwise just red
-    if ('ghost' in optionlist):
-        cr.set_source_rgb(1,.8,.8)  # light gray
-    else:
-        cr.set_source_rgb(1,0,0)    # red
-
-    # Position: one pixel in, and just high enough to clear the arrowhead
-    # (x,y) = (1, -2.5)
-    (x,y) = (1, -ARROWHEAD_WIDTH)
-    # drawdot(cr,x,y,"blue")
-    # drawdot(cr,0,0,"red")
-
-    # "input" wires get moved to right ot get out of the way of the arrowhead
-    if (inout(wirename) == "in"):
-        # if (side(wirename) != 2): x = x + 4
-        if (side(wirename) != 2): x = x + (ARROWHEAD_LENGTH + 1)
-
-    # Ports on side 2 (W side) should not be upside-down!
-    if (side(wirename)==2):
-        cr.rotate(PI);
-        cr.translate(-PORT_HEIGHT, 0)
-
-    cr.set_font_size(2.5)
-
-    # Could I think use "text_path" to e.g. right-justify labels etc.
-    # cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-    cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-    cr.move_to(x,y)
-    cr.show_text(wirename)
-    cr.stroke()
+            # Could I think use "text_path" to e.g. right-justify labels etc.
+            cr.set_font_size(2.5)
+            # cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+            cr.move_to(x,y)
+            cr.show_text(wirename)
+            cr.stroke()
+            cr.restore()
 
     cr.restore()
 
 def drawtileno(cr, tileno):
 
+    cr.save()
     # Put a big ghost-number in the middle of the tile
     # See https://www.cairographics.org/manual/cairo-text.html#cairo-text-extents
 
-    tilestr = str(tileno)
-
-    cr.save()
+    # Needs to be a string.
+    tileno = str(tileno)
 
     # Ghost color= light gray
     # graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
@@ -514,10 +451,10 @@ def drawtileno(cr, tileno):
 
     cr.set_font_size(20)
     cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-    # print cr.text_extents(tilestr)
 
     # E.g. cr.text_extents("100") => (3, -15, 38, 15, 42, 0) => (UL(x,y), w, h, begin_next(x,y)
-    (ULx, ULy, w, h, nextx, nexty) = cr.text_extents(tilestr)
+    # print cr.text_extents(tileno)
+    (ULx, ULy, w, h, nextx, nexty) = cr.text_extents(tileno)
 
     centerx = CANVAS_WIDTH/2
     centery = CANVAS_HEIGHT/2
@@ -530,20 +467,13 @@ def drawtileno(cr, tileno):
     # cr.set_source_rgb(1,0,1); drawdot(cr, x, y, 'purple')
 
     cr.move_to(x,y)
-    cr.show_text(tilestr)
+    cr.show_text(tileno)
     cr.stroke()
     cr.restore()
 
-    # sys.exit(0)
-
-#     x = CANVAS_WIDTH/2
-#     cr.move_to(x,y)
-#     cr.show_text(wirename)
-
-
+# Draw tile outline
 def drawtile(cr):
     cr.save()
-    # cr.set_source_rgb(0,0,0) # black
     setcolor(cr,'black')
     cr.set_line_width(.5)
     w = CANVAS_WIDTH  - 2*PORT_HEIGHT
@@ -555,62 +485,61 @@ def drawtile(cr):
 
 def connectwires(cr, connection):
 
+    # Draw a manhattan blue line connecting the two indicated ports inside a tile
+    # I've given a lot of leeway as to how connections are specified.
     # E.g. these should all work:
     #     connectwires(cr, "in_s3t0 => out_s2t3")
     #     connectwires(cr, "in_s3t0 out_s2t3")
     #     connectwires(cr, "in_s3t0 connects to out_s2t3")
     #     connectwires(cr, "  in_s3t0 connects to out_s2t3  ")
 
-    parse = re.search( "([A-z_0-9]+).*[^A-z_0-9]([A-z_0-9]+)[^A-z_0-9]*$", connection)
-    w1 = parse.group(1)
-    w2 = parse.group(2)
+    DBG = 0;
 
-    drawport(cr, w1)
-    drawport(cr, w2)
+    # Find the names of the two wires to connect.
+    parse = re.search( "([A-z_0-9]+).*[^A-z_0-9]([A-z_0-9]+)[^A-z_0-9]*$", connection)
+    w1 = parse.group(1); w2 = parse.group(2)
+
+    # Only draw non-ghost ports if connections exist.
+    drawport(cr, w1);    drawport(cr, w2)
 
     # TODO add a "if (DBG)" here maybe
-    # print "connection = " + connection
-    # print "Connecting wires '%s' and '%s'\n" % (w1,w2)
+    if (DBG):
+        print "connection = " + connection
+        print "Connecting wires '%s' and '%s'\n" % (w1,w2)
 
-    # 1. Find join point of the two wires
+    # 1. Find internal join point of the two wires w1 and w2
     # 1a. Find each wires connection point at tile's edge
 
     ULrotpoint1 = connectionpoint(w1) # upper-left corner of enclosing box oriented to side 0
-    x1 = ULrotpoint1[0]
-    y1 = ULrotpoint1[1]
+    x1 = ULrotpoint1[0]; y1 = ULrotpoint1[1]
 
     ULrotpoint2 = connectionpoint(w2) # upper-left corner of enclosing box oriented to side 0
-    x2 = ULrotpoint2[0]
-    y2 = ULrotpoint2[1]
+    x2 = ULrotpoint2[0]; y2 = ULrotpoint2[1]
 
+    # drawdot(cr,x1,y1,'red'); drawdot(cr,x2,y2,'red')
 
-    # dot = drawdot(cr,x1,y1,'red')
-    # drawdot(cr,x1,y1,'red')
-    # drawdot(cr,x2,y2,'red')
+    # x1 == +/- PORT_HEIGHT means x1 is an edge and x2 is interior
+    if   (x1 ==  PORT_HEIGHT): interior = (x2,y1)
+    elif (x1 == -PORT_HEIGHT): interior = (x2,y1)
+    else:                      interior = (x1,y2)
 
-    # Okay now connect the dots!
-    cr.save()
+    # Okay now connect the dots!  With a blue line.
+    # Put a blue dot at the corner.  You'll thank me later.
     # TODO if (isbus): linewidth = 1 etc.
-    if (x1 == PORT_HEIGHT): interior = (x2,y1)
-    else:                   interior = (x1,y2)
+    if (1):
+        cr.save()
+        setcolor(cr,'blue')
+        cr.set_line_width(.5)
+        drawdot(cr,interior[0],interior[1],'blue')
+        cr.move_to(x1,y1)
+        cr.line_to(interior[0],interior[1])
+        cr.line_to(x2,y2)
+        cr.stroke()
+        cr.restore()
 
-    # cr.set_source_rgb(0,0,1) # blue
-    setcolor(cr,'blue')
-    cr.set_line_width(.5)
-    drawdot(cr,interior[0],interior[1],'blue')
-    cr.move_to(x1,y1)
-    cr.line_to(interior[0],interior[1])
-    cr.line_to(x2,y2)
-    cr.stroke()
-    cr.restore()
+# cleanup bookmark
 
-
-#         dot = build_dot(cr,x,y) # returns a path
-#         cr.append_path(dot)
-#         cr.stroke()
-
-
-
+# FIXME/TODO Not used presently I think.  Do we keep it?
 def drawgrid(cr):
 
     cr.save()
