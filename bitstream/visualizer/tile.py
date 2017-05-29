@@ -254,70 +254,52 @@ def drawdot(cr, x, y, color):
 def connectionpoint(wirename):
 
     # Given wirename e.g. "out_s0t0", return x,y coords of its connection
-    # point on the edge of the tile.
+    # point on the edge of the tile, relative to edge of canvas.
 
-    canvas_width  = CANVAS_WIDTH
-    canvas_height = CANVAS_HEIGHT
-
-    decode = re.search('(in_s.*|out_s.*)t(.*)', wirename);
-    b = decode.group(1);      # blockno
-    t = int(decode.group(2)); # trackno
-
-    pwid = PORT_WIDTH; plen = PORT_HEIGHT
-    PL     = PORT_HEIGHT
-    # PLPW   = plen + pwid
-    # PLPWPW = plen + pwid + pwid
-    # PLPW   = plen + pwid/2
-    # PLPWPW = plen + pwid/2 + pwid
-    PLPW   = plen + pwid
-    PLPWPW = plen + pwid
-
-    # ntracks_v = NTRACKS_PE_BUS_V + NTRACKS_PE_WIRE_V
-    # ntracks_h = NTRACKS_PE_BUS_H + NTRACKS_PE_WIRE_H
-
-    # pwid = PORT_WIDTH; plen = PORT_HEIGHT
-    # canvas_width  = 2*plen + 2*ntracks_v*pwid + 3*pwid
-    # canvas_height = 2*plen + 2*ntracks_h*pwid + 3*pwid
-
-
-    # 'corner' = Distance from edge of canvas to edge of tile
-    # 'pad'    = Distance from edge of tile to first port
-    # '2*pad'  = Distance between last outport and first inport
-
-    # corner = PORT_HEIGHT
-    # pad    = PORT_PAD
-
-    # side 0: no rotate
-    #   out = (cw-pl, pl+t*pw)
-    #   in  = (cw-pl, ch-pl-2pw-t*pw)
-    if (b == "out_s0"): (x,y) = (canvas_width - PL,                 PLPW   + t*pwid)
-    if (b ==  "in_s0"): (x,y) = (canvas_width - PL, canvas_height - PLPWPW - t*pwid)
-
-    # side 1: rotate 90
-    #   out = (cw-pl-2pw, ch-pl)
-    #   in  = (pl+2pw, ch-pl)
-    if (b == "out_s1"): (x,y) = (canvas_width - PLPW   - t*pwid, canvas_height - PL)
-    if (b ==  "in_s1"): (x,y) = (               PLPWPW + t*pwid, canvas_height - PL)
-
-    # side 2: no rotate
-    #   out = (0, ch-pl-tpw)
-    #   in  = (0, pl+2pw+tpw)
-    if (b == "out_s2"): (x,y) = (PL, canvas_height - PLPWPW - t*pwid)
-    if (b ==  "in_s2"): (x,y) = (PL,                 PLPW   + t*pwid)
-
-    # side 3: rotate 270
-    #   out = (pl+2pw+tpw,pl)
-    #   in  = (cw-pl-pw-tpw,pl)
-    if (b == "out_s3"): (x,y) = (               PLPW   + t*pwid, PL)
-    if (b ==  "in_s3"): (x,y) = (canvas_width - PLPWPW - t*pwid, PL)
-
+    # FIXME rewrite this littel snippet below
     # outs1/ins3 blocks start in SE/NE and go left (neg x direction)
-
     # outs2/ins0 blocks start in SW/SE and go up   (neg y direction)
-
     # outs3/ins1 blocks start in NW/NE and go right (pos x direction)
 
-    (w,h,rot) = (-12,-12,-12)
+    # Need block id and track number of the target wire
+    decode = re.search('(in_s.*|out_s.*)t(.*)', wirename);
+    b = decode.group(1);      # blockno e.g. "in_s1"
+    t = int(decode.group(2)); # trackno e.g. "3"
+
+    # Canvas consists of a single tile padded on each side by space equal to "PORT_LENGTH"
+    
+    # A tile's edge is PORT_LENGTH away from the canvas edge
+    # The first connection point begins "PORT_PAD + PORT_WIDTH/2" from nearest tile edge.
+    # The distance from one track to the next is PORT_WIDTH.
+    # So track t connects at a distance CD = PL+PP+PW/2+t*PW from edge of canvas
+    CD = PORT_LENGTH + PORT_PAD + PORT_WIDTH/2 + (t * PORT_WIDTH)
+    PL = PORT_HEIGHT
+
+    # Sides (0,1,2,3) are (E,S,W,N) sides of tile respectively
+
+    # out_s0 wires start at NE corner and go DOWN
+    # in_s0 tracks start at SE corner and go UP
+    if (b == "out_s0"): (x,y) = (CANVAS_WIDTH - PL,                 CD)
+    if (b ==  "in_s0"): (x,y) = (CANVAS_WIDTH - PL, CANVAS_HEIGHT - CD)
+
+    # out_s1 wires start at SE corner and go LEFT
+    #  in_s1 wires start at SW corner and go RIGHT
+    if (b == "out_s1"): (x,y) = (CANVAS_WIDTH - CD, CANVAS_HEIGHT - PL)
+    if (b ==  "in_s1"): (x,y) = (               CD, CANVAS_HEIGHT - PL)
+
+    # out_s2 wires start at SW corner and go UP
+    #  in_s2 wires start at NW corner and go DOWN
+    if (b == "out_s2"): (x,y) = (PL, CANVAS_HEIGHT - CD)
+    if (b ==  "in_s2"): (x,y) = (PL,                 CD)
+
+    # out_s3 wires start at NW corner and go RIGHT
+    #  in_s3 wires start at NE corner and go LEFT
+    if (b == "out_s3"): (x,y) = (               CD, PL)
+    if (b ==  "in_s3"): (x,y) = (CANVAS_WIDTH - CD, PL)
+
+    return (x,y);
+
+
 #         decode = re.search('(in|out)_s(.*)t.*', wirename);
 #         s = int(decode.group(2))
 #         if ((s%2)==0): (w,h) = (plen,pwid)
@@ -327,7 +309,30 @@ def connectionpoint(wirename):
 #         rot = s * 3.1416/2
 #         if (s==2): rot = 0;
 
-    return (x,y,w,h, rot);
+
+    # PLPW   = plen + pwid
+    # PLPWPW = plen + pwid + pwid
+    # PLPW   = plen + pwid/2
+    # PLPWPW = plen + pwid/2 + pwid
+
+    # ntracks_v = NTRACKS_PE_BUS_V + NTRACKS_PE_WIRE_V
+    # ntracks_h = NTRACKS_PE_BUS_H + NTRACKS_PE_WIRE_H
+
+    # pwid = PORT_WIDTH; plen = PORT_HEIGHT
+    # canvas_width  = 2*plen + 2*ntracks_v*pwid + 3*pwid
+    # canvas_height = 2*plen + 2*ntracks_h*pwid + 3*pwid
+
+    # canvas_width  = CANVAS_WIDTH
+    # canvas_height = CANVAS_HEIGHT
+
+
+
+
+
+
+
+
+
 
 # >>> def opt_fun(x1, x2, *positional_parameters, **keyword_parameters):
 # ...     if ('optional' in keyword_parameters):
@@ -337,6 +342,8 @@ def connectionpoint(wirename):
 
 # E.g. "drawport(cr, "in_s0t0")
 # E.g. "drawport(cr, "in_s0t0", options="reg,arrowhead,box")
+
+
 def drawport(cr, wirename, **keywords):
     DBG = 0;
 
@@ -358,7 +365,7 @@ def drawport(cr, wirename, **keywords):
     # (x,y,  w,h,  rot) = connectionpoint(wirename)
 
     # TODO don't need w,h,rot
-    (x,y,  w,h,  rot) = connectionpoint(wirename)
+    (x,y) = connectionpoint(wirename)
     # drawdot(cr,x,y, "black")
     cr.stroke()
 
