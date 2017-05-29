@@ -653,29 +653,25 @@ def draw_one_tile(cr, tileno):
     tile[tileno].draw(cr)
     cr.restore()
 
-# cleanup bookmark
-
 def draw_all_tiles(cr):
+
+    SCALE_FACTOR = 2                      # Draw at 2x (for now at least)
+    global SCALE_FACTOR;                  # Others need to know
+    ntiles = GRID_WIDTH*GRID_HEIGHT
 
     print "Draw all tiles!"
     cr.save()
-    # Make a little whitespace margin at top and left
-    # cr.translate(100,100)
- 
-    # Make a little whitespace margin at top and left (scale independent)
-    cr.translate(ARRAY_PAD, ARRAY_PAD)
-
-    # Draw at 4x requested size
-    # cr.scale(4,4)
-    # cr.scale(2,2)
-    # cr.scale(1,1)
-    global SCALE_FACTOR; SCALE_FACTOR = 2
+    cr.translate(ARRAY_PAD, ARRAY_PAD)    # Whitespace margin at top and left
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
+    draw_big_ghost_arrows(cr)             # Big ghost arrows in background of grid
+    for t in range(0, ntiles):            # view show general flow dir for tracks
+        tile[t].draw(cr)
+    cr.restore()
 
-    draw_big_ghost_arrows(cr)
+def test_ports():  # Meh
 
-    # http://pycairo.readthedocs.io/en/latest/reference/context.html?highlight=set_dash#cairo.Context.set_dash
-
+    cr.save()
+    cr.translate(ARRAY_PAD, ARRAY_PAD); cr.scale(2,2)
     if (0):
         drawport(cr, "in_s0t0", options="foo,bar,baz")
         drawport(cr, "out_s0t0", options="foo")
@@ -698,57 +694,52 @@ def draw_all_tiles(cr):
     tile[1].draw(cr)
     tile[2].draw(cr)
     tile[3].draw(cr)
-    cr.restore()
 
+# cleanup bookmark
 
+# Is this better?
+class CGRAWin(Gtk.Window):
+    def __init__(self):
+        DBG = 2
 
-def info(self):
-    print "I am tile number %d;" % (tileno),
-    print "I live in a grid that is %s tiles high and %s tiles wide"\
-        % (GRID_WIDTH, GRID_HEIGHT)
-        # % (arrwidth, arrheight);
+        # Set up the main window and connect to callback routine that draws everything.
+        # See above for definition of globals WIN_WIDTH, WIN_HEIGHT
 
+        title = "Tilesy" # haha LOL
+        Gtk.Window.__init__(
+            self, \
+            title         = title,      \
+            width_request = WIN_WIDTH,  \
+            height_request= WIN_HEIGHT  \
+        )            
+
+        win = self
+        self.da = Gtk.DrawingArea()
+        self.add(self.da)
+        # A dumb way to keep track of the current window and drawing area widget
+        # global CUR_WINDOW;      CUR_WINDOW = win;
+        global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = self.da;
+        
+        # Some/all of this maybe doesn't belong in win init,
+        # but oh well here it is for now anyway
+
+        # "draw" event results in drawing everything on drawing area da
+        draw_handler_id = win.da.connect("draw", draw_handler)
+
+        # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
+        # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
+        button_press_handler_id = win.da.connect("button-press-event", button_press_handler)
+
+        # FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
+        win.da.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+
+        win.connect("delete-event", Gtk.main_quit)
 
 def main():
-
-    # Set up the main window and connect to callback routine that draws everything.
-
-    print "This is where I build a canvas of width %d and height %d" \
-          % (CANVAS_WIDTH, CANVAS_HEIGHT)
-
-    # Big enough to draw 2x2 grid at double-scale, plus 100 margin all around
-    # (w,h) = (4*CANVAS_WIDTH+200,4*CANVAS_HEIGHT+200)
-    # (w,h) = (WIN_WIDTH,WIN_HEIGHT)
-    win = Gtk.Window(width_request=WIN_WIDTH, height_request=WIN_HEIGHT)
-
-    win.move(0,0) # put window at top left corner of screen
-    win.set_title("Tilesy")
-    # win.props.height_request=canvas_height
-    # win.props.width_request =canvas_width
-    # print dir(win.props)
-
-    # This should all be in __init__ maybe
-
-    win.da = Gtk.DrawingArea()
-    win.add(win.da)
-    # print dir(win.da.props)
-
-    # An dumb way to keep track of the current window and drawing area widget
-    # global CUR_WINDOW;      CUR_WINDOW = win;
-    global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = win.da;
-
-    # "draw" event results in drawing everything on drawing area da
-    draw_handler_id = win.da.connect("draw", draw_handler)
-
-    # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
-    # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
-    button_press_handler_id = win.da.connect("button-press-event", button_press_handler)
-
-    # FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
-    win.da.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-
-    win.connect("delete-event", Gtk.main_quit)
-
+    DBG=1;
+    win = CGRAWin();
+    if (DBG): win.move(0,0) # put window at top left corner of screen
+    if (DBG>=2): print dir(win.props)
     win.show_all()
     Gtk.main()
 
@@ -793,17 +784,17 @@ class Tile:
 #     (row,col) = (-1,-1)
 #     self.connectionlist = []
 
-    def __init__(self, id):
-        self.id = id
-        # self.row = id % GRID_HEIGHT
-        # self.col = int(id / GRID_WIDTH)
-        (self.row,self.col) = tileno2rc(id)
+    def __init__(self, tileno):
+        self.tileno = tileno
+        # self.row = int(tileno % GRID_HEIGHT)
+        # self.col = int(tileno / GRID_WIDTH)
+        (self.row,self.col) = tileno2rc(tileno)
         self.connectionlist = []
 
     def connect(self,connection):  self.connectionlist.append(connection)
 
     def printprops(self):
-        print "Tile %d (r%d,c%d)" % (self.id, self.row, self.col)
+        print "Tile %d (r%d,c%d)" % (self.tileno, self.row, self.col)
         indent = "                "
         print indent + ("\n"+indent).join(self.connectionlist)
 
@@ -815,12 +806,17 @@ class Tile:
         if (ZOOM_TO_TILE == -1):
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
-        drawtileno(cr, self.id)
+        drawtileno(cr, self.tileno)
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
         drawtile(cr)
         cr.restore()
 
+    # Not currently used I think
+    def info(self):
+        print "I am tile number %d;" % (self.tileno),
+        print "I live in a grid that is %s tiles high and %s tiles wide"\
+            % (GRID_WIDTH, GRID_HEIGHT)
 
 def example1():
 
@@ -866,4 +862,6 @@ main()
 # def draw_tile(i):
     # tile[i].zoom_# # # # # # # # # # in();
 
+
+    # http://pycairo.readthedocs.io/en/latest/reference/context.html?highlight=set_dash#cairo.Context.set_dash
 
