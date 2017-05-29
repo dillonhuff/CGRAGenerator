@@ -11,7 +11,8 @@ import cairo
 #TODO
 # Put FU in each tile and connections to/from FU
 
-PI = 3.1416
+from math import pi
+PI = pi
 def deg2rad(rad): return rad*180/PI
 
 GRID_WIDTH  = 2;
@@ -77,6 +78,10 @@ ARRAY_PAD = 60
 CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
+def errmsg(m):
+    sys.stdout.write("ERROR: %s\n" % (m))
+    sys.exit(-1)
+
 ##############################################################################
 # These could all be part of a Wire class if we wanted to...
 
@@ -106,7 +111,6 @@ def draw_arrow(cr, al, ahl,ahw,fill):
     #   cr.translate(x,y); cr.rotate(-PI/2)
     #   draw_arrow(al,aw,ahl,ahw,fill)
     # cr.restore()
-    PI = 3.1416
 
     cr.save()
     if (1):
@@ -189,8 +193,7 @@ def draw_big_ghost_arrows(cr):
         draw_big_ghost_arrow(cr, da_h_offset + tilecol*CANVAS_WIDTH, da_start, 'down')
         draw_big_ghost_arrow(cr, ua_h_offset + tilecol*CANVAS_WIDTH, ua_start, 'up')
 
-# cleanup bookmark 5/28 11am
-
+# This could be an extension of cr's class I suppose
 def setcolor(cr, colorname):
     colordict = {}
 
@@ -225,48 +228,34 @@ def setcolor(cr, colorname):
     (r,g,b) = colordict[colorname];
     cr.set_source_rgb(r,g,b)
 
-# This could be an extension of cr's class I suppose
-# def build_dot(cr,x,y):
+# This could be an extension of cr's class I suppose NO!!!! it's a time waster
 def drawdot(cr, x, y, color):
 
     # For debugging purposes, draw a colorful dot at location (x,y)
 
     dotsize = 1.0
     dotsize = 0.8
-    # cr.set_line_width (10.0);
-    cr.save()
-    cr.arc (x, y, dotsize, 0, 2*PI);
-    cr.fill ();
-    cr.stroke ();
 
-    # path = cr.copy_path()
+    # cr.set_line_width (10.0); # For BIG dots
+
+    cr.save()
+    if (1):
+        cr.arc (x, y, dotsize, 0, 2*PI);
+        cr.fill ();
+        cr.stroke ();
     cr.restore()
-    # return path
+
+    # Instead of cr.stroke(), could do this: "path = cr.copy_path()"
+    # and then return the path for later use e.g. "cr.append_path(path); cr.stroke()"
     
 
-def errmsg(m):
-    sys.stdout.write("ERROR: %s\n" % (m))
-    sys.exit(-1)
+# cleanup bookmark
 
-
-
-# FIXME this should return connection point, not stupid UL whatever thingycrap
 def connectionpoint(wirename):
 
-    # FIXME comment below is wrong wrong wrong
-    # Given wirename e.g. "out_s0t0", return x,y coords of UL (NW) corner)
+    # Given wirename e.g. "out_s0t0", return x,y coords of its connection
+    # point on the edge of the tile.
 
-    # Return (x,y) coord of box corner adjoining tile and closes to the "out" side
-    # (see diagram in documentation I guess)
-    # Box will be drawn translated to that corner and rotated according
-    # to side (0,1,2,3) is (0,90,180,270) degrees respectively
-
-    ntracks_v = NTRACKS_PE_BUS_V + NTRACKS_PE_WIRE_V
-    ntracks_h = NTRACKS_PE_BUS_H + NTRACKS_PE_WIRE_H
-
-    # pwid = PORT_WIDTH; plen = PORT_HEIGHT
-    # canvas_width  = 2*plen + 2*ntracks_v*pwid + 3*pwid
-    # canvas_height = 2*plen + 2*ntracks_h*pwid + 3*pwid
     canvas_width  = CANVAS_WIDTH
     canvas_height = CANVAS_HEIGHT
 
@@ -282,6 +271,14 @@ def connectionpoint(wirename):
     # PLPWPW = plen + pwid/2 + pwid
     PLPW   = plen + pwid
     PLPWPW = plen + pwid
+
+    # ntracks_v = NTRACKS_PE_BUS_V + NTRACKS_PE_WIRE_V
+    # ntracks_h = NTRACKS_PE_BUS_H + NTRACKS_PE_WIRE_H
+
+    # pwid = PORT_WIDTH; plen = PORT_HEIGHT
+    # canvas_width  = 2*plen + 2*ntracks_v*pwid + 3*pwid
+    # canvas_height = 2*plen + 2*ntracks_h*pwid + 3*pwid
+
 
     # 'corner' = Distance from edge of canvas to edge of tile
     # 'pad'    = Distance from edge of tile to first port
@@ -821,7 +818,11 @@ def main():
     print "This is where I build a canvas of width %d and height %d" \
           % (CANVAS_WIDTH, CANVAS_HEIGHT)
 
-    win = Gtk.Window()
+    # Big enough to draw 2x2 grid at double-scale, plus 100 margin all around
+    # (w,h) = (4*CANVAS_WIDTH+200,4*CANVAS_HEIGHT+200)
+    (w,h) = (4*CANVAS_WIDTH+2*ARRAY_PAD,4*CANVAS_HEIGHT+2*ARRAY_PAD)
+    win = Gtk.Window(height_request=h, width_request=w)
+
     win.move(0,0) # put window at top left corner of screen
     win.set_title("Tilesy")
     # win.props.height_request=canvas_height
@@ -829,10 +830,6 @@ def main():
     # print dir(win.props)
 
     # This should all be in __init__ maybe
-
-    # Big enough to draw 2x2 grid at double-scale, plus 100 margin all around
-    # (w,h) = (4*CANVAS_WIDTH+200,4*CANVAS_HEIGHT+200)
-    (w,h) = (4*CANVAS_WIDTH+2*ARRAY_PAD,4*CANVAS_HEIGHT+2*ARRAY_PAD)
 
     win.da = Gtk.DrawingArea(height_request=h, width_request=w)
     win.add(win.da)
