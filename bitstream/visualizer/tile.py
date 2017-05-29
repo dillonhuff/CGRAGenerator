@@ -20,6 +20,7 @@ GRID_HEIGHT = 2;
 
 # tileno-to-RC conversion
 def tileno2rc(tileno): return (tileno % GRID_HEIGHT, int(tileno / GRID_WIDTH))
+def rc2tileno(x,y):    return GRID_WIDTH*col + row
 
 # A really dumb way to keep track of current scale factor, for
 # button-press events
@@ -36,7 +37,7 @@ NTRACKS_PE_WIRE_V = 0;
 ARROWHEAD_LENGTH = 3; ARROWHEAD_WIDTH = 2; # this is nice
 
 # Here's a dumb way to pass information from the button-press handler to the draw-event handler
-ZOOM_TO_TILE = -1;
+ZOOMTILE = -1;
 
 # Diagram below shows dimensions for PORT_WIDTH (PW) 
 # PORT_HEIGHT (PH) (aka PORT_LENGTH),
@@ -597,7 +598,7 @@ def draw_all_ports(cr):
 def draw_handler(widget, cr):
     global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = widget;
 
-    global ZOOM_TO_TILE; tileno = ZOOM_TO_TILE
+    global ZOOMTILE; tileno = ZOOMTILE
     if (tileno == -1):   draw_all_tiles(cr);
     else:                draw_one_tile(cr, tileno);
 
@@ -695,8 +696,6 @@ def test_ports():  # Meh
     tile[2].draw(cr)
     tile[3].draw(cr)
 
-# cleanup bookmark
-
 # Is this better?
 class CGRAWin(Gtk.Window):
     def __init__(self):
@@ -713,7 +712,6 @@ class CGRAWin(Gtk.Window):
             height_request= WIN_HEIGHT  \
         )            
 
-        win = self
         self.da = Gtk.DrawingArea()
         self.add(self.da)
         # A dumb way to keep track of the current window and drawing area widget
@@ -723,7 +721,8 @@ class CGRAWin(Gtk.Window):
         # Some/all of this maybe doesn't belong in win init,
         # but oh well here it is for now anyway
 
-        # "draw" event results in drawing everything on drawing area da
+        win = self
+        # "draw" event results in drawing everything on drawing area 'da'
         draw_handler_id = win.da.connect("draw", draw_handler)
 
         # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
@@ -735,49 +734,49 @@ class CGRAWin(Gtk.Window):
 
         win.connect("delete-event", Gtk.main_quit)
 
-def main():
-    DBG=1;
-    win = CGRAWin();
-    if (DBG): win.move(0,0) # put window at top left corner of screen
-    if (DBG>=2): print dir(win.props)
-    win.show_all()
-    Gtk.main()
-
 def button_press_handler(widget, event):
     DBG = 0
 
+    # Need to know current scale factor so we keep track of it in a global
     print ""
-    # if (0): print "matrix = " + str(DRAW_HANDLER_CR.get_matrix()) # it's always (1,0,0,1,0,0)
     print "SCALE_FACTOR %s" % SCALE_FACTOR
     print ""
 
-    # print event.x, ' ', event.y
+    # Can't get scale factor from context matrix, it's always (1,0,0,1,0,0) why?
+    if (0): print "matrix = " + str(DRAW_HANDLER_CR.get_matrix())
+
+    # x,y coordinates of button-press
     x = event.x; y = event.y
+    if (DBG): print "%d %d" % (x,y)
 
-    # Subtract off the scale-independent paddings and
-    # divide by scale factor I guess
+    # Subtract off the scale-independent paddings and divide by scale factor I guess
     x = (x - ARRAY_PAD)/SCALE_FACTOR; y = (y - ARRAY_PAD)/SCALE_FACTOR;
-    # print "Transformed x,y = (%d,%d)" % (x,y)
-    # print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
+    if (DBG): print "Transformed x,y = (%d,%d)" % (x,y)
+    if (DBG): print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
 
+    # Find row, col of tile indicated by sclaed/translated (x,y)
     row = y/CANVAS_WIDTH; col = x/CANVAS_HEIGHT;
     row = int(row); col = int(col)
 
+    # Find tile number indicated by (row,col)
+    # (Supposed to use a function to do this I guess): (tileno =  rc2tileno(row,col)
     tileno = GRID_WIDTH*col + row
     print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
 
-    global ZOOM_TO_TILE;
-    if (ZOOM_TO_TILE == -1):
+    # If already zoomed out (ZOOMTILE === -1), zoom in to tile indicated.
+    # Otherwise, zoom out.
+    global ZOOMTILE;
+    if (ZOOMTILE == -1):
         if (DBG): print "Zoom in to tile %s!" % str(tileno)
-        ZOOM_TO_TILE = tileno;
-        # draw_one_tile(DRAW_HANDLER_CR, tileno)
+        ZOOMTILE = tileno;
     else:
         if (DBG): print "Zoom out!"
-        ZOOM_TO_TILE = -1;
-        # draw_all_tiles(DRAW_HANDLER_CR)
+        ZOOMTILE = -1;
 
-    # Redraw (after every button push?) (yes, for now)
+    # Redraw after zoom
     CUR_DRAW_WIDGET.queue_draw()
+
+# cleanup bookmark
 
 class Tile:
 #     id = -1;
@@ -803,7 +802,7 @@ class Tile:
         
         cr.save()
 
-        if (ZOOM_TO_TILE == -1):
+        if (ZOOMTILE == -1):
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
         drawtileno(cr, self.tileno)
@@ -846,6 +845,18 @@ def build_tile_array(w,h):
     tile = range(0, w*h)
     for i in tile: tile[i] = Tile(i)
     return tile
+
+# Set up the main window and connect to callback routine that draws everything.
+def main():
+    DBG=1;
+    win = CGRAWin();
+    if (DBG): win.move(0,0) # put window at top left corner of screen
+    if (DBG>=2): print dir(win.props)
+    win.show_all()
+    Gtk.main()
+
+##############################################################################
+# Actual runcode starts here!
 
 # This has to be global (for now at least)
 tile = build_tile_array(GRID_WIDTH,GRID_HEIGHT)
