@@ -17,6 +17,8 @@ def deg2rad(rad): return rad*180/PI
 
 GRID_WIDTH  = 2;
 GRID_HEIGHT = 2;
+NTILES = GRID_WIDTH*GRID_HEIGHT
+TILE_LIST = range(0, NTILES)
 
 # tileno-to-RC conversion
 def tileno2rc(tileno): return (tileno % GRID_HEIGHT, int(tileno / GRID_WIDTH))
@@ -651,22 +653,21 @@ def draw_one_tile(cr, tileno):
     # Okay done with scale and translate.  Now draw!
     print "Drawing tile %s!" % str(tileno)
     if (0): print "...at scale factor %f." % SCALE_FACTOR
-    tile[tileno].draw(cr)
+    TILE_LIST[tileno].draw(cr)
     cr.restore()
 
 def draw_all_tiles(cr):
 
     SCALE_FACTOR = 2                      # Draw at 2x (for now at least)
     global SCALE_FACTOR;                  # Others need to know
-    ntiles = GRID_WIDTH*GRID_HEIGHT
 
     print "Draw all tiles!"
     cr.save()
     cr.translate(ARRAY_PAD, ARRAY_PAD)    # Whitespace margin at top and left
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
     draw_big_ghost_arrows(cr)             # Big ghost arrows in background of grid
-    for t in range(0, ntiles):            # view show general flow dir for tracks
-        tile[t].draw(cr)
+                                          # view show general flow dir for tracks
+    for tile in TILE_LIST: tile.draw(cr)  # Draw ALL the tiles
     cr.restore()
 
 def test_ports():  # Meh
@@ -691,6 +692,7 @@ def test_ports():  # Meh
     if (0):
         draw_all_ports(cr)
 
+    tile = TILE_LIST
     tile[0].draw(cr)
     tile[1].draw(cr)
     tile[2].draw(cr)
@@ -776,8 +778,6 @@ def button_press_handler(widget, event):
     # Redraw after zoom
     CUR_DRAW_WIDGET.queue_draw()
 
-# cleanup bookmark
-
 class Tile:
 #     id = -1;
 #     (row,col) = (-1,-1)
@@ -817,10 +817,18 @@ class Tile:
         print "I live in a grid that is %s tiles high and %s tiles wide"\
             % (GRID_WIDTH, GRID_HEIGHT)
 
-def example1():
+# Set up the main window and connect to callback routine that draws everything.
+def build_and_launch_main_window():
+    DBG=1;
+    win = CGRAWin();
+    if (DBG): win.move(0,0) # put window at top left corner of screen
+    if (DBG>=2): print dir(win.props)
+    win.show_all()
+    Gtk.main()
 
-    # This will be "example1"
-    # Enable these commands maybe:
+def demo1_connections():
+
+    tile = TILE_LIST; # A convenient handle
 
     tile[0].connect("in_s3t1 => out_s2t1")
     tile[0].connect("in_s3t1 connects to out_s1t1")
@@ -839,40 +847,32 @@ def example1():
     tile[3].connect("in_s2t1 => out_s3t1")
     tile[3].printprops()
 
-
-
-def build_tile_array(w,h):
-    tile = range(0, w*h)
-    for i in tile: tile[i] = Tile(i)
-    return tile
-
-# Set up the main window and connect to callback routine that draws everything.
-def main():
-    DBG=1;
-    win = CGRAWin();
-    if (DBG): win.move(0,0) # put window at top left corner of screen
-    if (DBG>=2): print dir(win.props)
-    win.show_all()
-    Gtk.main()
+def initialize_tile_list():
+    # tile = range(0, NTILES)           # Initialize tile array
+    for i in TILE_LIST: TILE_LIST[i] = Tile(i)
+    return TILE_LIST
 
 ##############################################################################
-# Actual runcode starts here!
+# Actual runcode starts here!  (FINALLY)
 
-# This has to be global (for now at least)
-tile = build_tile_array(GRID_WIDTH,GRID_HEIGHT)
+# (Always) initialize tile array
+initialize_tile_list()
 
-# Set up the tiles, make the connections
-example1()
+# Demo 1 assumes a 2x2 grid and makes some connections
+demo1_connections()
 
 # Set up the main window and connect to callback routine that draws everything.
-main()
+# Currently builds a window such that 2x2 grid fits in window at 2x scale
+build_and_launch_main_window()
+
+# TBD: demo2 builds sample connections for a 4x4 grid at 1x scale (demo1 was 2x)
 
 
 
-# # Zoom in on a single tile
-# def draw_tile(i):
-    # tile[i].zoom_# # # # # # # # # # in();
 
+##############################################################################
+# Notes
 
-    # http://pycairo.readthedocs.io/en/latest/reference/context.html?highlight=set_dash#cairo.Context.set_dash
+# http://pycairo.readthedocs.io/en/latest/reference/context.html?
+# highlight=set_dash#cairo.Context.set_dash
 
