@@ -299,41 +299,7 @@ def connectionpoint(wirename):
 
     return (x,y);
 
-
-#         decode = re.search('(in|out)_s(.*)t.*', wirename);
-#         s = int(decode.group(2))
-#         if ((s%2)==0): (w,h) = (plen,pwid)
-#         if ((s%2)==1): (w,h) = (pwid,plen)
-
-
-#         rot = s * 3.1416/2
-#         if (s==2): rot = 0;
-
-
-    # PLPW   = plen + pwid
-    # PLPWPW = plen + pwid + pwid
-    # PLPW   = plen + pwid/2
-    # PLPWPW = plen + pwid/2 + pwid
-
-    # ntracks_v = NTRACKS_PE_BUS_V + NTRACKS_PE_WIRE_V
-    # ntracks_h = NTRACKS_PE_BUS_H + NTRACKS_PE_WIRE_H
-
-    # pwid = PORT_WIDTH; plen = PORT_HEIGHT
-    # canvas_width  = 2*plen + 2*ntracks_v*pwid + 3*pwid
-    # canvas_height = 2*plen + 2*ntracks_h*pwid + 3*pwid
-
-    # canvas_width  = CANVAS_WIDTH
-    # canvas_height = CANVAS_HEIGHT
-
-
-
-
-
-
-
-
-
-
+# What's this?  What's THIS???
 # >>> def opt_fun(x1, x2, *positional_parameters, **keyword_parameters):
 # ...     if ('optional' in keyword_parameters):
 # ...         print 'optional parameter found, it is ', keyword_parameters['optional']
