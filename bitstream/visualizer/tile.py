@@ -78,6 +78,9 @@ ARRAY_PAD = 60
 CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
+WIN_WIDTH  = 4*CANVAS_WIDTH+2*ARRAY_PAD
+WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
+
 def errmsg(m):
     sys.stdout.write("ERROR: %s\n" % (m))
     sys.exit(-1)
@@ -537,8 +540,6 @@ def connectwires(cr, connection):
         cr.stroke()
         cr.restore()
 
-# cleanup bookmark
-
 # FIXME/TODO Not used presently I think.  Do we keep it?
 def drawgrid(cr):
 
@@ -593,22 +594,12 @@ def draw_all_ports(cr):
                 wirename = "%s_s%dt%d" % (dir, side, track)
                 drawport(cr, wirename, options="ghost")
 
-
 def draw_handler(widget, cr):
-    # print widget; print cr
-
-    # global DRAW_HANDLER_CR; DRAW_HANDLER_CR = cr;
     global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = widget;
 
-    global ZOOM_TO_TILE
-    tileno = ZOOM_TO_TILE
-    if (tileno == -1):
-        draw_all_tiles(cr);
-    else:
-        draw_one_tile(cr, tileno);
-
-#     if (1): draw_all_tiles(cr);
-#     if (0): draw_one_tile(cr,0);
+    global ZOOM_TO_TILE; tileno = ZOOM_TO_TILE
+    if (tileno == -1):   draw_all_tiles(cr);
+    else:                draw_one_tile(cr, tileno);
 
 def draw_one_tile(cr, tileno):
     cr.save()
@@ -621,43 +612,48 @@ def draw_one_tile(cr, tileno):
 
     global SCALE_FACTOR;
     
-    # For now, unzoomed (grid) view is scaled to 2x.
-    # And zoomed (onetile) view is 2x of that.  Ish.
-    # Except that, for no good reason, want the zoomed tile
-    # to occupy the same space as four unzoomed tiles.
+    # OLD: Draw at 4x requested size; SCALE_FACTOR = 4
+    # NEW:
+    #   For now, unzoomed (grid) view is scaled to 2x.
+    #   And zoomed (onetile) view is 2x of that.  Ish.
+    #   Except that, for no good reason, want the zoomed tile
+    #   to occupy the same space as four unzoomed tiles.
 
-    # OLD: Draw at 4x requested size
-    # SCALE_FACTOR = 4
-
-    # New (see above):
-    SCALE_FACTOR = float(4*CANVAS_WIDTH - 4*PORT_LENGTH)\
-                  /float(  CANVAS_WIDTH - 2*PORT_LENGTH)
-
+    # Canvas width = tile width + length of ports on each side
+    # In zoomed view, want width of one tile to match
+    # (two tiles + gap) in unzoomed (2x) view
+    tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
+    two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*2
+    fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
+    SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
 
+    if (0): print "Zoom scale factor %d/%d = %f." \
+        % (two_tiles_plus_gap_2x, tile_width, SCALE_FACTOR)
+
     ########################################################################
-    # Translate, so as to
-    # make a little whitespace margin at top and left
-
     # OLD: cr.translate(ARRAY_PAD, ARRAY_PAD)
+    # NEW: -----------------------------------------------------------------
+    # Translate so that zoomed tile corners match unzoomed tile corners
+    # Unzoomed corners were centered in window, and above scaling (supposedly)
+    # ensures that zoomed corners are same distance apart as unzoomed,
+    # so: should suffice to make sure zoomed corners are centered.
 
-    # NEW: Want corners to match.
-    # Original window size (before scaling) was 4c+2a
-    unscaled_window_size   = (4*CANVAS_WIDTH+2*ARRAY_PAD)/SCALE_FACTOR
+    # Things that were 40px wide in unzoomed view are now just 10px wide ish
+    scaled_win_width    = WIN_WIDTH/SCALE_FACTOR
+    scaled_canvas_width = CANVAS_WIDTH
+    print "sww=%0.2f scw=%0.2f" % (scaled_win_width,scaled_canvas_width)
+    xmargin = (scaled_win_width - scaled_canvas_width)/2
+    ymargin = xmargin
+    cr.translate(xmargin, ymargin)
 
-    # New window holds a single canvas after scaling which, if we center it,
-    # should match grid outlines because of carefully crafted scale factor above.
-    ONETILE_PAD = (unscaled_window_size - CANVAS_WIDTH)/2
-
-    cr.translate(ONETILE_PAD, ONETILE_PAD)
-
-
+    # Okay done with scale and translate.  Now draw!
     print "Drawing tile %s!" % str(tileno)
-    if (0): print "...at scale factor %d/%d = %f." \
-        % ((2*CANVAS_WIDTH-2*PORT_LENGTH),(CANVAS_WIDTH-2*PORT_LENGTH), SCALE_FACTOR)
+    if (0): print "...at scale factor %f." % SCALE_FACTOR
     tile[tileno].draw(cr)
     cr.restore()
 
+# cleanup bookmark
 
 def draw_all_tiles(cr):
 
@@ -722,8 +718,8 @@ def main():
 
     # Big enough to draw 2x2 grid at double-scale, plus 100 margin all around
     # (w,h) = (4*CANVAS_WIDTH+200,4*CANVAS_HEIGHT+200)
-    (w,h) = (4*CANVAS_WIDTH+2*ARRAY_PAD,4*CANVAS_HEIGHT+2*ARRAY_PAD)
-    win = Gtk.Window(height_request=h, width_request=w)
+    # (w,h) = (WIN_WIDTH,WIN_HEIGHT)
+    win = Gtk.Window(width_request=WIN_WIDTH, height_request=WIN_HEIGHT)
 
     win.move(0,0) # put window at top left corner of screen
     win.set_title("Tilesy")
@@ -733,7 +729,7 @@ def main():
 
     # This should all be in __init__ maybe
 
-    win.da = Gtk.DrawingArea(height_request=h, width_request=w)
+    win.da = Gtk.DrawingArea()
     win.add(win.da)
     # print dir(win.da.props)
 
