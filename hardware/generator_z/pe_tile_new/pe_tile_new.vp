@@ -10,7 +10,7 @@
 //; my $all_segments_for_all_tiles =  parameter(Name=>'all_segments_for_all_tiles', val=> "1", doc=>'stagger or overlap segments');
 //; # for sb
 //; my $sides = parameter(Name=>'sides', val=> 4, doc=>'number of edges for a SB'); 
-//; my $feedthrough_outputs = parameter(Name=>'feedthrough_outputs', val=> "11000", doc=>'binary vector for feedthrough output config. Affects all sides. MSB corresponds to output 0 eg: 00000010 means output 7 is feedthrough. Length in bits = 0.5*num_tracks.');
+//; my $feedthrough_outputs = parameter(Name=>'feedthrough_outputs', val=> "11000", doc=>'binary vector for feedthrough output config. Affects all sides. MSB corresponds to output 0 eg: 00000010 means output 7 is feedthrough. Length in bits = num_tracks.');
 //; my $registered_outputs = parameter(Name=>'registered_outputs', val=> "00110", doc=>'binary vector for registered output config. Affects all sides. MSB corresponds to output 0. Registering feedthrough outputs is ignored.');
 //; my $is_bidi = parameter(Name=>'is_bidi', val=> 0, doc=>'1 if SB pins are bidi. TBD.');
 //; my $sb_fs = parameter(Name=>'sb_fs', val=> "10000#10000#10000", doc=>'binary vector for modifying fanin of sb muxes');

@@ -1,0 +1,562 @@
+///////////////////////////////////////////////////////////////////
+// CGRA memory tile generator with SBs CBs
+//
+//////////////////////////////////////////////////////////////////
+
+//; use POSIX;
+//; #global
+//; my $bus_config = parameter(Name=>'bus_config', val=> "BUS16:16b#1_4:1_4:1_4:1_4:1_4 BUS1:1b#1_4:1_4:1_4:1_4:1_4", doc=>'buses used at global level.');
+
+//; my $all_segments_for_all_tiles =  parameter(Name=>'all_segments_for_all_tiles', val=> "1", doc=>'stagger or overlap segments');
+
+//; # for memory 
+//; my $gen_mem_for_busname  = parameter(Name=>'gen_mem_for_busname', val=> "BUS16", doc=>'generate mem for a particular bus width. only one name must be specified.');
+//; my $control_busname  = parameter(Name=>'control_busname', val=> "BUS1", doc=>'bus to propagate ren, wen, valid, and almost_full control signals. only one name must be specified.');
+//; my $ddepth   = parameter(Name=>'ddepth', val=> 512, doc=>'number of words in the memory');
+
+//; # for sb
+//; my $sides = parameter(Name=>'sides', val=> 4, doc=>'number of edges for a SB'); 
+//; my $feedthrough_outputs = parameter(Name=>'feedthrough_outputs', val=> "11100", doc=>'active low binary vector specifying into what tracks can the memory output be injected. Set the bit corresponding to a track to **0** to enable it to carry the injected value. length = number_tracks. MSB = track0. affects only the bus for which memory is being generated, other buses are always completely feedthrough.');
+//; my $registered_outputs = parameter(Name=>'registered_outputs', val=> "00011", doc=>'binary vector specifying which of the non-feedthrough outputs above can be registered. set bit to 1 for registering. feedthrough tracks are not registered');
+//; my $is_bidi = parameter(Name=>'is_bidi', val=> 0, doc=>'1 if SB pins are bidi. TBD.');
+//; my $sb_fs = parameter(Name=>'sb_fs', val=> "10000#10000#10000", doc=>'binary vector for modifying fanin of sb muxes');
+
+//; # for cb
+//; my $cb_connections = parameter(Name=>'cb_connections', val=> "1111111111", doc=>'binary vector to specify tracks muxed by cb input to memory.length = num_tracks*2');
+
+//; # for layout 
+//; my $mem_tile_height = parameter(Name=>'mem_tile_height', val=> 2, doc=>'multiple of cgra row height to use as mem_tile height');
+
+//; my @cb_connections_arr = split('',$cb_connections);
+
+//; my %bus_width_hash = ();
+//; my %bus_segment_hash = ();
+//; my %bus_num_tracks_hash = ();
+//; foreach my $bus (split(' ', $bus_config)) {
+//;   my $track_count=0;
+//;   if ($bus=~m/(BUS\S+):(\S+)b#(\S+)/) {
+//;     my $bus_name = $1;
+//;     $bus_width_hash{ $bus_name } = $2;
+//;     $bus_segment_hash{ $bus_name } = $3;
+//;     foreach my $seg_info (split(':',$bus_segment_hash{ $bus_name })) {
+//;       $seg_info =~ m/(\S+)_(\S+)/;
+//;       my $segment_length = $1;
+//;       if ($all_segments_for_all_tiles==1) {
+//;         $track_count += $segment_length;
+//;       } else {
+//;         $track_count += 1;
+//;       }
+//;     }
+//;     $bus_num_tracks_hash{ $bus_name } = $track_count;
+//;   }
+//; }
+//;my $filename = "TILE".$self->mname();
+//;open(TILEINFO, ">$filename") or die "Couldn't open file $filename, $!";
+//; my $tile_info_hash;
+//; my $rename_hash;
+
+module `mname`(
+clk,
+config_addr,
+config_data,
+//; for (my $row=0; $row < $mem_tile_height; $row++) {
+//;   for my $bus (sort keys %bus_num_tracks_hash) {
+//;     my $num_tracks = $bus_num_tracks_hash { $bus };
+//;     for(my $i=0; $i<$sides; $i++) {
+//;       for(my $j=0; $j<$num_tracks; $j++) {
+//;# NB: Change the following for the case of sides>4
+//;         if ($i==0||$i==2||($i==3&&$row==0)||($i==1 && $row==$mem_tile_height-1)) {
+out_`$row`_`$bus`_`$i`_`$j`,
+in_`$row`_`$bus`_`$i`_`$j`,
+//;         }
+//;       }
+//;     }
+//;   }
+//; }
+chain_in,
+chain_out,
+chain_valid_out,
+chain_wen_in,
+reset,
+tile_id
+);
+
+  input clk;
+  input [31:0] config_addr;
+  input [31:0] config_data;
+  input chain_wen_in;
+  output chain_valid_out;
+//; for (my $row=0; $row < $mem_tile_height; $row++) {
+//;   for my $bus (sort keys %bus_num_tracks_hash) {
+//;     my $num_tracks = $bus_num_tracks_hash { $bus };
+//;     my $bus_width = $bus_width_hash { $bus };
+//;     for(my $i=0; $i<$sides; $i++) {
+//;       for(my $j=0; $j<$num_tracks; $j++) {
+//;# NB: Change the following for the case of sides>4
+//;         if ($i==0||$i==2||($i==3&&$row==0)||($i==1 && $row==$mem_tile_height-1)) {
+  output [`$bus_width-1`:0] out_`$row`_`$bus`_`$i`_`$j`;
+  input [`$bus_width-1`:0] in_`$row`_`$bus`_`$i`_`$j`;
+//;         }
+//;       }
+//;     }
+//;   }
+//; }
+
+  input [`$bus_width_hash { $gen_mem_for_busname } - 1`:0] chain_in;
+  output [`$bus_width_hash { $gen_mem_for_busname } - 1`:0] chain_out;
+  input [15:0] tile_id;
+  input reset;
+
+//; ##############################################
+//; #
+//; # Generate config enables
+//; #
+//; ##############################################
+
+
+//; my $intra_tile_addr = 0;
+//; for my $bus (sort keys %bus_num_tracks_hash) {
+//;   for(my $row=0; $row<$mem_tile_height; $row++,$intra_tile_addr++) {
+  reg config_en_sb_`$row`_`$bus`;
+  always @(*) begin
+    if (reset) begin
+       config_en_sb_`$row`_`$bus` <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_sb_`$row`_`$bus` <= 1'b1;
+       end else begin
+         config_en_sb_`$row`_`$bus` <= 1'b0;
+       end
+    end
+  end
+//;     $tile_info_hash->{ "sb_".$row."_".$bus } = {
+//;       address => $intra_tile_addr
+//;     };
+//;   }
+//; }
+
+  reg config_en_cb_din;
+  always @(*) begin
+    if (reset) begin
+       config_en_cb_din <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_cb_din <= 1'b1;
+       end else begin
+         config_en_cb_din <= 1'b0;
+       end
+    end
+  end
+//;     $tile_info_hash->{ 'cb_din' } = {
+//;       address => $intra_tile_addr
+//;     };
+
+//;$intra_tile_addr++;
+  reg config_en_cb_ain;
+  always @(*) begin
+    if (reset) begin
+       config_en_cb_ain <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_cb_ain <= 1'b1;
+       end else begin
+         config_en_cb_ain <= 1'b0;
+       end
+    end
+  end
+//;     $tile_info_hash->{ 'cb_ain' } = {
+//;       address => $intra_tile_addr
+//;     };
+
+//;$intra_tile_addr++;
+  reg config_en_cb_renin;
+  always @(*) begin
+    if (reset) begin
+       config_en_cb_renin <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_cb_renin <= 1'b1;
+       end else begin
+         config_en_cb_renin <= 1'b0;
+       end
+    end
+  end
+//;     $tile_info_hash->{ 'cb_ren' } = {
+//;       address => $intra_tile_addr
+//;     };
+
+//;$intra_tile_addr++;
+  reg config_en_cb_wenin;
+  always @(*) begin
+    if (reset) begin
+       config_en_cb_wenin <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_cb_wenin <= 1'b1;
+       end else begin
+         config_en_cb_wenin <= 1'b0;
+       end
+    end
+  end
+//;     $tile_info_hash->{ 'cb_wen' } = {
+//;       address => $intra_tile_addr
+//;     };
+
+//;$intra_tile_addr++;
+  reg config_en_mem;
+  always @(*) begin
+    if (reset) begin
+       config_en_mem <= 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         config_en_mem <= 1'b1;
+       end else begin
+         config_en_mem <= 1'b0;
+       end
+    end
+  end
+//;     $tile_info_hash->{ 'mem' } = {
+//;       address => $intra_tile_addr,
+//;       data_bus => $gen_mem_for_busname,
+//;       control_bus => $control_busname
+//;     };
+
+//;   my $bus_width = $bus_width_hash { $gen_mem_for_busname };
+  wire [`$bus_width-1`:0] mem_output;
+  wire [`$bus_width-1`:0] mem_input;
+  wire [`$bus_width-1`:0] mem_addr;
+  wire ren;
+  wire wen;
+  wire valid;
+  wire almost_full;
+
+//; ##############################################
+//; #
+//; # Create Intra Tile Wires For SBs
+//; #
+//; ##############################################
+//; for my $bus (sort keys %bus_num_tracks_hash) {
+//;   my $num_tracks = $bus_num_tracks_hash { $bus };
+//;   my $bus_width = $bus_width_hash { $bus };
+//;   for (my $row=0; $row < $mem_tile_height; $row++) {
+//;     for(my $i=0; $i<$sides; $i++) {
+//;       for(my $j=0; $j<$num_tracks; $j++) {
+   wire [`$bus_width-1`:0] sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
+   wire [`$bus_width-1`:0] sb_wire_in_`$row`_`$bus`_`$i`_`$j`;
+//;       }
+//;     }
+//;   }
+//; }
+
+//; ##############################################
+//; #
+//; # Instantiate SBs
+//; #
+//; ##############################################
+//; my %sb_hash = ();
+//; for my $bus (sort keys %bus_num_tracks_hash) {
+//;   my $num_tracks = $bus_num_tracks_hash { $bus };
+//;   my $bus_width = $bus_width_hash { $bus };
+//;   my $ft = '0' x $num_tracks;
+//;   my $reg = '1' x $num_tracks;
+//;   if ($bus eq $gen_mem_for_busname) {
+//;     $sb_hash{ $bus } = generate('sb', 'sb1', width => $bus_width, num_tracks => $num_tracks, sides => $sides, feedthrough_outputs=>$ft, registered_outputs=>$reg, pe_output_count=>1, is_bidi=>$is_bidi);
+//;   } elsif ($bus eq $control_busname) {
+//;     $sb_hash{ $bus } = generate('sb', 'sb2', width => $bus_width, num_tracks => $num_tracks, sides => $sides, feedthrough_outputs=>$ft, registered_outputs=>$reg, pe_output_count=>2, is_bidi=>$is_bidi);
+//;   } else {
+//;     $sb_hash{ $bus } = generate('sb', 'sb3', width => $bus_width, num_tracks => $num_tracks, sides => $sides, feedthrough_outputs=>$ft, registered_outputs=>$reg, pe_output_count=>0, is_bidi=>$is_bidi);
+//;   }
+//; }
+//; for (my $row=0; $row < $mem_tile_height; $row++) {
+//;   for my $bus (sort keys %bus_num_tracks_hash) {
+//;     my $num_tracks = $bus_num_tracks_hash { $bus };
+//;     my $sb_obj = clone($sb_hash{ $bus }, 'sb_inst_bus'.$bus.'_row'.$row);
+  `$sb_obj->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+//;     if ($bus eq $gen_mem_for_busname) {
+    .pe_output_0(mem_output),
+//;     } elsif ($bus eq $control_busname) {
+    .pe_output_0(valid),
+    .pe_output_1(almost_full),
+//;     }
+//;     for(my $i=0; $i<$sides; $i++) {
+//;       for(my $j=0; $j<$num_tracks; $j++) {
+        .out_`$i`_`$j`(sb_wire_out_`$row`_`$bus`_`$i`_`$j`),
+        .in_`$i`_`$j`(sb_wire_in_`$row`_`$bus`_`$i`_`$j`),      
+//;       }
+//;     }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_sb_`$row`_`$bus`)
+  );
+//;     $tile_info_hash->{ "sb_".$row."_".$bus }{'bus'} = $bus;
+//;     $tile_info_hash->{ "sb_".$row."_".$bus }{'mname'} = $sb_obj->mname();
+//;     $tile_info_hash->{ "sb_".$row."_".$bus }{'row'} = $row;
+//;     if ($bus eq $gen_mem_for_busname) {
+//;       $rename_hash->{ "sb_".$row."_".$bus }{'pe_output_0'} = 'mem_out';
+//;     } elsif ($bus eq $control_busname) {
+//;       $rename_hash->{ "sb_".$row."_".$bus }{'pe_output_0'} = 'valid';
+//;       $rename_hash->{ "sb_".$row."_".$bus }{'pe_output_1'} = 'almost_full';
+//;     }
+//;   }
+//; }
+
+//; ##############################################
+//; #
+//; # Connect SB wires to IO or each other
+//; #
+//; ##############################################
+//; for my $bus (sort keys %bus_num_tracks_hash) {
+//;   my $num_tracks = $bus_num_tracks_hash { $bus };
+//;   my $bus_width = $bus_width_hash { $bus };
+//;   for (my $row=0; $row < $mem_tile_height; $row++) {
+//;     for(my $i=0; $i<$sides; $i++) {
+//;       for(my $j=0; $j<$num_tracks; $j++) {
+//;#        NB: Change following code for the case of sides!=4
+//;         if ($i==0||$i==2) {
+      assign  out_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
+      assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = in_`$row`_`$bus`_`$i`_`$j`;
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_${i}_${j}";
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "in_${row}_${bus}_${i}_${j}"; 
+//;         } else {
+//;           if ($i==1) {
+//;             if ($row == ($mem_tile_height-1)) {
+      assign  out_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
+      assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = in_`$row`_`$bus`_`$i`_`$j`;
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_${i}_${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "in_${row}_${bus}_${i}_${j}"; 
+//;             } else {
+//;               my $opposite_side = $i + int($sides*0.5);
+//;               if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
+      assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row+1`_`$bus`_`$opposite_side`_`$j`;
+      assign  sb_wire_out_`$row`_`$bus`_`$i`_`$j` = sb_wire_in_`$row+1`_`$bus`_`$opposite_side`_`$j`;
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "sb_wire_in_".(${row}+1)."_${bus}_${opposite_side}_${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "sb_wire_out_".(${row}+1)."_${bus}_${opposite_side}_${j}";
+//;             }
+//;           }
+//;           if ($i==3) {
+//;             if ($row == 0) {
+      assign  out_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
+      assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = in_`$row`_`$bus`_`$i`_`$j`;
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_${i}_${j}";
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "in_${row}_${bus}_${i}_${j}";
+//;             } else {
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "sb_wire_out_${row}_${bus}_${i}_${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "sb_wire_in_${row}_${bus}_${i}_${j}";
+//;             }
+//;           }
+//;         }
+//;       }
+//;     }
+//;   }
+//; }
+
+//; ##############################################
+//; #
+//; # Instantiate CBs
+//; #
+//; ##############################################
+
+//;   my $num_tracks = $bus_num_tracks_hash { $gen_mem_for_busname };
+//;   my $width = $bus_width_hash { $gen_mem_for_busname };
+//;   my $cb_base = generate('cb', 'cb', width=>$width, num_tracks=>$num_tracks, has_constant=>0, feedthrough_outputs=>$cb_connections);  
+
+//;   my $cb_din = clone($cb_base, 'cb_din');
+  `$cb_din->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .out(mem_input),
+//; for(my $i=0, my $k=0; $i<$sides; $i++) {
+//;#  NB: Change the following for the case of sides > 4
+//;   if ($i==1||$i==3) {next}
+//;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
+//;     if (@cb_connections_arr[$k]==1) {
+    .in_`$k`(in_0_`$gen_mem_for_busname`_`$i`_`$j`),
+//;       $rename_hash->{ 'cb_din' }{"in_${k}"} = "in_0_${gen_mem_for_busname}_${i}_${j}";
+//;     }
+//;   }    
+//;  }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_cb_din)
+  );
+//; $tile_info_hash->{ 'cb_din' }{'bus'} = $gen_mem_for_busname;
+//; $tile_info_hash->{ 'cb_din' }{'mname'} = $cb_din->mname();
+//; $rename_hash->{ 'cb_din' }{'out'} = 'din';
+
+//;   my $cb_ain = clone($cb_base, 'cb_ain');
+  `$cb_ain->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .out(mem_addr),
+//; for(my $i=0, my $k=0; $i<$sides; $i++) {
+//;#  NB: Change the following for the case of sides > 4
+//;   if ($i==1||$i==3) {next}
+//;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
+//;     if (@cb_connections_arr[$k]==1) {
+    .in_`$k`(in_0_`$gen_mem_for_busname`_`$i`_`$j`),
+//;       $rename_hash->{ 'cb_ain' }{"in_${k}"} = "in_0_${gen_mem_for_busname}_${i}_${j}";
+//;     }
+//;   }    
+//;  }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_cb_ain)
+  );
+//; $tile_info_hash->{ 'cb_ain' }{'bus'} = $gen_mem_for_busname;
+//; $tile_info_hash->{ 'cb_ain' }{'mname'} = $cb_ain->mname();
+//; $rename_hash->{ 'cb_ain' }{'out'} = 'ain';
+
+//;   my $num_tracks = $bus_num_tracks_hash{ $control_busname };
+//;   my $width = $bus_width_hash{ $control_busname };
+//;   my $cb_ctl_base = generate('cb', 'cb_ctl', width=>$width, num_tracks=>$num_tracks, has_constant=>0, feedthrough_outputs=>$cb_connections);
+
+//;   my $cb_ren = clone($cb_ctl_base, 'cb_ren');
+  `$cb_ren->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .out(ren),
+//; for(my $i=0, my $k=0; $i<$sides; $i++) {
+//;#  NB: Change the following for the case of sides > 4
+//;   if ($i==1||$i==3) {next}
+//;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
+//;     if (@cb_connections_arr[$k]==1) {
+    .in_`$k`(in_0_`$control_busname`_`$i`_`$j`),
+//;       $rename_hash->{ 'cb_ren' }{"in_${k}"} = "in_0_${control_busname}_${i}_${j}";
+//;     }
+//;   }    
+//;  }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_cb_renin)
+  );
+//; $tile_info_hash->{ 'cb_ren' }{'bus'} = $control_busname;
+//; $tile_info_hash->{ 'cb_ren' }{'mname'} = $cb_ren->mname();
+//; $rename_hash->{ 'cb_ren' }{'out'} = 'ren';
+
+
+//;   my $cb_wen = clone($cb_ctl_base, 'cb_wen');
+  `$cb_wen->instantiate()`
+  (
+    .clk(clk),
+    .reset(reset),
+    .out(wen),
+//; for(my $i=0, my $k=0; $i<$sides; $i++) {
+//;#  NB: Change the following for the case of sides > 4
+//;   if ($i==1||$i==3) {next;}
+//;   for(my $j=0; $j<$num_tracks; $j++, $k++) {
+//;     if (@cb_connections_arr[$k]==1) {
+    .in_`$k`(in_0_`$control_busname`_`$i`_`$j`),
+//;       $rename_hash->{ 'cb_wen' }{"in_${k}"} = "in_0_${control_busname}_${i}_${j}";
+//;     }
+//;   }    
+//;  }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_cb_wenin)
+  );
+//; $tile_info_hash->{ 'cb_wen' }{'bus'} = $control_busname;
+//; $tile_info_hash->{ 'cb_wen' }{'mname'} = $cb_wen->mname();
+//; $rename_hash->{ 'cb_wen' }{'out'} = 'wen';
+
+//; ##############################################
+//; #
+//; # Instantiate memory
+//; #
+//; ##############################################
+
+//;   my $width = $bus_width_hash { $gen_mem_for_busname };
+//;   my $mem_core = generate('memory_core', 'memory_core', dwidth=>$width, ddepth=>$ddepth);
+//;   $tile_info_hash->{'mem'}{'mname'} = $mem_core->mname();
+//;   $tile_info_hash->{'mem'}{'width'} = $width;
+//;   $tile_info_hash->{'mem'}{'depth'} = $ddepth;
+
+
+
+  `$mem_core->instantiate()`
+  (
+      .clk(clk),
+      .config_addr(config_addr),
+      .config_data(config_data),
+      .config_en(config_en_mem),
+      .xdata_in(mem_input),
+      .data_out(mem_output),
+      .chain_in(chain_in),
+      .chain_out(chain_out),
+      .addr(mem_addr),
+      .xwen(wen),
+      .chain_wen_in(chain_wen_in),
+      .ren(ren),
+      .valid(valid),
+      .chain_valid_out(chain_valid_out),
+      .almost_full(almost_full),
+      .reset(reset)
+   );
+
+
+endmodule
+
+
+
+//;#######################################################################
+//;## Generate tile connectivity, and pe info 
+//;##
+//;#######################################################################
+//;foreach my $feature (sort keys %$tile_info_hash)  {
+//;  my $value = $tile_info_hash->{$feature};
+//;################### MEMs
+//;  if ($feature=~m/mem/) {
+//;    print TILEINFO "    <mem feature_address='$value->{'address'}' data_bus='$value->{'data_bus'}' control_bus='$value->{'control_bus'}'>\n";
+//;    my $filename = "MEM".$value->{'mname'};
+//;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
+//;    while (<INP>) {
+//;      my $line = $_;
+//;      print TILEINFO $line;
+//;    }
+//;    close INP;
+//;    print TILEINFO "    </mem>\n"
+//;  }
+//;################### CBs
+//;  if ($feature=~m/cb/) {
+//;    print TILEINFO "    <cb feature_address='$value->{'address'}' bus='$value->{'bus'}'>\n";
+//;    my $filename = "CB".$value->{'mname'};
+//;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
+//;    while (<INP>) {
+//;      my $line = $_;
+//;      # while ( my ($find, $replace) = each(%$rename_hash->{$feature}) ) { # ref use DEPRECATED
+//;      while ( my ($find, $replace) = each($rename_hash->{$feature}) ) {
+//;#         print TILEINFO "$find###$replace###$line"\n";
+//;         $line=~s/>$find</>$replace</g;
+//;         $line=~s/='$find'>/='$replace'>/g;
+//;      }
+//;      print TILEINFO $line;
+//;    }
+//;    close INP;
+//;    print TILEINFO "    </cb>\n"
+//;  }
+//;################### SBs
+//;  if ($feature=~m/sb/) {
+//;    print TILEINFO "    <sb feature_address='$value->{'address'}' bus='$value->{'bus'}' row='$value->{'row'}'>\n";
+//;    my $filename = "SB".$value->{'mname'};
+//;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
+//;    while (<INP>) {
+//;      my $line = $_;
+//;      # while ( my ($find, $replace) = each(%$rename_hash->{$feature}) ) { # ref use DEPRECATED
+//;      while ( my ($find, $replace) = each($rename_hash->{$feature}) ) {
+//;#         print TILEINFO "$find###$replace###$line"\n";
+//;         $line=~s/>$find</>$replace</g;
+//;         $line=~s/'$find'/'$replace'/g;
+//;      }
+//;      print TILEINFO $line;
+//;    }
+//;    close INP;
+//;    print TILEINFO "    </sb>\n"
+//;  }
+//;}
+//;close TILEINFO;
+
