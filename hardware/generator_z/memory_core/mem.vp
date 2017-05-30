@@ -22,11 +22,11 @@ wire clk_d;
 
 assign #0.1 clk_d = clk;
 
-sram_512w_16b mem_inst(
+sram_`2**$awidth`w_`$dwidth`b mem_inst(
 .Q(data_out), 
-.CLK(clk_d),
-.CEN(cen), 
-.WEN(wen), 
+.CLK(clk),
+.CEN(~cen), 
+.WEN(~wen), 
 .A(addr), 
 .D(data_in), 
 .EMA(3'd0), 
