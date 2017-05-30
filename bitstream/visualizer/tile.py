@@ -477,62 +477,142 @@ def drawreg(cr, w,h):
 
     # Draw the register
     cr.rectangle(0,0,  w, h) # ULx, ULy, width, height
+    cr.stroke()
+    if (1):
+        cr.save()
+        # TODO fund and use background color instead of white!
+        setcolor(cr, 'white')
+        cr.rectangle(0,0,  w, h) # ULx, ULy, width, height
+        cr.fill()
+        cr.stroke()
+        cr.restore()
+
 
     # Draw the little triangle for the clock
     cr.move_to(0,0);
     cr.line_to(h/2,h/2)
     cr.line_to(0,h)
     cr.stroke()
+    cr.fill()
     cr.restore()
 
 
 def drawFU(cr, opname):
 
-    cr.save()
-    # Put a big ghost-number in the middle of the tile
-    # See https://www.cairographics.org/manual/cairo-text.html#cairo-text-extents
+    # Draw the main functional unit
 
-    # Needs to be a string.
-    opname = str(opname)
+    # width and height of FU (should maybe be globals I dunno)
+    (fu_w,fu_h) = (30,12)
 
-    # Ghost color= light gray
-    # graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
-    setcolor(cr, "black")
+    fu_linewidth   = 0.5
 
-    cr.set_line_width(1)
+    headwidth   = 3    # see how it looks
+    headlength  = 2 #reg_height/3
 
-    (fu_w,fu_h) = (40,20)
+    # width and height of input registers
+    reg_width  = 0.4*fu_w
+    reg_height = 6 # for now, say
+    reg_sep    = headlength+1 # Gap b/w reg and FU
 
-    # ULx = -w/2; ULy = -h/2
-    centerx = CANVAS_WIDTH/2
-    centery = CANVAS_HEIGHT/2
-    ULx = centerx - fu_w/2
-    ULy = centery - fu_h/2
+    arrowlength = reg_height+reg_sep+1
+    fill        = False
+    # txt_linewidth = float(fu_linewidth)/2.0
+    txt_linewidth = fu_linewidth
 
-    cr.rectangle(ULx,ULy,  fu_w, fu_h) # ULx, ULy, width, height
+    if (1):
+        cr.save()
+        # Put a big FU in the middle of the tile, with A and B inputs,
+        # each w/optional input registers
+
+        # Draw the main FU
+        setcolor(cr, "black")
+        cr.set_line_width(fu_linewidth)
+
+        # fu_ulx = -w/2; fu_uly = -h/2
+        centerx = CANVAS_WIDTH/2
+        centery = CANVAS_HEIGHT/2
+        fu_ulx = centerx - fu_w/2
+        fu_uly = centery - fu_h/2
+
+        cr.rectangle(fu_ulx,fu_uly,  fu_w, fu_h) # fu_ulx, fu_uly, width, height
+
+        # Add a label.  Just center it, like did w/ ghost numbers
+
+        cr.set_font_size(0.8*fu_h)
+        cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+        (txt_ulx, txt_uly, w, h, nextx, nexty) = cr.text_extents(opname)
+
+        (centerx,centery)    = (CANVAS_WIDTH/2,      CANVAS_HEIGHT/2)
+        (txt_ulx,txt_uly)    = (centerx - w/2 - txt_ulx, centery + h/2)
+        cr.move_to(txt_ulx,txt_uly)
+        cr.show_text(opname)
+        cr.stroke()
+
+        # Input arrows at w/4 and 3w/4 across the top
+        if (1):
+            
+            cr.save()
+            setcolor(cr, 'red')
+            # cr.set_line_width(txt_linewidth)
+            # print "FOO " + str(fu_linewidth)
+            # print "BAR " + str(txt_linewidth)
+            cr.set_line_width(txt_linewidth)
+            # cr.set_line_width(0.5)
+            cr.translate(fu_ulx,fu_uly) # UL corner of FU
+            cr.translate(fu_w/4, -arrowlength)
+            cr.rotate(PI/2) # point DOWN
+            draw_arrow(cr, arrowlength, headlength, headwidth, fill)
+            cr.stroke(); cr.restore()
+
+
+
+        cr.stroke()
+        cr.restore()
+
+    # Draw the A/B input registers
+
+    if (1):
+        cr.save()
+        setcolor(cr, 'black')
+        cr.set_line_width(.2)
+        reg_uly = centery - fu_h/2 - reg_height - reg_sep
+
+        # aport region is left half of fu
+        aport_x = (fu_ulx + fu_w/4)
+        reg_ulx = aport_x - reg_width/2
+        cr.save()
+        cr.translate(reg_ulx,reg_uly)
+        drawreg(cr, reg_width,reg_height)
+        cr.restore()
+    
+        # b port what the heck
+        bport_x = (fu_ulx + 3*fu_w/4)
+        reg_ulx = bport_x - reg_width/2
+        cr.save()
+        cr.translate(reg_ulx,reg_uly)
+        drawreg(cr, reg_width,reg_height)
+        cr.stroke(); cr.restore()
+
+    # Connection-point dot
+    if (1):
+        cr.save()
+        setcolor(cr, 'red')
+        # cr.set_line_width(txt_linewidth)
+        # print "FOO " + str(fu_linewidth)
+        # print "BAR " + str(txt_linewidth)
+        cr.set_line_width(txt_linewidth)
+        # cr.set_line_width(0.5)
+        cr.translate(fu_ulx,fu_uly) # UL corner of FU
+        cr.translate(fu_w/4, -arrowlength)
+        # cr.rotate(PI/2) # point DOWN
+        # draw_arrow(cr, arrowlength, headlength, headwidth, fill)
+        drawdot(cr, 0,0, 'red')
+        cr.stroke(); cr.restore()
+
+    # TODO: is there an output reg?  Artem says "NO"
+
     cr.stroke()
     cr.restore()
-
-    # aport region is left half of fu
-    port_width = fu_w/2
-    port_height = 4 # for now, say
-    reg_ulx = centerx - fu_w/2
-    reg_uly = centery - fu_h/2 - port_height
-    cr.save()
-    cr.translate(reg_ulx,reg_uly)
-    cr.set_line_width(.2)
-    drawreg(cr, port_width,port_height)
-    cr.restore()
-    
-    # b port what the heck
-    reg_ulx = centerx
-    reg_uly = centery - fu_h/2 - port_height
-    cr.save()
-    cr.translate(reg_ulx,reg_uly)
-    cr.set_line_width(.2)
-    drawreg(cr, port_width,port_height)
-    cr.restore()
-
 
 
 
