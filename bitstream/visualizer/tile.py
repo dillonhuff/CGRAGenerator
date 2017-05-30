@@ -314,7 +314,7 @@ def connectionpoint(wirename):
 
 # E.g. 'drawport(cr, "out_s1t0")' or 'drawport(cr, wirename, options="ghost")'
 def drawport(cr, wirename, **keywords):
-    DBG = 0;
+    DBG = 0
 
     # Draw the port for the indicated wire in the context of the current canvas
     # Ports are labeled arrows; input ports point in to the tile and
@@ -496,8 +496,22 @@ def drawreg(cr, w,h):
     cr.fill()
     cr.restore()
 
+def drawFU(cr, opname, **keywords):
+    DBG=1
 
-def drawFU(cr, opname):
+    # Use cases I want to support:
+    # drawFU(cr, "ADD") => basic FU including input and output arrows
+    # drawFU(cr, "ADD", regA="2", regB="0") => basic FU + reg(s) w/labels
+
+    (regA,regB) = (None,None)
+    if ('regA' in keywords): regA = keywords['regA']
+    if ('regB' in keywords): regB = keywords['regB']
+
+#     if (DBG):
+#         if (regA == None): print "No regA"
+#         else:              print "Found regA = '%s'" % str(regA)
+
+
 
     # Draw the main functional unit
 
@@ -550,9 +564,8 @@ def drawFU(cr, opname):
 
         # Input arrows at w/4 and 3w/4 across the top
         if (1):
-            
             cr.save()
-            setcolor(cr, 'red')
+            # setcolor(cr, 'red')
             # cr.set_line_width(txt_linewidth)
             # print "FOO " + str(fu_linewidth)
             # print "BAR " + str(txt_linewidth)
@@ -564,6 +577,18 @@ def drawFU(cr, opname):
             draw_arrow(cr, arrowlength, headlength, headwidth, fill)
             cr.stroke(); cr.restore()
 
+            cr.save()
+            # setcolor(cr, 'red')
+            # cr.set_line_width(txt_linewidth)
+            # print "FOO " + str(fu_linewidth)
+            # print "BAR " + str(txt_linewidth)
+            cr.set_line_width(txt_linewidth)
+            # cr.set_line_width(0.5)
+            cr.translate(fu_ulx,fu_uly) # UL corner of FU
+            cr.translate(3*fu_w/4, -arrowlength)
+            cr.rotate(PI/2) # point DOWN
+            draw_arrow(cr, arrowlength, headlength, headwidth, fill)
+            cr.stroke(); cr.restore()
 
 
         cr.stroke()
@@ -577,37 +602,70 @@ def drawFU(cr, opname):
         cr.set_line_width(.2)
         reg_uly = centery - fu_h/2 - reg_height - reg_sep
 
-        # aport region is left half of fu
-        aport_x = (fu_ulx + fu_w/4)
-        reg_ulx = aport_x - reg_width/2
-        cr.save()
-        cr.translate(reg_ulx,reg_uly)
-        drawreg(cr, reg_width,reg_height)
-        cr.restore()
+        if (regA != None):
+            # aport region is left half of fu
+            aport_x = (fu_ulx + fu_w/4)
+            reg_ulx = aport_x - reg_width/2
+            cr.save()
+            cr.translate(reg_ulx,reg_uly)
+            drawreg(cr, reg_width,reg_height)
+            cr.restore()
     
-        # b port what the heck
-        bport_x = (fu_ulx + 3*fu_w/4)
-        reg_ulx = bport_x - reg_width/2
-        cr.save()
-        cr.translate(reg_ulx,reg_uly)
-        drawreg(cr, reg_width,reg_height)
-        cr.stroke(); cr.restore()
+            # "Label" for register (i.e. constant value)
 
-    # Connection-point dot
-    if (1):
-        cr.save()
-        setcolor(cr, 'red')
-        # cr.set_line_width(txt_linewidth)
-        # print "FOO " + str(fu_linewidth)
-        # print "BAR " + str(txt_linewidth)
-        cr.set_line_width(txt_linewidth)
-        # cr.set_line_width(0.5)
-        cr.translate(fu_ulx,fu_uly) # UL corner of FU
-        cr.translate(fu_w/4, -arrowlength)
-        # cr.rotate(PI/2) # point DOWN
-        # draw_arrow(cr, arrowlength, headlength, headwidth, fill)
-        drawdot(cr, 0,0, 'red')
-        cr.stroke(); cr.restore()
+            label = str(regA)
+            cr.set_font_size(0.8*reg_height)
+            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+            (txt_ulx, txt_uly, txt_w, txt_h, nextx, nexty) = cr.text_extents(label)
+
+            (w,h) = (reg_width,reg_height)
+            (centerx,centery)    = (reg_ulx + w/2,           reg_uly + h/2)
+            (txt_ulx,txt_uly)    = (centerx - txt_w/2 - txt_ulx, centery + txt_h/2)
+            cr.move_to(txt_ulx,txt_uly)
+            cr.show_text(label)
+            cr.stroke()
+
+
+
+
+        if (regB != None):
+            # b port what the heck
+            bport_x = (fu_ulx + 3*fu_w/4)
+            reg_ulx = bport_x - reg_width/2
+            cr.save()
+            cr.translate(reg_ulx,reg_uly)
+            drawreg(cr, reg_width,reg_height)
+            cr.stroke(); cr.restore()
+
+            label = str(regB)
+            cr.set_font_size(0.8*reg_height)
+            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+            (txt_ulx, txt_uly, txt_w, txt_h, nextx, nexty) = cr.text_extents(label)
+
+            (w,h) = (reg_width,reg_height)
+            (centerx,centery)    = (reg_ulx + w/2,           reg_uly + h/2)
+            (txt_ulx,txt_uly)    = (centerx - txt_w/2 - txt_ulx, centery + txt_h/2)
+            cr.move_to(txt_ulx,txt_uly)
+            cr.show_text(label)
+            cr.stroke()
+
+
+
+#     # Connection-point dot
+#     if (1):
+#         cr.save()
+#         setcolor(cr, 'red')
+#         # cr.set_line_width(txt_linewidth)
+#         # print "FOO " + str(fu_linewidth)
+#         # print "BAR " + str(txt_linewidth)
+#         cr.set_line_width(txt_linewidth)
+#         # cr.set_line_width(0.5)
+#         cr.translate(fu_ulx,fu_uly) # UL corner of FU
+#         cr.translate(fu_w/4, -arrowlength)
+#         # cr.rotate(PI/2) # point DOWN
+#         # draw_arrow(cr, arrowlength, headlength, headwidth, fill)
+#         drawdot(cr, 0,0, 'red')
+#         cr.stroke(); cr.restore()
 
     # TODO: is there an output reg?  Artem says "NO"
 
@@ -1018,7 +1076,10 @@ class Tile:
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
         drawtileno(cr, self.tileno)
-        drawFU(cr, "ADD")
+        # drawFU(cr, "ADD", regA=2)
+        if (self.col==0): drawFU(cr, "ADD")
+        if (self.col==1): drawFU(cr, "ADD", regA=2)
+        if (self.col==2): drawFU(cr, "ADD", regA=2, regB=0)
 
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
