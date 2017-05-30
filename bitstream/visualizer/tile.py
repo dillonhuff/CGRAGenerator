@@ -392,25 +392,45 @@ def drawport(cr, wirename, **keywords):
         if (1):
             ########################################################################
             # Register
+
+#             cr.save()
+#             cr.set_line_width(.2)
+#             setcolor(cr, 'red')
+# 
+#             # From side 0 (unrotated) POV,
+#             # reg corner is rh IN and rw/2 UP from connection point.
+#             # Sides 1, 2, 3 rotate appropriately.
+#             (ULx,ULy) = (-REG_HEIGHT, -REG_WIDTH/2)
+# 
+#             # Draw the register
+#             cr.rectangle(ULx,ULy,  REG_HEIGHT, REG_WIDTH) # ULx, ULy, width, height
+# 
+#             # Draw the little triangle for the clock
+#             cr.move_to(ULx,ULy);
+#             cr.line_to(ULx+REG_HEIGHT/2,ULy+1);
+#             cr.line_to(ULx+REG_HEIGHT,ULy)
+#             cr.stroke()
+# 
+#             cr.restore()
+# 
             cr.save()
+            setcolor(cr, "red")
             cr.set_line_width(.2)
-            setcolor(cr, 'red')
+            (ULx,ULy) = (0, -REG_WIDTH/2)
+            cr.translate(ULx,ULy)
+            # cr.translate(ULx,ULy)
 
-            # From side 0 (unrotated) POV,
-            # reg corner is rh IN and rw/2 UP from connection point.
-            # Sides 1, 2, 3 rotate appropriately.
-            (ULx,ULy) = (-REG_HEIGHT, -REG_WIDTH/2)
+            # Drawreg default is to draw horizontal;
+            # but this routine's default is oriented to side 0 (90d cw)
+            cr.rotate(PI/2)
 
-            # Draw the register
-            cr.rectangle(ULx,ULy,  REG_HEIGHT, REG_WIDTH) # ULx, ULy, width, height
-
-            # Draw the little triangle for the clock
-            cr.move_to(ULx,ULy);
-            cr.line_to(ULx+REG_HEIGHT/2,ULy+1);
-            cr.line_to(ULx+REG_HEIGHT,ULy)
-
+            h = REG_HEIGHT  # I know, I know
+            w = REG_WIDTH
+            drawreg(cr, w,h)
             cr.stroke()
             cr.restore()
+
+
 
         # should be "if (option[label])
         if (1):
@@ -448,6 +468,96 @@ def drawport(cr, wirename, **keywords):
             cr.restore()
 
     cr.restore()
+
+def drawreg(cr, w,h):
+    # Draw a register with UL at (0,0), height h and width w
+    cr.save()
+
+    # cr.translate(ULx,ULy)
+
+    # Draw the register
+    cr.rectangle(0,0,  w, h) # ULx, ULy, width, height
+
+    # Draw the little triangle for the clock
+    cr.move_to(0,0);
+    cr.line_to(h/2,h/2)
+    cr.line_to(0,h)
+    cr.stroke()
+    cr.restore()
+
+
+def drawFU(cr, opname):
+
+    cr.save()
+    # Put a big ghost-number in the middle of the tile
+    # See https://www.cairographics.org/manual/cairo-text.html#cairo-text-extents
+
+    # Needs to be a string.
+    opname = str(opname)
+
+    # Ghost color= light gray
+    # graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
+    setcolor(cr, "black")
+
+    cr.set_line_width(1)
+
+    (fu_w,fu_h) = (40,20)
+
+    # ULx = -w/2; ULy = -h/2
+    centerx = CANVAS_WIDTH/2
+    centery = CANVAS_HEIGHT/2
+    ULx = centerx - fu_w/2
+    ULy = centery - fu_h/2
+
+    cr.rectangle(ULx,ULy,  fu_w, fu_h) # ULx, ULy, width, height
+    cr.stroke()
+    cr.restore()
+
+    # aport region is left half of fu
+    port_width = fu_w/2
+    port_height = 4 # for now, say
+    reg_ulx = centerx - fu_w/2
+    reg_uly = centery - fu_h/2 - port_height
+    cr.save()
+    cr.translate(reg_ulx,reg_uly)
+    cr.set_line_width(.2)
+    drawreg(cr, port_width,port_height)
+    cr.restore()
+    
+    # b port what the heck
+    reg_ulx = centerx
+    reg_uly = centery - fu_h/2 - port_height
+    cr.save()
+    cr.translate(reg_ulx,reg_uly)
+    cr.set_line_width(.2)
+    drawreg(cr, port_width,port_height)
+    cr.restore()
+
+
+
+
+#     cr.set_font_size(20)
+#     cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+# 
+#     # E.g. cr.text_extents("100") => (3, -15, 38, 15, 42, 0) => (UL(x,y), w, h, begin_next(x,y)
+#     # print cr.text_extents(opname)
+#     (ULx, ULy, w, h, nextx, nexty) = cr.text_extents(opname)
+# 
+#     centerx = CANVAS_WIDTH/2
+#     centery = CANVAS_HEIGHT/2
+# 
+#     x = centerx - w/2 - ULx
+#     y = centery + h/2
+# 
+#     # cr.set_source_rgb(1,0,0); drawdot(cr, centerx, centery, 'red'
+#     # cr.set_source_rgb(0,0,1); drawdot(cr, x+ULx, y+ULy, 'blue')
+#     # cr.set_source_rgb(1,0,1); drawdot(cr, x, y, 'purple')
+# 
+#     cr.move_to(x,y)
+#     cr.show_text(opname)
+#     cr.stroke()
+#     cr.restore()
+
 
 def drawtileno(cr, tileno):
 
@@ -828,6 +938,8 @@ class Tile:
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
         drawtileno(cr, self.tileno)
+        drawFU(cr, "ADD")
+
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
         drawtile(cr)
@@ -981,9 +1093,9 @@ if (1):
                 break;
 
     inputstream.close()
-#     sys.exit(0)
 
     build_and_launch_main_window()
+    sys.exit(0)
 
 
 if (scenario == "demo1"):
