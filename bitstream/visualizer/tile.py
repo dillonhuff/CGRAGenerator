@@ -8,6 +8,8 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk,Gdk
 import cairo
 
+from subprocess import call
+
 #TODO
 # Put FU in each tile and connections to/from FU
 
@@ -507,7 +509,19 @@ def connectwires(cr, connection):
     DBG = 0;
 
     # Find the names of the two wires to connect.
-    parse = re.search( "([A-z_0-9]+).*[^A-z_0-9]([A-z_0-9]+)[^A-z_0-9]*$", connection)
+    # parse = re.search( "([A-z_0-9]+).*[^A-z_0-9]([A-z_0-9]+)[^A-z_0-9]*$", connection)
+
+    # A better way?
+    connection = connection.strip() # Eliminate leading/trailing space
+
+    # For now connections must be of the form "out_s0t0 <= in_s1t0"
+    # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
+    parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
+    if (not parse):
+        print "ERROR Do not understand connection %s (yet)" % connection
+        return;
+
+
     w1 = parse.group(1); w2 = parse.group(2)
 
     # Only draw non-ghost ports if connections exist.
@@ -664,9 +678,10 @@ def draw_one_tile(cr, tileno):
 
 def draw_all_tiles(cr):
 
+    global SCALE_FACTOR;                   # Others should know
+
     SCALE_FACTOR = 1
     if (GRID_WIDTH <= 2): SCALE_FACTOR = 2 # Why squint if you don't need to?
-    global SCALE_FACTOR;                   # Others need to know
 
     print "Draw all tiles!"
     cr.save()
@@ -899,6 +914,78 @@ def initialize_tile_list(w, h):
 # Actual runcode starts here!  (FINALLY)
 
 scenario = "demo2"
+
+if (1):
+    DBG=1
+
+    initialize_tile_list(4,4)
+
+    scriptname = sys.argv[0];
+    args = sys.argv[1:];
+
+    # Open a channel to the example decoded bitstream
+    # filename = sys.argv[1];
+    # filename = args[0];
+    filename = "./examples/calebscript.bs-decoded"
+
+    # call(["ls", "-l", "examples"]) # exec/run/shell
+
+    if DBG: print "Using", filename, "as input";
+    try:
+        # filename = sys.argv[1];
+        inputstream = open(filename);
+    except IOError:
+        # TODO/FIXME yeah these were copies from somewhere else obviously
+        print ""
+        print "Cannot find processor bitstream file '%s'.  Usage:" % filename;
+        print "  ", scriptname, "[-debug] <procfile.csv.in> > <procfile.csv.out>"
+        print "\nExample:"
+        print "  alias dbcheck", scriptname;
+        print "  set pfile = /nobackup/steveri/github/cpu-db/data/processors.csv"
+        # print "  dbcheck $pfile > /tmp/processors.csv.%d" % +os.getpid()
+        sys.exit(-1);
+
+    tile = TILE_LIST; # A convenient handle
+
+    for line in inputstream:
+        if (DBG>1): print line.rstrip()
+        # Search each line for connections
+
+        # Ignore hacks for now at least
+        if (re.search("HACK", line)): continue
+
+        # foundtileno = re.search("^TILE *([0-9]*)", line)
+        # I guess python uses '\A' instead of '^' :(
+        foundtileno = re.search("^\s*TILE\s*([0-9]+)", line)
+        if (foundtileno):
+            tileno = int(foundtileno.group(1))
+            if (DBG>1): print "*** Found tile %d" % tileno
+            continue
+
+        teststring = line
+        while True:
+            # Want to find all connections of the form "out_s0t0 <= in_s1t0"
+            # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
+            # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
+
+            # NO list all connections and let GOD sort 'em out...
+            x = re.search("([^ ]* *<= *[^ ]*)(.*)", teststring)
+
+            # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", teststring)
+            if (x):
+                connection = x.group(1)
+                print "Tile %d found connection '%s'" % (tileno,connection)
+                teststring = x.group(2)
+                tile[tileno].connect(connection)
+            else:
+                break;
+
+    inputstream.close()
+#     sys.exit(0)
+
+    build_and_launch_main_window()
+
+
 if (scenario == "demo1"):
 
     # Initialize a 2x2 tile array
@@ -926,6 +1013,8 @@ if (scenario == "demo2"):
     # Set up the main window and connect to callback routine that draws everything.
     # Currently builds a window such that 2x2 grid fits in window at 2x scale
     build_and_launch_main_window()
+
+
 
 ##############################################################################
 # Notes
