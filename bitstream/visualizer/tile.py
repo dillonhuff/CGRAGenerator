@@ -389,7 +389,9 @@ def drawport(cr, wirename, **keywords):
             draw_arrow(cr, PORT_HEIGHT-margin, ahl, 2*ahw, fill)
             cr.restore()
 
-        if (1):
+
+#         if (1):
+        if ('reg' in optionlist):
             ########################################################################
             # Register
 
@@ -773,7 +775,7 @@ def connectwires(cr, connection):
     w1 = parse.group(1); w2 = parse.group(2)
 
     # Only draw non-ghost ports if connections exist.
-    drawport(cr, w1);    drawport(cr, w2)
+    drawport(cr, w1, options='reg');    drawport(cr, w2)
 
     # TODO add a "if (DBG)" here maybe
     if (DBG):
@@ -1077,9 +1079,9 @@ class Tile:
 
         drawtileno(cr, self.tileno)
         # drawFU(cr, "ADD", regA=2)
-        if (self.col==0): drawFU(cr, "ADD")
+        if (self.col==0): drawFU(cr, "ADD", regA=2, regB=0)
         if (self.col==1): drawFU(cr, "ADD", regA=2)
-        if (self.col==2): drawFU(cr, "ADD", regA=2, regB=0)
+        if (self.col==2): drawFU(cr, "ADD")
 
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
