@@ -575,11 +575,11 @@ def draw_pe(cr, opname, A, B):
         cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
         
         # This works, don't know why
-        (txt_ulx, txt_uly, w, h, nextx, nexty) = cr.text_extents(opname)
+        (text_ulx, text_uly, w, h, nextx, nexty) = cr.text_extents(opname)
 
         # (centerx,centery)    = (CANVAS_WIDTH/2,      CANVAS_HEIGHT/2)
-        (txt_ulx,txt_uly)    = (CANVAS_WIDTH/2 - w/2 - txt_ulx, CANVAS_HEIGHT/2 + h/2)
-        cr.move_to(txt_ulx,txt_uly)
+        (text_ulx,text_uly)    = (CANVAS_WIDTH/2 - w/2 - text_ulx, CANVAS_HEIGHT/2 + h/2)
+        cr.move_to(text_ulx,text_uly)
         cr.show_text(opname)
         cr.stroke()
 
@@ -693,49 +693,57 @@ def draw_pe(cr, opname, A, B):
             font_size = 0.8*reg_height
             cr.set_font_size(font_size)
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-            (txt_ulx, txt_uly, txt_w, txt_h, nextx, nexty) = cr.text_extents(label)
+            (text_ulx, text_uly, text_w, text_h, nextx, nexty) = cr.text_extents(label)
             print "fs=%f" % font_size
 
             # more reliable than text_extents!
             # text_extents("2") yields height=4, text_extents("0") gives 5(!!)
-            txt_h = font_size
-            txt_h = txt_h - 1.25 # HACK ALERT!
+            text_h = font_size
+            text_h = text_h - 1.25 # HACK ALERT!
 
-
-#             text = "1234"
-#             (x, y, w, h, nextx, nexty) = cr.text_extents(text)
-#             print "%s: w,h=%f,%f" % (text,w,h)
-# 
-#             text = "2"
-#             (x, y, w, h, nextx, nexty) = cr.text_extents(text)
-#             print "%s: w,h=%f,%f" % (text,w,h)
-# 
-#             text = "0"
-#             (x, y, w, h, nextx, nexty) = cr.text_extents(text)
-#             print "%s: w,h=%f,%f" % (text,w,h)
-# 
+#             (w,h) = (reg_width,reg_height)
+#             (centerx,centery)    = (reg_ulx + w/2.0,           reg_uly + h/2.0)
+#             (text_ulx,text_uly)    = (centerx - text_w/2.0 - text_ulx, centery + text_h/2.0)
+#             cr.move_to(text_ulx,text_uly)
+#             cr.show_text(label)
 
             (w,h) = (reg_width,reg_height)
-            (centerx,centery)    = (reg_ulx + w/2.0,           reg_uly + h/2.0)
-            (txt_ulx,txt_uly)    = (centerx - txt_w/2.0 - txt_ulx, centery + txt_h/2.0)
-
-            print "%s: uly=%f" % (label,txt_uly)
-            print "%s: centery=%f" % (label,centery)
-            print "%s: txt_h=%f" % (label,txt_h)
-            print "%s: halfh=%f" % (label,txt_h/2.0)
-
-#             cr.stroke()
-#             cr.set_line_width(1) 
-#             drawdot(cr, txt_ulx, txt_uly, 'blue')
-#             cr.stroke()
-#             cr.set_line_width(.2)
-
-
-
-            cr.move_to(txt_ulx,txt_uly)
+            regcenter_x = reg_ulx + reg_width/2
+            regcenter_y = reg_uly + reg_height/2
+            
+            # cr.move_to(regcenter_x - text_ulx, regcenter_y+(reg_height-text_h)/2)
+            x = regcenter_x - text_w/2 - text_ulx
+            y = regcenter_y + text_h/2 # + text_h + text_uly/2
+            # drawdot(cr, x, y, 'blue')
+            cr.move_to(x, y)
             cr.show_text(label)
             cr.stroke();
             cr.restore()
+
+# 
+# 
+# 
+# 
+# 
+#             (text_ulx,text_uly)    = (centerx - text_w/2.0 - text_ulx, centery + text_h/2.0)
+# 
+# #             print "%s: uly=%f" % (label,text_uly)
+# #             print "%s: centery=%f" % (label,centery)
+# #             print "%s: text_h=%f" % (label,text_h)
+# #             print "%s: halfh=%f" % (label,text_h/2.0)
+# 
+# #             cr.stroke()
+# #             cr.set_line_width(1) 
+# #             drawdot(cr, text_ulx, text_uly, 'blue')
+# #             cr.stroke()
+# #             cr.set_line_width(.2)
+# 
+# 
+# 
+#             cr.move_to(text_ulx,text_uly)
+#             cr.show_text(label)
+#             cr.stroke();
+#             cr.restore()
 
     if (A and re.search("^[0-9r]",A)): draw_pe_reg(cr, A, "A")
     if (B and re.search("^[0-9r]",B)): draw_pe_reg(cr, B, "B")
@@ -807,13 +815,13 @@ def drawtileno(cr, tileno):
 
     # E.g. cr.text_extents("100") => (3, -15, 38, 15, 42, 0) => (UL(x,y), w, h, begin_next(x,y)
     # print cr.text_extents(tileno)
-    (text_llx, text_lly, text_w, text_h, nextx, nexty) = cr.text_extents(tileno)
+    (text_ulx, text_uly, text_w, text_h, nextx, nexty) = cr.text_extents(tileno)
 
 #     # For centered text
 #     centerx = CANVAS_WIDTH/2
 #     centery = CANVAS_HEIGHT/2
 # 
-#     x = centerx - text_w/2 - text_llx
+#     x = centerx - text_w/2 - text_ulx
 #     y = centery + text_h/2
 
     # For left-justified
@@ -821,7 +829,7 @@ def drawtileno(cr, tileno):
 
 
     # cr.set_source_rgb(1,0,0); drawdot(cr, centerx, centery, 'red'
-    # cr.set_source_rgb(0,0,1); drawdot(cr, x+text_llx, y+text_lly, 'blue')
+    # cr.set_source_rgb(0,0,1); drawdot(cr, x+text_ulx, y+text_uly, 'blue')
     # cr.set_source_rgb(1,0,1); drawdot(cr, x, y, 'purple')
 
     cr.move_to(x,y)
