@@ -11,15 +11,15 @@ import cairo
 from subprocess import call
 
 #TODO
-# Put FU in each tile and connections to/from FU
+# Put PE in each tile and connections to/from PE
 
 from math import pi
 PI = pi
 def deg2rad(rad): return rad*180/PI
 
-# width and height of FU
-global FU_WIDTH;  FU_WIDTH = 30
-global FU_HEIGHT; FU_HEIGHT = 12
+# width and height of PE
+global PE_WIDTH;  PE_WIDTH = 30
+global PE_HEIGHT; PE_HEIGHT = 12
 
 
 
@@ -504,12 +504,12 @@ def drawreg(cr, w,h):
     cr.fill()
     cr.restore()
 
-def drawFU(cr, opname, **keywords):
+def drawPE(cr, opname, **keywords):
     DBG=1
 
     # Use cases I want to support:
-    # drawFU(cr, "ADD") => basic FU including input and output arrows
-    # drawFU(cr, "ADD", regA="2", regB="0") => basic FU + reg(s) w/labels
+    # drawPE(cr, "ADD") => basic PE including input and output arrows
+    # drawPE(cr, "ADD", regA="2", regB="0") => basic PE + reg(s) w/labels
 
     (regA,regB) = (None,None)
     if ('regA' in keywords): regA = keywords['regA']
@@ -524,46 +524,48 @@ def drawFU(cr, opname, **keywords):
 
     # Draw the main functional unit
 
-    # (fu_w,fu_h) = (30,12)
-    (fu_w,fu_h) = (FU_WIDTH,FU_HEIGHT)
+    # (pe_w,pe_h) = (30,12)
+    (pe_w,pe_h) = (PE_WIDTH,PE_HEIGHT)
 
-    fu_linewidth   = 0.5
+    pe_linewidth   = 0.5
 
     headwidth   = 3    # see how it looks
     headlength  = 2 #reg_height/3
 
     # width and height of input registers
-    reg_width  = 0.4*fu_w
+    reg_width  = 0.4*pe_w
     reg_height = 6 # for now, say
-    reg_sep    = headlength+1 # Gap b/w reg and FU
+    reg_sep    = headlength+1 # Gap b/w reg and PE
 
     arrowlength = reg_height+reg_sep+2
     arrowlength_out = headlength+2
     fill        = False
-    # txt_linewidth = float(fu_linewidth)/2.0
-    txt_linewidth = fu_linewidth
+    # txt_linewidth = float(pe_linewidth)/2.0
+    txt_linewidth = pe_linewidth
 
     if (1):
         cr.save()
-        # Put a big FU in the middle of the tile, with A and B inputs,
+        # Put a big PE in the middle of the tile, with A and B inputs,
         # each w/optional input registers
 
-        # Draw the main FU
+        # Draw the main PE
         setcolor(cr, "black")
-        cr.set_line_width(fu_linewidth)
+        cr.set_line_width(pe_linewidth)
 
-        # fu_ulx = -w/2; fu_uly = -h/2
+        # pe_ulx = -w/2; pe_uly = -h/2
         centerx = CANVAS_WIDTH/2
         centery = CANVAS_HEIGHT/2
-        fu_ulx = centerx - fu_w/2
-        fu_uly = centery - fu_h/2
+        pe_ulx = centerx - pe_w/2
+        pe_uly = centery - pe_h/2
 
-        cr.rectangle(fu_ulx,fu_uly,  fu_w, fu_h) # fu_ulx, fu_uly, width, height
+        cr.rectangle(pe_ulx,pe_uly,  pe_w, pe_h) # pe_ulx, pe_uly, width, height
 
         # Add a label.  Just center it, like did w/ ghost numbers
 
-        cr.set_font_size(0.8*fu_h)
+        cr.set_font_size(0.8*pe_h)
         cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+        
+        # This works, don't know why
         (txt_ulx, txt_uly, w, h, nextx, nexty) = cr.text_extents(opname)
 
         (centerx,centery)    = (CANVAS_WIDTH/2,      CANVAS_HEIGHT/2)
@@ -576,9 +578,9 @@ def drawFU(cr, opname, **keywords):
         if (1):
             cr.save()
             cr.set_line_width(txt_linewidth)
-            global FU_OUTX; FU_OUTX = fu_ulx+fu_w/2
-            global FU_OUTY; FU_OUTY = fu_uly+fu_h+arrowlength_out
-            cr.translate(FU_OUTX,FU_OUTY-arrowlength_out)
+            global PE_OUTX; PE_OUTX = pe_ulx+pe_w/2
+            global PE_OUTY; PE_OUTY = pe_uly+pe_h+arrowlength_out
+            cr.translate(PE_OUTX,PE_OUTY-arrowlength_out)
             cr.rotate(PI/2) # point DOWN
             fill = False
             draw_arrow(cr, arrowlength_out, headlength, headwidth, fill)
@@ -590,25 +592,25 @@ def drawFU(cr, opname, **keywords):
             cr.save()
             # setcolor(cr, 'red')
             # cr.set_line_width(txt_linewidth)
-            # print "FOO " + str(fu_linewidth)
+            # print "FOO " + str(pe_linewidth)
             # print "BAR " + str(txt_linewidth)
             cr.set_line_width(txt_linewidth)
             # cr.set_line_width(0.5)
 
-#             FU_ULX = CANVAS_WIDTH/2  - fu_w/2
-#             FU_ULY = CANVAS_HEIGHT/2 - fu_h/2)
-#             FU_A = (
-#                 FU_UL[0] + fu_w/4,
-#                 FU_UL[1] - arrowlength
+#             PE_ULX = CANVAS_WIDTH/2  - pe_w/2
+#             PE_ULY = CANVAS_HEIGHT/2 - pe_h/2)
+#             PE_A = (
+#                 PE_UL[0] + pe_w/4,
+#                 PE_UL[1] - arrowlength
 #                 )
 
-            global FU_AX; FU_AX = fu_ulx+fu_w/4
-            global FU_AY; FU_AY = fu_uly-arrowlength
+            global PE_AX; PE_AX = pe_ulx+pe_w/4
+            global PE_AY; PE_AY = pe_uly-arrowlength
 
-#             cr.translate(fu_ulx,fu_uly) # UL corner of FU
-#             cr.translate(fu_w/4, -arrowlength)
+#             cr.translate(pe_ulx,pe_uly) # UL corner of PE
+#             cr.translate(pe_w/4, -arrowlength)
 
-            cr.translate(FU_AX,FU_AY)
+            cr.translate(PE_AX,PE_AY)
             cr.rotate(PI/2) # point DOWN
             fill = False
             draw_arrow(cr, arrowlength, headlength, headwidth, fill)
@@ -617,18 +619,18 @@ def drawFU(cr, opname, **keywords):
             cr.save()
             # setcolor(cr, 'red')
             # cr.set_line_width(txt_linewidth)
-            # print "FOO " + str(fu_linewidth)
+            # print "FOO " + str(pe_linewidth)
             # print "BAR " + str(txt_linewidth)
             cr.set_line_width(txt_linewidth)
             # cr.set_line_width(0.5)
 
-            global FU_BX; FU_BX = fu_ulx+3*fu_w/4
-            global FU_BY; FU_BY = fu_uly-arrowlength
+            global PE_BX; PE_BX = pe_ulx+3*pe_w/4
+            global PE_BY; PE_BY = pe_uly-arrowlength
 
-#             cr.translate(fu_ulx,fu_uly) # UL corner of FU
-#             cr.translate(3*fu_w/4, -arrowlength)
+#             cr.translate(pe_ulx,pe_uly) # UL corner of PE
+#             cr.translate(3*pe_w/4, -arrowlength)
 
-            cr.translate(FU_BX,FU_BY)
+            cr.translate(PE_BX,PE_BY)
 
             cr.rotate(PI/2) # point DOWN
             draw_arrow(cr, arrowlength, headlength, headwidth, fill)
@@ -644,11 +646,11 @@ def drawFU(cr, opname, **keywords):
         cr.save()
         setcolor(cr, 'black')
         cr.set_line_width(.2)
-        reg_uly = centery - fu_h/2 - reg_height - reg_sep
+        reg_uly = centery - pe_h/2 - reg_height - reg_sep
 
         if (regA != None):
-            # aport region is left half of fu
-            aport_x = (fu_ulx + fu_w/4)
+            # aport region is left half of pe
+            aport_x = (pe_ulx + pe_w/4)
             reg_ulx = aport_x - reg_width/2
             cr.save()
             cr.translate(reg_ulx,reg_uly)
@@ -674,7 +676,7 @@ def drawFU(cr, opname, **keywords):
 
         if (regB != None):
             # b port what the heck
-            bport_x = (fu_ulx + 3*fu_w/4)
+            bport_x = (pe_ulx + 3*pe_w/4)
             reg_ulx = bport_x - reg_width/2
             cr.save()
             cr.translate(reg_ulx,reg_uly)
@@ -700,12 +702,12 @@ def drawFU(cr, opname, **keywords):
 #         cr.save()
 #         setcolor(cr, 'red')
 #         # cr.set_line_width(txt_linewidth)
-#         # print "FOO " + str(fu_linewidth)
+#         # print "FOO " + str(pe_linewidth)
 #         # print "BAR " + str(txt_linewidth)
 #         cr.set_line_width(txt_linewidth)
 #         # cr.set_line_width(0.5)
-#         cr.translate(fu_ulx,fu_uly) # UL corner of FU
-#         cr.translate(fu_w/4, -arrowlength)
+#         cr.translate(pe_ulx,pe_uly) # UL corner of PE
+#         cr.translate(pe_w/4, -arrowlength)
 #         # cr.rotate(PI/2) # point DOWN
 #         # draw_arrow(cr, arrowlength, headlength, headwidth, fill)
 #         drawdot(cr, 0,0, 'red')
@@ -794,11 +796,12 @@ def drawtile(cr):
     cr.restore()
 
 # E.g. ab_connect(cr, "in_s3t0", "wireA")
-def ab_connect(cr, inport, FU_input):
+def ab_connect(cr, inport, PE_input):
+    if (1): print "Connecting wire %s to pe_in %s" % (inport, PE_input)
     (x1,y1) = connectionpoint(inport)
 
-    if (FU_input == "wireA"): (x2,y2) = (FU_AX,FU_AY)
-    else:                     (x2,y2) = (FU_BX,FU_BY)
+    if (PE_input == "wireA"): (x2,y2) = (PE_AX,PE_AY)
+    else:                     (x2,y2) = (PE_BX,PE_BY)
 
     drawport(cr, inport)
 
@@ -815,7 +818,7 @@ def ab_connect(cr, inport, FU_input):
         cr.restore()
 
 def pe_out_connect(cr, outport):
-    (x1,y1) = (FU_OUTX,FU_OUTY)
+    (x1,y1) = (PE_OUTX,PE_OUTY)
     (x2,y2) = connectionpoint(outport)
 
     drawport(cr, outport, options='reg');
@@ -868,16 +871,31 @@ def manhattan_connect(cr, outport, inport):
         cr.stroke()
         cr.restore()
 
+def get_connection_type(c):
+    # connection type will be one of "port" "pe_in" "pe_out" "const"
+
+    # Okay right ordermatters, this one should go before pe_in search obviously
+    # For connections of the form "MUL(wireA,regB)" or "MUL(wireA,0x0002)"
+    # parse = re.search("^(.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
+    if re.search(",",c): return "pe"
+
+    if re.search("^[oi],*",c): return "port"
+    if re.search("wire.|reg.",c): return "pe_in"
+
 
 def connectwires(cr, connection):
 
     # Draw a manhattan blue line connecting the two indicated ports inside a tile
     # I've given a lot of leeway as to how connections are specified.
-    # E.g. these should all work:
-    #     connectwires(cr, "in_s3t0 => out_s2t3")
-    #     connectwires(cr, "in_s3t0 out_s2t3")
-    #     connectwires(cr, "in_s3t0 connects to out_s2t3")
-    #     connectwires(cr, "  in_s3t0 connects to out_s2t3  ")
+    # E.g. these should all work for connection parm:
+    #     "in_s3t0 => out_s2t3"
+    #     "in_s3t0 out_s2t3"
+    #     "in_s3t0 connects to out_s2t3"
+    #     "  in_s3t0 connects to out_s2t3  "
+    #     "wireA <= in_s3t0"
+    #     "pe_out <= MUL(wireA,wireB)"
+    #     "pe_out <= ADD(0x0002,0x0000)"
+
 
     DBG = 0;
 
@@ -887,45 +905,55 @@ def connectwires(cr, connection):
     # A better way?
     connection = connection.strip() # Eliminate leading/trailing space
 
-    # For now connections must be of the form "out_s0t0 <= in_s1t0"
-    # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
-
     # parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
+    parse = re.search("^(.*) .* (.*)$", connection)
+    pto = parse.group(1); pfrom = parse.group(2)
+
+    # connection type will be one of "port" "pe_in" "pe_out" "const"
+
+    to_type   = get_connection_type(pto)
+    from_type = get_connection_type(pfrom)
+        
+    # print "to '%s' from '%s'" % (pto,pfrom)
+
     # For connections of the form "out_s0t0 <= in_s1t0"
-    parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
-    if (parse):
-
-        w1 = parse.group(1); w2 = parse.group(2)
-
-        # TODO add a "if (DBG)" here maybe
+    if (to_type == "port" and from_type == "port"):
+        w1 = pto; w2 = pfrom
         if (DBG):
             print "connection = " + connection
             print "Connecting wires '%s' and '%s'\n" % (w1,w2)
 
         # Draw a blue rectilinear line connecting w1 and w2 ports
-        # manhattan_connect(cr, connectionpoint(w1), connectionpoint(w2))
         manhattan_connect(cr, w1, w2)
         return;
 
     # For connections of the form "wireA <= in_s3t0"
-    parse = re.search("(wire[AB]) .* (i[^ ]*)$", connection)
-    if (parse):
-        DBG = 0;
+    if (to_type == "pe_in" and from_type == "port"):
+        DBG=1
         if (DBG): print "Found valid connection %s" % connection
-        fu_in = parse.group(1); tile_in = parse.group(2)
-        ab_connect(cr, tile_in, fu_in);
-        return;
-        
-    # FIXME/TODO one parse to rule them all!
-    # For connections of the form "out_s1t0 <= pe_out"
-    parse = re.search("^(o[^ ]*) .* pe_out$", connection)
-    if (parse):
-        DBG = 0;
-        if (DBG): print "Found valid connection %s" % connection
-        fu_out = parse.group(1);
-        pe_out_connect(cr, fu_out)
+        if (DBG): print "Connecting port '%s' to pe_in '%s'" % (pfrom,pto)
+        ab_connect(cr, pfrom, pto)
         return;
 
+        
+    # For connections of the form "out_s1t0 <= pe_out"
+    if (to_type == "port" and pfrom == "pe_out"):
+        DBG = 0;
+        if (DBG): print "Found valid connection %s" % connection
+        pe_out_connect(cr, pto)
+        return;
+
+
+
+
+    # For connections of the form "pe_out <= MUL(wireA,regB)" or "pe_out <= MUL(wireA,0x0002)"
+    # parse = re.search("^(pe_out) .* (.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
+    if (from_type == "pe"):
+        DBG = 1;
+        if (DBG): print "Found valid connection %s" % connection
+#         parse = re.search("^(.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", pfrom)
+#         pe_name = 
+#         if (DBG): print "Found valid connection %s" % connection
 
 
     else:
@@ -1200,16 +1228,16 @@ class Tile:
         if (ZOOMTILE == -1):
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
-        # note drawFU MUST HAPPEN BEFORE CALLING connectwires()
-        # drawFU() sets up join opints for FU inputs
+        # note drawPE MUST HAPPEN BEFORE CALLING connectwires()
+        # drawPE() sets up join opints for PE inputs
 
         drawtileno(cr, self.tileno)
-        # drawFU(cr, "ADD", regA=2)
-        if (self.label != ""): drawFU(cr, self.label, inputs=False)
+        # drawPE(cr, "ADD", regA=2)
+        if (self.label != ""): drawPE(cr, self.label, inputs=False)
         else:
-            if (self.col==0): drawFU(cr, "ADD", regA=2, regB=0)
-            if (self.col==1): drawFU(cr, "ADD", regA=2)
-            if (self.col==2): drawFU(cr, "ADD")
+            if (self.col==0): drawPE(cr, "ADD", regA=2, regB=0)
+            if (self.col==1): drawPE(cr, "ADD", regA=2)
+            if (self.col==2): drawPE(cr, "ADDYO DADDY")
 
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
@@ -1310,6 +1338,7 @@ if (1):
     # filename = sys.argv[1];
     # filename = args[0];
     filename = "./examples/calebscript.bs-decoded"
+    filename = "./examples/bs.caleb-jimmied"
 
     # call(["ls", "-l", "examples"]) # exec/run/shell
 
