@@ -504,19 +504,27 @@ def drawreg(cr, w,h):
     cr.fill()
     cr.restore()
 
-def drawPE(cr, opname, **keywords):
+# def draw_pe(cr, opname, **keywords):
+def draw_pe(cr, opname, A, B):
     DBG=1
 
     # Use cases I want to support:
-    # drawPE(cr, "ADD") => basic PE including input and output arrows
-    # drawPE(cr, "ADD", regA="2", regB="0") => basic PE + reg(s) w/labels
+    # draw_pe(cr, "ADD") => basic PE including input and output arrows
+    # draw_pe(cr, "ADD", regA="2", regB="0") => basic PE + reg(s) w/labels
 
-    (regA,regB) = (None,None)
-    if ('regA' in keywords): regA = keywords['regA']
-    if ('regB' in keywords): regB = keywords['regB']
+    # if (self.col==0): draw_pe(cr, "ADD", "0x00002", "0x0000")
+    # if (self.col==1): draw_pe(cr, "ADD", "0x00002", "wireB")
+    # if (self.col==2): draw_pe(cr, "ADDYO DADDY", "wireA", "wireB")
+    # if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
+    # if (self.col==3): draw_pe(cr, "I/O", "wireA", None)
+    # if (self.col==3): draw_pe(cr, "I/O", None, None)
 
-    inputs = True;
-    if ('inputs' in keywords): inputs = keywords['inputs']
+#     (regA,regB) = (None,None)
+#     if ('regA' in keywords): regA = keywords['regA']
+#     if ('regB' in keywords): regB = keywords['regB']
+
+#     inputs = True;
+#     if ('inputs' in keywords): inputs = keywords['inputs']
 
 #     if (DBG):
 #         if (regA == None): print "No regA"
@@ -574,12 +582,14 @@ def drawPE(cr, opname, **keywords):
         cr.show_text(opname)
         cr.stroke()
 
+        global PE_OUTX; PE_OUTX = pe_ulx+pe_w/2
+        global PE_OUTY; PE_OUTY = pe_uly+pe_h+arrowlength_out
+
+
         # Output arrow at w/2 on bottom
         if (1):
             cr.save()
             cr.set_line_width(txt_linewidth)
-            global PE_OUTX; PE_OUTX = pe_ulx+pe_w/2
-            global PE_OUTY; PE_OUTY = pe_uly+pe_h+arrowlength_out
             cr.translate(PE_OUTX,PE_OUTY-arrowlength_out)
             cr.rotate(PI/2) # point DOWN
             fill = False
@@ -587,55 +597,57 @@ def drawPE(cr, opname, **keywords):
             cr.stroke(); cr.restore()
 
 
+        # FIXME this is terrible; breaks if connections happen before PE draw
+        # A fix would be to do a setup_pe() call that initializes globals
+        # Another fix would be to set up the globals at the beginning
+        global PE_AX; PE_AX = pe_ulx+pe_w/4
+        global PE_AY; PE_AY = pe_uly-arrowlength
+
+        global PE_BX; PE_BX = pe_ulx+3*pe_w/4
+        global PE_BY; PE_BY = pe_uly-arrowlength
+
+
         # Input arrows at w/4 and 3w/4 across the top
-        if (inputs):
-            cr.save()
+        if (A or B):
             # setcolor(cr, 'red')
             # cr.set_line_width(txt_linewidth)
             # print "FOO " + str(pe_linewidth)
             # print "BAR " + str(txt_linewidth)
-            cr.set_line_width(txt_linewidth)
             # cr.set_line_width(0.5)
 
-#             PE_ULX = CANVAS_WIDTH/2  - pe_w/2
-#             PE_ULY = CANVAS_HEIGHT/2 - pe_h/2)
-#             PE_A = (
-#                 PE_UL[0] + pe_w/4,
-#                 PE_UL[1] - arrowlength
-#                 )
 
-            global PE_AX; PE_AX = pe_ulx+pe_w/4
-            global PE_AY; PE_AY = pe_uly-arrowlength
+            #             cr.translate(pe_ulx,pe_uly) # UL corner of PE
+            #             cr.translate(pe_w/4, -arrowlength)
 
-#             cr.translate(pe_ulx,pe_uly) # UL corner of PE
-#             cr.translate(pe_w/4, -arrowlength)
 
-            cr.translate(PE_AX,PE_AY)
-            cr.rotate(PI/2) # point DOWN
-            fill = False
-            draw_arrow(cr, arrowlength, headlength, headwidth, fill)
-            cr.stroke(); cr.restore()
+            if (A):
+                cr.save()
+                cr.set_line_width(txt_linewidth)
+                cr.translate(PE_AX,PE_AY)
+                cr.rotate(PI/2) # point DOWN
+                fill = False
+                draw_arrow(cr, arrowlength, headlength, headwidth, fill)
+                cr.stroke(); cr.restore()
 
-            cr.save()
-            # setcolor(cr, 'red')
-            # cr.set_line_width(txt_linewidth)
-            # print "FOO " + str(pe_linewidth)
-            # print "BAR " + str(txt_linewidth)
-            cr.set_line_width(txt_linewidth)
-            # cr.set_line_width(0.5)
+            if (B):
+                cr.save()
+                # setcolor(cr, 'red')
+                # cr.set_line_width(txt_linewidth)
+                # print "FOO " + str(pe_linewidth)
+                # print "BAR " + str(txt_linewidth)
+                cr.set_line_width(txt_linewidth)
+                # cr.set_line_width(0.5)
 
-            global PE_BX; PE_BX = pe_ulx+3*pe_w/4
-            global PE_BY; PE_BY = pe_uly-arrowlength
 
-#             cr.translate(pe_ulx,pe_uly) # UL corner of PE
-#             cr.translate(3*pe_w/4, -arrowlength)
+                #             cr.translate(pe_ulx,pe_uly) # UL corner of PE
+                #             cr.translate(3*pe_w/4, -arrowlength)
 
-            cr.translate(PE_BX,PE_BY)
+                cr.translate(PE_BX,PE_BY)
 
-            cr.rotate(PI/2) # point DOWN
-            draw_arrow(cr, arrowlength, headlength, headwidth, fill)
-            cr.stroke(); cr.restore()
-
+                cr.rotate(PI/2) # point DOWN
+                fill = False
+                draw_arrow(cr, arrowlength, headlength, headwidth, fill)
+                cr.stroke(); cr.restore()
 
         cr.stroke()
         cr.restore()
@@ -648,7 +660,10 @@ def drawPE(cr, opname, **keywords):
         cr.set_line_width(.2)
         reg_uly = centery - pe_h/2 - reg_height - reg_sep
 
-        if (regA != None):
+        # print "A= " + str(A)
+        if (A and re.search("^[0-9r]",A)):
+            regA = A
+#             if (re.search("reg",A)): regA = ''
             # aport region is left half of pe
             aport_x = (pe_ulx + pe_w/4)
             reg_ulx = aport_x - reg_width/2
@@ -657,9 +672,9 @@ def drawPE(cr, opname, **keywords):
             drawreg(cr, reg_width,reg_height)
             cr.restore()
     
-            # "Label" for register (i.e. constant value)
-
-            label = str(regA)
+            # FIXME Assumes all constants areof the form "0x0002" else breaks
+            if (regA == "regA"): label = ''
+            else:                label = str(int(regA,16))  # E.g. want "0x0002" => "2"
             cr.set_font_size(0.8*reg_height)
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
             (txt_ulx, txt_uly, txt_w, txt_h, nextx, nexty) = cr.text_extents(label)
@@ -671,10 +686,10 @@ def drawPE(cr, opname, **keywords):
             cr.show_text(label)
             cr.stroke()
 
-
-
-
-        if (regB != None):
+        # if (regB != None):
+        if (B and re.search("^[0-9r]",B)):
+            regB = B
+#             if (re.search("reg",B)): regB = ''
             # b port what the heck
             bport_x = (pe_ulx + 3*pe_w/4)
             reg_ulx = bport_x - reg_width/2
@@ -683,7 +698,14 @@ def drawPE(cr, opname, **keywords):
             drawreg(cr, reg_width,reg_height)
             cr.stroke(); cr.restore()
 
-            label = str(regB)
+            # FIXME Assumes all constants areof the form "0x0002" else breaks
+            # label = str(int(regB,16))
+
+            print "reg = '%s'" % regB
+            if (regB == "regB"): label = ''
+            else:                label = str(int(regB,16))  # E.g. want "0x0002" => "2"
+
+
             cr.set_font_size(0.8*reg_height)
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
             (txt_ulx, txt_uly, txt_w, txt_h, nextx, nexty) = cr.text_extents(label)
@@ -951,9 +973,16 @@ def connectwires(cr, connection):
     if (from_type == "pe"):
         DBG = 1;
         if (DBG): print "Found valid connection %s" % connection
-#         parse = re.search("^(.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", pfrom)
-#         pe_name = 
-#         if (DBG): print "Found valid connection %s" % connection
+        parse = re.search("^(.*)[(](wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)[)]", pfrom)
+        pe_name = parse.group(1)
+        pe_a    = parse.group(2)
+        pe_b    = parse.group(3)
+        if (DBG): print "Found PE '%s' w/ inputs a='%s' b='%s'" % (pe_name,pe_a,pe_b)
+
+        draw_pe(cr, pe_name, pe_a, pe_b)
+
+        # TODO: draw_pe(pe_name) etc.
+#             if (self.col==0): draw_pe(cr, "ADD", regA=2, regB=0)
 
 
     else:
@@ -1228,16 +1257,24 @@ class Tile:
         if (ZOOMTILE == -1):
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
-        # note drawPE MUST HAPPEN BEFORE CALLING connectwires()
-        # drawPE() sets up join opints for PE inputs
+        # note draw_pe MUST HAPPEN BEFORE CALLING connectwires()
+        # draw_pe() sets up join opints for PE inputs
 
         drawtileno(cr, self.tileno)
-        # drawPE(cr, "ADD", regA=2)
-        if (self.label != ""): drawPE(cr, self.label, inputs=False)
+        # draw_pe(cr, "ADD", regA=2)
+        if (self.label != ""): draw_pe(cr, self.label, None, None)
         else:
-            if (self.col==0): drawPE(cr, "ADD", regA=2, regB=0)
-            if (self.col==1): drawPE(cr, "ADD", regA=2)
-            if (self.col==2): drawPE(cr, "ADDYO DADDY")
+#             if (self.col==0): draw_pe(cr, "ADD", "0x00002", "0x0000")
+#             if (self.col==1): draw_pe(cr, "ADD", "0x00002", "wireB")
+            if (self.col==2): draw_pe(cr, "ADDYO DADDY", "wireA", "wireB")
+            if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
+
+#         else:
+#             if (self.col==0): draw_pe(cr, "ADD", regA=2, regB=0)
+#             if (self.col==1): draw_pe(cr, "ADD", regA=2)
+#             if (self.col==2): draw_pe(cr, "ADDYO DADDY")
+
+
 
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
