@@ -682,101 +682,43 @@ def draw_pe(cr, opname, A, B):
 
         # Draw label
         if (1):
-
             cr.save()
             setcolor(cr, 'black')
+            font_size = 0.8*reg_height
+
             # FIXME Assumes all constants are of the form "0x0002" else breaks
             label = ''
             if (not re.search("^reg", reg)): 
                 label = str(int(reg,16))  # E.g. want "0x0002" => "2"
 
-            font_size = 0.8*reg_height
+            # Find textbox parms
             cr.set_font_size(font_size)
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
             (text_ulx, text_uly, text_w, text_h, nextx, nexty) = cr.text_extents(label)
             print "fs=%f" % font_size
 
-            # more reliable than text_extents!
+            # font_size more reliable than text_extents for textbox height!
             # text_extents("2") yields height=4, text_extents("0") gives 5(!!)
             fudge = -reg_height/4.0 # HACK ALERT!
             text_h = font_size + fudge
 
-            text = "1234"
-            (x, y, w, h, nextx, nexty) = cr.text_extents(text)
-            print "%s: y=%f h=%f" % (text,y,h)
-
-            text = "2"
-            (x, y, w, h, nextx, nexty) = cr.text_extents(text)
-            print "%s: y=%f h=%f" % (text,y,h)
-
-            text = "0"
-            (x, y, w, h, nextx, nexty) = cr.text_extents(text)
-            print "%s: y=%f h=%f" % (text,y,h)
-
-            # (w,h) = (reg_width,reg_height)
+            # Calculate x coord of LL corner of text box
             regcenter_x = reg_ulx + reg_width/2
+            textbegin_llx = regcenter_x - text_w/2 - text_ulx
+
+            # Caclulate y coord of LL corner of text box
             regcenter_y = reg_uly + reg_height/2
-            
-            # cr.move_to(regcenter_x - text_ulx, regcenter_y+(reg_height-text_h)/2)
-            x = regcenter_x - text_w/2 - text_ulx
-            y = regcenter_y + text_h/2 # + text_h + text_uly/2
-            # drawdot(cr, x, y, 'blue')
-            cr.move_to(x, y)
+            textbegin_lly = regcenter_y + text_h/2 # + text_h + text_uly/2
+
+            # drawdot(cr, textbegin_llx, textbegin_lly, 'blue')
+
+            cr.move_to(textbegin_llx, textbegin_lly)
             cr.show_text(label)
             cr.stroke();
             cr.restore()
 
     if (A and re.search("^[0-9r]",A)): draw_pe_reg(cr, A, "A")
     if (B and re.search("^[0-9r]",B)): draw_pe_reg(cr, B, "B")
-
-
-
-
-#     # Connection-point dot
-#     if (1):
-#         cr.save()
-#         setcolor(cr, 'red')
-#         # cr.set_line_width(txt_linewidth)
-#         # print "FOO " + str(pe_linewidth)
-#         # print "BAR " + str(txt_linewidth)
-#         cr.set_line_width(txt_linewidth)
-#         # cr.set_line_width(0.5)
-#         cr.translate(pe_ulx,pe_uly) # UL corner of PE
-#         cr.translate(pe_w/4, -arrowlength)
-#         # cr.rotate(PI/2) # point DOWN
-#         # draw_arrow(cr, arrowlength, headlength, headwidth, fill)
-#         drawdot(cr, 0,0, 'red')
-#         cr.stroke(); cr.restore()
-
-    # TODO: is there an output reg?  Artem says "NO"
-
-#     cr.stroke()
-#     cr.restore()
-
-
-
-#     cr.set_font_size(20)
-#     cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-# 
-#     # E.g. cr.text_extents("100") => (3, -15, 38, 15, 42, 0) => (UL(x,y), w, h, begin_next(x,y)
-#     # print cr.text_extents(opname)
-#     (ULx, ULy, w, h, nextx, nexty) = cr.text_extents(opname)
-# 
-#     centerx = CANVAS_WIDTH/2
-#     centery = CANVAS_HEIGHT/2
-# 
-#     x = centerx - w/2 - ULx
-#     y = centery + h/2
-# 
-#     # cr.set_source_rgb(1,0,0); drawdot(cr, centerx, centery, 'red'
-#     # cr.set_source_rgb(0,0,1); drawdot(cr, x+ULx, y+ULy, 'blue')
-#     # cr.set_source_rgb(1,0,1); drawdot(cr, x, y, 'purple')
-# 
-#     cr.move_to(x,y)
-#     cr.show_text(opname)
-#     cr.stroke()
-#     cr.restore()
-
 
 def drawtileno(cr, tileno):
 
