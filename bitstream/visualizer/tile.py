@@ -17,6 +17,12 @@ from math import pi
 PI = pi
 def deg2rad(rad): return rad*180/PI
 
+# width and height of FU
+global FU_WIDTH;  FU_WIDTH = 30
+global FU_HEIGHT; FU_HEIGHT = 12
+
+
+
 GRID_WIDTH  = 2;
 GRID_HEIGHT = 2;
 NTILES = GRID_WIDTH*GRID_HEIGHT
@@ -513,12 +519,10 @@ def drawFU(cr, opname, **keywords):
 #         if (regA == None): print "No regA"
 #         else:              print "Found regA = '%s'" % str(regA)
 
-
-
     # Draw the main functional unit
 
-    # width and height of FU (should maybe be globals I dunno)
-    (fu_w,fu_h) = (30,12)
+    # (fu_w,fu_h) = (30,12)
+    (fu_w,fu_h) = (FU_WIDTH,FU_HEIGHT)
 
     fu_linewidth   = 0.5
 
@@ -573,8 +577,22 @@ def drawFU(cr, opname, **keywords):
             # print "BAR " + str(txt_linewidth)
             cr.set_line_width(txt_linewidth)
             # cr.set_line_width(0.5)
-            cr.translate(fu_ulx,fu_uly) # UL corner of FU
-            cr.translate(fu_w/4, -arrowlength)
+
+#             FU_ULX = CANVAS_WIDTH/2  - fu_w/2
+#             FU_ULY = CANVAS_HEIGHT/2 - fu_h/2)
+#             FU_A = (
+#                 FU_UL[0] + fu_w/4,
+#                 FU_UL[1] - arrowlength
+#                 )
+
+            global FU_AX; FU_AX = fu_ulx+fu_w/4
+            global FU_AY; FU_AY = fu_uly-arrowlength
+
+#             cr.translate(fu_ulx,fu_uly) # UL corner of FU
+#             cr.translate(fu_w/4, -arrowlength)
+
+            cr.translate(FU_AX,FU_AY)
+
             cr.rotate(PI/2) # point DOWN
             draw_arrow(cr, arrowlength, headlength, headwidth, fill)
             cr.stroke(); cr.restore()
@@ -586,8 +604,15 @@ def drawFU(cr, opname, **keywords):
             # print "BAR " + str(txt_linewidth)
             cr.set_line_width(txt_linewidth)
             # cr.set_line_width(0.5)
-            cr.translate(fu_ulx,fu_uly) # UL corner of FU
-            cr.translate(3*fu_w/4, -arrowlength)
+
+            global FU_BX; FU_BX = fu_ulx+3*fu_w/4
+            global FU_BY; FU_BY = fu_uly-arrowlength
+
+#             cr.translate(fu_ulx,fu_uly) # UL corner of FU
+#             cr.translate(3*fu_w/4, -arrowlength)
+
+            cr.translate(FU_BX,FU_BY)
+
             cr.rotate(PI/2) # point DOWN
             draw_arrow(cr, arrowlength, headlength, headwidth, fill)
             cr.stroke(); cr.restore()
@@ -751,6 +776,25 @@ def drawtile(cr):
     cr.stroke()
     cr.restore()
 
+# E.g. ab_connect(cr, "in_s3t0", "wireA")
+def ab_connect(cr, inport_name, FU_input):
+    (x1,y1) = connectionpoint(inport_name)
+
+    if (FU_input == "wireA"): (x2,y2) = (FU_AX,FU_AY)
+    else:                     (x2,y2) = (FU_BX,FU_BY)
+
+    # FIXME/TODO:
+    # Parms (blue, .5 etc.) should be global and shared w/ manhattan_connect etc. below
+    if (1):
+        cr.save()
+        setcolor(cr,'blue')
+        cr.set_line_width(.5)
+        drawdot(cr,x2,y2,'blue')
+        cr.move_to(x1,y1)
+        cr.line_to(x2,y2)
+        cr.stroke()
+        cr.restore()
+
 def manhattan_connect(cr, xy1, xy2):
     # Given two points (x1,y1) and (x2,y2) on tile edge, draw
     # a manhattan connection through the interior of the tile.
@@ -802,6 +846,8 @@ def connectwires(cr, connection):
 
     # For now connections must be of the form "out_s0t0 <= in_s1t0"
     # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
+
+
     # parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
     # For connections of the form "out_s0t0 <= in_s1t0"
     parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
@@ -819,6 +865,17 @@ def connectwires(cr, connection):
 
         # Draw a blue rectilinear line connecting w1 and w2 ports
         manhattan_connect(cr, connectionpoint(w1), connectionpoint(w2))
+        return;
+
+    # For connections of the form "wireA <= in_s3t0"
+    parse = re.search("(wire[AB]) .* (i[^ ]*)$", connection)
+    if (parse):
+        DBG = 1;
+        if (DBG): print "Found valid connection %s" % connection
+        fu_in = parse.group(1); tile_in = parse.group(2)
+        ab_connect(cr, tile_in, fu_in);
+        return;
+        
 
     else:
         print "ERROR Do not understand connection %s (yet)" % connection
@@ -1090,6 +1147,9 @@ class Tile:
 
         if (ZOOMTILE == -1):
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
+
+        # note drawFU MUST HAPPEN BEFORE CALLING connectwires()
+        # drawFU() sets up join opints for FU inputs
 
         drawtileno(cr, self.tileno)
         # drawFU(cr, "ADD", regA=2)
