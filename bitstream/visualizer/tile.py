@@ -698,16 +698,22 @@ def draw_pe(cr, opname, A, B):
 
             # more reliable than text_extents!
             # text_extents("2") yields height=4, text_extents("0") gives 5(!!)
-            text_h = font_size
-            text_h = text_h - 1.25 # HACK ALERT!
+            fudge = -reg_height/4.0 # HACK ALERT!
+            text_h = font_size + fudge
 
-#             (w,h) = (reg_width,reg_height)
-#             (centerx,centery)    = (reg_ulx + w/2.0,           reg_uly + h/2.0)
-#             (text_ulx,text_uly)    = (centerx - text_w/2.0 - text_ulx, centery + text_h/2.0)
-#             cr.move_to(text_ulx,text_uly)
-#             cr.show_text(label)
+            text = "1234"
+            (x, y, w, h, nextx, nexty) = cr.text_extents(text)
+            print "%s: y=%f h=%f" % (text,y,h)
 
-            (w,h) = (reg_width,reg_height)
+            text = "2"
+            (x, y, w, h, nextx, nexty) = cr.text_extents(text)
+            print "%s: y=%f h=%f" % (text,y,h)
+
+            text = "0"
+            (x, y, w, h, nextx, nexty) = cr.text_extents(text)
+            print "%s: y=%f h=%f" % (text,y,h)
+
+            # (w,h) = (reg_width,reg_height)
             regcenter_x = reg_ulx + reg_width/2
             regcenter_y = reg_uly + reg_height/2
             
@@ -719,31 +725,6 @@ def draw_pe(cr, opname, A, B):
             cr.show_text(label)
             cr.stroke();
             cr.restore()
-
-# 
-# 
-# 
-# 
-# 
-#             (text_ulx,text_uly)    = (centerx - text_w/2.0 - text_ulx, centery + text_h/2.0)
-# 
-# #             print "%s: uly=%f" % (label,text_uly)
-# #             print "%s: centery=%f" % (label,centery)
-# #             print "%s: text_h=%f" % (label,text_h)
-# #             print "%s: halfh=%f" % (label,text_h/2.0)
-# 
-# #             cr.stroke()
-# #             cr.set_line_width(1) 
-# #             drawdot(cr, text_ulx, text_uly, 'blue')
-# #             cr.stroke()
-# #             cr.set_line_width(.2)
-# 
-# 
-# 
-#             cr.move_to(text_ulx,text_uly)
-#             cr.show_text(label)
-#             cr.stroke();
-#             cr.restore()
 
     if (A and re.search("^[0-9r]",A)): draw_pe_reg(cr, A, "A")
     if (B and re.search("^[0-9r]",B)): draw_pe_reg(cr, B, "B")
