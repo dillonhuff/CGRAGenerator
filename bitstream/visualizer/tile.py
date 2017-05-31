@@ -259,6 +259,7 @@ def drawdot(cr, x, y, color):
 
     cr.save()
     if (1):
+        setcolor(cr, color)
         cr.arc (x, y, dotsize, 0, 2*PI);
         cr.fill ();
         cr.stroke ();
@@ -576,8 +577,8 @@ def draw_pe(cr, opname, A, B):
         # This works, don't know why
         (txt_ulx, txt_uly, w, h, nextx, nexty) = cr.text_extents(opname)
 
-        (centerx,centery)    = (CANVAS_WIDTH/2,      CANVAS_HEIGHT/2)
-        (txt_ulx,txt_uly)    = (centerx - w/2 - txt_ulx, centery + h/2)
+        # (centerx,centery)    = (CANVAS_WIDTH/2,      CANVAS_HEIGHT/2)
+        (txt_ulx,txt_uly)    = (CANVAS_WIDTH/2 - w/2 - txt_ulx, CANVAS_HEIGHT/2 + h/2)
         cr.move_to(txt_ulx,txt_uly)
         cr.show_text(opname)
         cr.stroke()
@@ -654,68 +655,91 @@ def draw_pe(cr, opname, A, B):
 
     # Draw the A/B input registers
 
-    if (1):
-        cr.save()
-        setcolor(cr, 'black')
-        cr.set_line_width(.2)
-        reg_uly = centery - pe_h/2 - reg_height - reg_sep
+    # draw_pe_reg(A)
 
-        # print "A= " + str(A)
-        if (A and re.search("^[0-9r]",A)):
-            regA = A
-#             if (re.search("reg",A)): regA = ''
-            # aport region is left half of pe
-            aport_x = (pe_ulx + pe_w/4)
-            reg_ulx = aport_x - reg_width/2
+    # FIXME/TODO un-nest this def maybe; requires making things global or something
+    def draw_pe_reg(cr, reg, a_or_b):
+        # Sample usage cases:
+        #    draw_pe_reg(cr, "0x0002", "A") => Build A reg w/label "2"
+        #    draw_pe_reg(cr, "regB", "B")   => build B reg, no label
+
+        # A port is centered in left half of PE
+        # B port is centered in right half of PE
+        if (a_or_b == "A"): reg_ulx = pe_ulx + 1*pe_w/4 - reg_width/2
+        if (a_or_b == "B"): reg_ulx = pe_ulx + 3*pe_w/4 - reg_width/2
+
+        # Both ports are at same height
+        reg_uly = CANVAS_HEIGHT/2 - pe_h/2 - reg_height - reg_sep
+
+        # Draw register
+        if (1):
             cr.save()
+            setcolor(cr, 'black')
+            cr.set_line_width(.2)
             cr.translate(reg_ulx,reg_uly)
-            drawreg(cr, reg_width,reg_height)
+            drawreg(cr, reg_width,reg_height) # pretty sure this does the stroke too
             cr.restore()
-    
-            # FIXME Assumes all constants areof the form "0x0002" else breaks
-            if (regA == "regA"): label = ''
-            else:                label = str(int(regA,16))  # E.g. want "0x0002" => "2"
-            cr.set_font_size(0.8*reg_height)
-            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-            (txt_ulx, txt_uly, txt_w, txt_h, nextx, nexty) = cr.text_extents(label)
 
-            (w,h) = (reg_width,reg_height)
-            (centerx,centery)    = (reg_ulx + w/2,           reg_uly + h/2)
-            (txt_ulx,txt_uly)    = (centerx - txt_w/2 - txt_ulx, centery + txt_h/2)
-            cr.move_to(txt_ulx,txt_uly)
-            cr.show_text(label)
-            cr.stroke()
+        # Draw label
+        if (1):
 
-        # if (regB != None):
-        if (B and re.search("^[0-9r]",B)):
-            regB = B
-#             if (re.search("reg",B)): regB = ''
-            # b port what the heck
-            bport_x = (pe_ulx + 3*pe_w/4)
-            reg_ulx = bport_x - reg_width/2
             cr.save()
-            cr.translate(reg_ulx,reg_uly)
-            drawreg(cr, reg_width,reg_height)
-            cr.stroke(); cr.restore()
+            setcolor(cr, 'black')
+            # FIXME Assumes all constants are of the form "0x0002" else breaks
+            label = ''
+            if (not re.search("^reg", reg)): 
+                label = str(int(reg,16))  # E.g. want "0x0002" => "2"
 
-            # FIXME Assumes all constants areof the form "0x0002" else breaks
-            # label = str(int(regB,16))
-
-            print "reg = '%s'" % regB
-            if (regB == "regB"): label = ''
-            else:                label = str(int(regB,16))  # E.g. want "0x0002" => "2"
-
-
-            cr.set_font_size(0.8*reg_height)
+            font_size = 0.8*reg_height
+            cr.set_font_size(font_size)
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
             (txt_ulx, txt_uly, txt_w, txt_h, nextx, nexty) = cr.text_extents(label)
+            print "fs=%f" % font_size
+
+            # more reliable than text_extents!
+            # text_extents("2") yields height=4, text_extents("0") gives 5(!!)
+            txt_h = font_size
+            txt_h = txt_h - 1.25 # HACK ALERT!
+
+
+#             text = "1234"
+#             (x, y, w, h, nextx, nexty) = cr.text_extents(text)
+#             print "%s: w,h=%f,%f" % (text,w,h)
+# 
+#             text = "2"
+#             (x, y, w, h, nextx, nexty) = cr.text_extents(text)
+#             print "%s: w,h=%f,%f" % (text,w,h)
+# 
+#             text = "0"
+#             (x, y, w, h, nextx, nexty) = cr.text_extents(text)
+#             print "%s: w,h=%f,%f" % (text,w,h)
+# 
 
             (w,h) = (reg_width,reg_height)
-            (centerx,centery)    = (reg_ulx + w/2,           reg_uly + h/2)
-            (txt_ulx,txt_uly)    = (centerx - txt_w/2 - txt_ulx, centery + txt_h/2)
+            (centerx,centery)    = (reg_ulx + w/2.0,           reg_uly + h/2.0)
+            (txt_ulx,txt_uly)    = (centerx - txt_w/2.0 - txt_ulx, centery + txt_h/2.0)
+
+            print "%s: uly=%f" % (label,txt_uly)
+            print "%s: centery=%f" % (label,centery)
+            print "%s: txt_h=%f" % (label,txt_h)
+            print "%s: halfh=%f" % (label,txt_h/2.0)
+
+#             cr.stroke()
+#             cr.set_line_width(1) 
+#             drawdot(cr, txt_ulx, txt_uly, 'blue')
+#             cr.stroke()
+#             cr.set_line_width(.2)
+
+
+
             cr.move_to(txt_ulx,txt_uly)
             cr.show_text(label)
-            cr.stroke()
+            cr.stroke();
+            cr.restore()
+
+    if (A and re.search("^[0-9r]",A)): draw_pe_reg(cr, A, "A")
+    if (B and re.search("^[0-9r]",B)): draw_pe_reg(cr, B, "B")
+
 
 
 
@@ -737,8 +761,8 @@ def draw_pe(cr, opname, A, B):
 
     # TODO: is there an output reg?  Artem says "NO"
 
-    cr.stroke()
-    cr.restore()
+#     cr.stroke()
+#     cr.restore()
 
 
 
@@ -783,13 +807,13 @@ def drawtileno(cr, tileno):
 
     # E.g. cr.text_extents("100") => (3, -15, 38, 15, 42, 0) => (UL(x,y), w, h, begin_next(x,y)
     # print cr.text_extents(tileno)
-    (text_ulx, text_uly, text_w, text_h, nextx, nexty) = cr.text_extents(tileno)
+    (text_llx, text_lly, text_w, text_h, nextx, nexty) = cr.text_extents(tileno)
 
 #     # For centered text
 #     centerx = CANVAS_WIDTH/2
 #     centery = CANVAS_HEIGHT/2
 # 
-#     x = centerx - text_w/2 - text_ulx
+#     x = centerx - text_w/2 - text_llx
 #     y = centery + text_h/2
 
     # For left-justified
@@ -797,7 +821,7 @@ def drawtileno(cr, tileno):
 
 
     # cr.set_source_rgb(1,0,0); drawdot(cr, centerx, centery, 'red'
-    # cr.set_source_rgb(0,0,1); drawdot(cr, x+text_ulx, y+text_uly, 'blue')
+    # cr.set_source_rgb(0,0,1); drawdot(cr, x+text_llx, y+text_lly, 'blue')
     # cr.set_source_rgb(1,0,1); drawdot(cr, x, y, 'purple')
 
     cr.move_to(x,y)
