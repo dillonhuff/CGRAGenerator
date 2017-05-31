@@ -702,7 +702,7 @@ def drawFU(cr, opname, **keywords):
 def drawtileno(cr, tileno):
 
     cr.save()
-    # Put a big ghost-number in the middle of the tile
+    # Put a big ghost-number in top-left corner of tile
     # See https://www.cairographics.org/manual/cairo-text.html#cairo-text-extents
 
     # Needs to be a string.
@@ -717,16 +717,21 @@ def drawtileno(cr, tileno):
 
     # E.g. cr.text_extents("100") => (3, -15, 38, 15, 42, 0) => (UL(x,y), w, h, begin_next(x,y)
     # print cr.text_extents(tileno)
-    (ULx, ULy, w, h, nextx, nexty) = cr.text_extents(tileno)
+    (text_ulx, text_uly, text_w, text_h, nextx, nexty) = cr.text_extents(tileno)
 
-    centerx = CANVAS_WIDTH/2
-    centery = CANVAS_HEIGHT/2
+#     # For centered text
+#     centerx = CANVAS_WIDTH/2
+#     centery = CANVAS_HEIGHT/2
+# 
+#     x = centerx - text_w/2 - text_ulx
+#     y = centery + text_h/2
 
-    x = centerx - w/2 - ULx
-    y = centery + h/2
+    # For left-justified
+    x = PORT_LENGTH + 0.5*text_h; y = PORT_LENGTH + 1.5*text_h
+
 
     # cr.set_source_rgb(1,0,0); drawdot(cr, centerx, centery, 'red'
-    # cr.set_source_rgb(0,0,1); drawdot(cr, x+ULx, y+ULy, 'blue')
+    # cr.set_source_rgb(0,0,1); drawdot(cr, x+text_ulx, y+text_uly, 'blue')
     # cr.set_source_rgb(1,0,1); drawdot(cr, x, y, 'purple')
 
     cr.move_to(x,y)
@@ -745,6 +750,37 @@ def drawtile(cr):
     cr.rectangle(ULx,ULy,  w, h) # ULx, ULy, width, height
     cr.stroke()
     cr.restore()
+
+def manhattan_connect(cr, xy1, xy2):
+    # Given two points (x1,y1) and (x2,y2) on tile edge, draw
+    # a manhattan connection through the interior of the tile.
+    # Put a dot at the corner when the wire turns (you'll thank me later)
+
+    x1 = xy1[0]; y1 = xy1[1]
+    x2 = xy2[0]; y2 = xy2[1]
+
+    # drawdot(cr,x1,y1,'red'); drawdot(cr,x2,y2,'red')
+
+    # Find internal join point
+    # x1 == +/- PORT_HEIGHT means x1 is an edge and x2 is interior
+    if   (x1 ==  PORT_HEIGHT): interior = (x2,y1)
+    elif (x1 == -PORT_HEIGHT): interior = (x2,y1)
+    else:                      interior = (x1,y2)
+
+    # Okay now connect the dots!  With a blue line.
+    # Put a blue dot at the corner.  You'll thank me later.
+    # TODO if (isbus): linewidth = 1 etc.
+    if (1):
+        cr.save()
+        setcolor(cr,'blue')
+        cr.set_line_width(.5)
+        drawdot(cr,interior[0],interior[1],'blue')
+        cr.move_to(x1,y1)
+        cr.line_to(interior[0],interior[1])
+        cr.line_to(x2,y2)
+        cr.stroke()
+        cr.restore()
+
 
 def connectwires(cr, connection):
 
@@ -766,51 +802,29 @@ def connectwires(cr, connection):
 
     # For now connections must be of the form "out_s0t0 <= in_s1t0"
     # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
+    # parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
+    # For connections of the form "out_s0t0 <= in_s1t0"
     parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
-    if (not parse):
+    if (parse):
+
+        w1 = parse.group(1); w2 = parse.group(2)
+
+        # Only draw non-ghost ports if connections exist.
+        drawport(cr, w1, options='reg');    drawport(cr, w2)
+
+        # TODO add a "if (DBG)" here maybe
+        if (DBG):
+            print "connection = " + connection
+            print "Connecting wires '%s' and '%s'\n" % (w1,w2)
+
+        # Draw a blue rectilinear line connecting w1 and w2 ports
+        manhattan_connect(cr, connectionpoint(w1), connectionpoint(w2))
+
+    else:
         print "ERROR Do not understand connection %s (yet)" % connection
         return;
 
 
-    w1 = parse.group(1); w2 = parse.group(2)
-
-    # Only draw non-ghost ports if connections exist.
-    drawport(cr, w1, options='reg');    drawport(cr, w2)
-
-    # TODO add a "if (DBG)" here maybe
-    if (DBG):
-        print "connection = " + connection
-        print "Connecting wires '%s' and '%s'\n" % (w1,w2)
-
-    # 1. Find internal join point of the two wires w1 and w2
-    # 1a. Find each wires connection point at tile's edge
-
-    ULrotpoint1 = connectionpoint(w1) # upper-left corner of enclosing box oriented to side 0
-    x1 = ULrotpoint1[0]; y1 = ULrotpoint1[1]
-
-    ULrotpoint2 = connectionpoint(w2) # upper-left corner of enclosing box oriented to side 0
-    x2 = ULrotpoint2[0]; y2 = ULrotpoint2[1]
-
-    # drawdot(cr,x1,y1,'red'); drawdot(cr,x2,y2,'red')
-
-    # x1 == +/- PORT_HEIGHT means x1 is an edge and x2 is interior
-    if   (x1 ==  PORT_HEIGHT): interior = (x2,y1)
-    elif (x1 == -PORT_HEIGHT): interior = (x2,y1)
-    else:                      interior = (x1,y2)
-
-    # Okay now connect the dots!  With a blue line.
-    # Put a blue dot at the corner.  You'll thank me later.
-    # TODO if (isbus): linewidth = 1 etc.
-    if (1):
-        cr.save()
-        setcolor(cr,'blue')
-        cr.set_line_width(.5)
-        drawdot(cr,interior[0],interior[1],'blue')
-        cr.move_to(x1,y1)
-        cr.line_to(interior[0],interior[1])
-        cr.line_to(x2,y2)
-        cr.stroke()
-        cr.restore()
 
 # FIXME/TODO Not used presently I think.  Do we keep it?
 def drawgrid(cr):
@@ -937,7 +951,7 @@ def draw_all_tiles(cr):
     cr.save()
     cr.translate(ARRAY_PAD, ARRAY_PAD)    # Whitespace margin at top and left
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
-    draw_big_ghost_arrows(cr)             # Big ghost arrows in background of grid
+    # draw_big_ghost_arrows(cr)             # Big ghost arrows in background of grid
                                           # view show general flow dir for tracks
     for tile in TILE_LIST: tile.draw(cr)  # Draw ALL the tiles
     cr.restore()
