@@ -515,6 +515,9 @@ def drawFU(cr, opname, **keywords):
     if ('regA' in keywords): regA = keywords['regA']
     if ('regB' in keywords): regB = keywords['regB']
 
+    inputs = True;
+    if ('inputs' in keywords): inputs = keywords['inputs']
+
 #     if (DBG):
 #         if (regA == None): print "No regA"
 #         else:              print "Found regA = '%s'" % str(regA)
@@ -534,7 +537,8 @@ def drawFU(cr, opname, **keywords):
     reg_height = 6 # for now, say
     reg_sep    = headlength+1 # Gap b/w reg and FU
 
-    arrowlength = reg_height+reg_sep+1
+    arrowlength = reg_height+reg_sep+2
+    arrowlength_out = headlength+2
     fill        = False
     # txt_linewidth = float(fu_linewidth)/2.0
     txt_linewidth = fu_linewidth
@@ -568,8 +572,21 @@ def drawFU(cr, opname, **keywords):
         cr.show_text(opname)
         cr.stroke()
 
-        # Input arrows at w/4 and 3w/4 across the top
+        # Output arrow at w/2 on bottom
         if (1):
+            cr.save()
+            cr.set_line_width(txt_linewidth)
+            global FU_OUTX; FU_OUTX = fu_ulx+fu_w/2
+            global FU_OUTY; FU_OUTY = fu_uly+fu_h+arrowlength_out
+            cr.translate(FU_OUTX,FU_OUTY-arrowlength_out)
+            cr.rotate(PI/2) # point DOWN
+            fill = False
+            draw_arrow(cr, arrowlength_out, headlength, headwidth, fill)
+            cr.stroke(); cr.restore()
+
+
+        # Input arrows at w/4 and 3w/4 across the top
+        if (inputs):
             cr.save()
             # setcolor(cr, 'red')
             # cr.set_line_width(txt_linewidth)
@@ -592,8 +609,8 @@ def drawFU(cr, opname, **keywords):
 #             cr.translate(fu_w/4, -arrowlength)
 
             cr.translate(FU_AX,FU_AY)
-
             cr.rotate(PI/2) # point DOWN
+            fill = False
             draw_arrow(cr, arrowlength, headlength, headwidth, fill)
             cr.stroke(); cr.restore()
 
@@ -777,11 +794,13 @@ def drawtile(cr):
     cr.restore()
 
 # E.g. ab_connect(cr, "in_s3t0", "wireA")
-def ab_connect(cr, inport_name, FU_input):
-    (x1,y1) = connectionpoint(inport_name)
+def ab_connect(cr, inport, FU_input):
+    (x1,y1) = connectionpoint(inport)
 
     if (FU_input == "wireA"): (x2,y2) = (FU_AX,FU_AY)
     else:                     (x2,y2) = (FU_BX,FU_BY)
+
+    drawport(cr, inport)
 
     # FIXME/TODO:
     # Parms (blue, .5 etc.) should be global and shared w/ manhattan_connect etc. below
@@ -795,13 +814,37 @@ def ab_connect(cr, inport_name, FU_input):
         cr.stroke()
         cr.restore()
 
-def manhattan_connect(cr, xy1, xy2):
+def pe_out_connect(cr, outport):
+    (x1,y1) = (FU_OUTX,FU_OUTY)
+    (x2,y2) = connectionpoint(outport)
+
+    drawport(cr, outport, options='reg');
+
+    # FIX<E/TODO should be shared w/other connect routines!
+    if (1):
+        cr.save()
+        setcolor(cr,'blue')
+        cr.set_line_width(.5)
+        drawdot(cr,x2,y2,'blue')
+        cr.move_to(x1,y1)
+        cr.line_to(x2,y2)
+        cr.stroke()
+        cr.restore()
+
+# def manhattan_connect(cr, xy1, xy2):
+def manhattan_connect(cr, outport, inport):
     # Given two points (x1,y1) and (x2,y2) on tile edge, draw
     # a manhattan connection through the interior of the tile.
     # Put a dot at the corner when the wire turns (you'll thank me later)
 
-    x1 = xy1[0]; y1 = xy1[1]
-    x2 = xy2[0]; y2 = xy2[1]
+#     x1 = xy1[0]; y1 = xy1[1]
+#     x2 = xy2[0]; y2 = xy2[1]
+
+    (x1,y1) = connectionpoint(outport)
+    (x2,y2) = connectionpoint(inport)
+
+    # Only draw non-ghost ports if connections exist.
+    drawport(cr, outport, options='reg');    drawport(cr, inport)
 
     # drawdot(cr,x1,y1,'red'); drawdot(cr,x2,y2,'red')
 
@@ -847,7 +890,6 @@ def connectwires(cr, connection):
     # For now connections must be of the form "out_s0t0 <= in_s1t0"
     # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
 
-
     # parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
     # For connections of the form "out_s0t0 <= in_s1t0"
     parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
@@ -855,27 +897,36 @@ def connectwires(cr, connection):
 
         w1 = parse.group(1); w2 = parse.group(2)
 
-        # Only draw non-ghost ports if connections exist.
-        drawport(cr, w1, options='reg');    drawport(cr, w2)
-
         # TODO add a "if (DBG)" here maybe
         if (DBG):
             print "connection = " + connection
             print "Connecting wires '%s' and '%s'\n" % (w1,w2)
 
         # Draw a blue rectilinear line connecting w1 and w2 ports
-        manhattan_connect(cr, connectionpoint(w1), connectionpoint(w2))
+        # manhattan_connect(cr, connectionpoint(w1), connectionpoint(w2))
+        manhattan_connect(cr, w1, w2)
         return;
 
     # For connections of the form "wireA <= in_s3t0"
     parse = re.search("(wire[AB]) .* (i[^ ]*)$", connection)
     if (parse):
-        DBG = 1;
+        DBG = 0;
         if (DBG): print "Found valid connection %s" % connection
         fu_in = parse.group(1); tile_in = parse.group(2)
         ab_connect(cr, tile_in, fu_in);
         return;
         
+    # FIXME/TODO one parse to rule them all!
+    # For connections of the form "out_s1t0 <= pe_out"
+    parse = re.search("^(o[^ ]*) .* pe_out$", connection)
+    if (parse):
+        DBG = 0;
+        if (DBG): print "Found valid connection %s" % connection
+        fu_out = parse.group(1);
+        pe_out_connect(cr, fu_out)
+        return;
+
+
 
     else:
         print "ERROR Do not understand connection %s (yet)" % connection
@@ -1127,6 +1178,7 @@ class Tile:
 #     self.connectionlist = []
 
     def __init__(self, tileno):
+        self.label  = "" # E.g. "ADD", "MUL", "I/O"
         self.tileno = tileno
         # self.row = int(tileno % GRID_HEIGHT)
         # self.col = int(tileno / GRID_WIDTH)
@@ -1153,9 +1205,11 @@ class Tile:
 
         drawtileno(cr, self.tileno)
         # drawFU(cr, "ADD", regA=2)
-        if (self.col==0): drawFU(cr, "ADD", regA=2, regB=0)
-        if (self.col==1): drawFU(cr, "ADD", regA=2)
-        if (self.col==2): drawFU(cr, "ADD")
+        if (self.label != ""): drawFU(cr, self.label, inputs=False)
+        else:
+            if (self.col==0): drawFU(cr, "ADD", regA=2, regB=0)
+            if (self.col==1): drawFU(cr, "ADD", regA=2)
+            if (self.col==2): drawFU(cr, "ADD")
 
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
@@ -1280,8 +1334,12 @@ if (1):
         if (DBG>1): print line.rstrip()
         # Search each line for connections
 
-        # Ignore hacks for now at least
-        if (re.search("HACK", line)): continue
+        # HACK means label this tile as IO
+        if (re.search("HACK", line)):
+            tile[tileno].label = "I/O"
+            continue
+
+
 
         # foundtileno = re.search("^TILE *([0-9]*)", line)
         # I guess python uses '\A' instead of '^' :(
