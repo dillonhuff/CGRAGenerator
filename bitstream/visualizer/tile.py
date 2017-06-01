@@ -72,6 +72,8 @@ ZOOMTILE = -1;
 #     <-RW->
 
 PORT_WIDTH  = 8;
+# PORT_WIDTH  = 6;
+
 PORT_HEIGHT = 16;
 PORT_LENGTH = PORT_HEIGHT # Because sometimes I forget
 
@@ -90,8 +92,12 @@ ARRAY_PAD = 60
 #     Canvas height = 2*plen + 2*ntracks_h*pwid + 3*pwid
 #   where each port is an arrow in a box that's portlength long and portwidth wide
 #   and ntracks_v = ntracks_bus_v + ntracks_wire_v etc.
-CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
-CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
+# CANVAS_WIDTH  = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
+# CANVAS_HEIGHT = 2*PORT_HEIGHT + 2*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
+
+CANVAS_WIDTH  = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
+CANVAS_HEIGHT = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
+
 
 WIN_WIDTH  = 4*CANVAS_WIDTH+2*ARRAY_PAD
 WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
@@ -552,6 +558,28 @@ def draw_pe(cr, opname, A, B):
     # txt_linewidth = float(pe_linewidth)/2.0
     txt_linewidth = pe_linewidth
 
+    # pe_ulx = -w/2; pe_uly = -h/2
+    centerx = CANVAS_WIDTH/2
+    centery = CANVAS_HEIGHT/2
+    pe_ulx = centerx - pe_w/2
+    pe_uly = centery - pe_h/2
+
+    global PE_OUTX; PE_OUTX = pe_ulx+pe_w/2
+    global PE_OUTY; PE_OUTY = pe_uly+pe_h+arrowlength_out
+
+
+    # FIXME this is terrible; breaks if connections happen before PE draw
+    # A fix would be to do a setup_pe() call that initializes globals
+    # Another fix would be to set up the globals at the beginning
+    global PE_AX; PE_AX = pe_ulx+pe_w/4
+    global PE_AY; PE_AY = pe_uly-arrowlength
+
+    global PE_BX; PE_BX = pe_ulx+3*pe_w/4
+    global PE_BY; PE_BY = pe_uly-arrowlength
+
+    # Egregious hack
+    if (opname == "setup_only"): return
+
     if (1):
         cr.save()
         # Put a big PE in the middle of the tile, with A and B inputs,
@@ -560,12 +588,6 @@ def draw_pe(cr, opname, A, B):
         # Draw the main PE
         setcolor(cr, "black")
         cr.set_line_width(pe_linewidth)
-
-        # pe_ulx = -w/2; pe_uly = -h/2
-        centerx = CANVAS_WIDTH/2
-        centery = CANVAS_HEIGHT/2
-        pe_ulx = centerx - pe_w/2
-        pe_uly = centery - pe_h/2
 
         cr.rectangle(pe_ulx,pe_uly,  pe_w, pe_h) # pe_ulx, pe_uly, width, height
 
@@ -583,8 +605,7 @@ def draw_pe(cr, opname, A, B):
         cr.show_text(opname)
         cr.stroke()
 
-        global PE_OUTX; PE_OUTX = pe_ulx+pe_w/2
-        global PE_OUTY; PE_OUTY = pe_uly+pe_h+arrowlength_out
+
 
 
         # Output arrow at w/2 on bottom
@@ -596,16 +617,6 @@ def draw_pe(cr, opname, A, B):
             fill = False
             draw_arrow(cr, arrowlength_out, headlength, headwidth, fill)
             cr.stroke(); cr.restore()
-
-
-        # FIXME this is terrible; breaks if connections happen before PE draw
-        # A fix would be to do a setup_pe() call that initializes globals
-        # Another fix would be to set up the globals at the beginning
-        global PE_AX; PE_AX = pe_ulx+pe_w/4
-        global PE_AY; PE_AY = pe_uly-arrowlength
-
-        global PE_BX; PE_BX = pe_ulx+3*pe_w/4
-        global PE_BY; PE_BY = pe_uly-arrowlength
 
 
         # Input arrows at w/4 and 3w/4 across the top
@@ -811,8 +822,20 @@ def pe_out_connect(cr, outport):
         cr.stroke()
         cr.restore()
 
+
 # def manhattan_connect(cr, xy1, xy2):
 def manhattan_connect(cr, outport, inport):
+
+
+    # BACKWARDS: outport="out_s2t0" inport="in_s3t0"
+
+
+#     cr.save()
+#     (x,y) = connectionpoint("out_s2t0")
+#     drawdot(cr,x,y,'red')
+#     cr.stroke(); cr.restore()
+
+
     # Given two points (x1,y1) and (x2,y2) on tile edge, draw
     # a manhattan connection through the interior of the tile.
     # Put a dot at the corner when the wire turns (you'll thank me later)
@@ -834,6 +857,51 @@ def manhattan_connect(cr, outport, inport):
     elif (x1 == -PORT_HEIGHT): interior = (x2,y1)
     else:                      interior = (x1,y2)
 
+    # Maybe it works better if join point goes a little bit in toward the
+    # two respective incoming sides
+    
+    k=2
+    sx1 = k*x1/abs(x1) # sign(x1)
+    sx2 = k*x2/abs(x2) # sign(x2)
+
+    sy1 = k*y1/(y1) # sign(y1)
+    sy2 = k*y2/(y2) # sign(y2)
+
+    if   (abs(x1) ==  PORT_HEIGHT): interior = (x2-sx1,y1+sy2)
+    else:                           interior = (x1-sx2,y2-sy1)
+
+    (join_x,join_y) = (0,0)
+
+    k=PORT_WIDTH/3.0
+    l_edge = PORT_HEIGHT
+    r_edge = CANVAS_WIDTH-PORT_HEIGHT
+    t_edge = PORT_HEIGHT
+    b_edge = CANVAS_HEIGHT-PORT_HEIGHT
+    if   (x1 == x2):     join_x = x1
+    elif (x1 == l_edge): join_x = x2-k
+    elif (x1 == r_edge): join_x = x2+k
+    elif (x2 == l_edge): join_x = x1-k
+    elif (x2 == r_edge): join_x = x1+k
+
+    if   (y1 == y2):     join_y = y1
+    elif (y1 == t_edge): join_y = y2-k
+    elif (y1 == b_edge): join_y = y2+k
+    elif (y2 == t_edge): join_y = y1-k
+    elif (y2 == b_edge): join_y = y1+k
+
+    interior = (join_x,join_y)
+
+#     y = interior[1]
+# 
+#     interior = (
+#         min(x1,x2) + abs(x2-x1),
+#         min(y1,y2) + abs(y2-y1)
+#         )
+# 
+#     if ( abs(x) == PORT_HEIGHT ): 
+
+
+
     # Okay now connect the dots!  With a blue line.
     # Put a blue dot at the corner.  You'll thank me later.
     # TODO if (isbus): linewidth = 1 etc.
@@ -841,7 +909,7 @@ def manhattan_connect(cr, outport, inport):
         cr.save()
         setcolor(cr,'blue')
         cr.set_line_width(.5)
-        drawdot(cr,interior[0],interior[1],'blue')
+        # drawdot(cr,interior[0],interior[1],'blue')
         cr.move_to(x1,y1)
         cr.line_to(interior[0],interior[1])
         cr.line_to(x2,y2)
@@ -883,7 +951,7 @@ def connectwires(cr, connection):
     connection = connection.strip() # Eliminate leading/trailing space
 
     # parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
-    parse = re.search("^(.*) .* (.*)$", connection)
+    parse = re.search("^([^ ]*) .* ([^ ]*)$", connection)
     pto = parse.group(1); pfrom = parse.group(2)
 
     # connection type will be one of "port" "pe_in" "pe_out" "const"
@@ -895,18 +963,19 @@ def connectwires(cr, connection):
 
     # For connections of the form "out_s0t0 <= in_s1t0"
     if (to_type == "port" and from_type == "port"):
+        DBG=1
         w1 = pto; w2 = pfrom
         if (DBG):
             print "connection = " + connection
             print "Connecting wires '%s' and '%s'\n" % (w1,w2)
 
         # Draw a blue rectilinear line connecting w1 and w2 ports
-        manhattan_connect(cr, w1, w2)
+        manhattan_connect(cr, pto, pfrom)
         return;
 
     # For connections of the form "wireA <= in_s3t0"
     if (to_type == "pe_in" and from_type == "port"):
-        DBG=1
+        DBG=0
         if (DBG): print "Found valid connection %s" % connection
         if (DBG): print "Connecting port '%s' to pe_in '%s'" % (pfrom,pto)
         ab_connect(cr, pfrom, pto)
@@ -1213,23 +1282,18 @@ class Tile:
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
         # note draw_pe MUST HAPPEN BEFORE CALLING connectwires()
-        # draw_pe() sets up join opints for PE inputs
+        # draw_pe() sets up join points for PE inputs
+
+        draw_pe(cr, "setup_only", None, None)
 
         drawtileno(cr, self.tileno)
         # draw_pe(cr, "ADD", regA=2)
         if (self.label != ""): draw_pe(cr, self.label, None, None)
-        else:
-#             if (self.col==0): draw_pe(cr, "ADD", "0x00002", "0x0000")
-#             if (self.col==1): draw_pe(cr, "ADD", "0x00002", "wireB")
-            if (self.col==2): draw_pe(cr, "ADDYO DADDY", "wireA", "wireB")
-            if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
-
 #         else:
-#             if (self.col==0): draw_pe(cr, "ADD", regA=2, regB=0)
-#             if (self.col==1): draw_pe(cr, "ADD", regA=2)
-#             if (self.col==2): draw_pe(cr, "ADDYO DADDY")
-
-
+# #             if (self.col==0): draw_pe(cr, "ADD", "0x00002", "0x0000")
+# #             if (self.col==1): draw_pe(cr, "ADD", "0x00002", "wireB")
+#             if (self.col==2): draw_pe(cr, "ADDYO DADDY", "wireA", "wireB")
+#             if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
 
         draw_all_ports(cr)
         for c in self.connectionlist: connectwires(cr, c)
@@ -1329,8 +1393,10 @@ if (1):
     # Open a channel to the example decoded bitstream
     # filename = sys.argv[1];
     # filename = args[0];
-    filename = "./examples/calebscript.bs-decoded"
+    filename = "./examples/an2.bs"
     filename = "./examples/bs.caleb-jimmied"
+    filename = "./examples/calebscript.bs-decoded"
+    filename = "./examples/an2-jimmied.bs"
 
     # call(["ls", "-l", "examples"]) # exec/run/shell
 
@@ -1391,8 +1457,10 @@ if (1):
     inputstream.close()
 
     build_and_launch_main_window()
-    sys.exit(0)
+    # sys.exit(0)
 
+
+scenario = "demo2"
 
 if (scenario == "demo1"):
 
