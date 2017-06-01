@@ -688,7 +688,8 @@ def draw_pe(cr, opname, A, B):
         if (1):
             cr.save()
             setcolor(cr, 'black')
-            cr.set_line_width(.2)
+            # cr.set_line_width(.2)
+            cr.set_line_width(pe_linewidth)
             cr.translate(reg_ulx,reg_uly)
             drawreg(cr, reg_width,reg_height) # pretty sure this does the stroke too
             cr.restore()
@@ -698,6 +699,7 @@ def draw_pe(cr, opname, A, B):
             cr.save()
             setcolor(cr, 'black')
             font_size = 0.8*reg_height
+            font_size = 0.9*reg_height
 
             # FIXME Assumes all constants are of the form "0x0002" else breaks
             label = ''
@@ -708,7 +710,7 @@ def draw_pe(cr, opname, A, B):
             cr.set_font_size(font_size)
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
             (text_ulx, text_uly, text_w, text_h, nextx, nexty) = cr.text_extents(label)
-            print "fs=%f" % font_size
+            # print "fs=%f" % font_size
 
             # font_size more reliable than text_extents for textbox height!
             # text_extents("2") yields height=4, text_extents("0") gives 5(!!)
@@ -965,7 +967,7 @@ def connectwires(cr, connection):
 
     # For connections of the form "out_s0t0 <= in_s1t0"
     if (to_type == "port" and from_type == "port"):
-        DBG=1
+        DBG=0
         w1 = pto; w2 = pfrom
         if (DBG):
             print "connection = " + connection
@@ -1138,6 +1140,7 @@ def draw_all_tiles(cr):
     SCALE_FACTOR = 1
     if (GRID_WIDTH <= 2): SCALE_FACTOR = 2 # Why squint if you don't need to?
 
+    print
     print "Draw all tiles!"
     cr.save()
     cr.translate(ARRAY_PAD, ARRAY_PAD)    # Whitespace margin at top and left
@@ -1190,6 +1193,8 @@ class CGRAWin(Gtk.Window):
             width_request = WIN_WIDTH,  \
             height_request= WIN_HEIGHT  \
         )            
+
+        global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 
         self.da = Gtk.DrawingArea()
         self.add(self.da)
@@ -1309,13 +1314,18 @@ class Tile:
             % (GRID_WIDTH, GRID_HEIGHT)
 
 # Set up the main window and connect to callback routine that draws everything.
-def build_and_launch_main_window():
+def build_and_launch_main_window(title):
     DBG=1;
+    print "------------------------------------------------------------------------"
+    print title
+    print "------------------------------------------------------------------------"
     win = CGRAWin();
+    win.props.title = title
     if (DBG): win.move(0,0) # put window at top left corner of screen
     if (DBG>=2): print dir(win.props)
     win.show_all()
     Gtk.main()
+    print "------------------------------------------------------------------------"
 
 def demo_connections_2x2():
 
@@ -1379,47 +1389,12 @@ def initialize_tile_list(w, h):
     for i in TILE_LIST: TILE_LIST[i] = Tile(i)
     # return TILE_LIST
 
-##############################################################################
-# Actual runcode starts here!  (FINALLY)
-
-scenario = "demo2"
-
-if (1):
+def process_decoded_bitstream(bs):
     DBG=1
-
-    # Open a channel to the example decoded bitstream
-    # filename = sys.argv[1];
-    # filename = args[0];
-    filename = "./examples/an2.bs-decoded"
-    filename = "./examples/cd-jimmied.bs-decoded"
-    filename = "./examples/cd.bs-decoded"
-    filename = "./examples/an2-jimmied.bs-decoded"
-
-    # call(["ls", "-l", "examples"]) # exec/run/shell
-
-    if DBG: print "Using", filename, "as input";
-
-    scriptname = sys.argv[0];
-    args = sys.argv[1:];
-
-    try:
-        # filename = sys.argv[1];
-        inputstream = open(filename);
-    except IOError:
-        # TODO/FIXME yeah these were copies from somewhere else obviously
-        print ""
-        print "Cannot find processor bitstream file '%s'.  Usage:" % filename;
-        print "  ", scriptname, "[-debug] <procfile.csv.in> > <procfile.csv.out>"
-        print "\nExample:"
-        print "  alias dbcheck", scriptname;
-        print "  set pfile = /nobackup/steveri/github/cpu-db/data/processors.csv"
-        # print "  dbcheck $pfile > /tmp/processors.csv.%d" % +os.getpid()
-        sys.exit(-1);
-
     initialize_tile_list(4,4)
     tile = TILE_LIST; # A convenient handle
 
-    for line in inputstream:
+    for line in bs:
         if (DBG>1): print line.rstrip()
         # Search each line for connections
 
@@ -1427,8 +1402,6 @@ if (1):
         if (re.search("HACK", line)):
             tile[tileno].label = "I/O"
             continue
-
-
 
         # foundtileno = re.search("^TILE *([0-9]*)", line)
         # I guess python uses '\A' instead of '^' :(
@@ -1456,15 +1429,37 @@ if (1):
             else:
                 break;
 
-    inputstream.close()
+##############################################################################
+# Actual runcode starts here!  (FINALLY)
 
-    build_and_launch_main_window()
-    # sys.exit(0)
+def display_decoded_bitstream_file(filename):
+    DBG=1
+    # call(["ls", "-l", "examples"]) # exec/run/shell
 
+    if DBG: print "Using", filename, "as input";
 
-scenario = "demo2"
+    scriptname = sys.argv[0];
+    args = sys.argv[1:];
 
-if (scenario == "demo1"):
+    try:
+        # filename = sys.argv[1];
+        inputstream = open(filename);
+        process_decoded_bitstream(inputstream)
+        inputstream.close()
+        build_and_launch_main_window(filename)
+    except IOError:
+        # TODO/FIXME yeah these were copies from somewhere else obviously
+        print ""
+        print "Cannot find processor bitstream file '%s'.  Usage:" % filename;
+        print "  ", scriptname, "[-debug] <procfile.csv.in> > <procfile.csv.out>"
+        print "\nExample:"
+        print "  alias dbcheck", scriptname;
+        print "  set pfile = /nobackup/steveri/github/cpu-db/data/processors.csv"
+        # print "  dbcheck $pfile > /tmp/processors.csv.%d" % +os.getpid()
+        sys.exit(-1);
+
+def demo_sb_2x2():
+    # Simple 2x2 array with a few switchbox connections
 
     # Initialize a 2x2 tile array
     initialize_tile_list(2,2)
@@ -1474,23 +1469,129 @@ if (scenario == "demo1"):
 
     # Set up the main window and connect to callback routine that draws everything.
     # Currently builds a window such that 2x2 grid fits in window at 2x scale
-    build_and_launch_main_window()
+    title = func_name(); 
+    build_and_launch_main_window(title)
 
+def demo_sb_4x4():
+    # Simple 4x4 array with a few switchbox connections
 
-    # TBD: demo2 builds sample connections for a 4x4 grid at 1x scale (demo1 was 2x)
+    # TBD: demo_sb_4x4 builds sample connections for a 4x4 grid at 1x scale (demo_sb_2x2 was 2x)
 
-
-if (scenario == "demo2"):
-
-    # Initialize 4x4 tile array
-    initialize_tile_list(4,4)
+    initialize_tile_list(4,4)    # Initialize 4x4 tile array
 
     # Demo 2 makes same connections as 2x2 except in a 4x4 grid now
     demo_connections_4x4()
 
     # Set up the main window and connect to callback routine that draws everything.
     # Currently builds a window such that 2x2 grid fits in window at 2x scale
-    build_and_launch_main_window()
+    title = func_name(); 
+    build_and_launch_main_window(title)
+
+def func_name():
+    import traceback
+    return traceback.extract_stack(None, 2)[0][2]
+
+def demo_cd_jimmied():
+    DBG=0
+
+    # print func_name(); sys.exit(0)
+
+    initialize_tile_list(4,4)  # Initialize 4x4 tile array
+    example = '''
+                        TILE 0 (0,0)
+00050000 00000C00 [sb1] out_s1t0 <= pe_out
+F0000000 FFFFFFFF [pe ] IO HACK: regA <= 0xFFFF
+F1000000 FFFFFFFF [pe ] IO HACK: regB <= 0xFFFF
+FF000000 000000F0 [pe ] IO HACK: pe_out is CGRA INPUT 
+
+                        TILE 1 (1,0)
+00020001 00000005 [cb1] wireA <= in_s3t0
+00030001 00000000 [cb2] wireB <= in_s0t0
+00050001 00000C00 [sb1] out_s1t0 <= pe_out
+FF000001 0000A00B [pe ] pe_out <= MUL(wireA,wireB) 
+
+                        TILE 2 (2,0)
+00020002 00000005 [cb1] wireA <= in_s3t0
+F1000002 FFFFFFFF [pe ] IO HACK: regB <= 0xFFFF
+FF000002 000000FF [pe ] IO HACK: pe_in_a (wireA) is CGRA OUTPUT 
+
+                        TILE 5 (1,1)
+00050005 00300000 [sb1] out_s2t0 <= pe_out 
+F0000005 00000002 [pe ] regA <= 0x0002
+F1000005 00000000 [pe ] regB <= 0x0000
+FF000005 00000000 [pe ] pe_out <= ADD(0x0002,0x0000) 
+'''
+    if (DBG): print example
+    example = example.split('\n')
+    process_decoded_bitstream(example)
+    title = func_name(); 
+    build_and_launch_main_window(title)
+
+
+def demo_an2_jimmied():
+    DBG=0
+
+    # print func_name(); sys.exit(0)
+
+    initialize_tile_list(4,4)  # Initialize 4x4 tile array
+    example = '''
+                        TILE 4 (0,1)
+00020004 00000000 [cb1] wireA <= in_s1t0
+FF000004 00000000 [pe ] pe_out <= ADD(regA,regB)
+
+                        TILE 5 (1,1)
+00050005 00000000 [sb1] out_s3t0 <= in_s0t0
+
+                        TILE 8 (0,2)
+00020008 00000000 [cb1] wireA <= in_s1t0
+00030008 00000000 [cb2] wireB <= in_s0t0
+FF000008 0000F00B [pe ] pe_out <= MUL(wireA,wireB)
+00050008 00000C00 [sb1] out_s1t0 <= pe_out
+
+                        TILE 9 (1,2)
+FF000009 00000000 [pe ] pe_out <= ADD(0x0002,0x0000)
+F0000009 00000002 [pe ] regA <= 0x0002
+F1000009 00000000 [pe ] regB <= 0x0000
+00050009 00200003 [sb1] out_s0t0 <= pe_out     out_s3t0 <= in_s0t0
+                        out_s2t0 <= in_s3t0
+
+                        TILE 12 (0,3)
+0005000C 00100C00 [sb1] out_s1t0 <= pe_out     out_s2t0 <= in_s1t0
+FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
+
+                        TILE 13 (1,3)
+0005000D 80200000 [sb1] out_s2t0 <= in_s3t0    out_s3t0 <= in_s2t0
+'''
+    if (DBG): print example
+    example = example.split('\n')
+    process_decoded_bitstream(example)
+    title = func_name(); 
+    build_and_launch_main_window(title)
+
+
+if (0):
+    # Open a channel to the example decoded bitstream
+    # filename = sys.argv[1];
+    # filename = args[0];
+    filename = "./examples/an2.bs-decoded"
+    filename = "./examples/cd.bs-decoded"
+    display_decoded_bitstream_file("./examples/cd-jimmied.bs-decoded")
+    display_decoded_bitstream_file("./examples/an2-jimmied.bs-decoded")
+
+
+demo_cd_jimmied()
+demo_an2_jimmied()
+demo_sb_4x4()
+demo_sb_2x2()
+
+# scenario = ["demo_sb_4x4","demo_sb_2x2"]
+# 
+# # Simple 4x4 array with a few switchbox connections
+# if ("demo_sb_4x4" in scenario): demo_sb_4x4()
+# 
+# # Simple 2x2 array with a few switchbox connections
+# if ("demo_sb_2x2" in scenario): demo_sb_2x2()
+# 
 
 
 
