@@ -10,6 +10,8 @@ import cairo
 
 from subprocess import call
 
+
+
 #TODO
 # Put PE in each tile and connections to/from PE
 
@@ -1385,22 +1387,21 @@ scenario = "demo2"
 if (1):
     DBG=1
 
-    initialize_tile_list(4,4)
-
-    scriptname = sys.argv[0];
-    args = sys.argv[1:];
-
     # Open a channel to the example decoded bitstream
     # filename = sys.argv[1];
     # filename = args[0];
-    filename = "./examples/an2.bs"
-    filename = "./examples/bs.caleb-jimmied"
-    filename = "./examples/calebscript.bs-decoded"
-    filename = "./examples/an2-jimmied.bs"
+    filename = "./examples/an2.bs-decoded"
+    filename = "./examples/cd-jimmied.bs-decoded"
+    filename = "./examples/cd.bs-decoded"
+    filename = "./examples/an2-jimmied.bs-decoded"
 
     # call(["ls", "-l", "examples"]) # exec/run/shell
 
     if DBG: print "Using", filename, "as input";
+
+    scriptname = sys.argv[0];
+    args = sys.argv[1:];
+
     try:
         # filename = sys.argv[1];
         inputstream = open(filename);
@@ -1415,6 +1416,7 @@ if (1):
         # print "  dbcheck $pfile > /tmp/processors.csv.%d" % +os.getpid()
         sys.exit(-1);
 
+    initialize_tile_list(4,4)
     tile = TILE_LIST; # A convenient handle
 
     for line in inputstream:
