@@ -370,8 +370,12 @@ echo '  First prepare input and output files...'
       $out \
       $trace \
       $nclocks \
+      | tee /tmp/run.log.$$ \
       || exit -1
   unset echo >& /dev/null
+
+  grep FAIL /tmp/run.log.$$ && exit -1
+
 
   echo
   echo "# Show output vs. input; output should be 2x input for most common testbench"
