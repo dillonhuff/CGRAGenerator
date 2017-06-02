@@ -47,8 +47,18 @@ setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
 cd hardware/generator_z/top
 if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
 
+echo "WARNING! TEMPORARY HACK TO USE OLD MEM TILES!"
+
+# TEMPORARY HACK FOR BAD MEMTILE
+set run = run.csh
+set run = run_oldmemtile.csh
+
 which Genesis2.pl
-./run.csh || exit -1
+echo ""
+echo "$run looks like this:"
+cat $run
+echo ""
+./$run || exit -1
 
 
 ##############################################################################
