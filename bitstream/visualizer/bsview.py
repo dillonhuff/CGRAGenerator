@@ -1584,6 +1584,8 @@ demo_an2_jimmied()
 demo_sb_4x4()
 demo_sb_2x2()
 
+display_decoded_bitstream_file("./examples/m1-output.bs-decoded")
+
 # scenario = ["demo_sb_4x4","demo_sb_2x2"]
 # 
 # # Simple 4x4 array with a few switchbox connections
