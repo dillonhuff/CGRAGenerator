@@ -34,6 +34,33 @@ endif
 
 cp $vtop /tmp/top.v.orig
 
+set DBG
+echo difffff
+
+# UH OH what if wire already exists as a port!!?
+foreach port ($inwires $outwires)
+  egrep input'.*'$port $vtop > /dev/null && set OHNO
+  if ($?OHNO) then
+    echo "OHNO!  '$port' already defined!"
+
+    # 1. delete existing port from module paren parms
+    # 2. delete existing (input) port declaration
+
+    # DELETE
+    #    "wire_m1_1_BUS16_S1_T0,"
+    #    "  input [15:0] wire_m1_1_BUS16_S1_T0;"
+    # BUT NOT
+    #    "      .in_BUS16_S3_T0(wire_m1_1_BUS16_S1_T0),"
+    sed "/${port}[^)]*"'$/d' $vtop > /tmp/tmp
+    mv /tmp/tmp $vtop;
+    if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+    if ($?DBG) echo "------------------------------------------------------"
+
+
+  endif
+end
+
+
 # // VERILATOR_PORT1,2,3...
 # Build ports for verilator input and output signals
 set i = 0; echo "  Adding ports for verilator inputs and outputs..."
@@ -42,7 +69,14 @@ foreach port ($inwires $outwires)
   echo "    $port..."; mv /tmp/tmp $vtop; @ i = $i + 1
 end
 echo
-# diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+if ($?DBG) echo "------------------------------------------------------"
+#     < // VERILATOR_PORT0
+#     < // VERILATOR_PORT1
+#     ---
+#     > wire_1_0_BUS16_S1_T1, // VERILATOR_PORT0
+#     > wire_m1_1_BUS16_S1_T0, // VERILATOR_PORT1
+
 
 # // VERILATOR_IN1,2,3...
 # Declare verilator input signals...
@@ -52,7 +86,10 @@ foreach wirename ($inwires)
   echo "    $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
 end
 echo
-# diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+if ($?DBG) echo "------------------------------------------------------"
+
+
 
 # // VERILATOR_OUT1,2,3...
 # Declare verilator output signals...
