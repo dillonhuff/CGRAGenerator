@@ -18,7 +18,8 @@
 # DEFAULTS
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
-set config    = ../../bitstream/examples/calebscript.bs
+# set config    = ../../bitstream/examples/calebscript.bs
+set config    = ../../bitstream/examples/cd.bs
 set input     = io/gray_small.png
 set output    = /tmp/output.raw
 set nclocks   = "1M"
