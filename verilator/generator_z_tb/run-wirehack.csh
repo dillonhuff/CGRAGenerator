@@ -38,19 +38,19 @@ set DBG
 echo difffff
 
 # UH OH what if wire already exists as a port!!?
+# Ans: delete port info and continue as before
 foreach port ($inwires $outwires)
   egrep input'.*'$port $vtop > /dev/null && set OHNO
   if ($?OHNO) then
     echo "OHNO!  '$port' already defined!"
 
-    # 1. delete existing port from module paren parms
-    # 2. delete existing (input) port declaration
-
-    # DELETE
-    #    "wire_m1_1_BUS16_S1_T0,"
+    # DELETE input port and declaration
+    #    "wire_m1_1_BUS16_S1_T0,"                  (in module paren parms)
     #    "  input [15:0] wire_m1_1_BUS16_S1_T0;"
-    # BUT NOT
+    # 
+    # BUT NOT connection
     #    "      .in_BUS16_S3_T0(wire_m1_1_BUS16_S1_T0),"
+    # 
     sed "/${port}[^)]*"'$/d' $vtop > /tmp/tmp
     mv /tmp/tmp $vtop;
     if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
