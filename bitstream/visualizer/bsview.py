@@ -1438,11 +1438,7 @@ def display_decoded_bitstream_file(filename):
 
     if DBG: print "Using", filename, "as input";
 
-    scriptname = sys.argv[0];
-    args = sys.argv[1:];
-
     try:
-        # filename = sys.argv[1];
         inputstream = open(filename);
         process_decoded_bitstream(inputstream)
         inputstream.close()
@@ -1450,12 +1446,8 @@ def display_decoded_bitstream_file(filename):
     except IOError:
         # TODO/FIXME yeah these were copies from somewhere else obviously
         print ""
-        print "Cannot find processor bitstream file '%s'.  Usage:" % filename;
-        print "  ", scriptname, "[-debug] <procfile.csv.in> > <procfile.csv.out>"
-        print "\nExample:"
-        print "  alias dbcheck", scriptname;
-        print "  set pfile = /nobackup/steveri/github/cpu-db/data/processors.csv"
-        # print "  dbcheck $pfile > /tmp/processors.csv.%d" % +os.getpid()
+        print "ERROR Cannot find processor bitstream file '%s'" % filename
+        print main.__doc__
         sys.exit(-1);
 
 def demo_sb_2x2():
@@ -1568,23 +1560,54 @@ FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
     title = func_name(); 
     build_and_launch_main_window(title)
 
+def do_demos():
+    demo_cd_jimmied()
+    demo_an2_jimmied()
+    demo_sb_4x4()
+    demo_sb_2x2()
+    if (0):
+        # Open a channel to the example decoded bitstream
+        # filename = sys.argv[1];
+        # filename = args[0];
+        filename = "./examples/an2.bs-decoded"
+        filename = "./examples/cd.bs-decoded"
+        display_decoded_bitstream_file("./examples/cd-jimmied.bs-decoded")
+        display_decoded_bitstream_file("./examples/an2-jimmied.bs-decoded")
+    sys.exit(0)
 
-if (0):
-    # Open a channel to the example decoded bitstream
-    # filename = sys.argv[1];
-    # filename = args[0];
-    filename = "./examples/an2.bs-decoded"
-    filename = "./examples/cd.bs-decoded"
-    display_decoded_bitstream_file("./examples/cd-jimmied.bs-decoded")
-    display_decoded_bitstream_file("./examples/an2-jimmied.bs-decoded")
+
+def main():
+    '''
+    Usage:
+        bsview.py <b1.bs-decoded> <b2.bs-decoded> ...   # Displays decoded bitstreams b1, b2, ...
+        bsview.py -demo                                 # Runs through a couple built-in demos
+        bsview.py --help                                # Displays this help message
+    ''' 
+
+    print sys.argv
+
+    if (len(sys.argv) == 1):      do_demos()
+    if (sys.argv[1] ==  "-demo"): do_demos()
+    if (sys.argv[1] == "--help"): print main.__doc__
+
+    for bs in sys.argv[1:]:
+        display_decoded_bitstream_file(bs)
+
+    sys.exit(0)
 
 
-demo_cd_jimmied()
-demo_an2_jimmied()
-demo_sb_4x4()
-demo_sb_2x2()
 
-display_decoded_bitstream_file("./examples/m1-output.bs-decoded")
+    do_demos()
+    display_decoded_bitstream_file("./examples/m1-output.bs-decoded")
+
+    # No args => run the demo
+    # --help  => show usage examples
+    # other args => run throu
+
+
+
+main()
+
 
 # scenario = ["demo_sb_4x4","demo_sb_2x2"]
 # 
