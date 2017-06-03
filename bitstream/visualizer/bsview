@@ -44,7 +44,7 @@ foreach bs ($argv)
   
   echo
   echo "After:"
-  $BSVIEW_HOME/../decoder/decode.py $bs | tee $bsdecoded
+  $BSVIEW_HOME/../decoder/decode.py -nodefaults $bs | tee $bsdecoded
 
   echo "Decoded output is here: $bsdecoded"
 

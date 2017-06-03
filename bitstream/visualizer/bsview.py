@@ -12,6 +12,10 @@ from subprocess import call
 
 
 
+
+
+
+
 #TODO
 # Put PE in each tile and connections to/from PE
 
@@ -32,7 +36,7 @@ TILE_LIST = range(0, NTILES)
 
 # tileno-to-RC conversion
 def tileno2rc(tileno): return (tileno % GRID_HEIGHT, int(tileno / GRID_WIDTH))
-def rc2tileno(x,y):    return GRID_WIDTH*col + row
+def rc2tileno(row,col):    return GRID_WIDTH*col + row
 
 # A really dumb way to keep track of current scale factor, for
 # button-press events
@@ -1314,8 +1318,47 @@ class Tile:
         print "I live in a grid that is %s tiles high and %s tiles wide"\
             % (GRID_WIDTH, GRID_HEIGHT)
 
+def connect_missing_wires():
+    # Each input connection must have matching output and maybe that will suffice
+    print "------------------------------------------------------------------------------"
+    print "CONNECT MISSING WIRES"
+    for T in TILE_LIST:
+        for c in T.connectionlist:
+            print "found connection %s" % c
+            parse = re.search("(in_s\d+t\d+)", c)
+            if (parse):
+                w = parse.group(1)
+                print "connects to input wire '%s'" % w
+#                 print "tile number %d?" % T.tileno
+                (mT,mw) = find_matching_wire(T.tileno, w)
+                print mT
+                print TILE_LIST[mT].connectionlist
+                found_matching_connection = False
+                for mc in TILE_LIST[mT].connectionlist:
+                    print "  looking for %s in %s" % (mw, mc)
+                    if (re.search(mw,mc)):
+                        found_matching_connection = True
+                        print "Found a match for %s in tile %d (I think)" % (mw, mT)
+                if (not found_matching_connection): print "NO MATCH!"
+                else:                               print "MATCH! OKAY?"
+
+                
+    #            foreach mT.connection mc:
+    #                if (re.search(mw,mc):
+    # found_matching_connection = True
+    #    if ! find_connection(mt,mw): add_default_connection(mt,mw)
+    print "------------------------------------------------------------------------------"
+
+
 # Set up the main window and connect to callback routine that draws everything.
 def build_and_launch_main_window(title):
+
+    # At this point all connections have been made; now we can go through
+    # and add missing defaults
+    connect_missing_wires()
+#     sys.exit(0)
+
+
     DBG=1;
     print "------------------------------------------------------------------------"
     print title
@@ -1423,9 +1466,9 @@ def process_decoded_bitstream(bs):
 
             # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", teststring)
             if (x):
-                connection = x.group(1)
+                connection = x.group(1).strip()
                 print "Tile %d found connection '%s'" % (tileno,connection)
-                teststring = x.group(2)
+                teststring = x.group(2).strip()
                 tile[tileno].connect(connection)
             else:
                 break;
@@ -1606,6 +1649,36 @@ def main():
     # other args => run throu
 
 
+def find_matching_wire(tileno, w):
+  # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
+  parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
+  if (parse == None):
+      print "Invalid wire name '%s'" % w
+      return
+  in_or_out = parse.group(1)
+  side      = int(parse.group(2))
+  track     = int(parse.group(3))
+
+  if (in_or_out=="out"): in_or_out="in"
+  else:            in_or_out="out"
+
+  (r,c) = tileno2rc(tileno)
+#   print (r,c,side)
+
+  if (side==0):   (r,c,side) = (r,c+1,side+2)
+  elif (side==1): (r,c,side) = (r+1,c,side+2)
+  elif (side==2): (r,c,side) = (r,c-1,side-2)
+  elif (side==3): (r,c,side) = (r-1,c,side-2)
+
+#   print (r,c,side)
+
+  adj_tileno = rc2tileno(r,c)
+  adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
+  print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
+  return (adj_tileno, adj_wire)
+
+print find_matching_wire(4, "in_s1t0")
+# sys.exit(0)
 
 main()
 
