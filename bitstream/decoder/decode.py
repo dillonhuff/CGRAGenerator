@@ -230,7 +230,7 @@ def sb_iohack_find_pe_out(connection_list):
 def sb_print(connection_list):
     # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
 
-    # Connection list should contain fifteen items
+    # Connection list should contain fifteen items [FIXME SIXTEEN!!!]
     # ['in_s1t0 -> out_s0t0', 'in_s1t0 -> out_s0t1', 'in_s1t0 -> out_s0t2',
     #  'in_s1t0 -> out_s0t3', 'in_s1t0 -> out_s0t4', 'in_s0t1 -> out_s1t0',
     #  'in_s0t1 -> out_s1t1', 'in_s0t1 -> out_s1t2', 'in_s0t1 -> out_s1t3',
@@ -281,11 +281,23 @@ def sb_print(connection_list):
     col2 = connection_list[5:10];  # print col2;
     col3 = connection_list[10:15]; # print col3;
 
-    for i in range(0,5):
+    #TODO if "nodefaults" is set, then only show non-zero connections
+    # Default (zero) connections look like this:
+    #    out_s0.*in_s1
+
+
+    # for i in range(0,5):
+    for i in range(0, 5):
         # print "%8s %8s" % ("", ""),
         # if (i): print "%8s %8s %19s" % ("", "", ""),
         if (i): print "%8s %8s %5s" % ("", "", ""),
         print "%-19s    %-19s    %-19s" % (col1[i], col2[i], col3[i]);
+    # One more
+    print "%8s %8s %5s" % ("", "", ""),
+    print "%-19s    %-19s    %-19s" % ("","",connection_list[15]);
+
+
+
 
 def pe_decode(RR, DDDDDDDD):
 

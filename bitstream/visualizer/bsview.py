@@ -745,8 +745,9 @@ def drawtileno(cr, tileno):
     tileno = str(tileno)
 
     # Ghost color= light gray
-    # graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
-    setcolor(cr, 'ghostgray')
+    # setcolor(cr, 'ghostgray')
+
+    graylevel = 0.5; cr.set_source_rgb(graylevel,graylevel,graylevel)
 
     cr.set_font_size(20)
     cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
