@@ -49,6 +49,7 @@ foreach bs ($argv)
   echo "Decoded output is here: $bsdecoded"
 
   echo -n "Continue? (^C to exit) "; set reply = $<; echo ""
+  $BSVIEW_HOME/bsview.py $bsdecoded
 
 end
 
