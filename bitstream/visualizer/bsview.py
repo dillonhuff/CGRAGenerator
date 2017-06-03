@@ -342,25 +342,25 @@ def drawport(cr, wirename, **keywords):
     # [Optionally] attach a register to the port inside the tile.
     # [Optionally] leave off the label
 
-    if (DBG): print "Drawing port for wire '%s'..." % (wirename)
+    if DBG: print "Drawing port for wire '%s'..." % (wirename)
 
     # Only valid option so far is "ghost", meaning draw the port in light background color
     # TODO: options for reg/noreg, label/nolabel
     
     optionlist = []
     if ('options' in keywords):
-        if (DBG): print 'options parameter found, it is ', keywords['options']
+        if DBG: print 'options parameter found, it is ', keywords['options']
         optionlist = keywords['options'].split(',')
-        if (DBG): print "Found the following options: "+ str(optionlist)
+        if DBG: print "Found the following options: "+ str(optionlist)
         # for o in options: print "  " + o
     else:
-        if (DBG): print 'no options parameter, sorry'
+        if DBG: print 'no options parameter, sorry'
 
     cr.save()
 
     if (1):
         # Translate and rotate the world...
-        # if (DBG): print "Translate to %d,%d" % (x,y),
+        # if DBG: print "Translate to %d,%d" % (x,y),
         (x,y) = connectionpoint(wirename)
         cr.translate(x,y)
         drawdot(cr, 0, 0, "black") # Mark the connection point with a black dot
@@ -368,7 +368,7 @@ def drawport(cr, wirename, **keywords):
         # Side 0,1,2,3 out-wires point E, S, W and N respectively
         s = side(wirename)
         rot = s * 3.1416/2
-        if (DBG): print "rotate %d degrees\n" % int(180*rot/3.1416)
+        if DBG: print "rotate %d degrees\n" % int(180*rot/3.1416)
         cr.rotate(rot)
 
         # Now origin is connection point and world is oriented to the appropriate side
@@ -539,7 +539,7 @@ def draw_pe(cr, opname, A, B):
 #     inputs = True;
 #     if ('inputs' in keywords): inputs = keywords['inputs']
 
-#     if (DBG):
+#     if DBG:
 #         if (regA == None): print "No regA"
 #         else:              print "Found regA = '%s'" % str(regA)
 
@@ -974,7 +974,7 @@ def connectwires(cr, connection):
     if (to_type == "port" and from_type == "port"):
         DBG=0
         w1 = pto; w2 = pfrom
-        if (DBG):
+        if DBG:
             print "connection = " + connection
             print "Connecting wires '%s' and '%s'\n" % (w1,w2)
 
@@ -985,8 +985,8 @@ def connectwires(cr, connection):
     # For connections of the form "wireA <= in_s3t0"
     if (to_type == "pe_in" and from_type == "port"):
         DBG=0
-        if (DBG): print "Found valid connection %s" % connection
-        if (DBG): print "Connecting port '%s' to pe_in '%s'" % (pfrom,pto)
+        if DBG: print "Found valid connection %s" % connection
+        if DBG: print "Connecting port '%s' to pe_in '%s'" % (pfrom,pto)
         ab_connect(cr, pfrom, pto)
         return;
 
@@ -994,7 +994,7 @@ def connectwires(cr, connection):
     # For connections of the form "out_s1t0 <= pe_out"
     if (to_type == "port" and pfrom == "pe_out"):
         DBG = 0;
-        if (DBG): print "Found valid connection %s" % connection
+        if DBG: print "Found valid connection %s" % connection
         pe_out_connect(cr, pto)
         return;
 
@@ -1005,12 +1005,12 @@ def connectwires(cr, connection):
     # parse = re.search("^(pe_out) .* (.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
     if (from_type == "pe"):
         DBG = 1;
-        if (DBG): print "Found valid connection %s" % connection
+        if DBG: print "Found valid connection %s" % connection
         parse = re.search("^(.*)[(](wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)[)]", pfrom)
         pe_name = parse.group(1)
         pe_a    = parse.group(2)
         pe_b    = parse.group(3)
-        if (DBG): print "Found PE '%s' w/ inputs a='%s' b='%s'" % (pe_name,pe_a,pe_b)
+        if DBG: print "Found PE '%s' w/ inputs a='%s' b='%s'" % (pe_name,pe_a,pe_b)
 
         draw_pe(cr, pe_name, pe_a, pe_b)
 
@@ -1236,12 +1236,12 @@ def button_press_handler(widget, event):
 
     # x,y coordinates of button-press
     x = event.x; y = event.y
-    if (DBG): print "%d %d" % (x,y)
+    if DBG: print "%d %d" % (x,y)
 
     # Subtract off the scale-independent paddings and divide by scale factor I guess
     x = (x - ARRAY_PAD)/SCALE_FACTOR; y = (y - ARRAY_PAD)/SCALE_FACTOR;
-    if (DBG): print "Transformed x,y = (%d,%d)" % (x,y)
-    if (DBG): print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
+    if DBG: print "Transformed x,y = (%d,%d)" % (x,y)
+    if DBG: print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
 
     # Find row, col of tile indicated by sclaed/translated (x,y)
     row = y/CANVAS_WIDTH; col = x/CANVAS_HEIGHT;
@@ -1256,10 +1256,10 @@ def button_press_handler(widget, event):
     # Otherwise, zoom out.
     global ZOOMTILE;
     if (ZOOMTILE == -1):
-        if (DBG): print "Zoom in to tile %s!" % str(tileno)
+        if DBG: print "Zoom in to tile %s!" % str(tileno)
         ZOOMTILE = tileno;
     else:
-        if (DBG): print "Zoom out!"
+        if DBG: print "Zoom out!"
         ZOOMTILE = -1;
 
     # Redraw after zoom
@@ -1288,6 +1288,7 @@ class Tile:
     # Todo: maybe two separate routines, one for draw-in-grid and one for draw-standalone etc
     def draw(self, cr):
         
+        print "Drawing tile %d" % self.tileno
         cr.save()
 
         if (ZOOMTILE == -1):
@@ -1300,7 +1301,8 @@ class Tile:
 
         drawtileno(cr, self.tileno)
         # draw_pe(cr, "ADD", regA=2)
-        if (self.label != ""): draw_pe(cr, self.label, None, None)
+        if (self.label == "OUT"): draw_pe(cr, "OUT", "wireA", None)
+        elif (self.label != ""):  draw_pe(cr, self.label, None, None)
 #         else:
 # #             if (self.col==0): draw_pe(cr, "ADD", "0x00002", "0x0000")
 # #             if (self.col==1): draw_pe(cr, "ADD", "0x00002", "wireB")
@@ -1318,36 +1320,56 @@ class Tile:
         print "I live in a grid that is %s tiles high and %s tiles wide"\
             % (GRID_WIDTH, GRID_HEIGHT)
 
+
+def build_default_connection(tileno, out_wire):
+    '''
+    Output wire "out_wire" in tile "tileno" has not been explicitly
+    connected, so we will show the default (zero) connection.
+    '''
+    # Should be easy.  Default connections for "out_s[123]t<T>" is "in_s0t<T>"
+    # Default connection for "out_s0tT" is "in_s1tT"
+    parse = re.search("out_s(\d+)t(\d+)", out_wire)
+    if parse:
+        out_side  = int(parse.group(1))
+        out_track = int(parse.group(2))
+
+        if (out_side == 0): in_side = 1
+        else:               in_side = 0
+        in_track = out_track;
+        in_wire = "in_s%dt%d" % (in_side, in_track)
+
+        if (0): print "Connecting out_wire %s to in_wire %s" % (out_wire, in_wire)
+        newconnection = "%s => %s" % (in_wire, out_wire)
+        print "Tile %d add missing connection %s" % (tileno,newconnection)
+        TILE_LIST[tileno].connect(newconnection)
+
 def connect_missing_wires():
+    DBG=0;
     # Each input connection must have matching output and maybe that will suffice
-    print "------------------------------------------------------------------------------"
-    print "CONNECT MISSING WIRES"
+    if DBG: print "------------------------------------------------------------------------------"
+    if DBG: print "CONNECT MISSING WIRES"
     for T in TILE_LIST:
         for c in T.connectionlist:
-            print "found connection %s" % c
+            if DBG: print "found connection %s" % c
             parse = re.search("(in_s\d+t\d+)", c)
             if (parse):
                 w = parse.group(1)
-                print "connects to input wire '%s'" % w
-#                 print "tile number %d?" % T.tileno
+                if DBG: print "connects to input wire '%s'" % w
                 (mT,mw) = find_matching_wire(T.tileno, w)
-                print mT
-                print TILE_LIST[mT].connectionlist
+                # print mT
+                # print TILE_LIST[mT].connectionlist
                 found_matching_connection = False
                 for mc in TILE_LIST[mT].connectionlist:
-                    print "  looking for %s in %s" % (mw, mc)
+                    if DBG: print "  looking for %s in %s" % (mw, mc)
                     if (re.search(mw,mc)):
                         found_matching_connection = True
-                        print "Found a match for %s in tile %d (I think)" % (mw, mT)
-                if (not found_matching_connection): print "NO MATCH!"
-                else:                               print "MATCH! OKAY?"
+                        if DBG: print "Found a match for %s in tile %d (I think)" % (mw, mT)
+                if (not found_matching_connection):
+                    build_default_connection(mT,mw)
+                # if (not found_matching_connection): print "NO MATCH!"
+                # else:                               print "MATCH! OKAY?"
 
-                
-    #            foreach mT.connection mc:
-    #                if (re.search(mw,mc):
-    # found_matching_connection = True
-    #    if ! find_connection(mt,mw): add_default_connection(mt,mw)
-    print "------------------------------------------------------------------------------"
+    if DBG: print "------------------------------------------------------------------------------"
 
 
 # Set up the main window and connect to callback routine that draws everything.
@@ -1365,7 +1387,7 @@ def build_and_launch_main_window(title):
     print "------------------------------------------------------------------------"
     win = CGRAWin();
     win.props.title = title
-    if (DBG): win.move(0,0) # put window at top left corner of screen
+    if DBG: win.move(0,0) # put window at top left corner of screen
     if (DBG>=2): print dir(win.props)
     win.show_all()
     Gtk.main()
@@ -1442,9 +1464,11 @@ def process_decoded_bitstream(bs):
         if (DBG>1): print line.rstrip()
         # Search each line for connections
 
-        # HACK means label this tile as IO
-        if (re.search("HACK", line)):
-            tile[tileno].label = "I/O"
+        if (re.search("CGRA OUTPUT", line)):
+            tile[tileno].label = "OUT"
+            continue
+        elif (re.search("CGRA INPUT", line)):
+            tile[tileno].label = "IN"
             continue
 
         # foundtileno = re.search("^TILE *([0-9]*)", line)
@@ -1557,7 +1581,7 @@ F0000005 00000002 [pe ] regA <= 0x0002
 F1000005 00000000 [pe ] regB <= 0x0000
 FF000005 00000000 [pe ] pe_out <= ADD(0x0002,0x0000) 
 '''
-    if (DBG): print example
+    if DBG: print example
     example = example.split('\n')
     process_decoded_bitstream(example)
     title = func_name(); 
@@ -1598,7 +1622,7 @@ FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
                         TILE 13 (1,3)
 0005000D 80200000 [sb1] out_s2t0 <= in_s3t0    out_s3t0 <= in_s2t0
 '''
-    if (DBG): print example
+    if DBG: print example
     example = example.split('\n')
     process_decoded_bitstream(example)
     title = func_name(); 
@@ -1650,34 +1674,35 @@ def main():
 
 
 def find_matching_wire(tileno, w):
-  # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
-  parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
-  if (parse == None):
-      print "Invalid wire name '%s'" % w
-      return
-  in_or_out = parse.group(1)
-  side      = int(parse.group(2))
-  track     = int(parse.group(3))
+    DBG=0
+    # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
+    parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
+    if (parse == None):
+        print "Invalid wire name '%s'" % w
+        return
+    in_or_out = parse.group(1)
+    side      = int(parse.group(2))
+    track     = int(parse.group(3))
 
-  if (in_or_out=="out"): in_or_out="in"
-  else:            in_or_out="out"
+    if (in_or_out=="out"): in_or_out="in"
+    else:            in_or_out="out"
 
-  (r,c) = tileno2rc(tileno)
-#   print (r,c,side)
+    (r,c) = tileno2rc(tileno)
+    #   print (r,c,side)
 
-  if (side==0):   (r,c,side) = (r,c+1,side+2)
-  elif (side==1): (r,c,side) = (r+1,c,side+2)
-  elif (side==2): (r,c,side) = (r,c-1,side-2)
-  elif (side==3): (r,c,side) = (r-1,c,side-2)
+    if (side==0):   (r,c,side) = (r,c+1,side+2)
+    elif (side==1): (r,c,side) = (r+1,c,side+2)
+    elif (side==2): (r,c,side) = (r,c-1,side-2)
+    elif (side==3): (r,c,side) = (r-1,c,side-2)
 
-#   print (r,c,side)
+    #   print (r,c,side)
 
-  adj_tileno = rc2tileno(r,c)
-  adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
-  print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
-  return (adj_tileno, adj_wire)
+    adj_tileno = rc2tileno(r,c)
+    adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
+    if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
+    return (adj_tileno, adj_wire)
 
-print find_matching_wire(4, "in_s1t0")
+# print find_matching_wire(4, "in_s1t0")
 # sys.exit(0)
 
 main()
