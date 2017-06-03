@@ -38,6 +38,18 @@ foreach bs ($argv)
   set bsname = $bs:t
   set bsdecoded = /tmp/$bsname-decoded
   echo "Decoding bitstream '$bs', output to '$bsdecoded'"
+
+  echo "Before:"
+  cat $bs
+  
+  echo
+  echo "After:"
+  $BSVIEW_HOME/../decoder/decode.py $bs | tee $bsdecoded
+
+  echo "Decoded output is here: $bsdecoded"
+
+  echo -n "Continue? (^C to exit) "; set reply = $<; echo ""
+
 end
 
 
