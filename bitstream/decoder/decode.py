@@ -25,8 +25,21 @@ usage = "\n"\
   + "   %s --help\n" % scriptname\
   + ""
 
+usage = '''
+Decodes/annotates the indicated bitstream file
+Usage:
+   %s [ -nodefaults ] <bitstream-file>
+   %s --help
+''' % (scriptname, scriptname)
+
+sbdefaults = True;
+
 if (len(args) < 1):      print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
+if (args[0] == '-nodefaults'):
+    sbdefaults = False
+    args = args[1:]
+
 bitstream_filename = args[0];
 
 #       "                           \n"+\
@@ -227,10 +240,44 @@ def sb_iohack_find_pe_out(connection_list):
 
     return 0;
 
-def sb_print(connection_list):
+def sb_print_nonzero(connection_list):
     # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
 
-    # Connection list should contain fifteen items [FIXME SIXTEEN!!!]
+    # Connection list contains a bunch of items
+    # ['in_s1t0 -> out_s0t0', 'in_s1t0 -> out_s0t1', 'in_s1t0 -> out_s0t2',
+    #  'in_s1t0 -> out_s0t3', 'in_s1t0 -> out_s0t4', 'in_s0t1 -> out_s1t0',
+    #  'in_s0t1 -> out_s1t1', 'in_s0t1 -> out_s1t2', 'in_s0t1 -> out_s1t3',
+    #  ...
+
+    # Remove default (zero) connections from list.
+    # Default (zero) connections look like this:
+    #    out_s0.*in_s1
+    #    out_s[123].*in_s0
+    
+    valid = []
+#     print ""
+#     print connection_list
+    # for i in range(0, len(connection_list)-1):
+    for c in connection_list:
+#         print i
+#         c = connection_list[i];
+        # print  c
+        if (re.search("out_s0.*in_s1", c)):     continue
+        if (re.search("out_s[123].*in_s0", c)): continue
+        valid.append(c)
+#     print valid
+
+    if (valid == []): print "(defaults only)"
+
+    pad = ""
+    for c in valid:
+        print "%s%-19s" % (pad,c)
+        pad = "%8s %8s %5s" % ("", "", ""),
+
+def sb_print_all(connection_list):
+    # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
+
+    # Connection list should contain sixteen items
     # ['in_s1t0 -> out_s0t0', 'in_s1t0 -> out_s0t1', 'in_s1t0 -> out_s0t2',
     #  'in_s1t0 -> out_s0t3', 'in_s1t0 -> out_s0t4', 'in_s0t1 -> out_s1t0',
     #  'in_s0t1 -> out_s1t1', 'in_s0t1 -> out_s1t2', 'in_s0t1 -> out_s1t3',
@@ -252,9 +299,14 @@ def sb_print(connection_list):
     # print connection_list
     # print "\n".join(connection_list)
 
+    # Behavior will change depending on whether we're decoding reg 1 or reg 2
+    sbreg = 0;
     first_out = connection_list[0][0:8]
-    if (first_out[0:8] == "out_s3t1"):
+    if (first_out[0:8] == "out_s3t1"): sbreg = 1
 
+#     first_out = connection_list[0][0:8]
+#     if (first_out[0:8] == "out_s3t1"):
+    if (sbreg==1):
         # Things are different if the switchbox reg is R1 instead of R0.
         # The connection list will have exactly FOUR "out" connections,
         # followed by an indeterminate number of "reg" directives:
@@ -280,11 +332,6 @@ def sb_print(connection_list):
     col1 = connection_list[0:5];   # print col1;
     col2 = connection_list[5:10];  # print col2;
     col3 = connection_list[10:15]; # print col3;
-
-    #TODO if "nodefaults" is set, then only show non-zero connections
-    # Default (zero) connections look like this:
-    #    out_s0.*in_s1
-
 
     # for i in range(0,5):
     for i in range(0, 5):
@@ -568,10 +615,9 @@ for line in inputstream:
         iohack_cb_out[thistile] = cb_connection[-7:]
 
     elif (EE == "05"):
-        # print "";
-        # sb_print(RR, DDDDDDDD);
         connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
-        sb_print(connection_list);
+        if (sbdefaults): sb_print_all(connection_list);
+        else:            sb_print_nonzero(connection_list);
         pe_out = sb_iohack_find_pe_out(connection_list);
         if (pe_out):
             # print "FOUND IT! pe connects to %s" % pe_out
