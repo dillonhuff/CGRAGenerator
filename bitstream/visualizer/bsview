@@ -28,8 +28,18 @@ if ("$argv[1]" == '-demo') then
   exit 0
 endif
 
-echo $BSVIEW_HOME/bsview.py $argv
-$BSVIEW_HOME/bsview.py $argv
+# echo $BSVIEW_HOME/bsview.py $argv
+# $BSVIEW_HOME/bsview.py $argv
+
+# TODO maybe use extension to decide whether bs needs decoded or not
+# or auto-detect
+
+foreach bs ($argv)
+  set bsname = $bs:t
+  set bsdecoded = /tmp/$bsname-decoded
+  echo "Decoding bitstream '$bs', output to '$bsdecoded'"
+end
+
 
 
 
