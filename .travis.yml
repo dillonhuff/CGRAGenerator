@@ -27,7 +27,7 @@ script:
   - echo "CGRA program and run (uses output of pnr)" - `date`
   - pushd $cgroot/verilator/generator_z_tb
   - ./run.csh top_tb.cpp -input io/gray_small.png
-        -config $cgroot/bitstream/examples/calebscript.bs
+        -config $cgroot/bitstream/examples/cd.bs
         -input  io/gray.png 
         -output /tmp/output.raw
         -nclocks 3M
