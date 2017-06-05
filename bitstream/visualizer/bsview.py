@@ -2,19 +2,22 @@
 import sys
 import re
 
-# gi a.k.a. pygobjects, pygtk
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk,Gdk
-import cairo
+# # gi a.k.a. pygobjects, pygtk
+# import gi
+# gi.require_version('Gtk', '3.0')
+# from gi.repository import Gtk,Gdk
 
+import pygtk
+pygtk.require('2.0')
+import gtk
+# from gtk import Gtk,Gdk
+Gtk = gtk  # FIXME!
+
+import cairo
 from subprocess import call
 
-
-
-
-
-
+# print dir(gtk.gdk.Window.props)
+# sys.exit(0)
 
 #TODO
 # Put PE in each tile and connections to/from PE
@@ -1078,8 +1081,15 @@ def draw_all_ports(cr):
                 wirename = "%s_s%dt%d" % (dir, side, track)
                 drawport(cr, wirename, options="ghost")
 
+# Invaluable cairo drawing reference:
+# http://pygtk.org/articles/cairo-pygtk-widgets/cairo-pygtk-widgets.htm
+
 def draw_handler(widget, cr):
     global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = widget;
+
+    # FIXME probably don't need "cr" parm (above) anymore!
+    context = widget.window.cairo_create()
+    cr = context
 
     global ZOOMTILE; tileno = ZOOMTILE
     if (tileno == -1):   draw_all_tiles(cr);
@@ -1183,8 +1193,24 @@ def test_ports():  # Meh
     tile[2].draw(cr)
     tile[3].draw(cr)
 
-# Is this better?
-class CGRAWin(Gtk.Window):
+# TODO someday maybe
+# A GdkWindow is a rectangular region on the screen. It's a low-level
+#  object, used to implement high-level objects such as
+# GtkWidget and GtkWindow on the GTK+ level. A GtkWindow is a toplevel
+# window, the thing a user might think of as a "window" with a titlebar
+# and so on; a GtkWindow may contain many GdkWindow.
+
+# https://en.wikibooks.org/wiki/PyGTK_For_GUI_Programming/First_Steps
+
+# The gtk.VBox object can contain and organize multiple widgets into a
+# Vertical column. Similarly, the gtk.HBox object is also available,
+# organizing its child widgets into a Horizontal row. To create more
+# sophisticated layouts, you can nest the container objects, i.e. have a
+# gtk.HBox inside a gtk.VBox.
+
+
+# class CGRAWin(Gtk.Window):
+class CGRAWin(gtk.Window):
     def __init__(self):
         DBG = 2
 
@@ -1192,12 +1218,16 @@ class CGRAWin(Gtk.Window):
         # See above for definition of globals WIN_WIDTH, WIN_HEIGHT
 
         title = "Tilesy" # haha LOL
-        Gtk.Window.__init__(
-            self, \
-            title         = title,      \
-            width_request = WIN_WIDTH,  \
-            height_request= WIN_HEIGHT  \
-        )            
+#         Gtk.Window.__init__(
+        gtk.Window.__init__(
+            self
+#             title         = title,      \
+#             width_request = WIN_WIDTH,  \
+#             height_request= WIN_HEIGHT  \
+        )
+        self.props.title = title
+        self.props.width_request = WIN_WIDTH
+        self.props.height_request= WIN_HEIGHT
 
         global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 
@@ -1212,14 +1242,18 @@ class CGRAWin(Gtk.Window):
 
         win = self
         # "draw" event results in drawing everything on drawing area 'da'
-        draw_handler_id = win.da.connect("draw", draw_handler)
+        # draw_handler_id = win.da.connect("draw", draw_handler)
+        draw_handler_id = win.da.connect("expose-event", draw_handler)
 
         # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
         # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
         button_press_handler_id = win.da.connect("button-press-event", button_press_handler)
 
         # FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
-        win.da.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        # win.da.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+
+        # win.da.set_events(gtk.gdk.EventMask.BUTTON_PRESS_MASK)
+        win.da.set_events(gtk.gdk.BUTTON_PRESS_MASK)
 
         win.connect("delete-event", Gtk.main_quit)
 
@@ -1629,9 +1663,12 @@ FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
     build_and_launch_main_window(title)
 
 def do_demos():
-    demo_cd_jimmied()
-    demo_an2_jimmied()
+#     demo_cd_jimmied()
+#     demo_an2_jimmied()
     demo_sb_4x4()
+    sys.exit(0)
+
+
     demo_sb_2x2()
     if (0):
         # Open a channel to the example decoded bitstream
@@ -1674,7 +1711,7 @@ def main():
 
 
 def find_matching_wire(tileno, w):
-    DBG=0
+    DBG=1
     # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
     parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
     if (parse == None):
@@ -1690,7 +1727,7 @@ def find_matching_wire(tileno, w):
     (r,c) = tileno2rc(tileno)
     #   print (r,c,side)
 
-    if (side==0):   (r,c,side) = (r,c+1,side+2)
+    if   (side==0): (r,c,side) = (r,c+1,side+2)
     elif (side==1): (r,c,side) = (r+1,c,side+2)
     elif (side==2): (r,c,side) = (r,c-1,side-2)
     elif (side==3): (r,c,side) = (r-1,c,side-2)
@@ -1700,6 +1737,9 @@ def find_matching_wire(tileno, w):
     adj_tileno = rc2tileno(r,c)
     adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
     if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
+
+    print "Found tile number %d" % adj_tileno
+
     return (adj_tileno, adj_wire)
 
 # print find_matching_wire(4, "in_s1t0")
