@@ -52,6 +52,11 @@ echo "WARNING! TEMPORARY HACK TO USE OLD MEM TILES!"
 # TEMPORARY HACK FOR BAD MEMTILE
 set run = run.csh
 set run = run_oldmemtile.csh
+if ($?NEWMEMTILE) then
+  echo "WARNING Found environment variable NEWMEMTILE"
+  set run = run.csh
+endif
+
 
 which Genesis2.pl
 echo ""

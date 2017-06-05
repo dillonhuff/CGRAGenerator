@@ -1085,6 +1085,8 @@ def draw_all_ports(cr):
 
 # Invaluable cairo drawing reference:
 # http://pygtk.org/articles/cairo-pygtk-widgets/cairo-pygtk-widgets.htm
+# Looks good but did not use: http://zetcode.com/gui/pygtk/
+# Ditto for: http://pygtk.org/pygtk2tutorial/ch-DrawingArea.html
 
 def draw_handler(widget, cr):
     global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = widget;
