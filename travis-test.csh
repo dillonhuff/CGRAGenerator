@@ -28,8 +28,11 @@ setenv GENESIS_HOME /tmp/Genesis2/Genesis2Tools
 # popd
 
 set path=(. $GENESIS_HOME/bin $GENESIS_HOME/gui/bin $path)
-# setenv PERL5LIB "$PERL5LIB":$GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
-setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
+if (! $?PERL5LIB) then
+  setenv PERL5LIB $GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
+else
+  setenv PERL5LIB "$PERL5LIB":$GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions
+endif
 
 # echo path=$path
 
