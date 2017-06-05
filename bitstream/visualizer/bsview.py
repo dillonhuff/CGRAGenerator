@@ -16,6 +16,8 @@ Gtk = gtk  # FIXME!
 import cairo
 from subprocess import call
 
+def exit(): sys.exit(0)
+
 # print dir(gtk.gdk.Window.props)
 # sys.exit(0)
 
@@ -1143,7 +1145,6 @@ def draw_one_tile(cr, tileno):
     cr.translate(xmargin, ymargin)
 
     # Okay done with scale and translate.  Now draw!
-    print "Drawing tile %s!" % str(tileno)
     if (0): print "...at scale factor %f." % SCALE_FACTOR
     TILE_LIST[tileno].draw(cr)
     cr.restore()
@@ -1321,8 +1322,6 @@ class Tile:
 
     # Todo: maybe two separate routines, one for draw-in-grid and one for draw-standalone etc
     def draw(self, cr):
-        
-        print "Drawing tile %d" % self.tileno
         cr.save()
 
         if (ZOOMTILE == -1):
@@ -1390,6 +1389,12 @@ def connect_missing_wires():
                 w = parse.group(1)
                 if DBG: print "connects to input wire '%s'" % w
                 (mT,mw) = find_matching_wire(T.tileno, w)
+
+                # print range (0, NTILES)
+                if mT not in range (0, NTILES):
+                    print "WARNING Ignoring edge wire %s on tile %d" % (w, T.tileno)
+                    return()
+
                 # print mT
                 # print TILE_LIST[mT].connectionlist
                 found_matching_connection = False
@@ -1663,12 +1668,9 @@ FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
     build_and_launch_main_window(title)
 
 def do_demos():
-#     demo_cd_jimmied()
-#     demo_an2_jimmied()
+    demo_cd_jimmied()
+    demo_an2_jimmied()
     demo_sb_4x4()
-    sys.exit(0)
-
-
     demo_sb_2x2()
     if (0):
         # Open a channel to the example decoded bitstream
@@ -1737,9 +1739,6 @@ def find_matching_wire(tileno, w):
     adj_tileno = rc2tileno(r,c)
     adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
     if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
-
-    print "Found tile number %d" % adj_tileno
-
     return (adj_tileno, adj_wire)
 
 # print find_matching_wire(4, "in_s1t0")
