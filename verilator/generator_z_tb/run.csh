@@ -131,17 +131,18 @@ if (! $?embedded_io) then
   exit -1
 endif
 
+# Swizzle the bitstream to match new mem regime
+
 echo "Unswizzling bitstream.  Before:"
 cat $config
-
-echo "After:"
-
-
-# Swizzle the bitstream to match new mem regime
 
 set swizzled = /tmp/{$config:t}.swizzled
 if (-e $swizzled) rm $swizzled
 ./swizzle.py < $config > $swizzled
+
+echo "After:"
+cat $swizzled
+
 
 echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
 
@@ -160,6 +161,7 @@ echo; sed -n '/O Summary/,$p' $decoded; echo
 
 # Clean bitstream (strip out hacked-in IO info)
 set newbs = /tmp/bs.txt
+if (-e $newbs) rm $newbs
 echo "Will strip out IO hack from '$config'"
 echo "to create clean bitstream '$newbs'"
 echo
