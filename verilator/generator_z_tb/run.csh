@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+# setenv OLDMEM
+
 # Travis flow (CGRAFlow/.travis.yml)
 #  travis script calls "travis-test" to do the initial generate
 #  travis script calls PNR to build map, io info from generated cgra_info.txt
@@ -25,8 +27,10 @@ set GENERATE  = "-gen"
 # set config    = ../../bitstream/examples/cd-swizzled.bs
 
 # No, use swizzler instead
+# cd2 is suspect, may be WRONG
+set config    = ../../bitstream/examples/cd3.bs  # cd3 works
+set config    = ../../bitstream/examples/cd2.bs  # cd2 broken i think
 set config    = ../../bitstream/examples/cd.bs
-
 
 set input     = io/gray_small.png
 set output    = /tmp/output.raw
@@ -131,17 +135,22 @@ if (! $?embedded_io) then
   exit -1
 endif
 
-# Swizzle the bitstream to match new mem regime
-
-echo "Unswizzling bitstream.  Before:"
-cat $config
+# Swizzle the bitstream to match new mem regime (unless bypassed)
 
 set swizzled = /tmp/{$config:t}.swizzled
 if (-e $swizzled) rm $swizzled
-./swizzle.py < $config > $swizzled
 
-echo "After:"
-cat $swizzled
+if ($?OLDMEM) then
+    cp $config $swizzled
+else
+  echo "Unswizzling bitstream.  Before:"
+  cat $config
+
+  ./swizzle.py < $config > $swizzled
+
+  echo "After:"
+  cat $swizzled
+endif
 
 
 echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
@@ -152,7 +161,13 @@ if (-e $decoded) rm $decoded
 # New memtile regime swaps r,c tile addresses HA
 set echo
 # ../../bitstream/decoder/decode.py -newmem $config > $decoded
-../../bitstream/decoder/decode.py -newmem $swizzled > $decoded
+
+if ($?OLDMEM) then
+  ../../bitstream/decoder/decode.py $swizzled > $decoded
+else
+  ../../bitstream/decoder/decode.py -newmem $swizzled > $decoded
+endif
+
 unset echo
 
 

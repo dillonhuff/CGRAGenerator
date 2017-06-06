@@ -51,8 +51,8 @@ foreach port ($inwires $outwires)
     # BUT NOT connection
     #    "      .in_BUS16_S3_T0(wire_m1_1_BUS16_S1_T0),"
     # 
-    sed "/${port}[^)]*"'$/d' $vtop > /tmp/tmp
-    mv /tmp/tmp $vtop;
+    sed "/${port}[^)]*"'$/d' $vtop > /tmp/tmp$$
+    mv /tmp/tmp$$ $vtop;
     if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
     if ($?DBG) echo "------------------------------------------------------"
 
@@ -60,13 +60,12 @@ foreach port ($inwires $outwires)
   endif
 end
 
-
 # // VERILATOR_PORT1,2,3...
 # Build ports for verilator input and output signals
 set i = 0; echo "  Adding ports for verilator inputs and outputs..."
 foreach port ($inwires $outwires)
-  sed "s|\(// VERILATOR_PORT$i\)|$port,               \1|" $vtop > /tmp/tmp
-  echo "    $port..."; mv /tmp/tmp $vtop; @ i = $i + 1
+  sed "s|\(// VERILATOR_PORT$i\)|$port,               \1|" $vtop > /tmp/tmp$$
+  echo "    $port..."; mv /tmp/tmp$$ $vtop; @ i = $i + 1
 end
 echo
 if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
@@ -77,13 +76,12 @@ if ($?DBG) echo "------------------------------------------------------"
 #     > wire_1_0_BUS16_S1_T1, // VERILATOR_PORT0
 #     > wire_m1_1_BUS16_S1_T0, // VERILATOR_PORT1
 
-
 # // VERILATOR_IN1,2,3...
 # Declare verilator input signals...
 set i = 0; echo "  Adding verilator input declarations..."
 foreach wirename ($inwires)
-  sed "s|\(// VERILATOR_IN$i\)|input  [15:0] $wirename; \1|" $vtop > /tmp/tmp
-  echo "    $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
+  sed "s|\(// VERILATOR_IN$i\)|input  [15:0] $wirename; \1|" $vtop > /tmp/tmp$$
+  echo "    $wirename..."; mv /tmp/tmp$$ $vtop; @ i = $i + 1
 end
 echo
 if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
@@ -95,8 +93,8 @@ if ($?DBG) echo "------------------------------------------------------"
 # Declare verilator output signals...
 set i = 0; echo "  Adding verilator output declarations..."
 foreach wirename ($outwires)
-  sed "s|\(// VERILATOR_OUT$i\)|output [15:0]  $wirename; \1|" $vtop > /tmp/tmp
-  echo "    $wirename..."; mv /tmp/tmp $vtop; @ i = $i + 1
+  sed "s|\(// VERILATOR_OUT$i\)|output [15:0]  $wirename; \1|" $vtop > /tmp/tmp$$
+  echo "    $wirename..."; mv /tmp/tmp$$ $vtop; @ i = $i + 1
 end
 echo
 # diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
@@ -106,24 +104,24 @@ echo "  Disconnecting input wires from internal net..."
 foreach inwire ($inwires)
   (egrep "out.*$inwire" $vtop > /dev/null)\
     || echo "    Wire not found in internal net of top.v"
-  sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > /tmp/tmp
-  # diff $vtop /tmp/tmp | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
-  echo "    $inwire..."; mv /tmp/tmp $vtop
+  sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > /tmp/tmp$$
+  # diff $vtop /tmp/tmp$$ | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
+  echo "    $inwire..."; mv /tmp/tmp$$ $vtop
 end
 echo
 
 # Show what we did
 echo Changes to top.v:  ; echo
-  diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /' > /tmp/tmp
+  diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /' > /tmp/tmp$$
 
-  cat /tmp/tmp | egrep '^ *<' | egrep 'PORT'; echo "    ---"
-  cat /tmp/tmp | egrep '^ *>' | egrep 'PORT'; echo; echo
+  cat /tmp/tmp$$ | egrep '^ *<' | egrep 'PORT'; echo "    ---"
+  cat /tmp/tmp$$ | egrep '^ *>' | egrep 'PORT'; echo; echo
 
-  cat /tmp/tmp | egrep '^ *<' | egrep 'IN|OUT'; echo "    ---"
-  cat /tmp/tmp | egrep '^ *>' | egrep 'IN|OUT'; echo; echo
+  cat /tmp/tmp$$ | egrep '^ *<' | egrep 'IN|OUT'; echo "    ---"
+  cat /tmp/tmp$$ | egrep '^ *>' | egrep 'IN|OUT'; echo; echo
 
-  cat /tmp/tmp | egrep '^ *<' | egrep -v 'VERILATOR'; echo "    ---"
-  cat /tmp/tmp | egrep '^ *>' | egrep -v 'VERILATOR'; echo; echo
+  cat /tmp/tmp$$ | egrep '^ *<' | egrep -v 'VERILATOR'; echo "    ---"
+  cat /tmp/tmp$$ | egrep '^ *>' | egrep -v 'VERILATOR'; echo; echo
 
 
 
