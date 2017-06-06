@@ -129,9 +129,10 @@ endif
 echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
 
 set decoded = /tmp/{$config:t}.decoded
+if (-e $decoded) rm $decoded
 # ../../bitstream/decoder/decode.py $config > $decoded
 # New memtile regime swaps r,c tile addresses HA
-# ../../bitstream/decoder/decode.py -newmem $config > $decoded
+../../bitstream/decoder/decode.py -newmem $config > $decoded
 
 
 
