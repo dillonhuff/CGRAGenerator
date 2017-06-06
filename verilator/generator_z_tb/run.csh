@@ -19,7 +19,10 @@
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
 # set config    = ../../bitstream/examples/calebscript.bs
-set config    = ../../bitstream/examples/cd.bs
+# set config    = ../../bitstream/examples/cd.bs
+
+# New memtile regime swaps r,c tile addresses HA
+set config    = ../../bitstream/examples/cd-swizzled.bs
 set input     = io/gray_small.png
 set output    = /tmp/output.raw
 set nclocks   = "1M"
@@ -126,7 +129,11 @@ endif
 echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
 
 set decoded = /tmp/{$config:t}.decoded
-../../bitstream/decoder/decode.py $config > $decoded
+# ../../bitstream/decoder/decode.py $config > $decoded
+# New memtile regime swaps r,c tile addresses HA
+# ../../bitstream/decoder/decode.py -newmem $config > $decoded
+
+
 
 # Show IO info derived from bitstream
 echo; sed -n '/O Summary/,$p' $decoded; echo

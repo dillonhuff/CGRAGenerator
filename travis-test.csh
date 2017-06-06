@@ -52,13 +52,16 @@ if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
 
 echo "WARNING! TEMPORARY HACK TO USE OLD MEM TILES!"
 
-# TEMPORARY HACK FOR BAD MEMTILE
+# # TEMPORARY HACK FOR BAD MEMTILE
+# set run = run.csh
+# set run = run_oldmemtile.csh
+# if ($?NEWMEMTILE) then
+#   echo "WARNING Found environment variable NEWMEMTILE"
+#   set run = run.csh
+# endif
+
 set run = run.csh
-set run = run_oldmemtile.csh
-if ($?NEWMEMTILE) then
-  echo "WARNING Found environment variable NEWMEMTILE"
-  set run = run.csh
-endif
+
 
 
 which Genesis2.pl

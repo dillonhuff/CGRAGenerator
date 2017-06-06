@@ -18,29 +18,45 @@ from lib.sb_decode_5tracks import *
 scriptname = sys.argv[0];
 args = sys.argv[1:];
 
-usage = "\n"\
-  + "Decodes/annotates the indicated bitstream file\n"\
-  + "Usage:\n"\
-  + "   %s <bitstream-file>\n" % scriptname\
-  + "   %s --help\n" % scriptname\
-  + ""
+# usage = "\n"\
+#   + "Decodes/annotates the indicated bitstream file\n"\
+#   + "Usage:\n"\
+#   + "   %s <bitstream-file>\n" % scriptname\
+#   + "   %s -newmem <bitstream-file>\n" % scriptname\
+#   + "   %s --help\n" % scriptname\
+#   + ""
+
+scriptname_tail = scriptname
+parse = re.search('([/].*$)', scriptname)
+parse = re.search('([^/]+$)', scriptname)
+if (parse): scriptname_tail = parse.group(1)
 
 usage = '''
 Decodes/annotates the indicated bitstream file
 Usage:
-   %s [ -nodefaults ] <bitstream-file>
+   %s [ -nodefaults ] [ -newmem ] <bitstream-file>
    %s --help
-''' % (scriptname, scriptname)
+''' % (scriptname_tail, scriptname_tail)
 
 sbdefaults = True;
 
-if (len(args) < 1):      print usage; sys.exit(-1);
+SWAP   = False
+
+
+if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
-if (args[0] == '-nodefaults'):
-    sbdefaults = False
+while (len(args) > 0):
+    if (args[0] == '-nodefaults'):
+        sbdefaults = False
+    elif (args[0] == '-swaprc'):
+        SWAP = True
+    elif (args[0] == '-newmem'):
+        SWAP = True
+    else: bitstream_filename = args[0];
     args = args[1:]
 
-bitstream_filename = args[0];
+
+
 
 #       "                           \n"+\
 #       "          0    4    8    12\n"+\
@@ -79,7 +95,14 @@ def tileno2rc(tileno):
     #
     row = tileno%4
     col = int(tileno/4)
-    return [row, col];
+    
+    if (not SWAP): return [row, col];
+    else:          return [col, row];
+
+    
+
+
+
 
 def find_source(row, col, wirename):
     # Given tile number (r,c) in a 4x4 grid as shown...
