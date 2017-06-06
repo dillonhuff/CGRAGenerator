@@ -28,9 +28,14 @@ set GENERATE  = "-gen"
 
 # No, use swizzler instead
 # cd2 is suspect, may be WRONG
-set config    = ../../bitstream/examples/cd3.bs  # cd3 works
+set config    = ../../bitstream/examples/cd387-good.bs
 set config    = ../../bitstream/examples/cd2.bs  # cd2 broken i think
 set config    = ../../bitstream/examples/cd.bs
+set config    = ../../bitstream/examples/cd3.bs  # cd3 works
+
+# works under new regime: cd2/cd387
+# works under old regime: cd/cd3
+
 
 set input     = io/gray_small.png
 set output    = /tmp/output.raw
@@ -140,17 +145,19 @@ endif
 set swizzled = /tmp/{$config:t}.swizzled
 if (-e $swizzled) rm $swizzled
 
-if ($?OLDMEM) then
-    cp $config $swizzled
-else
-  echo "Unswizzling bitstream.  Before:"
-  cat $config
+# if ($?OLDMEM) then
+#     cp $config $swizzled
+# else
+#   echo "Unswizzling bitstream.  Before:"
+#   cat $config
+# 
+#   ./swizzle.py < $config > $swizzled
+# 
+#   echo "After:"
+#   cat $swizzled
+# endif
 
-  ./swizzle.py < $config > $swizzled
-
-  echo "After:"
-  cat $swizzled
-endif
+cp $config $swizzled
 
 
 echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
