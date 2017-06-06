@@ -50,7 +50,8 @@ endif
 cd hardware/generator_z/top
 if (-e ./genesis_clean.cmd) ./genesis_clean.cmd
 
-echo "WARNING! TEMPORARY HACK TO USE OLD MEM TILES!"
+# echo "WARNING! TEMPORARY HACK TO USE OLD MEM TILES!"
+echo "no more TEMPORARY HACK TO USE OLD MEM TILES!"
 
 # # TEMPORARY HACK FOR BAD MEMTILE
 # set run = run.csh

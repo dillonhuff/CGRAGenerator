@@ -22,7 +22,12 @@ set GENERATE  = "-gen"
 # set config    = ../../bitstream/examples/cd.bs
 
 # New memtile regime swaps r,c tile addresses HA
-set config    = ../../bitstream/examples/cd-swizzled.bs
+# set config    = ../../bitstream/examples/cd-swizzled.bs
+
+# No, use swizzler instead
+set config    = ../../bitstream/examples/cd.bs
+
+
 set input     = io/gray_small.png
 set output    = /tmp/output.raw
 set nclocks   = "1M"
@@ -126,14 +131,28 @@ if (! $?embedded_io) then
   exit -1
 endif
 
+echo "Unswizzling bitstream.  Before:"
+cat $config
+
+echo "After:"
+
+
+# Swizzle the bitstream to match new mem regime
+
+set swizzled = /tmp/{$config:t}.swizzled
+if (-e $swizzled) rm $swizzled
+./swizzle.py < $config > $swizzled
+
 echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
 
 set decoded = /tmp/{$config:t}.decoded
 if (-e $decoded) rm $decoded
 # ../../bitstream/decoder/decode.py $config > $decoded
 # New memtile regime swaps r,c tile addresses HA
-../../bitstream/decoder/decode.py -newmem $config > $decoded
-
+set echo
+# ../../bitstream/decoder/decode.py -newmem $config > $decoded
+../../bitstream/decoder/decode.py -newmem $swizzled > $decoded
+unset echo
 
 
 # Show IO info derived from bitstream
