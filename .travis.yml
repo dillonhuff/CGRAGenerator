@@ -13,10 +13,8 @@ addons:
 
 script:
 
-  # - setenv CGRA_GEN_USE_MEM 1
-  # - setenv CGRA_GEN_ALL_REG=1
-  - export CGRA_GEN_USE_MEM-1
-  - export CGRA_GEN_ALL_REG=1
+  # - export CGRA_GEN_USE_MEM=1
+  # - export CGRA_GEN_ALL_REG=1
 
 
   # CGRA setup
@@ -33,6 +31,7 @@ script:
   - echo "CGRA program and run (uses output of pnr)" - `date`
   - pushd $cgroot/verilator/generator_z_tb
   - ./run.csh top_tb.cpp -input io/gray_small.png
+        -nogen 
         -config $cgroot/bitstream/examples/cd387-good.bs
         -input  io/gray.png 
         -output /tmp/output.raw

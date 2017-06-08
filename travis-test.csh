@@ -92,4 +92,6 @@ echo ""
 set top = `pwd`/genesis_verif/top.v
 $whereami/bin/find_cgra_info.csh $top || exit -1
 
+ls -l cgra_info.txt examples/*.txt
+
 
