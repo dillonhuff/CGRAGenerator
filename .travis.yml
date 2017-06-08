@@ -15,6 +15,9 @@ script:
 
   # - setenv CGRA_GEN_USE_MEM 1
   # - setenv CGRA_GEN_ALL_REG=1
+  - export CGRA_GEN_USE_MEM-1
+  - export CGRA_GEN_ALL_REG=1
+
 
   # CGRA setup
   - echo CGRA setup for CGRAGenerator travis script
