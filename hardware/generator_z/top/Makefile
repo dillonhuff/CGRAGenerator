@@ -47,6 +47,13 @@ else
     allreg := export CGRA_GEN_ALL_REG=1
 endif
 
+help:
+	@echo '    ' make gen
+	@echo '    ' make gen CGRA_GEN_USE_MEM=1
+	@echo '    ' make gen CGRA_GEN_ALL_REG=1
+	@echo '    ' make gen CGRA_GEN_ALL_REG=1 CGRA_GEN_USE_MEM=1
+
+
 gen:
 	$(usemem); \
 	$(allreg); \
