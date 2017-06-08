@@ -1,5 +1,8 @@
 #!/bin/csh -f
 
+# setenv CGRA_GEN_USE_MEM 1
+# setenv CGRA_GEN_ALL_REG 1
+
 # setenv OLDMEM
 
 # Travis flow (CGRAFlow/.travis.yml)
@@ -28,13 +31,13 @@ set GENERATE  = "-gen"
 
 # No, use swizzler instead
 # cd2 is suspect, may be WRONG
-set config    = ../../bitstream/examples/cd387-good.bs
 set config    = ../../bitstream/examples/cd2.bs  # cd2 broken i think
 set config    = ../../bitstream/examples/cd.bs
 set config    = ../../bitstream/examples/cd3.bs  # cd3 works
+set config    = ../../bitstream/examples/cd387-good.bs
 
-# works under new regime: cd2/cd387
-# works under old regime: cd/cd3
+# works under new regime: cd2, cd387
+# works under old regime: cd, cd3
 
 
 set input     = io/gray_small.png
@@ -227,7 +230,9 @@ else
   pushd ../..
     ./travis-test.csh
   popd
-
+  set gztop = ../../hardware/generator_z/top/
+  echo DIFF
+  ls -l $gztop/cgra_info.txt $gztop/examples/*.txt
 endif
 
 # If config files has an xml extension, use Ankita's perl script

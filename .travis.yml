@@ -13,6 +13,9 @@ addons:
 
 script:
 
+  # - setenv CGRA_GEN_USE_MEM 1
+  - setenv CGRA_GEN_ALL_REG=1
+
   # CGRA setup
   - echo CGRA setup for CGRAGenerator travis script
   - cgroot=${TRAVIS_BUILD_DIR};
@@ -31,6 +34,7 @@ script:
         -input  io/gray.png 
         -output /tmp/output.raw
         -nclocks 3M
+  - ls -l cgra_info.txt examples/*.txt
   - popd
 
 ##############################################################################
