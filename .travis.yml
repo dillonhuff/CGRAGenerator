@@ -35,7 +35,7 @@ script:
         -output /tmp/output.raw
         -nclocks 3M
   - popd
-  - pushd $cgroot; ls -l cgra_info.txt examples/*.txt
+  - pushd $cgroot/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
 
 ##############################################################################
 # NOTES
