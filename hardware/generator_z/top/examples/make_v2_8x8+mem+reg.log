@@ -1,0 +1,46 @@
+export CGRA_GEN_USE_MEM=1; \
+	export CGRA_GEN_ALL_REG=1; \
+	./run.csh
+
+-----------------------------------------------
+--- Genesis Is Starting Work On Your Design ---
+-----------------------------------------------
+
+-----------------------------------------------
+|            Genesis Release Info             |
+|  $Change: 11904 $ --- $Date: 2013/08/03 $   |
+-----------------------------------------------
+
+---------------------------------------------------------------------------
+    !! THIS VERSION OF GENESIS2 IS NOT FOR ANY COMMERCIAL USE !!
+     FOR COMMERCIAL LICENSE CONTACT SHACHAM@ALUMNI.STANFORD.EDU
+---------------------------------------------------------------------------
+
+Genesis2::Manager->execute: Starting Source File Parsing Phase
+Genesis2::Manager->parse_files: Now parsing file ../sb/sb.vp
+Genesis2::Manager->parse_files: Now parsing file ../cb/cb.vp
+Genesis2::Manager->parse_files: Now parsing file ../pe_tile/pe_tile.vp
+Genesis2::Manager->parse_files: Now parsing file top.vp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_pe.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_mult_add.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_full_add.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_lut.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_new/pe/rtl/test_opt_reg.svp
+Genesis2::Manager->parse_files: Now parsing file ../pe_tile_new/pe_tile_new.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory_tile/memory_tile.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory_core/memory_core.vp
+Genesis2::Manager->parse_files: Now parsing file ../memory_core/mem.vp
+Genesis2::Manager->execute: Done With Source File Parsing Phase
+
+Genesis2::Manager->execute: Starting Verilog Code Generation Phase
+Genesis2::ConfigHandler->SetPrmOverrides: Now processing command line parameter overrides
+Genesis2::Manager->gen_verilog: Starting code generation from module top
+Genesis2::Manager->execute: Done With Verilog Code Generation Phase
+
+Genesis2::Manager->execute: Starting Auxiliary File Generation Phase
+Genesis2::Manager->execute: Done With Auxiliary File Generation Phase
+
+-----------------------------------------------
+--- Genesis Finished Generating Your Design ---
+-----------------------------------------------
+
