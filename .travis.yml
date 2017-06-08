@@ -34,8 +34,8 @@ script:
         -input  io/gray.png 
         -output /tmp/output.raw
         -nclocks 3M
-  - ls -l cgra_info.txt examples/*.txt
   - popd
+  - pushd $cgroot; ls -l cgra_info.txt examples/*.txt
 
 ##############################################################################
 # NOTES
