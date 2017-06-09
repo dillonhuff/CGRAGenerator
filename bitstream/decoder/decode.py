@@ -34,12 +34,13 @@ if (parse): scriptname_tail = parse.group(1)
 usage = '''
 Decodes/annotates the indicated bitstream file
 Usage:
-   %s [ -nodefaults ] [ -newmem ] <bitstream-file>
+   %s [ -nodefaults ] [ -newmem | -oldmem | -swaprc | -8x8 ] <bitstream-file>
    %s --help
 ''' % (scriptname_tail, scriptname_tail)
 
 sbdefaults = True;
 
+GRIDSIZE = "4x4"
 SWAP = False
 if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
@@ -48,22 +49,9 @@ while (len(args) > 0):
     elif (args[0] == '-swaprc'):     SWAP = True
     elif (args[0] == '-newmem'):     SWAP = True
     elif (args[0] == '-oldmem'):     SWAP = False
+    elif (args[0] == '-8x8'):        GRIDSIZE = "8x8"
     else:              bitstream_filename = args[0];
     args = args[1:]
-
-
-
-
-#       "                           \n"+\
-#       "          0    4    8    12\n"+\
-#       "                           \n"+\
-#       "          1    5    9    13\n"+\
-#       "                           \n"+\
-#       "          2    6    10   14\n"+\
-#       "                           \n"+\
-#       "          3    7    11   15\n"+\
-#       "";
-
 
 # TBD this (below) could be a separate "print_intro()" function like
 print "";
@@ -89,12 +77,105 @@ def tileno2rc(tileno):
     #  2  6  10  14      (2,0) (2,1) (2,2) (2,3)
     #  3  7  11  15      (3,0) (3,1) (3,2) (3,3)
     #
+    # Unless SWAP = True, in which case...just the opposite (ugh!)
+    #
+    #      tileno                    r,c
+    #   0   1   2   3      (0,0) (0,1) (0,2) (0,3)
+    #   4   5   6   7      (1,0) (1,1) (1,2) (1,3)
+    #   8   9  10  11      (2,0) (2,1) (2,2) (2,3)
+    #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
+
+    # Is this smart? Ans: NO   # FIXME/TODO
+    if (GRIDSIZE == "8x8"):
+        return tileno2rc_8x8(tileno)
+
     row = tileno%4
     col = int(tileno/4)
     
     if (not SWAP): return [row, col];
     else:          return [col, row];
 
+# Oh no
+cgra_tile_info = '''
+  <tile type='pe_tile_new' tile_addr='0' row='0' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='1' row='0' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='2' row='0' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='3' row='0' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='4' row='0' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='5' row='0' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='6' row='0' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='7' row='0' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='8' row='1' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='9' row='1' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='10' row='1' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='11' row='1' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='12' row='1' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='13' row='1' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='14' row='2' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='15' row='2' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='16' row='2' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='17' row='2' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='18' row='2' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='19' row='2' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='20' row='2' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='21' row='2' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='22' row='3' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='23' row='3' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='24' row='3' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='25' row='3' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='26' row='3' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='27' row='3' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='28' row='4' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='29' row='4' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='30' row='4' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='31' row='4' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='32' row='4' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='33' row='4' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='34' row='4' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='35' row='4' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='36' row='5' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='37' row='5' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='38' row='5' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='39' row='5' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='40' row='5' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='41' row='5' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='42' row='6' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='43' row='6' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='44' row='6' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='45' row='6' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='46' row='6' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='47' row='6' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='48' row='6' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='49' row='6' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='50' row='7' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='51' row='7' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='52' row='7' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='53' row='7' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='54' row='7' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='55' row='7' col='6' tracks='BUS1:5 BUS16:5 '>
+'''
+
+def tileno2rc_8x8(tileno):
+    DBG = 0
+    search_string = "tile_addr='%s'.*row='(\d+)'.*col='(\d+)'" % str(tileno)
+    parse = re.search(search_string, cgra_tile_info)
+    if (not parse):
+        global PRINTED_CONFIG
+        if (DBG):
+            print 'WARNING: Using search string "%s"\n' % search_string
+            print "WARNING: Could not find tile number %s in this lookup table: %s" \
+                % (str(tileno), cgra_tile_info)
+        return False
+        
+    row = int(parse.group(1))
+    col = int(parse.group(2))
+    if (DBG): print "Found tile number '%d' => row '%d' col '%d'" % (tileno, row, col)
+    return (row,col)
+
+def test_tileno2rc_8x8():
+    for i in range(0, 55):
+        tileno2rc_8x8(i)
+# test_tileno2rc_8x8(); sys.exit(0)
     
 
 
