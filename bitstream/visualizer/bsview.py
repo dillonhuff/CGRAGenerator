@@ -1855,7 +1855,8 @@ def do_demos():
     global REQUESTED_SIZE
     if (1):
         REQUESTED_SIZE = (8,8)
-        display_decoded_bitstream_file("../decoder/examples/cd387-newmem-8x8.bs-decoded")
+        # display_decoded_bitstream_file("../decoder/examples/cd387-newmem-8x8.bs-decoded")
+        display_decoded_bitstream_file("../decoder/examples/cd387-newmem-8x8-nodefaults.bsd")
 
     REQUESTED_SIZE = (4,4)
     SWAP = False # Demos were all written under old regime
@@ -1875,7 +1876,9 @@ def do_demos():
         # SWAP = False # This should fail
         # display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
         SWAP = True  # newmem / new regime
-        display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
+        # display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
+        display_decoded_bitstream_file("cd387-newmem-nodefaults.bsd")
+
     demo_sb_8x8()
     return
 
