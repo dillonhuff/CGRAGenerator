@@ -47,6 +47,7 @@ while (len(args) > 0):
     if   (args[0] == '-nodefaults'): sbdefaults = False
     elif (args[0] == '-swaprc'):     SWAP = True
     elif (args[0] == '-newmem'):     SWAP = True
+    elif (args[0] == '-oldmem'):     SWAP = False
     else:              bitstream_filename = args[0];
     args = args[1:]
 
