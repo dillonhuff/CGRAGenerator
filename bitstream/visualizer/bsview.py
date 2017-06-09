@@ -39,9 +39,35 @@ GRID_HEIGHT = 2;
 NTILES = GRID_WIDTH*GRID_HEIGHT
 TILE_LIST = range(0, NTILES)
 
+SWAP = False
 # tileno-to-RC conversion
-def tileno2rc(tileno): return (tileno % GRID_HEIGHT, int(tileno / GRID_WIDTH))
-def rc2tileno(row,col):    return GRID_WIDTH*col + row
+def tileno2rc(tileno):
+    # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown above.
+    # Given tile number tileno return the (row,column) equivalent
+    #
+    #    tileno                    r,c
+    #  0  4   8  12      (0,0) (0,1) (0,2) (0,3)
+    #  1  5   9  13      (1,0) (1,1) (1,2) (1,3)
+    #  2  6  10  14      (2,0) (2,1) (2,2) (2,3)
+    #  3  7  11  15      (3,0) (3,1) (3,2) (3,3)
+    #
+    # Unless SWAP = True, in which case...just the opposite (ugh!)
+    #
+    #      tileno                    r,c
+    #   0   1   2   3      (0,0) (0,1) (0,2) (0,3)
+    #   4   5   6   7      (1,0) (1,1) (1,2) (1,3)
+    #   8   9  10  11      (2,0) (2,1) (2,2) (2,3)
+    #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
+    #
+    row =     tileno % GRID_HEIGHT
+    col = int(tileno / GRID_WIDTH)
+    
+    if (not SWAP): return [row, col];
+    else:          return [col, row];
+
+def rc2tileno(row,col):
+    if (not SWAP): return GRID_HEIGHT*col + row
+    else:          return GRID_WIDTH *row + col
 
 # A really dumb way to keep track of current scale factor, for
 # button-press events
@@ -1285,8 +1311,8 @@ def button_press_handler(widget, event):
     row = int(row); col = int(col)
 
     # Find tile number indicated by (row,col)
-    # (Supposed to use a function to do this I guess): (tileno =  rc2tileno(row,col)
-    tileno = GRID_WIDTH*col + row
+    tileno = rc2tileno(row,col)
+
     print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
 
     # If already zoomed out (ZOOMTILE === -1), zoom in to tile indicated.
@@ -1670,48 +1696,61 @@ FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
     build_and_launch_main_window(title)
 
 def do_demos():
+    global SWAP
+    if (1):
+        # SWAP = False # "This should fail"
+        # display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
+        SWAP = True # "This should work"
+        display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
+
+
+    SWAP = False # Demos were all written under old regime
     demo_cd_jimmied()
     demo_an2_jimmied()
     demo_sb_4x4()
     demo_sb_2x2()
-    if (0):
+    if (1):
         # Open a channel to the example decoded bitstream
         # filename = sys.argv[1];
         # filename = args[0];
-        filename = "./examples/an2.bs-decoded"
-        filename = "./examples/cd.bs-decoded"
+        # filename = "./examples/an2.bs-decoded"
+        # filename = "./examples/cd.bs-decoded"
+        SWAP = False # old regime
         display_decoded_bitstream_file("./examples/cd-jimmied.bs-decoded")
         display_decoded_bitstream_file("./examples/an2-jimmied.bs-decoded")
-    sys.exit(0)
+        # SWAP = False # This should fail
+        # display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
+        SWAP = True  # newmem / new regime
+        display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
+    return
 
 
 def main():
     '''
     Usage:
         bsview.py <b1.bs-decoded> <b2.bs-decoded> ...   # Displays decoded bitstreams b1, b2, ...
+        bsview.py -swaprc <b1.bsv1-decoded> ...         # Swap RC on indicated bitstream
+        bsview.py -newmem <b1.bsv1-decoded> ...         # Do the right thing for newmem regime
+        bsview.py -oldmem <b1.bsv1-decoded> ...         # Do the right thing for oldmem regime
         bsview.py -demo                                 # Runs through a couple built-in demos
         bsview.py --help                                # Displays this help message
     ''' 
 
     print sys.argv
+    args = sys.argv[1:]  # argv[0] is command name
 
-    if (len(sys.argv) == 1):      do_demos()
-    if (sys.argv[1] ==  "-demo"): do_demos()
-    if (sys.argv[1] == "--help"): print main.__doc__
-
-    for bs in sys.argv[1:]:
-        display_decoded_bitstream_file(bs)
-
-    sys.exit(0)
-
-
-
-    do_demos()
-    display_decoded_bitstream_file("./examples/m1-output.bs-decoded")
-
-    # No args => run the demo
-    # --help  => show usage examples
-    # other args => run throu
+    global SWAP
+    if    (len(args) == 0): do_demos() # no args
+    while (len(args)  > 0):            # args
+        print "arg0 = %s, SWAP=%s" % (args[0], SWAP)
+        if   (args[0] ==  "-demo"):  do_demos()
+        elif (args[0] == "--help"):  print main.__doc__
+        elif (args[0] == '-swaprc'): SWAP = True
+        elif (args[0] == '-newmem'): SWAP = True
+        elif (args[0] == '-oldmem'): SWAP = False
+        else:      display_decoded_bitstream_file(args[0])
+        args = args[1:]
+    return
 
 
 def find_matching_wire(tileno, w):
