@@ -19,6 +19,7 @@ if ($#argv == 0) then
     echo "    $sn -swaprc <b1.bs> ...   # Swap RC on indicated bitstream"
     echo "    $sn -newmem <b1.bs> ...   # Do the right thing for newmem regime"
     echo "    $sn -oldmem <b1.bs> ...   # Do the right thing for oldmem regime (default)"
+    echo "    $sn -8x8 <b1.bs> ...      # Do the right thing for 8x8 newmem regime (default)"
     echo "    $sn -demo                 # Runs through a couple built-in demos"
     echo "    $sn --help                # Displays this help message"
     exit 0
@@ -43,7 +44,8 @@ set switch = "-newmem"
 
 set echo
 foreach bs ($argv)
-  # if ("$bs" == "-oldmem" || "$bs" == "-newmem" || "$bs" == "-swaprc") then
+
+  # Valid switches now include -oldmem, -newmem, -swaprc, -8x8 ...
   if (`expr "$bs" : "-"`) then
     set switch = $bs
     continue

@@ -143,17 +143,20 @@ cgra_tile_info = '''
   <tile type='pe_tile_new' tile_addr='55' row='7' col='6' tracks='BUS1:5 BUS16:5 '>
 '''
 
+PRINTED_CONFIG = False
 def tileno2rc_8x8(tileno):
-    DBG = 1
+    DBG = 0
     search_string = "tile_addr='%s'.*row='(\d+)'.*col='(\d+)'" % str(tileno)
     parse = re.search(search_string, cgra_tile_info)
     if (not parse):
-        msg = 'WARNING: Using search string "%s"\n' % search_string
-        msg = msg + \
-              "WARNING: Could not find tile number %s in this data structure: %s" \
-              % (str(tileno), cgra_tile_info)
-        # errmsg(msg)
-        print msg
+        global PRINTED_CONFIG
+        if (DBG and not PRINTED_CONFIG):
+            print 'WARNING: Using search string "%s"\n' % search_string
+            print "WARNING: Could not find tile number %s in this lookup table: %s" \
+                % (str(tileno), cgra_tile_info)
+            PRINTED_CONFIG = True;
+        elif (DBG):
+            print "WARNING: Could not find tile number '%s' in the lookup table." % str(tileno)
         return False
         
     row = int(parse.group(1))
@@ -168,7 +171,7 @@ def test_tileno2rc_8x8():
 
 
 def rc2tileno_8x8(row,col):
-    DBG = 1
+    DBG = 0
     search_string = "tile_addr='(\d+)'.*row='%d'.*col='%d'" % (row,col)
     parse = re.search(search_string, cgra_tile_info)
     # if (not parse):
@@ -177,7 +180,7 @@ def rc2tileno_8x8(row,col):
     #           "ERROR: Could not find tile (r%s,c%s) in this data structure: %s" \
     #           % (str(row), str(col), cgra_tile_info)
     #     errmsg(msg)
-    if (not parse):
+    if (DBG and not parse):
         msg = 'WARNING: Using search string "%s"\n' % search_string
         msg = msg + \
               "WARNING: Could not find tile (r%s,c%s) in this data structure: %s" \
@@ -1538,6 +1541,7 @@ def connect_missing_wires():
     if DBG: print "------------------------------------------------------------------------------"
     if DBG: print "CONNECT MISSING WIRES"
     for T in TILE_LIST:
+        if (not T): continue
         for c in T.connectionlist:
             if DBG: print "found connection %s" % c
             parse = re.search("(in_s\d+t\d+)", c)
@@ -1647,17 +1651,27 @@ def initialize_tile_list(w, h):
     NTILES      = w * h
     TILE_LIST   = range(0, NTILES)
     
+    DBG=1
     # for i in TILE_LIST: TILE_LIST[i] = Tile(i)
+    if (DBG): print "Initializing tiles"
     for i in TILE_LIST:
         rc = tileno2rc(i)
         if (not rc):
             TILE_LIST[i] = False
         else:
+            if (DBG): print "%2s" % i,
+            if (DBG and (i%16 == 15)): print ""
             TILE_LIST[i] = Tile(i)
+    if (DBG): print ""
+
+
 
 def process_decoded_bitstream(bs):
     DBG=1
-    initialize_tile_list(4,4)
+    # initialize_tile_list(4,4)
+    global REQUESTED_SIZE
+    (nrows,ncols) = REQUESTED_SIZE
+    initialize_tile_list(nrows, ncols)
     tile = TILE_LIST; # A convenient handle
 
     for line in bs:
@@ -1748,7 +1762,7 @@ def demo_sb_4x4():
     build_and_launch_main_window(title)
 
 def demo_sb_8x8():
-    initialize_tile_list(8,8)    # Initialize 4x4 tile array
+    initialize_tile_list(8,8)    # Initialize 8x8 tile array
     demo_connections_4x4()       # For now let's use the 4x4 connections, see what happens
     title = func_name(); 
     build_and_launch_main_window(title)
@@ -1836,16 +1850,14 @@ FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
     build_and_launch_main_window(title)
 
 def do_demos():
-    global SWAP
-    demo_sb_8x8()
     # return
+    global SWAP
+    global REQUESTED_SIZE
     if (1):
-        # SWAP = False # "This should fail"
-        # display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
-        SWAP = True # "This should work"
-        display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
+        REQUESTED_SIZE = (8,8)
+        display_decoded_bitstream_file("../decoder/examples/cd387-newmem-8x8.bs-decoded")
 
-
+    REQUESTED_SIZE = (4,4)
     SWAP = False # Demos were all written under old regime
     demo_cd_jimmied()
     demo_an2_jimmied()
@@ -1864,6 +1876,7 @@ def do_demos():
         # display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
         SWAP = True  # newmem / new regime
         display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
+    demo_sb_8x8()
     return
 
 
@@ -1877,9 +1890,12 @@ def main():
         bsview.py -demo                                 # Runs through a couple built-in demos
         bsview.py --help                                # Displays this help message
     ''' 
-
     print sys.argv
     args = sys.argv[1:]  # argv[0] is command name
+
+    # FIXME yes this is bad
+    global REQUESTED_SIZE
+    REQUESTED_SIZE = (4,4) # default
 
     global SWAP
     if    (len(args) == 0): do_demos() # no args
@@ -1891,6 +1907,7 @@ def main():
         elif (args[0] == '-swaprc'): SWAP = True
         elif (args[0] == '-newmem'): SWAP = True
         elif (args[0] == '-oldmem'): SWAP = False
+        elif (args[0] == '-8x8'): REQUESTED_SIZE = (8,8)
         else:      display_decoded_bitstream_file(args[0])
         args = args[1:]
     return
