@@ -40,19 +40,14 @@ Usage:
 
 sbdefaults = True;
 
-SWAP   = False
-
-
+SWAP = False
 if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
 while (len(args) > 0):
-    if (args[0] == '-nodefaults'):
-        sbdefaults = False
-    elif (args[0] == '-swaprc'):
-        SWAP = True
-    elif (args[0] == '-newmem'):
-        SWAP = True
-    else: bitstream_filename = args[0];
+    if   (args[0] == '-nodefaults'): sbdefaults = False
+    elif (args[0] == '-swaprc'):     SWAP = True
+    elif (args[0] == '-newmem'):     SWAP = True
+    else:              bitstream_filename = args[0];
     args = args[1:]
 
 
