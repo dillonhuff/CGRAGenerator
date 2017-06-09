@@ -67,10 +67,10 @@ def tileno2rc(tileno):
     #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
     #
 
-#     # Is this smart? Ans: NO   # FIXME/TODO
-#     if (GRID_WIDTH >= 8):
-#         return tileno2rc_8x8(tileno)
-# 
+    # Is this smart? Ans: NO   # FIXME/TODO
+    if (GRID_WIDTH >= 8):
+        return tileno2rc_8x8(tileno)
+
     row =     tileno % GRID_HEIGHT
     col = int(tileno / GRID_WIDTH)
     
@@ -148,13 +148,18 @@ def tileno2rc_8x8(tileno):
     search_string = "tile_addr='%s'.*row='(\d+)'.*col='(\d+)'" % str(tileno)
     parse = re.search(search_string, cgra_tile_info)
     if (not parse):
-        msg = 'Using search string "%s"\n' % search_string
-        msg = msg + "ERROR: Could not find tile number %s in this data structure: %s" % (str(tileno), cgra_tile_info)
-        errmsg(msg)
+        msg = 'WARNING: Using search string "%s"\n' % search_string
+        msg = msg + \
+              "WARNING: Could not find tile number %s in this data structure: %s" \
+              % (str(tileno), cgra_tile_info)
+        # errmsg(msg)
+        print msg
+        return False
         
     row = int(parse.group(1))
     col = int(parse.group(2))
     if (DBG): print "Found tile number '%d' => row '%d' col '%d'" % (tileno, row, col)
+    return (row,col)
 
 def test_tileno2rc_8x8():
     for i in range(0, 55):
@@ -1311,7 +1316,10 @@ def draw_all_tiles(cr):
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
     # draw_big_ghost_arrows(cr)             # Big ghost arrows in background of grid
                                           # view show general flow dir for tracks
-    for tile in TILE_LIST: tile.draw(cr)  # Draw ALL the tiles
+    # for tile in TILE_LIST: tile.draw(cr)  # Draw ALL the tiles
+    for tile in TILE_LIST:                # Draw ALL the tiles
+        if (tile): tile.draw(cr)
+
     cr.restore()
 
 def test_ports():  # Meh
@@ -1639,8 +1647,13 @@ def initialize_tile_list(w, h):
     NTILES      = w * h
     TILE_LIST   = range(0, NTILES)
     
-    for i in TILE_LIST: TILE_LIST[i] = Tile(i)
-    # return TILE_LIST
+    # for i in TILE_LIST: TILE_LIST[i] = Tile(i)
+    for i in TILE_LIST:
+        rc = tileno2rc(i)
+        if (not rc):
+            TILE_LIST[i] = False
+        else:
+            TILE_LIST[i] = Tile(i)
 
 def process_decoded_bitstream(bs):
     DBG=1
@@ -1825,6 +1838,7 @@ FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
 def do_demos():
     global SWAP
     demo_sb_8x8()
+    # return
     if (1):
         # SWAP = False # "This should fail"
         # display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
