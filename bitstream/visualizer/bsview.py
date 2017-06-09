@@ -66,6 +66,11 @@ def tileno2rc(tileno):
     #   8   9  10  11      (2,0) (2,1) (2,2) (2,3)
     #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
     #
+
+#     # Is this smart? Ans: NO   # FIXME/TODO
+#     if (GRID_WIDTH >= 8):
+#         return tileno2rc_8x8(tileno)
+# 
     row =     tileno % GRID_HEIGHT
     col = int(tileno / GRID_WIDTH)
     
@@ -154,8 +159,36 @@ def tileno2rc_8x8(tileno):
 def test_tileno2rc_8x8():
     for i in range(0, 55):
         tileno2rc_8x8(i)
-
 # test_tileno2rc_8x8(); sys.exit(0)
+
+
+def rc2tileno_8x8(row,col):
+    DBG = 1
+    search_string = "tile_addr='(\d+)'.*row='%d'.*col='%d'" % (row,col)
+    parse = re.search(search_string, cgra_tile_info)
+    # if (not parse):
+    #     msg = 'Using search string "%s"\n' % search_string
+    #     msg = msg + \
+    #           "ERROR: Could not find tile (r%s,c%s) in this data structure: %s" \
+    #           % (str(row), str(col), cgra_tile_info)
+    #     errmsg(msg)
+    if (not parse):
+        msg = 'WARNING: Using search string "%s"\n' % search_string
+        msg = msg + \
+              "WARNING: Could not find tile (r%s,c%s) in this data structure: %s" \
+              % (str(row), str(col), cgra_tile_info[:-1])  # -1 chops off trailing '\n'
+        print msg
+        return False
+        
+    tileno = int(parse.group(1))
+    if (DBG): print "Found tile (r%dc%d) => tileno '%d'" % (row, col, tileno)
+
+def test_rc2tileno_8x8():
+    for r in range(0, 7):
+        for c in range (0, 7):
+            t = rc2tileno_8x8(r,c)
+# test_rc2tileno_8x8(); sys.exit(0);
+
 
 # A really dumb way to keep track of current scale factor, for
 # button-press events
@@ -1791,6 +1824,7 @@ FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
 
 def do_demos():
     global SWAP
+    demo_sb_8x8()
     if (1):
         # SWAP = False # "This should fail"
         # display_decoded_bitstream_file("../decoder/examples/cd387-decoded-nodefaults-newmem.bs")
@@ -1834,8 +1868,8 @@ def main():
     args = sys.argv[1:]  # argv[0] is command name
 
     global SWAP
-    # if    (len(args) == 0): do_demos() # no args
-    if    (len(args) == 0): demo_sb_8x8() # no args
+    if    (len(args) == 0): do_demos() # no args
+    # if    (len(args) == 0): demo_sb_8x8() # no args
     while (len(args)  > 0):            # args
         print "arg0 = %s, SWAP=%s" % (args[0], SWAP)
         if   (args[0] ==  "-demo"):  do_demos()
