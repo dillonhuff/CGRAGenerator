@@ -18,6 +18,10 @@ from subprocess import call
 
 def exit(): sys.exit(0)
 
+def errmsg(m):
+    sys.stdout.write("ERROR: %s\n" % (m))
+    sys.exit(-1)
+
 # print dir(gtk.gdk.Window.props)
 # sys.exit(0)
 
@@ -71,6 +75,87 @@ def tileno2rc(tileno):
 def rc2tileno(row,col):
     if (not SWAP): return GRID_HEIGHT*col + row
     else:          return GRID_WIDTH *row + col
+
+
+
+# Oh no
+cgra_tile_info = '''
+  <tile type='pe_tile_new' tile_addr='0' row='0' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='1' row='0' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='2' row='0' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='3' row='0' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='4' row='0' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='5' row='0' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='6' row='0' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='7' row='0' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='8' row='1' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='9' row='1' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='10' row='1' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='11' row='1' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='12' row='1' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='13' row='1' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='14' row='2' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='15' row='2' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='16' row='2' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='17' row='2' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='18' row='2' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='19' row='2' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='20' row='2' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='21' row='2' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='22' row='3' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='23' row='3' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='24' row='3' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='25' row='3' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='26' row='3' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='27' row='3' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='28' row='4' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='29' row='4' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='30' row='4' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='31' row='4' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='32' row='4' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='33' row='4' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='34' row='4' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='35' row='4' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='36' row='5' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='37' row='5' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='38' row='5' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='39' row='5' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='40' row='5' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='41' row='5' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='42' row='6' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='43' row='6' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='44' row='6' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='45' row='6' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='46' row='6' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='47' row='6' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='48' row='6' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='49' row='6' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='50' row='7' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='51' row='7' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='52' row='7' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='53' row='7' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='54' row='7' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='55' row='7' col='6' tracks='BUS1:5 BUS16:5 '>
+'''
+
+def tileno2rc_8x8(tileno):
+    DBG = 1
+    search_string = "tile_addr='%s'.*row='(\d+)'.*col='(\d+)'" % str(tileno)
+    parse = re.search(search_string, cgra_tile_info)
+    if (not parse):
+        msg = 'Using search string "%s"\n' % search_string
+        msg = msg + "ERROR: Could not find tile number %s in this data structure: %s" % (str(tileno), cgra_tile_info)
+        errmsg(msg)
+        
+    row = int(parse.group(1))
+    col = int(parse.group(2))
+    if (DBG): print "Found tile number '%d' => row '%d' col '%d'" % (tileno, row, col)
+
+def test_tileno2rc_8x8():
+    for i in range(0, 55):
+        tileno2rc_8x8(i)
+
+# test_tileno2rc_8x8(); sys.exit(0)
 
 # A really dumb way to keep track of current scale factor, for
 # button-press events
@@ -141,10 +226,6 @@ CANVAS_HEIGHT = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
 WIN_WIDTH  = 4*CANVAS_WIDTH+2*ARRAY_PAD
 WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
-
-def errmsg(m):
-    sys.stdout.write("ERROR: %s\n" % (m))
-    sys.exit(-1)
 
 ##############################################################################
 # These could all be part of a Wire class if we wanted to...
