@@ -39,7 +39,10 @@ GRID_HEIGHT = 2;
 NTILES = GRID_WIDTH*GRID_HEIGHT
 TILE_LIST = range(0, NTILES)
 
-SWAP = False
+# Old regime default: SWAP = False
+# New regime default: SWAP = True
+SWAP = True
+
 # tileno-to-RC conversion
 def tileno2rc(tileno):
     # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown above.
@@ -1182,7 +1185,10 @@ def draw_all_tiles(cr):
     global SCALE_FACTOR;                   # Others should know
 
     SCALE_FACTOR = 1
-    if (GRID_WIDTH <= 2): SCALE_FACTOR = 2 # Why squint if you don't need to?
+    if (GRID_WIDTH <= 2): SCALE_FACTOR = 2   # Why squint if you don't need to?
+    if (GRID_WIDTH  > 4): SCALE_FACTOR = 0.5 # Let's try this
+
+
 
     print
     print "Draw all tiles!"
@@ -1614,6 +1620,13 @@ def demo_sb_4x4():
     title = func_name(); 
     build_and_launch_main_window(title)
 
+def demo_sb_8x8():
+    initialize_tile_list(8,8)    # Initialize 4x4 tile array
+    demo_connections_4x4()       # For now let's use the 4x4 connections, see what happens
+    title = func_name(); 
+    build_and_launch_main_window(title)
+
+
 def func_name():
     import traceback
     return traceback.extract_stack(None, 2)[0][2]
@@ -1740,7 +1753,8 @@ def main():
     args = sys.argv[1:]  # argv[0] is command name
 
     global SWAP
-    if    (len(args) == 0): do_demos() # no args
+    # if    (len(args) == 0): do_demos() # no args
+    if    (len(args) == 0): demo_sb_8x8() # no args
     while (len(args)  > 0):            # args
         print "arg0 = %s, SWAP=%s" % (args[0], SWAP)
         if   (args[0] ==  "-demo"):  do_demos()
