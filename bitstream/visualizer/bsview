@@ -15,9 +15,12 @@ if ($#argv == 0) then
     USAGE:
     set sn = $scriptpath:t
     echo "Usage:"
-    echo "    $sn <bitstream.bs>     # Decodes and displays bitstream"
-    echo "    $sn -demo              # Runs through a couple built-in demos"
-    echo "    $sn --help             # Displays this help message"
+    echo "    $sn <b1.bs> <b2.bs> ...   # Displays decoded bitstreams b1, b2, ..."
+    echo "    $sn -swaprc <b1.bs> ...   # Swap RC on indicated bitstream"
+    echo "    $sn -newmem <b1.bs> ...   # Do the right thing for newmem regime"
+    echo "    $sn -oldmem <b1.bs> ...   # Do the right thing for oldmem regime (default)"
+    echo "    $sn -demo                 # Runs through a couple built-in demos"
+    echo "    $sn --help                # Displays this help message"
     exit 0
 endif
 
@@ -34,7 +37,14 @@ endif
 # TODO maybe use extension to decide whether bs needs decoded or not
 # or auto-detect
 
+set switch = ""
+set echo
 foreach bs ($argv)
+  if ("$bs" == "-oldmem" || "$bs" == "-newmem" || "$bs" == "-swaprc") then
+    set switch = $bs
+    continue
+  endif
+
   set bsname = $bs:t
   set bsdecoded = /tmp/$bsname-decoded
   echo "Decoding bitstream '$bs', output to '$bsdecoded'"
@@ -42,14 +52,18 @@ foreach bs ($argv)
   echo "Before:"
   cat $bs
   
+  $BSVIEW_HOME/../decoder/decode.py -nodefaults $switch $bs > $bsdecoded
+
   echo
   echo "After:"
-  $BSVIEW_HOME/../decoder/decode.py -nodefaults $bs | tee $bsdecoded
+  cat $bsdecoded
 
   echo "Decoded output is here: $bsdecoded"
 
   # echo -n "Continue? (^C to exit) "; set reply = $<; echo ""
-  $BSVIEW_HOME/bsview.py $bsdecoded
+  $BSVIEW_HOME/bsview.py $switch $bsdecoded
+
+  set switch = ""
 
 end
 
