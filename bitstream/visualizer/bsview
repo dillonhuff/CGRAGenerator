@@ -43,7 +43,8 @@ set switch = "-newmem"
 
 set echo
 foreach bs ($argv)
-  if ("$bs" == "-oldmem" || "$bs" == "-newmem" || "$bs" == "-swaprc") then
+  # if ("$bs" == "-oldmem" || "$bs" == "-newmem" || "$bs" == "-swaprc") then
+  if (`expr "$bs" : "-"`) then
     set switch = $bs
     continue
   endif
