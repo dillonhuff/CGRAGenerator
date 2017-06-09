@@ -37,7 +37,10 @@ endif
 # TODO maybe use extension to decide whether bs needs decoded or not
 # or auto-detect
 
-set switch = ""
+# set switch = ""
+# Let's make "newmem" the default
+set switch = "-newmem"
+
 set echo
 foreach bs ($argv)
   if ("$bs" == "-oldmem" || "$bs" == "-newmem" || "$bs" == "-swaprc") then
