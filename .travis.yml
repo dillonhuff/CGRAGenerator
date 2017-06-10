@@ -12,10 +12,8 @@ addons:
     # - build-essential
 
 script:
-
   # - export CGRA_GEN_USE_MEM=1
   # - export CGRA_GEN_ALL_REG=1
-
 
   # CGRA setup
   - echo CGRA setup for CGRAGenerator travis script
@@ -38,6 +36,11 @@ script:
         -nclocks 3M
   - popd
   - pushd $cgroot/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
+
+  # This should work as well or better, yes?
+
+
+
 
 ##############################################################################
 # NOTES
