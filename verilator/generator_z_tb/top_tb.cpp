@@ -351,23 +351,28 @@ int main(int argc, char **argv, char **env) {
           top->clk = clk;
           top->reset = reset;
 
-          if (0) {
-              // Using add4 config file
-              top->wire_0_m1_BUS16_S0_T0 = in_0_0;
-              top->wire_m1_0_BUS16_S1_T0 = in_0_1;
-              top->wire_1_m1_BUS16_S0_T2 = in_1_0;
-              // top->wire_2_0_BUS16_S3_T2  = in_1_1;
-              top->wire_4_0_BUS16_S3_T2  = in_1_1;
-          }
+          // 6/10/2017: What is this?  Why is it here?  And why did verilator
+          // throw an error for a missing wire in the "if (0)" block?
+          // 
+          //           if (0) {
+          //               // Using add4 config file
+          //               top->wire_0_m1_BUS16_S0_T0 = in_0_0;
+          //               top->wire_m1_0_BUS16_S1_T0 = in_0_1;
+          //               top->wire_1_m1_BUS16_S0_T2 = in_1_0;
+          //               // top->wire_2_0_BUS16_S3_T2  = in_1_1;
+          //               top->wire_4_0_BUS16_S3_T2  = in_1_1;
+          //           }
+          // 
+          //           else {
+          //               // mul2 config file
+          //               // top->wire_0_3_BUS16_S2_T0 = 0x10;
+          //               // top->wire_1_2_BUS16_S3_T1 = 0x11;
+          //               // top->wire_0_0_BUS16_S1_T0 = 0x22;
+          //               // INWIRE = 0x22;
+          //               INWIRE = in_0_0;
+          //           }
 
-          else {
-              // mul2 config file
-              // top->wire_0_3_BUS16_S2_T0 = 0x10;
-              // top->wire_1_2_BUS16_S3_T1 = 0x11;
-              // top->wire_0_0_BUS16_S1_T0 = 0x22;
-              // INWIRE = 0x22;
-              INWIRE = in_0_0;
-          }
+          INWIRE = in_0_0;
 
 
           top->config_addr = config_addr;

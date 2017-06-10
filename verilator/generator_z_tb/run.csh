@@ -44,9 +44,10 @@ set nclocks   = "1M"
 unset tracefile
 
 if ($#argv == 1) then
-  if ($argv[1] == '--help') then
+  if ("$argv[1]" == '--help') then
     echo "Usage:"
-    echo "    $0 <textbench.cpp> [-gen]"
+    echo "    $0 <textbench.cpp> [-gen | -nogen]"
+    echo "        -usemem -allreg"
     echo "        -config     <config_filename>"
     echo "        -input      <input_filename>"
     echo "        -output     <output_filename>"
@@ -68,7 +69,6 @@ if ($#argv == 1) then
   endif
 endif
 
-
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
 # CLEANUP
@@ -87,9 +87,7 @@ while ($#argv)
       set GENERATE = '-gen'; breaksw;
 
     case '-nogen':
-      # echo "'nogen' is the default already"; breaksw;
       set GENERATE = '-nogen'; breaksw;
-      
 
     case '-config':
       set config = "$2"; shift; breaksw
@@ -115,6 +113,18 @@ while ($#argv)
       # will accept e.g. "1,000,031" or "41K" or "3M"
       set nclocks = $2;
       shift; breaksw
+
+    case -usemem:
+      setenv CGRA_GEN_USE_MEM 1; breaksw
+
+    case -allreg:
+      setenv CGRA_GEN_ALL_REG 1; breaksw
+
+    # Unused / undocumented for now
+    case -oldmem:
+      unsetenv CGRA_GEN_USE_MEM
+      unsetenv CGRA_GEN_ALL_REG
+      breaksw
 
     default:
       set testbench = "$1";
@@ -304,6 +314,16 @@ echo ''
 echo '------------------------------------------------------------------------'
 echo ''
 echo "Building the verilator simulator executable..."
+
+  # (Temporary (I hope)) SRAM hack
+
+  echo
+  echo '  SRAM hack'
+  if ($?CGRA_GEN_USE_MEM) then
+     cp ./sram_stub.v $vdir/sram_512w_16b.v
+     ls -l $vdir/sram*
+  endif
+  echo
 
   # Build the necessary switches
 
