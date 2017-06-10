@@ -12,32 +12,48 @@ addons:
     # - build-essential
 
 script:
+#   # - export CGRA_GEN_USE_MEM=1
+#   # - export CGRA_GEN_ALL_REG=1
+# 
+#   # CGRA setup
+#   - echo CGRA setup for CGRAGenerator travis script
+#   - cgroot=${TRAVIS_BUILD_DIR};
+#   - cgbuild=${TRAVIS_BUILD_DIR}/build;
+#   - mkdir $cgbuild;
+# 
+#   # CGRA generate
+#   - echo "CGRA generate (generates CGRA + connection matrix for pnr)" - `date`
+#   - pushd $cgroot; ./travis-test.csh || exit -1; popd
+# 
+#   # CGRA program and run uses bitstream produced by PNR guys
+#   - echo "CGRA program and run (uses output of pnr)" - `date`
+#   - pushd $cgroot/verilator/generator_z_tb
+#   - ./run.csh top_tb.cpp -input io/gray_small.png
+#         -nogen 
+#         -config $cgroot/bitstream/examples/cd387-good.bs
+#         -input  io/gray.png 
+#         -output /tmp/output.raw
+#         -nclocks 3M
+#   - popd
+#   - pushd $cgroot/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
+
+  # This should work as well or better, yes?
+
   # - export CGRA_GEN_USE_MEM=1
   # - export CGRA_GEN_ALL_REG=1
 
-  # CGRA setup
-  - echo CGRA setup for CGRAGenerator travis script
-  - cgroot=${TRAVIS_BUILD_DIR};
-  - cgbuild=${TRAVIS_BUILD_DIR}/build;
-  - mkdir $cgbuild;
-
-  # CGRA generate
-  - echo "CGRA generate (generates CGRA + connection matrix for pnr)" - `date`
-  - pushd $cgroot; ./travis-test.csh || exit -1; popd
-
-  # CGRA program and run uses bitstream produced by PNR guys
-  - echo "CGRA program and run (uses output of pnr)" - `date`
-  - pushd $cgroot/verilator/generator_z_tb
-  - ./run.csh top_tb.cpp -input io/gray_small.png
-        -nogen 
-        -config $cgroot/bitstream/examples/cd387-good.bs
-        -input  io/gray.png 
-        -output /tmp/output.raw
-        -nclocks 3M
+  - CGROOT=${TRAVIS_BUILD_DIR};
+  - pushd $CGROOT/verilator/generator_z_tb
+  -   ./run.csh -gen top_tb.cpp -input io/gray_small.png
+          -nogen 
+          -config $CGROOT/bitstream/examples/cd387-good.bs
+          -input  io/gray.png 
+          -output /tmp/output.raw
+          -nclocks 3M
   - popd
-  - pushd $cgroot/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
 
-  # This should work as well or better, yes?
+  # See if cgra_info matches one or more of existing sample cgra_info files
+  - pushd $CGROOT/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
 
 
 
