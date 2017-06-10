@@ -225,7 +225,7 @@ int main(int argc, char **argv, char **env) {
       // travis freaks out if no output for 10 minutes...
       if ( (i%100000) == 0) {
           if (i==100000) printf("Executed %dK cycles...", i/1000);
-          else           printf("%dK...", i/1000);
+          else if (i>0)  printf("%dK...", i/1000);
           fflush(stdout);
       }
 
