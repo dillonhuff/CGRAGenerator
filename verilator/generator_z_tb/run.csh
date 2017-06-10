@@ -442,6 +442,7 @@ echo '  First prepare input and output files...'
 
   echo
   echo "# Run executable simulation"
+  echo -n " TIME NOW: "; date
 
   set echo
     obj_dir/V$top \
@@ -453,6 +454,7 @@ echo '  First prepare input and output files...'
       | tee /tmp/run.log.$$ \
       || exit -1
   unset echo >& /dev/null
+  echo -n " TIME NOW: "; date
 
   grep FAIL /tmp/run.log.$$ && exit -1
 

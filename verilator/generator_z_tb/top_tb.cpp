@@ -222,6 +222,13 @@ int main(int argc, char **argv, char **env) {
     int nprints = 0;
 
   for (int i=0; i<NCLOCKS; i++) {
+      // travis freaks out if no output for 10 minutes...
+      if ( (i%100000) == 0) {
+          printf("Executed %dK cycles...", i/1000);
+          if (i==0) { printf("\n");
+          fflush(stdout);
+      }
+
       char what_i_did[256] = "";
       // sprintf(what_i_did, "");
 
