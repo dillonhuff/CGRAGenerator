@@ -12,68 +12,43 @@ addons:
     # - build-essential
 
 script:
+  # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
+  - set -e
+  - cd testdir; make test_all
+  
+
+
 #   # - export CGRA_GEN_USE_MEM=1
 #   # - export CGRA_GEN_ALL_REG=1
 # 
-#   # CGRA setup
-#   - echo CGRA setup for CGRAGenerator travis script
-#   - cgroot=${TRAVIS_BUILD_DIR};
-#   - cgbuild=${TRAVIS_BUILD_DIR}/build;
-#   - mkdir $cgbuild;
+#   - CGROOT=${TRAVIS_BUILD_DIR};
+#   - pushd $CGROOT/verilator/generator_z_tb
 # 
-#   # CGRA generate
-#   - echo "CGRA generate (generates CGRA + connection matrix for pnr)" - `date`
-#   - pushd $cgroot; ./travis-test.csh || exit -1; popd
+#   # Old 4x4 parrot
+#   # -   ./run.csh -gen top_tb.cpp
+#   #         -config $CGROOT/bitstream/examples/cd387-good.bs
+#   #         -input  io/gray.png 
+#   #         -output /tmp/output.raw
+#   #         -nclocks 3M
 # 
-#   # CGRA program and run uses bitstream produced by PNR guys
-#   - echo "CGRA program and run (uses output of pnr)" - `date`
-#   - pushd $cgroot/verilator/generator_z_tb
-#   - ./run.csh top_tb.cpp -input io/gray_small.png
-#         -nogen 
-#         -config $cgroot/bitstream/examples/cd387-good.bs
-#         -input  io/gray.png 
-#         -output /tmp/output.raw
-#         -nclocks 3M
+#   # New 8x8 parrot
+#   -   ./run.csh -gen top_tb.cpp
+#           -usemem -config $CGROOT/bitstream/examples/cd387-newmem-8x8.bs
+#           -input  io/gray.png 
+#           -output /tmp/output.raw
+#           -nclocks 3M
+# 
 #   - popd
-#   - pushd $cgroot/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
-
-  # This should work as well or better, yes?
-
-  # set -e => exit on failure.
-  # You can sandwich the stuff in script with set -e and set +e. 
-  - set -e
-
-  # - export CGRA_GEN_USE_MEM=1
-  # - export CGRA_GEN_ALL_REG=1
-
-  - CGROOT=${TRAVIS_BUILD_DIR};
-  - pushd $CGROOT/verilator/generator_z_tb
-
-  # Old 4x4 parrot
-  # -   ./run.csh -gen top_tb.cpp
-  #         -config $CGROOT/bitstream/examples/cd387-good.bs
-  #         -input  io/gray.png 
-  #         -output /tmp/output.raw
-  #         -nclocks 3M
-
-  # New 8x8 parrot
-  -   ./run.csh -gen top_tb.cpp
-          -usemem -config $CGROOT/bitstream/examples/cd387-newmem-8x8.bs
-          -input  io/gray.png 
-          -output /tmp/output.raw
-          -nclocks 3M
-
-  - popd
-
-  # See if cgra_info matches one or more of existing sample cgra_info files
-  - pushd $CGROOT/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
-
-
-
-
-##############################################################################
-# NOTES
 # 
-# Maybe someday we'll want/need:
-# perl:
-# - "5.18"
+#   # See if cgra_info matches one or more of existing sample cgra_info files
+#   - pushd $CGROOT/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
+# 
+# 
+# 
+# 
+# ##############################################################################
+# # NOTES
+# # 
+# # Maybe someday we'll want/need:
+# # perl:
+# # - "5.18"
