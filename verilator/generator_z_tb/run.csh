@@ -236,11 +236,6 @@ else
   # Build CGRA 
   echo "Building CGRA because you asked for it with '-gen'..."
 
-#   # Phasing out travis script!
-#   pushd ../..
-#     ./travis-test.csh
-#   popd
-
   ../../bin/generate.csh || exit -1
 
   set gztop = ../../hardware/generator_z/top/
