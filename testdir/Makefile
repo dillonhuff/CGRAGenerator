@@ -32,10 +32,10 @@
 VERILATOR_TOP := ../verilator/generator_z_tb
 
 test_all:
-	make test_4x4_gray_small |& tee /tmp/test_4x4_gray_small.log
-	make test_8x8_gray_small |& tee /tmp/test_8x8_gray_small.log
-	make test_4x4_gray       |& tee /tmp/test_4x4_gray.log
-	make test_8x8_gray       |& tee /tmp/test_8x8_gray.log
+	make test_4x4_gray_small 2>&1 | tee /tmp/test_4x4_gray_small.log
+	make test_8x8_gray_small 2>&1 | tee /tmp/test_8x8_gray_small.log
+	make test_4x4_gray       2>&1 | tee /tmp/test_4x4_gray.log
+	make test_8x8_gray       2>&1 | tee /tmp/test_8x8_gray.log
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
 	@echo ==================================================
