@@ -31,6 +31,22 @@
 
 VERILATOR_TOP := ../verilator/generator_z_tb
 
+# foo: ../bitstream/examples/cd387-good.bs $(VERILATOR_TOP)/top_tb.cpp $(VERILATOR_TOP)/io/gray_small.png
+# 	@echo $?
+# 	@echo $(?:.bs=.foo)
+# 	echo $(filter %.cpp,$?)
+# 	bitstream=$(filter %.bs,$?); echo $$bitstream
+# 	input=$(filter %.png,$?); echo $$input
+# 
+# %.baz : ; echo foo
+# 	echo bar
+# 	echo $?
+# 	$(A=b)
+# 	echo $(A)
+# 
+# bar.baz: ../bitstream/examples/cd387-good.bs
+
+
 test_all:
 	make test_4x4_gray_small 2>&1 | tee /tmp/test_4x4_gray_small.log
 	make test_8x8_gray_small 2>&1 | tee /tmp/test_8x8_gray_small.log
@@ -39,8 +55,10 @@ test_all:
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
 	@echo ==================================================
-	@egrep '^00014' /tmp/test_{4x4,8x8}_gray_small.log
-	@egrep '^00014' /tmp/test_{4x4,8x8}_gray.log
+	@egrep '^00014' /tmp/test_4x4_gray_small.log
+	@egrep '^00014' /tmp/test_8x8_gray_small.log
+	@egrep '^00014' /tmp/test_4x4_gray.log
+	@egrep '^00014' /tmp/test_8x8_gray.log
 
 test_4x4_gray_small:
 # 	@echo ""
