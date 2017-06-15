@@ -6,15 +6,15 @@
 
 set scriptpath = "$0"
 set scriptpath = $scriptpath:h
-if ("$scriptpath" == "$0") set scriptpath = `pwd`
-set CGROOT = $scriptpath:h
-
-# Clean it up
-pushd $CGROOT >& /dev/null
-  set CGROOT = `pwd`; 
-popd >& /dev/null
+if ("$scriptpath" == "$0") then
+  set scriptpath = `pwd`
+  set CGROOT = `cd $scriptpath:h; pwd`
+else
+  set CGROOT = `cd $scriptpath/..; pwd`
+endif
 
 # echo "scriptpath=$scriptpath"
+# pwd
 # echo "CGROOT=$CGROOT"
 # exit
 
@@ -42,6 +42,7 @@ cd $CGROOT/hardware/generator_z/top
 
     # NOTE THIS IS THE RUN.CSH IN HARDWARE/GENERATOR_Z
     set run = run.csh
+
     echo ""; echo "Generator $run looks like this:"; cat $run; echo ""
 
     ./$run || exit -1
