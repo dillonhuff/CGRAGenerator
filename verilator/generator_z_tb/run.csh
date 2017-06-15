@@ -117,6 +117,9 @@ while ($#argv)
     case -usemem:
       setenv CGRA_GEN_USE_MEM 1; breaksw
 
+    case -newmem:
+      setenv CGRA_GEN_USE_MEM 1; breaksw
+
     case -allreg:
       setenv CGRA_GEN_ALL_REG 1; breaksw
 
