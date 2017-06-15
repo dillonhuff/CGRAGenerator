@@ -282,9 +282,16 @@ echo ""
     set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
     echo "  OUT $outwires"
 
+    set yikeswires = `egrep '^# YIKES' $decoded | awk '{print $NF}'`
+    if ("$yikeswires" != "") then
+        set yikeswires = "-yikeswires '$yikeswires'"
+    endif
+    echo "  YIKES $yikeswires"
+    
     echo
     echo "  inwires  = $inwires"
     echo "  outwires = $outwires"
+    echo "  yikeswires = $yikeswires"
     echo
 
 echo "END find input and output wires"

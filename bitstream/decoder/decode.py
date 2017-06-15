@@ -336,19 +336,38 @@ def cb_decode(EE, DDDDDDDD):
     # return st[EE + '.' + DDDDDDDD]
     return cb_connection
 
+yikes_wire = None
 def sb_iohack_find_pe_out(connection_list):
     # Find the wire that's connected to pe_out
     # An item in the list should look like this: "out_s1t0 <= pe_out"
+    DBG = 0
+    list_of_pe_outs = []
     for c in connection_list:
         # print "FOO " + c;
         pe_out = re.search("([A-z_0-9]+).*pe_out$", c);
         if (pe_out):
             iohack_pe_out = pe_out.group(1);
-            # print "FOUND IT! (%s); " % c,
-            # print "pe connects to %s" % iohack_pe_out
-            return iohack_pe_out;
+            if (DBG): print "FOUND IT! (%s); " % c,
+            if (DBG): print "pe connects to %s" % iohack_pe_out
+            list_of_pe_outs.append(iohack_pe_out);
+            if (DBG): print "FOO " + str(list_of_pe_outs)
 
-    return 0;
+    howmany = len(list_of_pe_outs);
+    if (DBG): print "Found %d pe_out's" % howmany
+    if (howmany == 0):
+        return 0;
+
+    elif (howmany == 1):
+        rval = list_of_pe_outs[0];
+        if (DBG): print "One pe_out: " + rval
+        return rval
+
+    else:
+        if (DBG): print "YIKES!  Too many pe_out's (for now)."
+        rval = list_of_pe_outs[0];
+        global yikes_wire
+        yikes_wire = list_of_pe_outs[1];
+        return rval;
 
 def sb_print_nonzero(connection_list):
     # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
@@ -772,6 +791,13 @@ for t in iohack_io_tiles:
         inwire = iohack_pe_out[t]
         input_wirename  = "%8s / %s" % ( inwire, find_source(r,c, inwire))
         print "# INPUT  %s / %s" % (tile, input_wirename)
+
+        if (not yikes_wire == None):
+            yikes_wirename  = "%8s / %s" % ( inwire, find_source(r,c, yikes_wire))
+            print "# YIKES  %s / %s" % (tile, yikes_wirename)
+
+        # else: print "FOO no yikes wire"
+
     if (io == "output"):
         outwire = iohack_cb_out[t];
         output_wirename = "%8s / %s" % (outwire, find_source(r,c,outwire));
