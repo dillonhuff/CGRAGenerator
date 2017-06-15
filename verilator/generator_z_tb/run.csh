@@ -117,6 +117,9 @@ while ($#argv)
     case -usemem:
       setenv CGRA_GEN_USE_MEM 1; breaksw
 
+    case -newmem:
+      setenv CGRA_GEN_USE_MEM 1; breaksw
+
     case -allreg:
       setenv CGRA_GEN_ALL_REG 1; breaksw
 
@@ -183,7 +186,7 @@ set echo
 if ($?OLDMEM) then
   ../../bitstream/decoder/decode.py $swizzled > $decoded
 else
-  ../../bitstream/decoder/decode.py -newmem $swizzled > $decoded
+  ../../bitstream/decoder/decode.py -newmem -8x8 $swizzled > $decoded
 endif
 
 unset echo
