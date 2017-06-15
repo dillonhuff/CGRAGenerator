@@ -14,41 +14,41 @@ addons:
 script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
-#  - cd testdir; make test_all
+  - cd testdir; make test_all
+  
 
 
-
-  # - export CGRA_GEN_USE_MEM=1
-  # - export CGRA_GEN_ALL_REG=1
-
-  - CGROOT=${TRAVIS_BUILD_DIR};
-  - pushd $CGROOT/verilator/generator_z_tb
-
-  # Old 4x4 parrot
-  # -   ./run.csh -gen top_tb.cpp
-  #         -config $CGROOT/bitstream/examples/cd387-good.bs
-  #         -input  io/gray.png 
-  #         -output /tmp/output.raw
-  #         -nclocks 3M
-
-  # New 8x8 parrot
-  -   ./run.csh -gen top_tb.cpp
-          -usemem -config $CGROOT/bitstream/examples/cd387-newmem-8x8.bs
-          -input  io/gray.png 
-          -output /tmp/output.raw
-          -nclocks 3M
-
-  - popd
-
-  # See if cgra_info matches one or more of existing sample cgra_info files
-  - pushd $CGROOT/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
-
-
-
-
-##############################################################################
-# NOTES
+#   # - export CGRA_GEN_USE_MEM=1
+#   # - export CGRA_GEN_ALL_REG=1
 # 
-# Maybe someday we'll want/need:
-# perl:
-# - "5.18"
+#   - CGROOT=${TRAVIS_BUILD_DIR};
+#   - pushd $CGROOT/verilator/generator_z_tb
+# 
+#   # Old 4x4 parrot
+#   # -   ./run.csh -gen top_tb.cpp
+#   #         -config $CGROOT/bitstream/examples/cd387-good.bs
+#   #         -input  io/gray.png 
+#   #         -output /tmp/output.raw
+#   #         -nclocks 3M
+# 
+#   # New 8x8 parrot
+#   -   ./run.csh -gen top_tb.cpp
+#           -usemem -config $CGROOT/bitstream/examples/cd387-newmem-8x8.bs
+#           -input  io/gray.png 
+#           -output /tmp/output.raw
+#           -nclocks 3M
+# 
+#   - popd
+# 
+#   # See if cgra_info matches one or more of existing sample cgra_info files
+#   - pushd $CGROOT/hardware/generator_z/top; ls -l cgra_info.txt examples/*.txt; popd
+# 
+# 
+# 
+# 
+# ##############################################################################
+# # NOTES
+# # 
+# # Maybe someday we'll want/need:
+# # perl:
+# # - "5.18"
