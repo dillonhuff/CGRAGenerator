@@ -183,7 +183,7 @@ set echo
 if ($?OLDMEM) then
   ../../bitstream/decoder/decode.py $swizzled > $decoded
 else
-  ../../bitstream/decoder/decode.py -newmem $swizzled > $decoded
+  ../../bitstream/decoder/decode.py -newmem -8x8 $swizzled > $decoded
 endif
 
 unset echo
