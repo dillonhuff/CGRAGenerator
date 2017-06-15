@@ -179,6 +179,14 @@ def test_tileno2rc_8x8():
     
 
 
+# def tiletype(tileno):
+#     # Is this smart? Ans: NO   # FIXME/TODO
+#     if (GRIDSIZE == "8x8"):
+#         search_string = 
+#         parse = re.search("type='([^']*)'", cgra_tile_info)
+#         return 
+# 
+#     else: return "pe_tile_new";
 
 
 def find_source(row, col, wirename):
@@ -269,7 +277,8 @@ def EE_decode(EE):
     element["04"] =   "cb4";
     element["05"] =   "sb1";
     element["06"] =   "sb2";
-    return element[EE];
+    # return element[EE];
+    return "sb2"
 
 # Given 8-digit hex string DDDDDDDD = e.g. "00000002", tell what
 # switchbox will do with the data, e.g. sb_decode("00000000") = "out <= in_0"
@@ -286,10 +295,10 @@ def cb_decode(EE, DDDDDDDD):
     #     [01234]: pe_inp_b = in_BUS16_S0_T[01234]
     #     [56789]: pe_inp_b = in_BUS16_S2_T[01234]
 
-    if (not re.search("0000000[0-9]", DDDDDDDD)):
-        sys.stdout.flush();
-        sys.stderr.write("\nERROR bad value '%s' for connection box\n" % DDDDDDDD);
-        sys.exit(-1);
+#     if (not re.search("0000000[0-9A-Fa-f]", DDDDDDDD)):
+#         sys.stdout.flush();
+#         sys.stderr.write("\nERROR bad value '%s' for connection box\n" % DDDDDDDD);
+#         sys.exit(-1);
 
     st = {};
 
@@ -321,7 +330,8 @@ def cb_decode(EE, DDDDDDDD):
     st["03.00000008"] = "wireB <= in_s2t3"
     st["03.00000009"] = "wireB <= in_s2t4"
 
-    cb_connection = st[EE + '.' + DDDDDDDD]
+    # cb_connection = st[EE + '.' + DDDDDDDD]
+    cb_connection = "wireB <= in_s2t4"
 
     # return st[EE + '.' + DDDDDDDD]
     return cb_connection
@@ -698,11 +708,19 @@ for line in inputstream:
 
         # IO hack
         op = DDDDDDDD[6:8] # last two hex digits
+
+        # print "RR=%s and op=%s" % (RR,op)
+
+
         if ( (RR=="FF") and (op=="FF") ): iohack_io_tiles[thistile] = "output";
-        if ( (RR=="FF") and (op=="F0") ): iohack_io_tiles[thistile] = "input";
+        if ( (RR=="FF") and (op=="F0") ):
+            iohack_io_tiles[thistile] = "input";
+            # print "iohack_io_tiles[%s] = %s" % (thistile, iohack_io_tiles[thistile])
             # print "\n\nFOO input\n\n"
             # print "\n\nFOO output\n\n"
             
+
+
     # Connection box
     elif (EE == "02" or EE == "03"):
         # print "%s   # %s" % (line, cb_decode(EE,DDDDDDDD));
