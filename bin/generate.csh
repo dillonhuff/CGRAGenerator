@@ -42,7 +42,7 @@ cd $CGROOT/hardware/generator_z/top
 
     # NOTE THIS IS THE RUN.CSH IN HARDWARE/GENERATOR_Z
     set run = run.csh
-
+    
     echo ""; echo "Generator $run looks like this:"; cat $run; echo ""
 
     ./$run || exit -1
