@@ -1368,6 +1368,15 @@ def test_ports():  # Meh
 # sophisticated layouts, you can nest the container objects, i.e. have a
 # gtk.HBox inside a gtk.VBox.
 
+class CGRAButton(gtk.Button):
+    def __init__(self):
+        gtk.Button.__init__(self)
+        self.props.label = "label"
+        self.props.name = "name"
+        self.props.width_request = 100
+        self.props.height_request= 100
+
+
 
 # class CGRAWin(Gtk.Window):
 class CGRAWin(gtk.Window):
@@ -1391,8 +1400,37 @@ class CGRAWin(gtk.Window):
 
         global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 
+        # FIXME why "self.da" andnot just "da"?
         self.da = Gtk.DrawingArea()
-        self.add(self.da)
+        # self.add(self.da)
+
+        # To toolbar FIXME should be separate function maybe
+        button_magplus = gtk.Button("+")
+        button_magminus= gtk.Button("-")
+        button_hand    = gtk.Button("hand")
+        button_arrow   = gtk.Button("arrow")
+        # button_arrow   = CGRAButton("arrow")
+
+        top_toolbar = gtk.HBox()
+        top_toolbar.props.height_request = 25
+#         button_magplus.height_request = 20
+
+
+        expand = False; fill = False;
+        top_toolbar.pack_start(button_magplus,  expand, fill)
+        top_toolbar.pack_start(button_magminus, expand, fill)
+        top_toolbar.pack_start(button_hand,     expand, fill)
+        top_toolbar.pack_start(button_arrow,    expand, fill)
+        print dir(top_toolbar.props)
+
+        vbox = gtk.VBox()
+        vbox.pack_start(top_toolbar, expand, fill)
+        vbox.pack_start(self.da)
+
+        self.add(vbox)
+
+
+
         # A dumb way to keep track of the current window and drawing area widget
         # global CUR_WINDOW;      CUR_WINDOW = win;
         global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = self.da;
@@ -1406,7 +1444,7 @@ class CGRAWin(gtk.Window):
         draw_handler_id = win.da.connect("expose-event", draw_handler)
 
         # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
-        # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
+         # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
         button_press_handler_id = win.da.connect("button-press-event", button_press_handler)
 
         # FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
