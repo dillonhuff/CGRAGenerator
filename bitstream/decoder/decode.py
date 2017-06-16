@@ -34,7 +34,7 @@ if (parse): scriptname_tail = parse.group(1)
 usage = '''
 Decodes/annotates the indicated bitstream file
 Usage:
-   %s [ -nodefaults ] [ -newmem | -oldmem | -swaprc | -8x8 ] <bitstream-file>
+   %s [ -nodefaults ] [ -newmem | -oldmem | -swaprc | -4x4 | -8x8 ] <bitstream-file>
    %s --help
 ''' % (scriptname_tail, scriptname_tail)
 
@@ -49,6 +49,7 @@ while (len(args) > 0):
     elif (args[0] == '-swaprc'):     SWAP = True
     elif (args[0] == '-newmem'):     SWAP = True
     elif (args[0] == '-oldmem'):     SWAP = False
+    elif (args[0] == '-4x4'):        GRIDSIZE = "4x4"
     elif (args[0] == '-8x8'):        GRIDSIZE = "8x8"
     else:              bitstream_filename = args[0];
     args = args[1:]
@@ -330,11 +331,12 @@ def cb_decode(EE, DDDDDDDD):
     st["03.00000008"] = "wireB <= in_s2t3"
     st["03.00000009"] = "wireB <= in_s2t4"
 
-    # cb_connection = st[EE + '.' + DDDDDDDD]
-    cb_connection = "wireB <= in_s2t4"
-
-    # return st[EE + '.' + DDDDDDDD]
-    return cb_connection
+    if (GRIDSIZE == "8x8"):
+        cb_connection = "wireB <= in_s2t4"
+        return cb_connection
+    else:
+        cb_connection = st[EE + '.' + DDDDDDDD]
+        return st[EE + '.' + DDDDDDDD]
 
 yikes_wire = None
 def sb_iohack_find_pe_out(connection_list):

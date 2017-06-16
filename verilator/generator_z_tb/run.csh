@@ -21,6 +21,7 @@
 # builds small parrot
 
 # DEFAULTS
+set gridsize = "4x4"
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
 # set config    = ../../bitstream/examples/calebscript.bs
@@ -47,7 +48,7 @@ if ($#argv == 1) then
   if ("$argv[1]" == '--help') then
     echo "Usage:"
     echo "    $0 <textbench.cpp> [-gen | -nogen]"
-    echo "        -usemem -allreg"
+    echo "        -usemem -allreg [ -4x4 | -8x8 ]"
     echo "        -config     <config_filename>"
     echo "        -input      <input_filename>"
     echo "        -output     <output_filename>"
@@ -57,6 +58,7 @@ if ($#argv == 1) then
     echo "Defaults:"
     echo "    $0 top_tb.cpp \"
     echo "       $GENERATE         \"
+    echo "       -$gridsize \"
     echo "       -config   $config \"
     echo "       -input    $input  \"
     echo "       -output   $output \"
@@ -82,6 +84,12 @@ while ($#argv)
 
     case '-clean':
       exit 0;
+
+    case '-4x4':
+      set gridsize = "4x4"; breaksw;
+
+    case '-8x8':
+      set gridsize = "8x8"; breaksw;
 
     case '-gen':
       set GENERATE = '-gen'; breaksw;
@@ -180,16 +188,18 @@ set decoded = /tmp/{$config:t}.decoded
 if (-e $decoded) rm $decoded
 # ../../bitstream/decoder/decode.py $config > $decoded
 # New memtile regime swaps r,c tile addresses HA
-set echo
+
 # ../../bitstream/decoder/decode.py -newmem $config > $decoded
 
 if ($?OLDMEM) then
+  set echo
   ../../bitstream/decoder/decode.py $swizzled > $decoded
 else
-  ../../bitstream/decoder/decode.py -newmem -8x8 $swizzled > $decoded
+  set echo
+  ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled > $decoded
 endif
 
-unset echo
+unset echo >& /dev/null
 
 
 # Show IO info derived from bitstream
