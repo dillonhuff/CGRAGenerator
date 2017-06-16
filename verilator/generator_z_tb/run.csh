@@ -479,6 +479,9 @@ echo '  First prepare input and output files...'
 
   if ($?input) then
     echo
+    ls -l /tmp/input.raw $output
+
+    echo
     set cmd = "od -t x1 /tmp/input.raw"
     set cmd = "od -t u1 /tmp/input.raw"
     echo $cmd; $cmd | head

@@ -63,10 +63,11 @@ test_all:
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
 	@echo ==================================================
-	@egrep '^00014' /tmp/test_4x4_gray_small.log
-	@egrep '^00014' /tmp/test_8x8_gray_small.log
-	@egrep '^00014' /tmp/test_4x4_gray.log
-	@egrep '^00014' /tmp/test_8x8_gray.log
+	@egrep '^00014'                \
+	  /tmp/test_4x4_gray_small.log \
+	  /tmp/test_8x8_gray_small.log \
+	  /tmp/test_4x4_gray.log       \
+	  /tmp/test_8x8_gray.log
 
 test_4x4_gray_small:
 # 	@echo ""
@@ -80,7 +81,7 @@ test_4x4_gray_small:
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
-	   -nclocks 3M
+	   -nclocks 5M
 
 test_4x4_gray:
 	bitstream=../../bitstream/examples/cd387-good.bs; \
@@ -90,7 +91,7 @@ test_4x4_gray:
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
-	   -nclocks 3M
+	   -nclocks 5M
 
 test_8x8_gray_small:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
@@ -100,7 +101,7 @@ test_8x8_gray_small:
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
-	   -nclocks 3M
+	   -nclocks 5M
 
 test_8x8_gray:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
@@ -110,4 +111,4 @@ test_8x8_gray:
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
-	   -nclocks 3M
+	   -nclocks 5M
