@@ -49,10 +49,17 @@ VERILATOR_TOP := ../verilator/generator_z_tb
 
 test_all:
 	make test_4x4_gray_small 2>&1 | tee /tmp/test_4x4_gray_small.log
-	grep FAIL /tmp/test_4x4_gray_small.log && exit -1
+	grep '\*PASS\*' /tmp/test_4x4_gray_small.log | head -1
+
 	make test_8x8_gray_small 2>&1 | tee /tmp/test_8x8_gray_small.log
+	grep '\*PASS\*' /tmp/test_8x8_gray_small.log | head -1
+
 	make test_4x4_gray       2>&1 | tee /tmp/test_4x4_gray.log
+	grep '\*PASS\*' /tmp/test_4x4_gray.log | head -1
+
 	make test_8x8_gray       2>&1 | tee /tmp/test_8x8_gray.log
+	grep '\*PASS\*' /tmp/test_8x8_gray.log | head -1
+
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
 	@echo ==================================================

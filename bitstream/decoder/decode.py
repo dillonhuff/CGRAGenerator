@@ -301,6 +301,11 @@ def cb_decode(EE, DDDDDDDD):
 #         sys.stderr.write("\nERROR bad value '%s' for connection box\n" % DDDDDDDD);
 #         sys.exit(-1);
 
+    if (not re.search("0000000[0-9A-Fa-f]", DDDDDDDD)):
+        print "\nWARNING unexpected value '%s' for connection box" % DDDDDDDD
+        print "\nWARNING i will assume this has to do with memory tiles..."
+        return "wireB <= in_s9t9"
+
     st = {};
 
     # input A side 0 (S)
@@ -331,12 +336,16 @@ def cb_decode(EE, DDDDDDDD):
     st["03.00000008"] = "wireB <= in_s2t3"
     st["03.00000009"] = "wireB <= in_s2t4"
 
-    if (GRIDSIZE == "8x8"):
-        cb_connection = "wireB <= in_s2t4"
-        return cb_connection
-    else:
-        cb_connection = st[EE + '.' + DDDDDDDD]
-        return st[EE + '.' + DDDDDDDD]
+    cb_connection = st[EE + '.' + DDDDDDDD]
+    return st[EE + '.' + DDDDDDDD]
+
+
+#     if (GRIDSIZE == "8x8"):
+#         cb_connection = "wireB <= in_s2t4"
+#         return cb_connection
+#     else:
+#         cb_connection = st[EE + '.' + DDDDDDDD]
+#         return st[EE + '.' + DDDDDDDD]
 
 yikes_wire = None
 def sb_iohack_find_pe_out(connection_list):
