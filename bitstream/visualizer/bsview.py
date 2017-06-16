@@ -1368,7 +1368,6 @@ def test_ports():  # Meh
 # sophisticated layouts, you can nest the container objects, i.e. have a
 # gtk.HBox inside a gtk.VBox.
 
-
 # class CGRAWin(Gtk.Window):
 class CGRAWin(gtk.Window):
     def __init__(self):
@@ -1378,21 +1377,82 @@ class CGRAWin(gtk.Window):
         # See above for definition of globals WIN_WIDTH, WIN_HEIGHT
 
         title = "Tilesy" # haha LOL
-#         Gtk.Window.__init__(
-        gtk.Window.__init__(
-            self
-#             title         = title,      \
-#             width_request = WIN_WIDTH,  \
-#             height_request= WIN_HEIGHT  \
-        )
+        gtk.Window.__init__(self)
         self.props.title = title
         self.props.width_request = WIN_WIDTH
         self.props.height_request= WIN_HEIGHT
 
         global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 
+        # FIXME why "self.da" and not just "da"?
         self.da = Gtk.DrawingArea()
-        self.add(self.da)
+        # self.add(self.da)
+
+        ########################################################################
+        # To toolbar FIXME should be separate function maybe
+        # top_toolbar = build_toolbar()
+        # def build_toolbar():
+
+        # button_magplus = gtk.Button("+")
+        button_magplus = gtk.Button()
+
+        # OLD
+        # image = gtk.Image()
+        # image.set_from_file("magplus.ico")
+
+        # NEW
+        # image = gtk.Image()
+        # image.set_from_stock(stock_id, size)
+        # 
+        # http://pygtk.org/docs/pygtk/gtk-stock-items.html
+        # gtk.STOCK_ZOOM_100  gtk.{STOCK_ZOOM_FIT, STOCK_ZOOM_IN, STOCK_ZOOM_OUT}
+        # 
+        # Stock icon sizes are gtk.ICON_SIZE_MENU,
+        # gtk.ICON_SIZE_SMALL_TOOLBAR, gtk.ICON_SIZE_LARGE_TOOLBAR,
+        # gtk.ICON_SIZE_BUTTON, gtk.ICON_SIZE_DND and gtk.ICON_SIZE_DIALOG.
+        
+        # HOW-TO
+        # image = gtk.Image()
+        # #  (from http://www.pygtk.org/docs/pygtk/gtk-stock-items.html)
+        # image.set_from_stock(gtk.STOCK_**)
+        # button = gtk.Button()
+        # button.set_image(image)
+        # button.set_label("")
+
+        # https://stackoverflow.com/questions/2188659/stock-icons-not-shown-on-buttons
+        image = gtk.Image()
+        image.set_from_stock(gtk.STOCK_ZOOM_IN, gtk.ICON_SIZE_SMALL_TOOLBAR)
+        # image.set_from_stock(gtk.STOCK_ZOOM_IN)
+        image.show()
+        # button_magplus.set_label("")
+        # button_magplus.set_image(image)
+        button_magplus.add(image)
+        button_magplus.show()
+
+        button_magminus= gtk.Button("-")
+        button_hand    = gtk.Button("hand")
+        button_arrow   = gtk.Button("arrow")
+
+        top_toolbar = gtk.HBox()
+        top_toolbar.props.height_request = 25
+
+
+        expand = False; fill = False;
+        top_toolbar.pack_start(button_magplus,  expand, fill)
+        top_toolbar.pack_start(button_magminus, expand, fill)
+        top_toolbar.pack_start(button_hand,     expand, fill)
+        top_toolbar.pack_start(button_arrow,    expand, fill)
+        print dir(top_toolbar.props)
+        ########################################################################
+
+        vbox = gtk.VBox()
+        vbox.pack_start(top_toolbar, expand, fill)
+        vbox.pack_start(self.da)
+
+        self.add(vbox)
+
+
+
         # A dumb way to keep track of the current window and drawing area widget
         # global CUR_WINDOW;      CUR_WINDOW = win;
         global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = self.da;
@@ -1406,7 +1466,7 @@ class CGRAWin(gtk.Window):
         draw_handler_id = win.da.connect("expose-event", draw_handler)
 
         # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
-        # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
+         # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
         button_press_handler_id = win.da.connect("button-press-event", button_press_handler)
 
         # FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
