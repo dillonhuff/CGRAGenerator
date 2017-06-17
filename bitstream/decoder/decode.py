@@ -302,8 +302,10 @@ def cb_decode(EE, DDDDDDDD):
 #         sys.exit(-1);
 
     if (not re.search("0000000[0-9A-Fa-f]", DDDDDDDD)):
-        print "\nWARNING unexpected value '%s' for connection box" % DDDDDDDD
-        print "\nWARNING i will assume this has to do with memory tiles..."
+        print ""
+        print "WARNING unexpected value '%s' for connection box" % DDDDDDDD
+        print "WARNING I will assume this has to do with memory tiles..."
+        print ""
         return "wireB <= in_s9t9"
 
     st = {};
@@ -381,42 +383,43 @@ def sb_iohack_find_pe_out(connection_list):
         return rval;
 
 def sb_print_nonzero(connection_list):
-    # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
+    # Print only sb connections with declared nonzero (nondefault) values
 
+    # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
     # Connection list contains a bunch of items
     # ['in_s1t0 -> out_s0t0', 'in_s1t0 -> out_s0t1', 'in_s1t0 -> out_s0t2',
     #  'in_s1t0 -> out_s0t3', 'in_s1t0 -> out_s0t4', 'in_s0t1 -> out_s1t0',
     #  'in_s0t1 -> out_s1t1', 'in_s0t1 -> out_s1t2', 'in_s0t1 -> out_s1t3',
     #  ...
 
-    # Remove default (zero) connections from list.
+    # Start with list of all connections, then
+    # remove default (zero) connections from list.
     # Default (zero) connections look like this:
     #    out_s0.*in_s1
     #    out_s[123].*in_s0
     
+    DBG = 0
+    if DBG: print ""
+    if DBG: print connection_list
+
     valid = []
-#     print ""
-#     print connection_list
-    # for i in range(0, len(connection_list)-1):
     for c in connection_list:
-#         print i
-#         c = connection_list[i];
-        # print  c
         if (re.search("out_s0.*in_s1", c)):     continue
         if (re.search("out_s[123].*in_s0", c)): continue
         valid.append(c)
-#     print valid
+        if DBG: print "VALID " + str(valid)
 
     if (valid == []): print "(defaults only)"
 
     pad = ""
     for c in valid:
         print "%s%-19s" % (pad,c)
-        pad = "%8s %8s %5s" % ("", "", ""),
+        pad = "%8s %8s %5s " % ("", "", "")
 
 def sb_print_all(connection_list):
-    # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
+    # Print all sb connections, including defaults
 
+    # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
     # Connection list should contain sixteen items
     # ['in_s1t0 -> out_s0t0', 'in_s1t0 -> out_s0t1', 'in_s1t0 -> out_s0t2',
     #  'in_s1t0 -> out_s0t3', 'in_s1t0 -> out_s0t4', 'in_s0t1 -> out_s1t0',
