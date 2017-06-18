@@ -77,7 +77,7 @@ test_4x4_gray_small:
 	bitstream=../../bitstream/examples/cd387-good.bs; \
 	image=gray_small;              \
 	cd $(VERILATOR_TOP);	        \
-	./run.csh -gen top_tb.cpp        \
+	./run.csh -gen top_tb.cpp -oldmem -4x4       \
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
@@ -87,7 +87,7 @@ test_4x4_gray:
 	bitstream=../../bitstream/examples/cd387-good.bs; \
 	image=gray;                    \
 	cd $(VERILATOR_TOP);	        \
-	./run.csh -gen top_tb.cpp        \
+	./run.csh -gen top_tb.cpp -oldmem -4x4        \
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
@@ -97,7 +97,7 @@ test_8x8_gray_small:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
 	image=gray_small;              \
 	cd $(VERILATOR_TOP);	        \
-	./run.csh -gen top_tb.cpp -usemem\
+	./run.csh -gen top_tb.cpp -usemem -8x8\
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
@@ -107,7 +107,7 @@ test_8x8_gray:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
 	image=gray;                    \
 	cd $(VERILATOR_TOP);	        \
-	./run.csh -gen top_tb.cpp -usemem\
+	./run.csh -gen top_tb.cpp -usemem -8x8\
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
