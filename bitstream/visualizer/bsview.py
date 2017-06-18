@@ -453,24 +453,20 @@ def connectionpoint(wirename):
     # outs2/ins0 blocks start in SW/SE and go up   (neg y direction)
     # outs3/ins1 blocks start in NW/NE and go right (pos x direction)
 
-    # Sometimes wirename = "in_s9t9"  This indicates a memtile cb that we
-    # don't understand yet
-    if (wirename == "in_s9t9"):
-        print "WARNING Found wire %s indicating memtile cb" % wirename
-        print "WARNING Do not yet understand memtile cb's"
-        print "WARNING Will use 'in_s0t0' instead"
-        wirename = "in_s0t0"
-        
     # FIXME
-    # Sometimes wirename = "out_s9t9"  This is bsview.py propagating the
-    # "in_s9t9" problem,,,maybe this will mollify it i dunno
-    if (wirename == "out_s9t9"):
-        print "WARNING Found wire %s indicating memtile cb" % wirename
-        print "WARNING Do not yet understand memtile cb's"
-        print "WARNING Will use 'out_s0t0' instead"
-        wirename = "out_s0t0"
-        
-
+    # 1. Sometimes wirename = "in_s9t9"  This indicates a memtile cb that we don't understand yet
+    # 2. Sometimes wirename = "out_s9t9"  This is bsview.py propagating the
+    # "in_s9t9" problem...maybe this will mollify it i dunno
+    
+    hackwire = False
+    if (wirename == "in_s9t9" ): hackwire = "in_s0t0"
+    if (wirename == "out_s9t9"): hackwire = "out_s0t0"
+    if (hackwire):
+        wirename = hackwire
+        if (not TILES_DRAWN_AT_LEAST_ONCE):
+            print "WARNING Found wire %s indicating memtile cb" % wirename
+            print "WARNING Do not yet understand memtile cb's"
+            print "WARNING Will use '%s' instead" % hackwire
 
     # Need block id and track number of the target wire
     decode = re.search('(in_s.*|out_s.*)t(.*)', wirename);
@@ -978,7 +974,10 @@ def drawtile(cr):
 
 # E.g. ab_connect(cr, "in_s3t0", "wireA")
 def ab_connect(cr, inport, PE_input):
-    if (1): print "Connecting wire %s to pe_in %s" % (inport, PE_input)
+    DBG=1;
+    if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
+
+    if DBG: print "Connecting wire %s to pe_in %s" % (inport, PE_input)
     (x1,y1) = connectionpoint(inport)
 
     if (PE_input == "wireA"): (x2,y2) = (PE_AX,PE_AY)
@@ -1164,7 +1163,7 @@ def connectwires(cr, connection):
 
         # Draw a blue rectilinear line connecting w1 and w2 ports
         manhattan_connect(cr, pto, pfrom)
-        return;
+        return True;
 
     # For connections of the form "wireA <= in_s3t0"
     if (to_type == "pe_in" and from_type == "port"):
@@ -1172,7 +1171,7 @@ def connectwires(cr, connection):
         if DBG: print "Found valid connection %s" % connection
         if DBG: print "Connecting port '%s' to pe_in '%s'" % (pfrom,pto)
         ab_connect(cr, pfrom, pto)
-        return;
+        return True;
 
         
     # For connections of the form "out_s1t0 <= pe_out"
@@ -1180,7 +1179,7 @@ def connectwires(cr, connection):
         DBG = 0;
         if DBG: print "Found valid connection %s" % connection
         pe_out_connect(cr, pto)
-        return;
+        return True;
 
 
 
@@ -1189,6 +1188,7 @@ def connectwires(cr, connection):
     # parse = re.search("^(pe_out) .* (.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
     if (from_type == "pe"):
         DBG = 1;
+        if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
         if DBG: print "Found valid connection %s" % connection
         parse = re.search("^(.*)[(](wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)[)]", pfrom)
         pe_name = parse.group(1)
@@ -1197,14 +1197,14 @@ def connectwires(cr, connection):
         if DBG: print "Found PE '%s' w/ inputs a='%s' b='%s'" % (pe_name,pe_a,pe_b)
 
         draw_pe(cr, pe_name, pe_a, pe_b)
+        return True
 
         # TODO: draw_pe(pe_name) etc.
 #             if (self.col==0): draw_pe(cr, "ADD", regA=2, regB=0)
 
-
     else:
-        print "ERROR Do not understand connection %s (yet)" % connection
-        return;
+        # print "ERROR Do not understand connection %s (yet)" % connection
+        return False
 
 
 
@@ -1330,7 +1330,11 @@ def draw_one_tile(cr, tileno):
     TILE_LIST[tileno].draw(cr)
     cr.restore()
 
+global TILES_DRAWN_AT_LEAST_ONCE           # FIXME Yes this is awful
+TILES_DRAWN_AT_LEAST_ONCE = False          # FIXME Yes this is awful
 def draw_all_tiles(cr):
+    DBG=0
+    if DBG: print "Draw all tiles!"
 
     global SCALE_FACTOR;                   # Others should know
 
@@ -1338,10 +1342,6 @@ def draw_all_tiles(cr):
     if (GRID_WIDTH <= 2): SCALE_FACTOR = 2   # Why squint if you don't need to?
     if (GRID_WIDTH  > 4): SCALE_FACTOR = 0.5 # Let's try this
 
-
-
-    print
-    print "Draw all tiles!"
     cr.save()
     cr.translate(ARRAY_PAD, ARRAY_PAD)    # Whitespace margin at top and left
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
@@ -1351,6 +1351,8 @@ def draw_all_tiles(cr):
     for tile in TILE_LIST:                # Draw ALL the tiles
         if (tile): tile.draw(cr)
 
+    global TILES_DRAWN_AT_LEAST_ONCE      # FIXME Yes this is awful
+    TILES_DRAWN_AT_LEAST_ONCE = True      # FIXME Yes this is awful
     cr.restore()
 
 def test_ports():  # Meh
@@ -1408,13 +1410,18 @@ class CGRAWin(gtk.Window):
         gtk.Window.__init__(self)
         self.props.title = title
         self.props.width_request = WIN_WIDTH
-        self.props.height_request= WIN_HEIGHT
+        self.props.height_request= min(WIN_HEIGHT,600)
+
+        # FIXME minimum width (above) should be based on screen height,
+        # not just an arbitrary 600.
+        # FIXME2 currently cannot resize window below requested w,h...why?
 
         global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 
-        # FIXME why "self.da" and not just "da"?
-        self.da = Gtk.DrawingArea()
-        # self.add(self.da)
+        da = Gtk.DrawingArea()
+        da.props.width_request = WIN_WIDTH
+        da.props.height_request= WIN_HEIGHT
+        # self.add(da)
 
         ########################################################################
         # To toolbar FIXME should be separate function maybe
@@ -1473,37 +1480,45 @@ class CGRAWin(gtk.Window):
         print dir(top_toolbar.props)
         ########################################################################
 
+        # Create a new scrolled window.
+        scrolled_window = gtk.ScrolledWindow()
+        scrolled_window.set_border_width(10)
+        scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+        scrolled_window.add_with_viewport(da)
+        scrolled_window.show() # FIXME What does this do??  Is it necessary?
+        da.show()              # FIXME What does this do??  Is it necessary?
+        
         vbox = gtk.VBox()
         vbox.pack_start(top_toolbar, expand, fill)
-        vbox.pack_start(self.da)
-
+        vbox.pack_start(scrolled_window, True, True, 0)
         self.add(vbox)
 
-
+        self.show()
 
         # A dumb way to keep track of the current window and drawing area widget
         # global CUR_WINDOW;      CUR_WINDOW = win;
-        global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = self.da;
+        global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = da;
         
         # Some/all of this maybe doesn't belong in win init,
         # but oh well here it is for now anyway
 
-        win = self
+        # win = self
+
         # "draw" event results in drawing everything on drawing area 'da'
-        # draw_handler_id = win.da.connect("draw", draw_handler)
-        draw_handler_id = win.da.connect("expose-event", draw_handler)
+        # draw_handler_id = da.connect("draw", draw_handler)
+        draw_handler_id = da.connect("expose-event", draw_handler)
 
         # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
          # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
-        button_press_handler_id = win.da.connect("button-press-event", button_press_handler)
+        button_press_handler_id = da.connect("button-press-event", button_press_handler)
 
         # FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
-        # win.da.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        # da.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
 
-        # win.da.set_events(gtk.gdk.EventMask.BUTTON_PRESS_MASK)
-        win.da.set_events(gtk.gdk.BUTTON_PRESS_MASK)
+        # da.set_events(gtk.gdk.EventMask.BUTTON_PRESS_MASK)
+        da.set_events(gtk.gdk.BUTTON_PRESS_MASK)
 
-        win.connect("delete-event", Gtk.main_quit)
+        self.connect("delete-event", Gtk.main_quit)
 
 def button_press_handler(widget, event):
     DBG = 0
@@ -1547,6 +1562,7 @@ def button_press_handler(widget, event):
     # Redraw after zoom
     CUR_DRAW_WIDGET.queue_draw()
 
+# import traceback
 class Tile:
 #     id = -1;
 #     (row,col) = (-1,-1)
@@ -1560,7 +1576,9 @@ class Tile:
         (self.row,self.col) = tileno2rc(tileno)
         self.connectionlist = []
 
-    def connect(self,connection):  self.connectionlist.append(connection)
+    def connect(self,connection):
+        # traceback.print_stack()
+        self.connectionlist.append(connection)
 
     def printprops(self):
         print "Tile %d (r%d,c%d)" % (self.tileno, self.row, self.col)
@@ -1590,7 +1608,18 @@ class Tile:
 #             if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
 
         draw_all_ports(cr)
-        for c in self.connectionlist: connectwires(cr, c)
+        for c in self.connectionlist:
+            if (not connectwires(cr, c) and self.tileno == 0):
+                print "ERROR Do not understand connection %s in tile %d (yet);" % (c, self.tileno)
+                print "ERROR Removing '%s' from Tile %d connection list" % (c, self.tileno)
+                # print "BEFORE: %s" % str(self.connectionlist)
+                self.connectionlist.remove(c)
+                # print "AFTER: %s" % str(self.connectionlist)
+                # print ""
+                # print ""
+                # print ""
+                
+
         drawtile(cr)
         cr.restore()
 
