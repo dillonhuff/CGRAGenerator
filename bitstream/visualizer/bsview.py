@@ -207,10 +207,15 @@ def test_rc2tileno_8x8():
 # A really dumb way to keep track of current scale factor, for
 # button-press events
 SCALE_FACTOR = 1;
-SF_ALL       = 1; # No zoom when displaying all tiles in a window
-SF_ALL_2x2   = 2; # Zoom 2x when displaying 2x2 grid
+SF_ALL       = 1; # No zoom when displaying all tiles in a window # FIXME NOT USED
+SF_ALL_2x2   = 2; # Zoom 2x when displaying 2x2 grid              # FIXME NOT USED
 
+def set_initial_scale_factor():
+    global SCALE_FACTOR;                   # Others should know
 
+    SCALE_FACTOR = 1
+    if (GRID_WIDTH <= 2): SCALE_FACTOR = 2   # Why squint if you don't need to?
+    if (GRID_WIDTH  > 4): SCALE_FACTOR = 0.5 # Let's try this
 
 # Could/should derive these from "BUS:5" etc.
 NTRACKS_PE_BUS_H = 5;
@@ -1278,14 +1283,7 @@ def draw_handler(widget, cr):
     if (tileno == -1):   draw_all_tiles(cr);
     else:                draw_one_tile(cr, tileno);
 
-def draw_one_tile(cr, tileno):
-    cr.save()
-
-    # scalefactor = 10 # zoom in for debugging
-    # cr.scale(scalefactor,scalefactor)
-
-    ########################################################################
-    # Scale and translate
+def set_zoom_scale_factor():
 
     global SCALE_FACTOR;
     
@@ -1299,11 +1297,22 @@ def draw_one_tile(cr, tileno):
     # Canvas width = tile width + length of ports on each side
     # In zoomed view, want width of one tile to match
     # (two tiles + gap) in unzoomed (2x) view
-    USF = 2 # Scale factor for unzoomed tiles
+    unzoomed_scale_factor = 2 # Scale factor for unzoomed tiles
     tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
-    two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*USF
+    two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
     fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
     SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
+
+def draw_one_tile(cr, tileno):
+    cr.save()
+
+    # scalefactor = 10 # zoom in for debugging
+    # cr.scale(scalefactor,scalefactor)
+
+    ########################################################################
+    # Scale and translate
+
+    set_zoom_scale_factor()
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
 
     if (0): print "Zoom scale factor %d/%d = %f." \
@@ -1335,12 +1344,6 @@ TILES_DRAWN_AT_LEAST_ONCE = False          # FIXME Yes this is awful
 def draw_all_tiles(cr):
     DBG=0
     if DBG: print "Draw all tiles!"
-
-    global SCALE_FACTOR;                   # Others should know
-
-    SCALE_FACTOR = 1
-    if (GRID_WIDTH <= 2): SCALE_FACTOR = 2   # Why squint if you don't need to?
-    if (GRID_WIDTH  > 4): SCALE_FACTOR = 0.5 # Let's try this
 
     cr.save()
     cr.translate(ARRAY_PAD, ARRAY_PAD)    # Whitespace margin at top and left
@@ -1454,30 +1457,51 @@ class CGRAWin(gtk.Window):
         # button.set_image(image)
         # button.set_label("")
 
+        ########################################################################
+
+        # BUTTON: zoom-in magnifying glass
         # https://stackoverflow.com/questions/2188659/stock-icons-not-shown-on-buttons
-        image = gtk.Image()
-        image.set_from_stock(gtk.STOCK_ZOOM_IN, gtk.ICON_SIZE_SMALL_TOOLBAR)
-        # image.set_from_stock(gtk.STOCK_ZOOM_IN)
-        image.show()
         # button_magplus.set_label("")
         # button_magplus.set_image(image)
+        image = gtk.Image()
+        image.set_from_stock(gtk.STOCK_ZOOM_IN, gtk.ICON_SIZE_SMALL_TOOLBAR)
+        image.show()
+        #
         button_magplus.add(image)
+        button_magplus.connect("clicked", self.button_magplus_action)
         button_magplus.show()
+        
+        # BUTTON: zoom-out magnifying glass
+        # button_magminus= gtk.Button("-")
+        image = gtk.Image()
+        image.set_from_stock(gtk.STOCK_ZOOM_OUT, gtk.ICON_SIZE_SMALL_TOOLBAR)
+        image.show()
+        #
+        button_magminus= gtk.Button()
+        button_magminus.add(image)
+        button_magminus.connect("clicked", self.button_magminus_action)
+        button_magminus.show()
 
-        button_magminus= gtk.Button("-")
+        # BUTTON: misc TBD
         button_hand    = gtk.Button("grabby hand")
         button_arrow   = gtk.Button("arrow")
 
+        # BUTTON: exit
+        button_exit   = gtk.Button("exit")
+        button_exit.connect("clicked", self.button_exit_action)
+        button_exit.show()
+
+
+        # Pack buttons into a toolbar on top
+        expand = False; fill = False;
         top_toolbar = gtk.HBox()
         top_toolbar.props.height_request = 25
-
-
-        expand = False; fill = False;
         top_toolbar.pack_start(button_magplus,  expand, fill)
         top_toolbar.pack_start(button_magminus, expand, fill)
         top_toolbar.pack_start(button_hand,     expand, fill)
         top_toolbar.pack_start(button_arrow,    expand, fill)
-        print dir(top_toolbar.props)
+        top_toolbar.pack_start(button_exit,     expand, fill)
+        # print dir(top_toolbar.props)
         ########################################################################
 
         # Create a new scrolled window.
@@ -1519,6 +1543,26 @@ class CGRAWin(gtk.Window):
         da.set_events(gtk.gdk.BUTTON_PRESS_MASK)
 
         self.connect("delete-event", Gtk.main_quit)
+
+    def button_magplus_action(widget, event):
+        global SCALE_FACTOR
+        # print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
+        SCALE_FACTOR = round(SCALE_FACTOR * 1.2, 2)
+
+        # Redraw after zoom
+        CUR_DRAW_WIDGET.queue_draw()
+
+    def button_magminus_action(widget, event):
+        global SCALE_FACTOR
+        # print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
+        SCALE_FACTOR = round(SCALE_FACTOR * 0.8, 2)
+
+        # Redraw after zoom
+        CUR_DRAW_WIDGET.queue_draw()
+
+    def button_exit_action(widget, event):
+        Gtk.main_quit()
+
 
 def button_press_handler(widget, event):
     DBG = 0
@@ -1563,10 +1607,12 @@ def button_press_handler(widget, event):
     CUR_DRAW_WIDGET.queue_draw()
 
 # import traceback
+#     traceback.print_stack()
+
 class Tile:
-#     id = -1;
-#     (row,col) = (-1,-1)
-#     self.connectionlist = []
+    # id = -1;
+    # (row,col) = (-1,-1)
+    # self.connectionlist = []
 
     def __init__(self, tileno):
         self.label  = "" # E.g. "ADD", "MUL", "I/O"
@@ -1577,7 +1623,6 @@ class Tile:
         self.connectionlist = []
 
     def connect(self,connection):
-        # traceback.print_stack()
         self.connectionlist.append(connection)
 
     def printprops(self):
@@ -1768,6 +1813,8 @@ def initialize_tile_list(w, h):
     NTILES      = w * h
     TILE_LIST   = range(0, NTILES)
     
+    set_initial_scale_factor()
+
     DBG=1
     # for i in TILE_LIST: TILE_LIST[i] = Tile(i)
     if (DBG): print "Initializing tiles"
