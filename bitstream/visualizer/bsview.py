@@ -78,6 +78,11 @@ def tileno2rc(tileno):
     else:          return [col, row];
 
 def rc2tileno(row,col):
+
+    # Is this smart? Ans: NO   # FIXME/TODO
+    if (GRID_WIDTH >= 8):
+        return rc2tileno_8x8(row,col)
+
     if (not SWAP): return GRID_HEIGHT*col + row
     else:          return GRID_WIDTH *row + col
 
@@ -171,7 +176,7 @@ def test_tileno2rc_8x8():
 
 
 def rc2tileno_8x8(row,col):
-    DBG = 0
+    DBG = 1
     search_string = "tile_addr='(\d+)'.*row='%d'.*col='%d'" % (row,col)
     parse = re.search(search_string, cgra_tile_info)
     # if (not parse):
@@ -190,6 +195,7 @@ def rc2tileno_8x8(row,col):
         
     tileno = int(parse.group(1))
     if (DBG): print "Found tile (r%dc%d) => tileno '%d'" % (row, col, tileno)
+    return tileno
 
 def test_rc2tileno_8x8():
     for r in range(0, 7):
@@ -447,6 +453,25 @@ def connectionpoint(wirename):
     # outs2/ins0 blocks start in SW/SE and go up   (neg y direction)
     # outs3/ins1 blocks start in NW/NE and go right (pos x direction)
 
+    # Sometimes wirename = "in_s9t9"  This indicates a memtile cb that we
+    # don't understand yet
+    if (wirename == "in_s9t9"):
+        print "WARNING Found wire %s indicating memtile cb" % wirename
+        print "WARNING Do not yet understand memtile cb's"
+        print "WARNING Will use 'in_s0t0' instead"
+        wirename = "in_s0t0"
+        
+    # FIXME
+    # Sometimes wirename = "out_s9t9"  This is bsview.py propagating the
+    # "in_s9t9" problem,,,maybe this will mollify it i dunno
+    if (wirename == "out_s9t9"):
+        print "WARNING Found wire %s indicating memtile cb" % wirename
+        print "WARNING Do not yet understand memtile cb's"
+        print "WARNING Will use 'out_s0t0' instead"
+        wirename = "out_s0t0"
+        
+
+
     # Need block id and track number of the target wire
     decode = re.search('(in_s.*|out_s.*)t(.*)', wirename);
     b = decode.group(1);      # blockno e.g. "in_s1"
@@ -482,6 +507,9 @@ def connectionpoint(wirename):
     #  in_s3 wires start at NE corner and go LEFT
     if (b == "out_s3"): (x,y) = (               CD, PL)
     if (b ==  "in_s3"): (x,y) = (CANVAS_WIDTH - CD, PL)
+
+    try: x
+    except: print "ERROR Could not find connection point for " + wirename
 
     return (x,y);
 
@@ -1430,7 +1458,7 @@ class CGRAWin(gtk.Window):
         button_magplus.show()
 
         button_magminus= gtk.Button("-")
-        button_hand    = gtk.Button("hand")
+        button_hand    = gtk.Button("grabby hand")
         button_arrow   = gtk.Button("arrow")
 
         top_toolbar = gtk.HBox()
@@ -1733,6 +1761,30 @@ def process_decoded_bitstream(bs):
     (nrows,ncols) = REQUESTED_SIZE
     initialize_tile_list(nrows, ncols)
     tile = TILE_LIST; # A convenient handle
+
+#     (r,c) = (6,1)
+#     t = rc2tileno(r,c)
+#     print "Row %d col %d = tileno %s" % (r, c, t)
+#     print 
+#     sys.exit(0)
+
+
+    tileno = 43;
+    (r,c) = tileno2rc(tileno)
+    print "Tile %d = row %d col %d" % (tileno, r, c)
+    print "Row %d col %d = tileno %d" % (r, c, rc2tileno(r,c))
+    print ""
+
+    tileno = 51;
+    (r,c) = tileno2rc(tileno)
+    print "Tile %d = row %d col %d" % (tileno, r, c)
+    print "Row %d col %d = tileno %d" % (r, c, rc2tileno(r,c))
+    print ""
+
+#     tileno = 57;
+#     (r,c) = tileno2rc(tileno)
+#     print "Tile %d = row %d col %d" % (tileno, r, c)
+#     sys.exit(0)
 
     for line in bs:
         if (DBG>1): print line.rstrip()
