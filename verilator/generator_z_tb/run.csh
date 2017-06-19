@@ -138,6 +138,11 @@ while ($#argv)
       breaksw
 
     default:
+      if (`expr "$1" : "-"`) then
+        echo "ERROR: Unknown switch '$1'"
+        exec $0 --help
+        exit -1
+      endif
       set testbench = "$1";
   endsw
   shift;
