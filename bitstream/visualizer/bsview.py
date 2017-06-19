@@ -1304,6 +1304,10 @@ def set_zoom_scale_factor():
     SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
 
 def draw_one_tile(cr, tileno):
+
+    # Save
+    global SCALE_FACTOR;
+    save_scale_factor = SCALE_FACTOR
     cr.save()
 
     # scalefactor = 10 # zoom in for debugging
@@ -1311,6 +1315,7 @@ def draw_one_tile(cr, tileno):
 
     ########################################################################
     # Scale and translate
+
 
     set_zoom_scale_factor()
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
@@ -1337,7 +1342,10 @@ def draw_one_tile(cr, tileno):
     # Okay done with scale and translate.  Now draw!
     if (0): print "...at scale factor %f." % SCALE_FACTOR
     TILE_LIST[tileno].draw(cr)
+
+    # Restore
     cr.restore()
+    SCALE_FACTOR = save_scale_factor
 
 global TILES_DRAWN_AT_LEAST_ONCE           # FIXME Yes this is awful
 TILES_DRAWN_AT_LEAST_ONCE = False          # FIXME Yes this is awful
@@ -1546,16 +1554,16 @@ class CGRAWin(gtk.Window):
 
     def button_magplus_action(widget, event):
         global SCALE_FACTOR
-        # print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
-        SCALE_FACTOR = round(SCALE_FACTOR * 1.2, 2)
+        print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
+        SCALE_FACTOR = round(SCALE_FACTOR * 1.2, 1)
 
         # Redraw after zoom
         CUR_DRAW_WIDGET.queue_draw()
 
     def button_magminus_action(widget, event):
         global SCALE_FACTOR
-        # print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
-        SCALE_FACTOR = round(SCALE_FACTOR * 0.8, 2)
+        print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
+        SCALE_FACTOR = round(SCALE_FACTOR * 0.8, 1)
 
         # Redraw after zoom
         CUR_DRAW_WIDGET.queue_draw()
