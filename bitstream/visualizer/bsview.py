@@ -1557,6 +1557,15 @@ class CGRAWin(gtk.Window):
         print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
         SCALE_FACTOR = round(SCALE_FACTOR * 1.2, 1)
 
+        (h,w) = CUR_DRAW_WIDGET.get_size_request()
+        print "FOO h=%d w=%d" % (h,w)
+        print "Drawing area size(%d,%d) " % (h,w),
+        baked_in_fudge_factor = 2 # FIXME!!!
+        h = int(WIN_HEIGHT * SCALE_FACTOR * baked_in_fudge_factor)
+        w = int(WIN_WIDTH  * SCALE_FACTOR * baked_in_fudge_factor)
+        CUR_DRAW_WIDGET.set_size_request(h, w)
+        print "=> (%d,%d)" % (h,w)
+
         # Redraw after zoom
         CUR_DRAW_WIDGET.queue_draw()
 
@@ -1564,6 +1573,15 @@ class CGRAWin(gtk.Window):
         global SCALE_FACTOR
         print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
         SCALE_FACTOR = round(SCALE_FACTOR * 0.8, 1)
+
+        (h,w) = CUR_DRAW_WIDGET.get_size_request()
+        print "FOO h=%d w=%d" % (h,w)
+        print "Drawing area size(%d,%d) " % (h,w),
+        baked_in_fudge_factor = 2 # FIXME!!!
+        h = int(WIN_HEIGHT * SCALE_FACTOR * baked_in_fudge_factor)
+        w = int(WIN_WIDTH  * SCALE_FACTOR * baked_in_fudge_factor)
+        CUR_DRAW_WIDGET.set_size_request(h, w)
+        print "=> (%d,%d)" % (h,w)
 
         # Redraw after zoom
         CUR_DRAW_WIDGET.queue_draw()
