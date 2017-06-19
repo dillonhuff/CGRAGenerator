@@ -89,7 +89,11 @@ while ($#argv)
       set gridsize = "4x4"; breaksw;
 
     case '-8x8':
-      set gridsize = "8x8"; breaksw;
+    case -usemem:
+    case -newmem:
+      set gridsize = "8x8";
+      setenv CGRA_GEN_USE_MEM 1;
+      breaksw;
 
     case '-gen':
       set GENERATE = '-gen'; breaksw;
@@ -121,12 +125,6 @@ while ($#argv)
       # will accept e.g. "1,000,031" or "41K" or "3M"
       set nclocks = $2;
       shift; breaksw
-
-    case -usemem:
-      setenv CGRA_GEN_USE_MEM 1; breaksw
-
-    case -newmem:
-      setenv CGRA_GEN_USE_MEM 1; breaksw
 
     case -allreg:
       setenv CGRA_GEN_ALL_REG 1; breaksw
