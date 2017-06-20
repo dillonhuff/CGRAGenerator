@@ -49,21 +49,21 @@ if ($#argv == 1) then
     echo "Usage:"
     echo "    $0 <textbench.cpp> [-gen | -nogen]"
     echo "        -usemem -allreg [ -4x4 | -8x8 ]"
-    echo "        -config     <config_filename>"
-    echo "        -input      <input_filename>"
-    echo "        -output     <output_filename>"
-    echo "       [-buildtrace <trace_filename>]"
+    echo "        -config <config_filename.bs>"
+    echo "        -input   <input_filename.png>"
+    echo "        -output <output_filename.raw>"
+    echo "       [-trace   <trace_filename.vcd>]"
     echo "        -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>"
     echo
     echo "Defaults:"
     echo "    $0 top_tb.cpp \"
     echo "       $GENERATE         \"
     echo "       -$gridsize \"
-    echo "       -config   $config \"
-    echo "       -input    $input  \"
-    echo "       -output   $output \"
+    echo "       -config  $config \"
+    echo "       -input   $input  \"
+    echo "       -output  $output \"
     if ($?tracefile) then
-      echo "       -buildtrace $tracefile \"
+      echo "       -trace $tracefile \"
     endif
     echo "       -nclocks  $nclocks                                          \"
     echo
@@ -89,7 +89,11 @@ while ($#argv)
       set gridsize = "4x4"; breaksw;
 
     case '-8x8':
-      set gridsize = "8x8"; breaksw;
+    case -usemem:
+    case -newmem:
+      set gridsize = "8x8";
+      setenv CGRA_GEN_USE_MEM 1;
+      breaksw;
 
     case '-gen':
       set GENERATE = '-gen'; breaksw;
@@ -114,19 +118,13 @@ while ($#argv)
     case -output:
       set output = "$2"; shift; breaksw
 
-    case -buildtrace:
+    case -trace:
       set tracefile = "$2"; shift; breaksw
 
     case -nclocks:
       # will accept e.g. "1,000,031" or "41K" or "3M"
       set nclocks = $2;
       shift; breaksw
-
-    case -usemem:
-      setenv CGRA_GEN_USE_MEM 1; breaksw
-
-    case -newmem:
-      setenv CGRA_GEN_USE_MEM 1; breaksw
 
     case -allreg:
       setenv CGRA_GEN_ALL_REG 1; breaksw
@@ -138,6 +136,11 @@ while ($#argv)
       breaksw
 
     default:
+      if (`expr "$1" : "-"`) then
+        echo "ERROR: Unknown switch '$1'"
+        exec $0 --help
+        exit -1
+      endif
       set testbench = "$1";
   endsw
   shift;
@@ -225,7 +228,7 @@ echo "   -config   $config   \"
 echo "   -input    $input  \"
 echo "   -output   $output    \"
 if ($?tracefile) then
-  echo "   -buildtrace $tracefile \"
+  echo "   -trace $tracefile \"
 endif
 echo "   -nclocks  $nclocks                 \"
 
@@ -360,6 +363,8 @@ echo "Building the verilator simulator executable..."
   # Add trace switch if trace requested
   if ($?tracefile) set myswitches = "$myswitches --trace"
 
+  # Note default trace_filename in top_tb.cpp is "top_tb.vcd"
+
   # Run verilator to build the simulator.
 
   echo
@@ -452,7 +457,7 @@ echo '  First prepare input and output files...'
   # If no trace requested, simulator will not create a waveform file.
   set trace = ''
   if ($?tracefile) then
-    set trace = "-buildtrace $tracefile"
+    set trace = "-trace $tracefile"
   endif
 
   echo
