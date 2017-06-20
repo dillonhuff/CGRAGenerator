@@ -40,8 +40,14 @@ Usage:
 
 sbdefaults = True;
 
-GRIDSIZE = "4x4"
-SWAP = False
+# GRIDSIZE = "4x4"
+# SWAP = False
+
+# No! default should be 8x8 / newmem
+GRIDSIZE = "8x8"
+SWAP = True
+
+
 if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
 while (len(args) > 0):

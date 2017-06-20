@@ -43,15 +43,16 @@ endif
 set switch = "-newmem"
 
 set echo
-foreach bs ($argv)
+foreach arg ($argv)
 
   # Valid switches now include -oldmem, -newmem, -swaprc, -8x8 ...
-  if (`expr "$bs" : "-"`) then
-    set switch = $bs
+  if (`expr "$arg" : "-"`) then
+    set switch = $arg
     continue
   endif
 
-  set bsname = $bs:t
+  set bs = $arg
+  set bsname = $arg:t
   set bsdecoded = /tmp/$bsname-decoded
   echo "Decoding bitstream '$bs', output to '$bsdecoded'"
 

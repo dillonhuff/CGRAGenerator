@@ -2112,9 +2112,16 @@ def main():
 
     # FIXME yes this is bad
     global REQUESTED_SIZE
-    REQUESTED_SIZE = (4,4) # default
-
     global SWAP
+
+    # Defaults for old regime
+    # REQUESTED_SIZE = (4,4) # default
+    # SWAP           = False
+
+    # Defaults for new regime
+    REQUESTED_SIZE = (8,8) # default
+    SWAP           = True
+
     if    (len(args) == 0): do_demos() # no args
     # if    (len(args) == 0): demo_sb_8x8() # no args
     while (len(args)  > 0):            # args
