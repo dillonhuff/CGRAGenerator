@@ -286,6 +286,8 @@ WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
 def parse_wirename(wirename):
     rval = {}
     decode = re.search('(in|out)_s(.*)t(.*)', wirename);
+#     if (not decode):
+#         print "WARNING Do not understand wirename '%s' (yet)" % wirename
     rval['inout'] = str(decode.group(1))
     rval['side']  = int(decode.group(2))
     rval['track'] = int(decode.group(3))
@@ -475,8 +477,13 @@ def connectionpoint(wirename):
 
     # Need block id and track number of the target wire
     decode = re.search('(in_s.*|out_s.*)t(.*)', wirename);
-    b = decode.group(1);      # blockno e.g. "in_s1"
-    t = int(decode.group(2)); # trackno e.g. "3"
+    if (decode):
+        b = decode.group(1);      # blockno e.g. "in_s1"
+        t = int(decode.group(2)); # trackno e.g. "3"
+    else:
+        print "WARNING Do not understand wirename '%s' (yet)" % wirename
+        print "WARNING (Arbitrarily) connecting unknown wire to 'outs3t4' instead"
+        (b,t) = ("out_s3",4)
 
     # Canvas consists of a single tile padded on each side by space equal to "PORT_LENGTH"
     
@@ -1856,56 +1863,230 @@ def initialize_tile_list(w, h):
 
 
 
+# NO LONGER USED reads old format from my decoder
+# def process_decoded_bitstream_old(bs):
+#     DBG=1
+#     # initialize_tile_list(4,4)
+#     global REQUESTED_SIZE
+#     (nrows,ncols) = REQUESTED_SIZE
+#     initialize_tile_list(nrows, ncols)
+#     tile = TILE_LIST; # A convenient handle
+# 
+# #     (r,c) = (6,1)
+# #     t = rc2tileno(r,c)
+# #     print "Row %d col %d = tileno %s" % (r, c, t)
+# #     print 
+# #     sys.exit(0)
+# 
+# 
+#     tileno = 43;
+#     (r,c) = tileno2rc(tileno)
+#     print "Tile %d = row %d col %d" % (tileno, r, c)
+#     print "Row %d col %d = tileno %d" % (r, c, rc2tileno(r,c))
+#     print ""
+# 
+#     tileno = 51;
+#     (r,c) = tileno2rc(tileno)
+#     print "Tile %d = row %d col %d" % (tileno, r, c)
+#     print "Row %d col %d = tileno %d" % (r, c, rc2tileno(r,c))
+#     print ""
+# 
+# #     tileno = 57;
+# #     (r,c) = tileno2rc(tileno)
+# #     print "Tile %d = row %d col %d" % (tileno, r, c)
+# #     sys.exit(0)
+# 
+#     for line in bs:
+#         if (DBG>1): print line.rstrip()
+#         # Search each line for connections
+# 
+#         if (re.search("CGRA OUTPUT", line)):
+#             tile[tileno].label = "OUT"
+#             continue
+#         elif (re.search("CGRA INPUT", line)):
+#             tile[tileno].label = "IN"
+#             continue
+# 
+#         # foundtileno = re.search("^TILE *([0-9]*)", line)
+#         # I guess python uses '\A' instead of '^' :(
+#         foundtileno = re.search("^\s*TILE\s*([0-9]+)", line)
+#         if (foundtileno):
+#             tileno = int(foundtileno.group(1))
+#             if (DBG>1): print "*** Found tile %d" % tileno
+#             continue
+# 
+#         teststring = line
+#         while True:
+#             # Want to find all connections of the form "out_s0t0 <= in_s1t0"
+#             # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
+#             # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
+# 
+#             # NO list all connections and let GOD sort 'em out...
+#             x = re.search("([^ ]* *<= *[^ ]*)(.*)", teststring)
+# 
+#             # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", teststring)
+#             if (x):
+#                 connection = x.group(1).strip()
+#                 print "Tile %d found connection '%s'" % (tileno,connection)
+#                 teststring = x.group(2).strip()
+#                 tile[tileno].connect(connection)
+#             else:
+#                 break;
+
 def process_decoded_bitstream(bs):
+
     DBG=1
+
     # initialize_tile_list(4,4)
     global REQUESTED_SIZE
     (nrows,ncols) = REQUESTED_SIZE
     initialize_tile_list(nrows, ncols)
     tile = TILE_LIST; # A convenient handle
 
-#     (r,c) = (6,1)
-#     t = rc2tileno(r,c)
-#     print "Row %d col %d = tileno %s" % (r, c, t)
-#     print 
-#     sys.exit(0)
+    # (r,c) = (6,1)
+    # t = rc2tileno(r,c); print "Row %d col %d = tileno %s\n" % (r, c, t); sys.exit(0)
 
+    # tileno = 43;
+    # (r,c) = tileno2rc(tileno)
+    # print "Tile %d = row %d col %d" % (tileno, r, c)
+    # print "Row %d col %d = tileno %d\n" % (r, c, rc2tileno(r,c))
 
-    tileno = 43;
-    (r,c) = tileno2rc(tileno)
-    print "Tile %d = row %d col %d" % (tileno, r, c)
-    print "Row %d col %d = tileno %d" % (r, c, rc2tileno(r,c))
+    reg = {}
+    (reg['A'], reg['B']) = ("regA", "regB") # defaults
+
+    operand = {} # operand['a'], operand['b']
+
     print ""
-
-    tileno = 51;
-    (r,c) = tileno2rc(tileno)
-    print "Tile %d = row %d col %d" % (tileno, r, c)
-    print "Row %d col %d = tileno %d" % (r, c, rc2tileno(r,c))
-    print ""
-
-#     tileno = 57;
-#     (r,c) = tileno2rc(tileno)
-#     print "Tile %d = row %d col %d" % (tileno, r, c)
-#     sys.exit(0)
-
     for line in bs:
         if (DBG>1): print line.rstrip()
-        # Search each line for connections
+        line = line.strip() # why not
 
-        if (re.search("CGRA OUTPUT", line)):
-            tile[tileno].label = "OUT"
+        # Need to know current tile
+        # Every non-comment line is a bitstream ADDR/DATA pair;
+        # Last four hex digits of 8-digit ADDR is tile number
+        parse = re.search('^[0-9A-Fa-f]...(....)', line)
+        if (parse):
+            tileno = int(parse.group(1), 16)
+            print "%s => tile number %d" % (line, tileno)
             continue
-        elif (re.search("CGRA INPUT", line)):
+
+        print ""
+        print "BEFORE: " + line
+
+        # Find inputs and outputs
+        # Note this must happen BEFORE finding other op names :(
+        if re.search("op = input", line):
             tile[tileno].label = "IN"
-            continue
+            # Okay maybe this is dangerous...!
+            line = "Found input tile %d" % tileno
 
-        # foundtileno = re.search("^TILE *([0-9]*)", line)
-        # I guess python uses '\A' instead of '^' :(
-        foundtileno = re.search("^\s*TILE\s*([0-9]+)", line)
-        if (foundtileno):
-            tileno = int(foundtileno.group(1))
-            if (DBG>1): print "*** Found tile %d" % tileno
-            continue
+        if re.search("op = output", line):
+            tile[tileno].label = "OUT"
+            # Okay maybe this is dangerous...!
+            line = "Found output tile %d" % tileno
+
+
+        # Transformations
+        # < "# data[(1, 0)] : connect wire 3 (pe_out_res) to out_BUS16_S0_T0"
+        # > "out_s1t0 <= in_s0t0"
+
+        # mild FIXME/TODO b/c in a loop regex's should probably be compiled first
+        # 'pe_out_res' => 'pe_out'
+        line = re.sub("pe_out_res", "pe_out", line)
+
+        # "to a" => "to wireA", "to b" => "to wireB"
+        # FIXME so egregious!!!
+        line = re.sub("to a", "to wireA", line)
+        line = re.sub("to b", "to wireB", line)
+
+
+        # 'out_BUS16_S0_T0' => 'out_s0t0'
+        line = re.sub(r'(in|out)_BUS16_S(\S+)_T(\S+)', r"\1_s\2t\3", line)
+        # print "AFTER:  " + line
+
+        # 'data[(1, 0)] : connect wire 3 (X) to Y'
+        # => 'Y <= X'
+        line = re.sub(
+            r'.*connect wire \S+ \(([^)]+)\) to (\S+)',
+            r'\2 <= \1',
+            line)
+
+        # Transformations
+        # < "# data[(15, 0)] : load `b` reg with const: 1
+        # > "regB <= 0x0001"
+        parse = re.search('.*load `(.)` reg with const: (\S+)', line)
+        parse = re.search('.*load `(.)` reg with const: (\S+)', line)
+        if (parse):
+            AB = (parse.group(1)).upper()
+            k = "0x%04x" % int(parse.group(2))
+            line = "reg%s <= %s" % (AB,k)
+            reg[AB] = k
+            print "reg['%s'] = %s" % (AB, reg[AB])
+
+        # Transformations
+        # < "# data[14] : load `a` reg with wire"
+        # > regA <= wireA
+
+        parse = re.search("load `(.)` reg with wire", line)
+        if (parse):
+            AB = parse.group(1).upper()
+            line = "reg%s <= wire%s" % (AB,AB)
+
+
+        # Transformations
+        # < "# data[15] : read from reg `a`"
+        # < "# data[13] : read from reg `b`"
+        # < "# data[(4, 0)] : op = mul"
+        #
+        # > pe_out <= MUL(regA,0x0001)
+
+        # < "# data[15] : read from wire `a`"
+        # < "# data[13] : read from wire `b`"
+        # < "# data[(4, 0)] : op = add"
+        #
+        # > "wireA <= in_s1t0"
+        # > "wireB <= in_s2t0"
+        # > "pe_out <= ADD(wireA,wireB)"
+
+# Tile 10
+# GOT:    'pe_out <= ADD(regA,0x0000)'
+# WANTED: 'pe_out <= ADD(wireA,0x0000)'
+
+
+        parse = re.search("read from (reg|wire) `(.)`", line)
+        if (parse):
+            AB = parse.group(2).upper()
+            operand[AB] = parse.group(1)
+
+        parse = re.search(" op = (\S+)", line)
+        if (parse):
+            opname = parse.group(1).upper()
+            if (operand['A'] == 'wire'): reg['A'] = 'wireA' # Confusing enough?
+            if (operand['B'] == 'wire'): reg['B'] = 'wireB'
+            line = 'pe_out <= %s(%s,%s)' % (opname, reg['A'], reg['B'])
+
+            (reg['A'], reg['B']) = ("regA", "regB") # defaults
+
+
+        print "AFTER:  " + line
+#         continue
+
+#         # Search each line for connections
+# 
+#         if (re.search("CGRA OUTPUT", line)):
+#             tile[tileno].label = "OUT"
+#             continue
+#         elif (re.search("CGRA INPUT", line)):
+#             tile[tileno].label = "IN"
+#             continue
+# 
+#         # foundtileno = re.search("^TILE *([0-9]*)", line)
+#         # I guess python uses '\A' instead of '^' :(
+#         foundtileno = re.search("^\s*TILE\s*([0-9]+)", line)
+#         if (foundtileno):
+#             tileno = int(foundtileno.group(1))
+#             if (DBG>1): print "*** Found tile %d" % tileno
+#             continue
 
         teststring = line
         while True:
@@ -1925,6 +2106,7 @@ def process_decoded_bitstream(bs):
             else:
                 break;
 
+
 ##############################################################################
 # Actual runcode starts here!  (FINALLY)
 
@@ -1936,6 +2118,7 @@ def display_decoded_bitstream_file(filename):
 
     try:
         inputstream = open(filename);
+        # process_decoded_bitstream_old(inputstream)
         process_decoded_bitstream(inputstream)
         inputstream.close()
         build_and_launch_main_window(filename)
