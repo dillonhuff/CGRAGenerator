@@ -53,7 +53,7 @@ int main(int argc, char **argv, char **env) {
                     "  -config <config_filename>\n",
                     "  -input  <input_filename>\n",
                     "  -output <output_filename>\n",
-                    "  [-buildtrace <trace_filename>]\n",
+                    "  [-trace <trace_filename>]\n",
                     "  -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>\n"
                     );
         }
