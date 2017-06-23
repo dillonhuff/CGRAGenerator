@@ -16,6 +16,9 @@ Gtk = gtk  # FIXME!
 import cairo
 from subprocess import call
 
+import traceback
+# sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+
 def exit(): sys.exit(0)
 
 def errmsg(m):
@@ -46,6 +49,8 @@ TILE_LIST = range(0, NTILES)
 # Old regime default: SWAP = False
 # New regime default: SWAP = True
 SWAP = True
+
+PRINTED_CONFIG = False
 
 # tileno-to-RC conversion
 def tileno2rc(tileno):
@@ -148,7 +153,20 @@ cgra_tile_info = '''
   <tile type='pe_tile_new' tile_addr='55' row='7' col='6' tracks='BUS1:5 BUS16:5 '>
 '''
 
-PRINTED_CONFIG = False
+def tiletype(tileno):
+    # FIXME again, search string should probably be compiled globally, outside all loops
+    
+    search_pattern = "type='(\S+)'.*tile_addr='%s'" % str(tileno)
+    parse = re.search(search_pattern, cgra_tile_info)
+    if (not parse):
+        print "ERROR could not find type for tile %d" % tileno
+        sys.exit(-1)
+    else:
+        type = parse.group(1)
+        # print "Tile %d has type '%s'" % (tileno,type)
+        return type
+    
+
 def tileno2rc_8x8(tileno):
     DBG = 0
     search_string = "tile_addr='%s'.*row='(\d+)'.*col='(\d+)'" % str(tileno)
@@ -282,17 +300,62 @@ WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
 ##############################################################################
 # These could all be part of a Wire class if we wanted to...
 
+
+
+def quickfix(wirename):
+    DBG=1
+    # Some quick rewrites for the new mem tiles
+    # E.g. 'out_0_BUS16_3_0 should I THINK be same as out_s3t0
+    # FIXME is this the right place to do this?
+    # FIXME is this the right *way* to do this?
+
+    # if DBG: print "Rewriting wire '%s'" % wirename
+
+    # 'out_0_BUS16_3_0 should I THINK be same as out_s3t0
+    decode = re.search('(in|out)_0_BUS16_(.*)_(.*)', wirename);
+    if (decode):
+        wnew = "%s_s%st%s" % (decode.group(1), decode.group(2), decode.group(3))
+        if DBG: print "quickfix() rewrote '%s' => '%s'" % (wirename, wnew)
+        wirename = wnew
+    return wirename
+
+
 # E.g. given "out_s1t3", rval['inout'] = "out", rval['side'] = 1 and rval['track'] = 3
 def parse_wirename(wirename):
     rval = {}
+
+    # FIXME This probably gonna bite me in the a55...
+    # fix for: "WARNING PW does not understand ... 'out_1_BUS16_2_0'..."
+    # pretends like e.g. 'out_1_BUS16_2_0' same as "out_s2t0"
+
+    decode = re.search('(in|out)_1_BUS16_(.*)_(.*)', wirename);
+    if (decode):
+        DBG=1
+        rval['inout'] = decode.group(1)
+        rval['side']  = int(decode.group(2))
+        rval['track'] = int(decode.group(3))
+        if DBG: print "PW interprets '%-15s' => '%s_s%dt%d'" % \
+           (wirename, rval['inout'], rval['side'], rval['track'])
+        return rval
+
     decode = re.search('(in|out)_s(.*)t(.*)', wirename);
-#     if (not decode):
-#         print "WARNING Do not understand wirename '%s' (yet)" % wirename
-    rval['inout'] = str(decode.group(1))
-    rval['side']  = int(decode.group(2))
-    rval['track'] = int(decode.group(3))
-    return rval
-    
+    if (decode):
+        rval['inout'] = str(decode.group(1))
+        rval['side']  = int(decode.group(2))
+        rval['track'] = int(decode.group(3))
+        return rval
+
+    else:
+        print "WARNING PW does not understand wirename '%s' (yet)" % wirename
+        print "WARNING (Arbitrarily) connecting unknown wire to 'outs3t4' instead"
+        # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+        # print ""
+        # print ""
+        rval['inout'] = "out"
+        rval['side']  = 3
+        rval['track'] = 4
+        return rval
+
 def inout(wirename): return parse_wirename(wirename)['inout']
 def side(wirename): return parse_wirename(wirename)['side']
 def track(wirename): return parse_wirename(wirename)['track']
@@ -475,16 +538,67 @@ def connectionpoint(wirename):
             print "WARNING Do not yet understand memtile cb's"
             print "WARNING Will use '%s' instead" % hackwire
 
+    # WARNING CP does not understand wirename 'out_1_BUS16_2_0' (yet)
+    # FIXME hack: out_1_BUS16_2_0 is just out0_s2t0 minus tilecanvas_height.  Right?
+    # Okay it might be more nuanced than this.
+    # First, note that sb_wires are always side 3
+    # out_1_ only shift down by pad amount;
+    #  in_1_ maybe don't shift at all...?
+    #
+    # wire             xfudge       yfudge
+    # in_0_*           0            0
+    # in_1_BUS16_0     0            CH
+    # in_1_BUS16_1     0            CH
+    # in_1_BUS16_2     0            CH
+    # in_1_BUS16_3     0            CH
+    #
+    # out_0_* => same as "in" maybe
+
+    # wire             xfudge       yfudge
+    # sb_wire_in_1     0            CH
+    # sb_wire_out_1    0            CH
+
+    # Problems: in_1_BUS16_2_0 did not move...?
+    # Problems: 'no options parameter, sorry'
+
+    yfudge = 0  # FIXME fudge factors for e.g. out_0_ etc.
+    decode = re.search('(in|out)_1_BUS16_(.*)_(.*)', wirename);
+    if (decode):
+        DBG=1
+        inout = decode.group(1)
+        side  = decode.group(2)
+        track = decode.group(3)
+        wnew = "%s_s%st%s" % (inout, side, track)
+        if DBG: print "CP adding fudge to '%s'" % wirename
+        if DBG: print "CP rewrote '%-15s' => '%s'" % (wirename, wnew)
+        wirename = wnew
+#         if (inout == "in"): yfudge = PORT_HEIGHT
+#         else:               yfudge = CANVAS_HEIGHT
+        yfudge = CANVAS_HEIGHT
+
+
+    # Problem: in_1_BUS16_2_0 connects to wrong place (should go to sb_wire_out_1_BUS16_3_0
+    # data[(31, 30)] : @ tile (3, 0) connect wire 2 (in_1_BUS16_2_0) to sb_wire_out_1_BUS16_3_0
+
     # Need block id and track number of the target wire
     decode = re.search('(in_s.*|out_s.*)t(.*)', wirename);
     if (decode):
         b = decode.group(1);      # blockno e.g. "in_s1"
         t = int(decode.group(2)); # trackno e.g. "3"
     else:
-        print "WARNING Do not understand wirename '%s' (yet)" % wirename
+        print "WARNING CP does not understand wirename '%s' (yet)" % wirename
         print "WARNING (Arbitrarily) connecting unknown wire to 'outs3t4' instead"
         (b,t) = ("out_s3",4)
 
+    # ALSO need to fudge side-1 (bottom) wires on mem tiles.
+    # FIXME globals are evil.  Also this evil memtile hack
+    global CUR_TILE # Didn't we do this somewhere already
+    if (tiletype(CUR_TILE) == "memory_tile"):
+        print "CP found memory tile %d, wirename '%s'" % (CUR_TILE, wirename)
+        if (b == "out_s1") or (b ==  "in_s1"):
+            print "CP adding fudge b/c side 1 (bottom)"
+            yfudge = CANVAS_HEIGHT
+        
     # Canvas consists of a single tile padded on each side by space equal to "PORT_LENGTH"
     
     # A tile's edge is PORT_LENGTH away from the canvas edge
@@ -519,13 +633,14 @@ def connectionpoint(wirename):
     try: x
     except: print "ERROR Could not find connection point for " + wirename
 
-    return (x,y);
+    # print "yfudge is (still) %d" % yfudge
+    return (x, y + yfudge);
 
 # TODO/FIXME need at least one more pass on drawport() below!
 
 # E.g. 'drawport(cr, "out_s1t0")' or 'drawport(cr, wirename, options="ghost")'
 def drawport(cr, wirename, **keywords):
-    DBG = 0
+    DBG = 1
 
     # Draw the port for the indicated wire in the context of the current canvas
     # Ports are labeled arrows; input ports point in to the tile and
@@ -556,6 +671,8 @@ def drawport(cr, wirename, **keywords):
         (x,y) = connectionpoint(wirename)
         cr.translate(x,y)
         drawdot(cr, 0, 0, "black") # Mark the connection point with a black dot
+
+        # if (wirename == "sb_wire_out_1_BUS16_3_0"): print "FOO x,y is %d,%d" % (x,y)
 
         # Side 0,1,2,3 out-wires point E, S, W and N respectively
         s = side(wirename)
@@ -905,6 +1022,10 @@ def draw_pe(cr, opname, A, B):
             # Find textbox parms
             cr.set_font_size(font_size)
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+            # FIXME (below)
+            if (label == ''):
+                print "WARNING neva-2 crashes when label=''; changing to label=' '"
+                label = ' '
             (text_ulx, text_uly, text_w, text_h, nextx, nexty) = cr.text_extents(label)
             # print "fs=%f" % font_size
 
@@ -934,7 +1055,8 @@ def draw_pe(cr, opname, A, B):
 def drawtileno(cr, tileno):
 
     cr.save()
-    # Put a big ghost-number in top-left corner of tile
+    # stoopid keywords ghost number ghost-number ghost_number
+    # Put a big ghost number in top-left corner of tile
     # See https://www.cairographics.org/manual/cairo-text.html#cairo-text-extents
 
     # Needs to be a string.
@@ -970,6 +1092,13 @@ def drawtileno(cr, tileno):
     cr.move_to(x,y)
     cr.show_text(tileno)
     cr.stroke()
+
+    # Also useful to print out (r,c)
+    cr.set_font_size(12)
+    cr.move_to(x,y+15)
+    cr.show_text("%d,%d" % tileno2rc(tileno))
+    cr.stroke()
+
     cr.restore()
 
 # Draw tile outline
@@ -989,7 +1118,7 @@ def ab_connect(cr, inport, PE_input):
     DBG=1;
     if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
 
-    if DBG: print "Connecting wire %s to pe_in %s" % (inport, PE_input)
+    if DBG: print "AB connecting wire '%s' to pe_in wire '%s'" % (inport, PE_input)
     (x1,y1) = connectionpoint(inport)
 
     if (PE_input == "wireA"): (x2,y2) = (PE_AX,PE_AY)
@@ -1061,6 +1190,8 @@ def manhattan_connect(cr, outport, inport):
     elif (x1 == -PORT_HEIGHT): interior = (x2,y1)
     else:                      interior = (x1,y2)
 
+    # if (outport == "sb_wire_out_1_BUS16_3_0"): print "FOO1 interior = %s" % str(interior)
+
     # Maybe it works better if join point goes a little bit in toward the
     # two respective incoming sides
     
@@ -1095,16 +1226,22 @@ def manhattan_connect(cr, outport, inport):
 
     interior = (join_x,join_y)
 
-#     y = interior[1]
-# 
-#     interior = (
-#         min(x1,x2) + abs(x2-x1),
-#         min(y1,y2) + abs(y2-y1)
-#         )
-# 
-#     if ( abs(x) == PORT_HEIGHT ): 
+    # if (outport == "sb_wire_out_1_BUS16_3_0"): print "FOO2 interior = %s" % str(interior)
+    # if (outport == "sb_wire_out_1_BUS16_3_0"):
+    #     print "begin here: %s" % str((x1,y1))
+    #     print "then  here: %s" % str(interior)
+    #     print "end   here: %s" % str((x2,y2))
 
-
+    # FIXME hackity hack hack hack FIXME
+    # hack for when a lower wire connects to an upper wire in a memory tile
+    # omg i'm losing it
+    # if (interior[1] == 0): interior[1] = CANVAS_HEIGHT
+    # FIXME "TypeError: object does not support item assignment" on neva-2!!?
+    interior_x = interior[0]; interior_y = interior[1]
+    if (interior_y == 0):
+        # interior_y = CANVAS_HEIGHT
+        # FIXME this could be better
+        (interior_x,interior_y) = (x1,y1)
 
     # Okay now connect the dots!  With a blue line.
     # Put a blue dot at the corner.  You'll thank me later.
@@ -1115,7 +1252,7 @@ def manhattan_connect(cr, outport, inport):
         cr.set_line_width(.5)
         # drawdot(cr,interior[0],interior[1],'blue')
         cr.move_to(x1,y1)
-        cr.line_to(interior[0],interior[1])
+        cr.line_to(interior_x,interior_y)
         cr.line_to(x2,y2)
         cr.stroke()
         cr.restore()
@@ -1123,13 +1260,40 @@ def manhattan_connect(cr, outport, inport):
 def get_connection_type(c):
     # connection type will be one of "port" "pe_in" "pe_out" "const"
 
-    # Okay right ordermatters, this one should go before pe_in search obviously
+    # Okay right order matters, this one should go before pe_in search obviously
+    # ?? What idiot is writing these comments!!???  Oh wait it's me
+
+    # if re.search(",",c): return "pe"
+    # if re.search("^[oi],*",c): return "port"
+    # if re.search("wire.|reg.",c): return "pe_in"
+
     # For connections of the form "MUL(wireA,regB)" or "MUL(wireA,0x0002)"
     # parse = re.search("^(.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
-    if re.search(",",c): return "pe"
+    type = "unknown"
+    if   (c == "pe_out"):           type = "pe_out"
+    elif re.search(",",c):          type = "pe"
+    elif re.search("^[oi],*",c):    type = "port"
+    elif re.search("^sb_wire_[oi],*",c):    type = "port"
+    elif re.search("wire.|reg.",c): type = "pe_in"
+    elif re.search("^0x",c):        type = "const"
 
-    if re.search("^[oi],*",c): return "port"
-    if re.search("wire.|reg.",c): return "pe_in"
+    # FIXME/hack map din == pe_in for now, but it be UUUUGLYYYY etc.
+    elif (c == "din"):
+        type = "pe_in"
+        print ""
+        print "WARNING MEMHACK modeling '%s' as '%s'" % (c, type)
+    elif (c == "mem_out"):
+        type = "pe_out"
+        print ""
+        print "WARNING MEMHACK modeling '%s' as '%s'" % (c, type)
+    else:
+        print "ERROR Unknown type for connection '%s'" % c
+        # I'll probably regret this...
+        sys.exit(-1)
+
+    DBG=1
+    if DBG: print "GCT connection '%s' = type '%s'" % (c, type)
+    return type
 
 
 def connectwires(cr, connection):
@@ -1146,7 +1310,7 @@ def connectwires(cr, connection):
     #     "pe_out <= ADD(0x0002,0x0000)"
 
 
-    DBG = 0;
+    DBG = 1;
 
     # Find the names of the two wires to connect.
     # parse = re.search( "([A-z_0-9]+).*[^A-z_0-9]([A-z_0-9]+)[^A-z_0-9]*$", connection)
@@ -1158,20 +1322,24 @@ def connectwires(cr, connection):
     parse = re.search("^([^ ]*) .* ([^ ]*)$", connection)
     pto = parse.group(1); pfrom = parse.group(2)
 
-    # connection type will be one of "port" "pe_in" "pe_out" "const"
+    # Some quick rewrites for the new mem tiles
+    # E.g. 'out_0_BUS16_3_0 should I THINK be same as out_s3t0
+    pto   = quickfix(pto)
+    pfrom = quickfix(pfrom)
+
+    # connection type will be one of "port" "pe_in" "pe_out" "const" (more?)
 
     to_type   = get_connection_type(pto)
     from_type = get_connection_type(pfrom)
         
-    # print "to '%s' from '%s'" % (pto,pfrom)
+    if DBG: print "CONNECT to '%s' from '%s'" % (pto,pfrom)
 
     # For connections of the form "out_s0t0 <= in_s1t0"
     if (to_type == "port" and from_type == "port"):
-        DBG=0
         w1 = pto; w2 = pfrom
         if DBG:
-            print "connection = " + connection
-            print "Connecting wires '%s' and '%s'\n" % (w1,w2)
+            print "CW connection = " + connection
+            print "CW connecting wires '%s' and '%s'\n" % (w1,w2)
 
         # Draw a blue rectilinear line connecting w1 and w2 ports
         manhattan_connect(cr, pto, pfrom)
@@ -1180,21 +1348,17 @@ def connectwires(cr, connection):
     # For connections of the form "wireA <= in_s3t0"
     if (to_type == "pe_in" and from_type == "port"):
         DBG=0
-        if DBG: print "Found valid connection %s" % connection
-        if DBG: print "Connecting port '%s' to pe_in '%s'" % (pfrom,pto)
+        if DBG: print "CW found valid connection %s" % connection
+        if DBG: print "CW connecting port '%s' to pe_in '%s'" % (pfrom,pto)
         ab_connect(cr, pfrom, pto)
         return True;
 
-        
     # For connections of the form "out_s1t0 <= pe_out"
     if (to_type == "port" and pfrom == "pe_out"):
         DBG = 0;
-        if DBG: print "Found valid connection %s" % connection
+        if DBG: print "CW found valid connection %s" % connection
         pe_out_connect(cr, pto)
         return True;
-
-
-
 
     # For connections of the form "pe_out <= MUL(wireA,regB)" or "pe_out <= MUL(wireA,0x0002)"
     # parse = re.search("^(pe_out) .* (.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
@@ -1361,13 +1525,12 @@ def draw_all_tiles(cr):
     if DBG: print "Draw all tiles!"
 
     cr.save()
-    cr.translate(ARRAY_PAD, ARRAY_PAD)    # Whitespace margin at top and left
+    cr.translate(ARRAY_PAD, ARRAY_PAD)     # Whitespace margin at top and left
     cr.scale(SCALE_FACTOR,SCALE_FACTOR)
-    # draw_big_ghost_arrows(cr)             # Big ghost arrows in background of grid
-                                          # view show general flow dir for tracks
-    # for tile in TILE_LIST: tile.draw(cr)  # Draw ALL the tiles
-    for tile in TILE_LIST:                # Draw ALL the tiles
-        if (tile): tile.draw(cr)
+    # draw_big_ghost_arrows(cr)            # Big ghost arrows in background of grid
+                                           # view show general flow dir for tracks
+    for tile in TILE_LIST:                 # Draw ALL the tiles
+        if (tile): tile.draw(cr)           # uh...unless they don't exist :)
 
     global TILES_DRAWN_AT_LEAST_ONCE      # FIXME Yes this is awful
     TILES_DRAWN_AT_LEAST_ONCE = True      # FIXME Yes this is awful
@@ -1441,6 +1604,13 @@ class CGRAWin(gtk.Window):
         da.props.height_request= WIN_HEIGHT
         # self.add(da)
 
+        # White background for better contrast / less ink wastage when printing
+        MAXCOLOR = 65535
+        col = gtk.gdk.Color(MAXCOLOR,MAXCOLOR,MAXCOLOR)
+        # col = gtk.Color('#fff') WRONG
+        # col = gtk.gdk.Color('#fff') # fails on neva2
+        da.modify_bg(gtk.STATE_NORMAL, col)
+
         ########################################################################
         # To toolbar FIXME should be separate function maybe
         # top_toolbar = build_toolbar()
@@ -1510,7 +1680,8 @@ class CGRAWin(gtk.Window):
         # Pack buttons into a toolbar on top
         expand = False; fill = False;
         top_toolbar = gtk.HBox()
-        top_toolbar.props.height_request = 25
+        # neva-2 wants height 30; kiwi is happy with 25 FIXME
+        top_toolbar.props.height_request = 30
         top_toolbar.pack_start(button_magplus,  expand, fill)
         top_toolbar.pack_start(button_magminus, expand, fill)
         top_toolbar.pack_start(button_hand,     expand, fill)
@@ -1679,11 +1850,15 @@ class Tile:
         # draw_pe(cr, "ADD", regA=2)
         if (self.label == "OUT"): draw_pe(cr, "OUT", "wireA", None)
         elif (self.label != ""):  draw_pe(cr, self.label, None, None)
-#         else:
-# #             if (self.col==0): draw_pe(cr, "ADD", "0x00002", "0x0000")
-# #             if (self.col==1): draw_pe(cr, "ADD", "0x00002", "wireB")
-#             if (self.col==2): draw_pe(cr, "ADDYO DADDY", "wireA", "wireB")
-#             if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
+        # else:
+        #     # if (self.col==0): draw_pe(cr, "ADD", "0x00002", "0x0000")
+        #     # if (self.col==1): draw_pe(cr, "ADD", "0x00002", "wireB")
+        #     if (self.col==2): draw_pe(cr, "ADDYO DADDY", "wireA", "wireB")
+        #     if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
+
+        # FIXME globals are evil?
+        global CUR_TILE # Didn't we do this somewhere already
+        CUR_TILE = self.tileno
 
         draw_all_ports(cr)
         for c in self.connectionlist:
