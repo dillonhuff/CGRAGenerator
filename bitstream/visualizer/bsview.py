@@ -594,9 +594,10 @@ def connectionpoint(wirename):
     # FIXME globals are evil.  Also this evil memtile hack
     global CUR_TILE # Didn't we do this somewhere already
     if (tiletype(CUR_TILE) == "memory_tile"):
-        print "CP found memory tile %d, wirename '%s'" % (CUR_TILE, wirename)
+        DBG=0
+        if DBG: print "CP found memory tile %d, wirename '%s'" % (CUR_TILE, wirename)
         if (b == "out_s1") or (b ==  "in_s1"):
-            print "CP adding fudge b/c side 1 (bottom)"
+            if DBG: print "CP adding fudge b/c side 1 (bottom)"
             yfudge = CANVAS_HEIGHT
         
     # Canvas consists of a single tile padded on each side by space equal to "PORT_LENGTH"
@@ -640,7 +641,7 @@ def connectionpoint(wirename):
 
 # E.g. 'drawport(cr, "out_s1t0")' or 'drawport(cr, wirename, options="ghost")'
 def drawport(cr, wirename, **keywords):
-    DBG = 1
+    DBG = 0
 
     # Draw the port for the indicated wire in the context of the current canvas
     # Ports are labeled arrows; input ports point in to the tile and
@@ -1291,7 +1292,7 @@ def get_connection_type(c):
         # I'll probably regret this...
         sys.exit(-1)
 
-    DBG=1
+    DBG=0
     if DBG: print "GCT connection '%s' = type '%s'" % (c, type)
     return type
 
@@ -1310,7 +1311,7 @@ def connectwires(cr, connection):
     #     "pe_out <= ADD(0x0002,0x0000)"
 
 
-    DBG = 1;
+    DBG = 0;
 
     # Find the names of the two wires to connect.
     # parse = re.search( "([A-z_0-9]+).*[^A-z_0-9]([A-z_0-9]+)[^A-z_0-9]*$", connection)
@@ -1905,50 +1906,50 @@ def build_default_connection(tileno, out_wire):
         print "Tile %d add missing connection %s" % (tileno,newconnection)
         TILE_LIST[tileno].connect(newconnection)
 
-def connect_missing_wires():
-    DBG=0;
-    # Each input connection must have matching output and maybe that will suffice
-    if DBG: print "------------------------------------------------------------------------------"
-    if DBG: print "CONNECT MISSING WIRES"
-    for T in TILE_LIST:
-        if (not T): continue
-        for c in T.connectionlist:
-            if DBG: print "found connection %s" % c
-            parse = re.search("(in_s\d+t\d+)", c)
-            if (parse):
-                w = parse.group(1)
-                if DBG: print "connects to input wire '%s'" % w
-                (mT,mw) = find_matching_wire(T.tileno, w)
-
-                # print range (0, NTILES)
-                if mT not in range (0, NTILES):
-                    print "WARNING Ignoring edge wire %s on tile %d" % (w, T.tileno)
-                    return()
-
-                # print mT
-                # print TILE_LIST[mT].connectionlist
-                found_matching_connection = False
-                for mc in TILE_LIST[mT].connectionlist:
-                    if DBG: print "  looking for %s in %s" % (mw, mc)
-                    if (re.search(mw,mc)):
-                        found_matching_connection = True
-                        if DBG: print "Found a match for %s in tile %d (I think)" % (mw, mT)
-                if (not found_matching_connection):
-                    build_default_connection(mT,mw)
-                # if (not found_matching_connection): print "NO MATCH!"
-                # else:                               print "MATCH! OKAY?"
-
-    if DBG: print "------------------------------------------------------------------------------"
+# def connect_missing_wires():
+#     DBG=1;
+#     # Each input connection must have matching output and maybe that will suffice
+#     if DBG: print "------------------------------------------------------------------------------"
+#     if DBG: print "CONNECT MISSING WIRES"
+#     for T in TILE_LIST:
+#         if (not T): continue
+#         for c in T.connectionlist:
+#             if DBG: print "found connection '%s' in tile %d" % (c,T.tileno)
+#             parse = re.search("(in_s\d+t\d+)", c)
+#             if (parse):
+#                 w = parse.group(1)
+#                 if DBG: print "connects to input wire '%s'" % w
+#                 (mT,mw) = find_matching_wire(T.tileno, w)
+# 
+#                 # print range (0, NTILES)
+#                 if mT not in range (0, NTILES):
+#                     print "WARNING Ignoring edge wire %s on tile %d" % (w, T.tileno)
+#                     return()
+# 
+#                 # print mT
+#                 # print TILE_LIST[mT].connectionlist
+#                 found_matching_connection = False
+#                 for mc in TILE_LIST[mT].connectionlist:
+#                     if DBG: print "  looking for %s in %s" % (mw, mc)
+#                     if (re.search(mw,mc)):
+#                         found_matching_connection = True
+#                         if DBG: print "Found a match for %s in tile %d (I think)" % (mw, mT)
+#                 if (not found_matching_connection):
+#                     # build_default_connection(mT,mw)
+#                     # Under new regime, should be no missing conections...right?
+#                     print "ERROR wire '%s' was supposed to connect to '%s' in tile %d" % (w,mw,mT)
+#                     print "ERROR found no connection for '%s'" % mw
+#                     sys.exit(-1)
+#     if DBG: print "------------------------------------------------------------------------------"
 
 
 # Set up the main window and connect to callback routine that draws everything.
 def build_and_launch_main_window(title):
 
-    # At this point all connections have been made; now we can go through
-    # and add missing defaults
-    connect_missing_wires()
-#     sys.exit(0)
-
+    # Not supposed to need this no more under new regime...
+    # # At this point all connections have been made; now we can go through
+    # # and add missing defaults
+    # connect_missing_wires()
 
     DBG=1;
     print "------------------------------------------------------------------------"
@@ -2495,55 +2496,43 @@ def main():
     return
 
 
-def find_matching_wire(tileno, w):
-    DBG=1
-    # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
-    parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
-    if (parse == None):
-        print "Invalid wire name '%s'" % w
-        return
-    in_or_out = parse.group(1)
-    side      = int(parse.group(2))
-    track     = int(parse.group(3))
-
-    if (in_or_out=="out"): in_or_out="in"
-    else:            in_or_out="out"
-
-    (r,c) = tileno2rc(tileno)
-    #   print (r,c,side)
-
-    if   (side==0): (r,c,side) = (r,c+1,side+2)
-    elif (side==1): (r,c,side) = (r+1,c,side+2)
-    elif (side==2): (r,c,side) = (r,c-1,side-2)
-    elif (side==3): (r,c,side) = (r-1,c,side-2)
-
-    #   print (r,c,side)
-
-    adj_tileno = rc2tileno(r,c)
-    adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
-    if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
-    return (adj_tileno, adj_wire)
-
-# print find_matching_wire(4, "in_s1t0")
-# sys.exit(0)
+# def find_matching_wire(tileno, w):
+#     DBG=1
+#     # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
+#     parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
+#     if (parse == None):
+#         print "Invalid wire name '%s'" % w
+#         return
+#     in_or_out = parse.group(1)
+#     side      = int(parse.group(2))
+#     track     = int(parse.group(3))
+# 
+#     if (in_or_out=="out"): in_or_out="in"
+#     else:            in_or_out="out"
+# 
+#     (r,c) = tileno2rc(tileno)
+#     #   print (r,c,side)
+# 
+#     if   (side==0): (r,c,side) = (r,c+1,side+2)
+#     elif (side==1): (r,c,side) = (r+1,c,side+2)
+#     elif (side==2): (r,c,side) = (r,c-1,side-2)
+#     elif (side==3): (r,c,side) = (r-1,c,side-2)
+# 
+#     #   print (r,c,side)
+# 
+#     adj_tileno = rc2tileno(r,c)
+#     adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
+#     if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
+#     return (adj_tileno, adj_wire)
 
 main()
 
 
-# scenario = ["demo_sb_4x4","demo_sb_2x2"]
-# 
-# # Simple 4x4 array with a few switchbox connections
-# if ("demo_sb_4x4" in scenario): demo_sb_4x4()
-# 
-# # Simple 2x2 array with a few switchbox connections
-# if ("demo_sb_2x2" in scenario): demo_sb_2x2()
-# 
-
-
-
-##############################################################################
+#################################################################
 # Notes
-
+# 
 # http://pycairo.readthedocs.io/en/latest/reference/context.html?
 # highlight=set_dash#cairo.Context.set_dash
+# 
+#################################################################
 
