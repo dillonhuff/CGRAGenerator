@@ -330,7 +330,7 @@ def parse_wirename(wirename):
 
     decode = re.search('(in|out)_1_BUS16_(.*)_(.*)', wirename);
     if (decode):
-        DBG=1
+        DBG=0
         rval['inout'] = decode.group(1)
         rval['side']  = int(decode.group(2))
         rval['track'] = int(decode.group(3))
@@ -564,7 +564,7 @@ def connectionpoint(wirename):
     yfudge = 0  # FIXME fudge factors for e.g. out_0_ etc.
     decode = re.search('(in|out)_1_BUS16_(.*)_(.*)', wirename);
     if (decode):
-        DBG=1
+        DBG=0
         inout = decode.group(1)
         side  = decode.group(2)
         track = decode.group(3)
@@ -1335,6 +1335,12 @@ def connectwires(cr, connection):
         
     if DBG: print "CONNECT to '%s' from '%s'" % (pto,pfrom)
 
+#     if (pfrom == 'mem_out'):
+#         print "FOO okay found FROM 'mem_out' type '%s' in tile %d" % (from_type,CUR_TILE)
+#         print "FOO connects TO '%s' type '%s'" % (pto, to_type)
+
+    DBG=0
+    if (DBG>1): print "FOO1 %s - %s" % (to_type, from_type)
     # For connections of the form "out_s0t0 <= in_s1t0"
     if (to_type == "port" and from_type == "port"):
         w1 = pto; w2 = pfrom
@@ -1346,6 +1352,7 @@ def connectwires(cr, connection):
         manhattan_connect(cr, pto, pfrom)
         return True;
 
+    if (DBG>1): print "FOO2 %s - %s" % (to_type, from_type)
     # For connections of the form "wireA <= in_s3t0"
     if (to_type == "pe_in" and from_type == "port"):
         DBG=0
@@ -1354,19 +1361,21 @@ def connectwires(cr, connection):
         ab_connect(cr, pfrom, pto)
         return True;
 
+    if (DBG>1): print "FOO3 %s - %s" % (to_type, from_type)
     # For connections of the form "out_s1t0 <= pe_out"
-    if (to_type == "port" and pfrom == "pe_out"):
+    if (to_type == "port" and from_type == "pe_out"):
         DBG = 0;
-        if DBG: print "CW found valid connection %s" % connection
+        if DBG: print "CW/pe_out found valid connection %s" % connection
         pe_out_connect(cr, pto)
         return True;
 
+    if (DBG>1): print "FOO4 %s - %s" % (to_type, from_type)
     # For connections of the form "pe_out <= MUL(wireA,regB)" or "pe_out <= MUL(wireA,0x0002)"
     # parse = re.search("^(pe_out) .* (.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
     if (from_type == "pe"):
         DBG = 1;
         if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
-        if DBG: print "Found valid connection %s" % connection
+        if DBG: print "CW/pe found valid connection %s" % connection
         parse = re.search("^(.*)[(](wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)[)]", pfrom)
         pe_name = parse.group(1)
         pe_a    = parse.group(2)
