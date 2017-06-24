@@ -2111,7 +2111,7 @@ def initialize_tile_list(w, h):
 
 def process_decoded_bitstream(bs):
 
-    DBG=1
+    DBG=0
 
     # initialize_tile_list(4,4)
     global REQUESTED_SIZE
@@ -2132,7 +2132,7 @@ def process_decoded_bitstream(bs):
 
     operand = {} # operand['a'], operand['b']
 
-    print ""
+    if DBG: print ""
     for line in bs:
         if (DBG>1): print line.rstrip()
         line = line.strip() # why not
@@ -2143,11 +2143,11 @@ def process_decoded_bitstream(bs):
         parse = re.search('^[0-9A-Fa-f]...(....)', line)
         if (parse):
             tileno = int(parse.group(1), 16)
-            print "%s => tile number %d" % (line, tileno)
+            if DBG: print "%s => tile number %d" % (line, tileno)
             continue
 
-        print ""
-        print "BEFORE: " + line
+        if DBG: print ""
+        if DBG: print "BEFORE: " + line
 
         # Find inputs and outputs
         # Note this must happen BEFORE finding other op names :(
@@ -2197,7 +2197,7 @@ def process_decoded_bitstream(bs):
             k = "0x%04x" % int(parse.group(2))
             line = "reg%s <= %s" % (AB,k)
             reg[AB] = k
-            print "reg['%s'] = %s" % (AB, reg[AB])
+            if DBG: print "reg['%s'] = %s" % (AB, reg[AB])
 
         # Transformations
         # < "# data[14] : load `a` reg with wire"
@@ -2244,7 +2244,7 @@ def process_decoded_bitstream(bs):
             (reg['A'], reg['B']) = ("regA", "regB") # defaults
 
 
-        print "AFTER:  " + line
+        if DBG: print "AFTER:  " + line
 #         continue
 
 #         # Search each line for connections
@@ -2276,7 +2276,7 @@ def process_decoded_bitstream(bs):
             # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", teststring)
             if (x):
                 connection = x.group(1).strip()
-                print "Tile %d found connection '%s'" % (tileno,connection)
+                print "Tile %2d found connection '%s'" % (tileno,connection)
                 teststring = x.group(2).strip()
                 tile[tileno].connect(connection)
             else:
@@ -2292,12 +2292,18 @@ def display_decoded_bitstream_file(filename):
 
     if DBG: print "Using", filename, "as input";
 
+    # Let's make the title a bit more attractive
+    # e.g. "debugconv.bsa" instead of "../examples/debugconv.bsa"
+    title = re.sub(r'.*/([^/]+)$', r'\1', "/"+filename)
+    if DBG: print "Using", title, "as window title";
+
     try:
         inputstream = open(filename);
         # process_decoded_bitstream_old(inputstream)
         process_decoded_bitstream(inputstream)
         inputstream.close()
-        build_and_launch_main_window(filename)
+        # build_and_launch_main_window(filename)
+        build_and_launch_main_window(title)
     except IOError:
         # TODO/FIXME yeah these were copies from somewhere else obviously
         print ""
