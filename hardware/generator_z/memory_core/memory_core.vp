@@ -81,6 +81,7 @@ wire int_cen;
 reg  lb_ren;
 reg [1:0] lb_ren_state;
 reg [1:0] out_count;
+reg WENHACK;
 
 
 reg [`$dwidth - 1`:0] mem_addr;
@@ -95,7 +96,11 @@ reg mv_to_out;
 
 assign gclk = clk & (`$TILE_EN`);
 assign data_in = (`$ENABLE_CHAIN`)?chain_in:xdata_in;
+
+// At the last minute, run.csh can modify line below
+// to read "asssign  wen = WENHACK" instead
 assign wen = (`$ENABLE_CHAIN`)?chain_wen_in:xwen;
+
 assign chain_out = data_out;
 assign chain_valid_out = valid;
 
@@ -175,18 +180,29 @@ always @(posedge clk or posedge reset) begin
     input_count <= 2'd0;
   end else begin
     if (wen==1'b1 && ~(mv_to_ram|mv_to_out)) begin
+      //$display ("case 1 (does this work?)");
       in_sr <= {in_sr[`$dwidth*2 - 1`:0],data_in};
       `$backtick`xassert(input_count==2'd3, "error: input_count increasing beyond 3")
       input_count <= input_count + 2'd1;
     end else if (wen==1'b1 && (mv_to_ram|mv_to_out)) begin
+      //$display ("case 2 (does this work?)");
       in_sr[`$dwidth*2 - 1`:0] <= {in_sr[`$dwidth - 1`:0],data_in};
       `$backtick`xassert(input_count==2'd0, "error: input_count decreasing beyond 0. case 1.")
       input_count <= input_count - 2'd1;
     end else if (wen==1'b0 && (mv_to_ram)) begin
+      //$display ("case 3 (does this work?)");
       `$backtick`xassert(input_count<2'd2, "error: input_count decreasing beyond 0. case 2.")    
       input_count <= input_count - 2'd2;
     end else if (wen==1'b0 && (mv_to_out)) begin
+      //$display ("case 4 (does this work?)");
       input_count <= 0;
+    //end else begin
+      //$display("Wait, what?");
+      //$display("The value of wen is: %b", wen) ;
+      //$display("The value of mv_to_ram is: %b", mv_to_ram) ;
+      //$display("The value of mv_to_out is: %b", mv_to_out) ;
+      //$display("mv_to_ram|mv_to_out is: %b", mv_to_ram|mv_to_out) ;
+      //$display("~(mv_to_ram|mv_to_out) is: %b", ~(mv_to_ram|mv_to_out)) ;
     end
   end
 end
@@ -228,6 +244,14 @@ end
 
 always @(posedge clk) begin
   valid = ((out_count>0) || `$backtick`MV_RAM_TO_OUTPUT || `$backtick`MV_INPUT_TO_OUTPUT);
+end
+
+always @(posedge clk or posedge reset) begin
+   if (reset==1'b1) begin
+     WENHACK = 1'b0;
+   end else if (data_in != 16'b0) begin
+     WENHACK = 1'b1;
+   end
 end
 
 always @(posedge clk or posedge reset) begin
