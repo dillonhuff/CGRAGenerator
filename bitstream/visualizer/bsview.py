@@ -2,6 +2,13 @@
 import sys
 import re
 
+global PRINTED
+PRINTED = [] # oh this is awful
+def print_once(s):
+    global PRINTED
+    if (s not in PRINTED):
+        PRINTED.append(s); print s
+
 # # gi a.k.a. pygobjects, pygtk
 # import gi
 # gi.require_version('Gtk', '3.0')
@@ -303,7 +310,7 @@ WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
 
 
 def quickfix(wirename):
-    DBG=1
+    DBG=0
     # Some quick rewrites for the new mem tiles
     # E.g. 'out_0_BUS16_3_0 should I THINK be same as out_s3t0
     # FIXME is this the right place to do this?
@@ -592,10 +599,10 @@ def connectionpoint(wirename):
 
     # ALSO need to fudge side-1 (bottom) wires on mem tiles.
     # FIXME globals are evil.  Also this evil memtile hack
-    global CUR_TILE # Didn't we do this somewhere already
-    if (tiletype(CUR_TILE) == "memory_tile"):
+    global CUR_TILENO # Didn't we do this somewhere already
+    if (tiletype(CUR_TILENO) == "memory_tile"):
         DBG=0
-        if DBG: print "CP found memory tile %d, wirename '%s'" % (CUR_TILE, wirename)
+        if DBG: print "CP found memory tile %d, wirename '%s'" % (CUR_TILENO, wirename)
         if (b == "out_s1") or (b ==  "in_s1"):
             if DBG: print "CP adding fudge b/c side 1 (bottom)"
             yfudge = CANVAS_HEIGHT
@@ -1025,7 +1032,9 @@ def draw_pe(cr, opname, A, B):
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
             # FIXME (below)
             if (label == ''):
-                print "WARNING neva-2 crashes when label=''; changing to label=' '"
+                msg = "WARNING neva-2 crashes when label=''; "\
+                      + "changing to label=' '"
+                print_once(msg)
                 label = ' '
             (text_ulx, text_uly, text_w, text_h, nextx, nexty) = cr.text_extents(label)
             # print "fs=%f" % font_size
@@ -1110,6 +1119,18 @@ def drawtile(cr):
     w = CANVAS_WIDTH  - 2*PORT_HEIGHT
     h = CANVAS_HEIGHT - 2*PORT_HEIGHT
     (ULx,ULy) = (PORT_HEIGHT,PORT_HEIGHT)
+    cr.rectangle(ULx,ULy,  w, h) # ULx, ULy, width, height
+    cr.stroke()
+    cr.restore()
+
+# Draw memtile outline
+def drawmemtile(cr):
+    cr.save()
+    setcolor(cr,'black')
+    cr.set_line_width(.5)
+    (ULx,ULy) = (PORT_HEIGHT,PORT_HEIGHT)
+    w = CANVAS_WIDTH  - 2*PORT_HEIGHT
+    h = 2*CANVAS_HEIGHT - 2*PORT_HEIGHT
     cr.rectangle(ULx,ULy,  w, h) # ULx, ULy, width, height
     cr.stroke()
     cr.restore()
@@ -1240,9 +1261,20 @@ def manhattan_connect(cr, outport, inport):
     # FIXME "TypeError: object does not support item assignment" on neva-2!!?
     interior_x = interior[0]; interior_y = interior[1]
     if (interior_y == 0):
-        # interior_y = CANVAS_HEIGHT
+        # print "interor y = zero means a mem-sb1 connection"
+        # print "inport '%s' => outport '%s' in tile %d" % (inport, outport, CUR_TILENO)
+
+        (y1_prev,y2_prev) = (y1,y2)
+        if re.search("^sb_wire_in_1_", outport):
+            y1 -= PORT_HEIGHT
+            # print "subtracting from y1 was %d now %d" % (y1_prev,y1)
+        elif re.search("^sb_wire_out_1_", inport):
+            y2 -= PORT_HEIGHT
+            # print "subtracting from y2 was %d now %d" % (y2_prev,y2)
+
         # FIXME this could be better
         (interior_x,interior_y) = (x1,y1)
+        # print ""
 
     # Okay now connect the dots!  With a blue line.
     # Put a blue dot at the corner.  You'll thank me later.
@@ -1281,12 +1313,10 @@ def get_connection_type(c):
     # FIXME/hack map din == pe_in for now, but it be UUUUGLYYYY etc.
     elif (c == "din"):
         type = "pe_in"
-        print ""
-        print "WARNING MEMHACK modeling '%s' as '%s'" % (c, type)
+        print_once( "\nWARNING MEMHACK modeling '%s' as '%s'" % (c, type) )
     elif (c == "mem_out"):
         type = "pe_out"
-        print ""
-        print "WARNING MEMHACK modeling '%s' as '%s'" % (c, type)
+        print_once( "\nWARNING MEMHACK modeling '%s' as '%s'" % (c, type) )
     else:
         print "ERROR Unknown type for connection '%s'" % c
         # I'll probably regret this...
@@ -1336,7 +1366,7 @@ def connectwires(cr, connection):
     if DBG: print "CONNECT to '%s' from '%s'" % (pto,pfrom)
 
 #     if (pfrom == 'mem_out'):
-#         print "FOO okay found FROM 'mem_out' type '%s' in tile %d" % (from_type,CUR_TILE)
+#         print "FOO okay found FROM 'mem_out' type '%s' in tile %d" % (from_type,CUR_TILENO)
 #         print "FOO connects TO '%s' type '%s'" % (pto, to_type)
 
     DBG=0
@@ -1844,7 +1874,9 @@ class Tile:
         indent = "                "
         print indent + ("\n"+indent).join(self.connectionlist)
 
-    # Todo: maybe two separate routines, one for draw-in-grid and one for draw-standalone etc
+    # Todo: maybe two separate routines,
+    # one for draw-in-grid and one for draw-standalone etc
+
     def draw(self, cr):
         cr.save()
 
@@ -1858,8 +1890,9 @@ class Tile:
 
         drawtileno(cr, self.tileno)
         # draw_pe(cr, "ADD", regA=2)
-        if (self.label == "OUT"): draw_pe(cr, "OUT", "wireA", None)
-        elif (self.label != ""):  draw_pe(cr, self.label, None, None)
+        if   (self.label == "OUT"): draw_pe(cr, "OUT", "wireA", None)
+        elif (self.label == "MEM"): draw_pe(cr, "MEM", None, "wireB")
+        elif (self.label != ""):    draw_pe(cr, self.label, None, None)
         # else:
         #     # if (self.col==0): draw_pe(cr, "ADD", "0x00002", "0x0000")
         #     # if (self.col==1): draw_pe(cr, "ADD", "0x00002", "wireB")
@@ -1867,8 +1900,8 @@ class Tile:
         #     if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
 
         # FIXME globals are evil?
-        global CUR_TILE # Didn't we do this somewhere already
-        CUR_TILE = self.tileno
+        global CUR_TILENO # Didn't we do this somewhere already
+        CUR_TILENO = self.tileno
 
         draw_all_ports(cr)
         for c in self.connectionlist:
@@ -1877,13 +1910,12 @@ class Tile:
                 print "ERROR Removing '%s' from Tile %d connection list" % (c, self.tileno)
                 # print "BEFORE: %s" % str(self.connectionlist)
                 self.connectionlist.remove(c)
-                # print "AFTER: %s" % str(self.connectionlist)
-                # print ""
-                # print ""
-                # print ""
-                
+                # print "AFTER: %s\n\n\n" % str(self.connectionlist)
 
-        drawtile(cr)
+        if (tiletype(self.tileno) == "memory_tile"):
+            drawmemtile(cr)
+        else: drawtile(cr)
+
         cr.restore()
 
     # Not currently used I think
@@ -2160,16 +2192,9 @@ def process_decoded_bitstream(bs):
 
         # Find inputs and outputs
         # Note this must happen BEFORE finding other op names :(
-        if re.search("op = input", line):
-            tile[tileno].label = "IN"
-            # Okay maybe this is dangerous...!
-            line = "Found input tile %d" % tileno
-
-        if re.search("op = output", line):
-            tile[tileno].label = "OUT"
-            # Okay maybe this is dangerous...!
-            line = "Found output tile %d" % tileno
-
+        if   re.search("op = input",  line): tile[tileno].label = "IN"
+        elif re.search("op = output", line): tile[tileno].label = "OUT"
+        elif re.search("mem_out",     line): tile[tileno].label = "MEM"
 
         # Transformations
         # < "# data[(1, 0)] : connect wire 3 (pe_out_res) to out_BUS16_S0_T0"
