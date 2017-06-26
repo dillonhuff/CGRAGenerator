@@ -78,9 +78,18 @@ foreach f (obj_dir counter.cvd tile_config.dat)
   if (-e $f) rm -rf $f
 end
 
+unset HACKMEM
+
 while ($#argv)
   # echo "Found switch '$1'"
   switch ("$1")
+
+    case '-hackmem':
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      set HACKMEM = 1
+      breaksw
 
     case '-clean':
       exit 0;
@@ -338,7 +347,7 @@ echo '------------------------------------------------------------------------'
 echo ''
 echo "Building the verilator simulator executable..."
 
-  # (Temporary (I hope)) SRAM hack
+  # (Temporary (I hope)) SRAM hack(s)
 
   echo
   echo '  SRAM hack'
@@ -347,6 +356,36 @@ echo "Building the verilator simulator executable..."
      ls -l $vdir/sram*
   endif
   echo
+
+  # Temporary wen/ren hacks.  
+  if ($?HACKMEM) then
+    # In memory_core_unq1.v, change:
+    #   assign wen = (`$ENABLE_CHAIN`)?chain_wen_in:xwen;
+    # To:
+    #   assign wen = WENHACK
+
+    mv $vdir/memory_core_unq1.v /tmp/memory_core_unq1.v.orig
+    cat /tmp/memory_core_unq1.v.orig \
+      | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
+      > $vdir/memory_core_unq1.v
+
+    # No longer doing:
+    #  | sed 's/assign int_ren = .*/assign int_ren = 1;/' \
+    #  | sed 's/assign int_wen = .*/assign int_wen = 1;/' \
+    #  | sed 's/assign wen = .*/assign wen = 1;/' \
+
+    echo
+    echo '------------------------------------------------------------------------'
+    echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
+    echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
+    echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
+    echo diff /tmp/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
+    diff /tmp/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
+    echo '------------------------------------------------------------------------'
+    echo
+    echo
+
+  endif
 
   # Build the necessary switches
 
