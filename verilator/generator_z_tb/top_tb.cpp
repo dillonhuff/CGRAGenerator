@@ -40,10 +40,10 @@ int main(int argc, char **argv, char **env) {
 
     for (int i=1; i< argc; i++) {
         // printf("    arg%d is maybe %s\n\n", argv[i]);
-        if      (! strcmp(argv[i], "-config")) { config_filename  = argv[++i]; }
-        else if (! strcmp(argv[i], "-input" )) { input_filename   = argv[++i]; }
+        if      (! strcmp(argv[i], "-config"))  { config_filename = argv[++i]; }
+        else if (! strcmp(argv[i], "-input" ))  { input_filename  = argv[++i]; }
         else if (! strcmp(argv[i], "-output" )) { output_filename = argv[++i]; }
-        else if (! strcmp(argv[i], "-buildtrace" )) { trace_filename = argv[++i]; }
+        else if (! strcmp(argv[i], "-trace" ))  { trace_filename  = argv[++i]; }
         else if (! strcmp(argv[i], "-nclocks")) { 
                 sscanf(argv[++i], "%d", &NCLOCKS);
         }
@@ -53,7 +53,7 @@ int main(int argc, char **argv, char **env) {
                     "  -config <config_filename>\n",
                     "  -input  <input_filename>\n",
                     "  -output <output_filename>\n",
-                    "  [-buildtrace <trace_filename>]\n",
+                    "  [-trace <trace_filename>]\n",
                     "  -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>\n"
                     );
         }
@@ -151,8 +151,6 @@ int main(int argc, char **argv, char **env) {
     }
 #endif
 
-
-
     ///    initial begin
     ///      clk<=1'b1;
     ///      reset_count<=4'd0;
@@ -214,254 +212,268 @@ int main(int argc, char **argv, char **env) {
         exit(-1);
     }
 
-// Tile configuration init END
-/////////////////////////////////////////////////////////
-
-  ///    always #0.625 clk <= ~clk;
+    // Tile configuration init END
+    /////////////////////////////////////////////////////////
+    ///    always #0.625 clk <= ~clk;
 
     int nprints = 0;
 
-  for (int i=0; i<NCLOCKS; i++) {
-      char what_i_did[256] = "";
-      // sprintf(what_i_did, "");
+    for (int i=0; i<NCLOCKS; i++) {
+        // travis freaks out if no output for 10 minutes...
+        // if ( (i%100000) == 0) {
+        //     if (i==100000) printf("Executed %dK cycles...", i/1000);
+        //     else if (i>0)  printf("%dK...", i/1000);
+        //     fflush(stdout);
+        // }
+        if ( (i%100000) == 0 ) {
+            printf("Executed %dK cycles...\n", i/1000); fflush(stdout);
+        }
 
-      // @posedge events go here.
+        char what_i_did[256] = "";
+        // sprintf(what_i_did, "");
 
-      ///    always @(posedge clk) begin
-      ///      if (!(&reset_count)) begin 
-      ///        reset_count <= reset_count + 1;  // Remember this is four bits!
-      ///      end
-      ///    end
-      ///    assign reset = !reset_count[3];
+        // @posedge events go here.
+
+        ///    always @(posedge clk) begin
+        ///      if (!(&reset_count)) begin 
+        ///        reset_count <= reset_count + 1;  // Remember this is four bits!
+        ///      end
+        ///    end
+        ///    assign reset = !reset_count[3];
     
-      if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
-      if (i==4) { sprintf(what_i_did, "reset=0\n"); }
+        if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
+        if (i==4) { sprintf(what_i_did, "reset=0\n"); }
 
-      unsigned int in_0_0;
-      unsigned int in_0_1;
-      unsigned int in_1_0;
-      unsigned int in_1_1;
+        unsigned int in_0_0;
+        unsigned int in_0_1;
+        unsigned int in_1_0;
+        unsigned int in_1_1;
 
-      for (clk=0; clk<2; clk++) {
+        for (clk=0; clk<2; clk++) {
 
 #if VM_TRACE > 0
-          // dump variables into VCD file
-          tfp->dump (2*i+clk);
+            // dump variables into VCD file
+            tfp->dump (2*i+clk);
 #endif
 
-          //printf("CyNum-rst-clk %05d %d %d, ", i, reset, clk);
-          // char prefix[256];
-          // sprintf(prefix, "cy.clk %05d.%d R%d: ", i, clk, reset);
-          // printf("cy.clk %05d.%d R%d: ", i, clk, reset);
+            //printf("CyNum-rst-clk %05d %d %d, ", i, reset, clk);
+            // char prefix[256];
+            // sprintf(prefix, "cy.clk %05d.%d R%d: ", i, clk, reset);
+            // printf("cy.clk %05d.%d R%d: ", i, clk, reset);
 
-          // top->clk = !top->clk;
+            // top->clk = !top->clk;
 
-          // printf("Sim-cycle.clock %03d.%d, ", i, clk);
+            // printf("Sim-cycle.clock %03d.%d, ", i, clk);
 
-          /////////////////////////////////////////////////////////
-          // Tile configuration run BEGIN
+            /////////////////////////////////////////////////////////
+            // Tile configuration run BEGIN
 
-          ///    always @(posedge clk) begin
-          ///      if (!reset) begin
-          ///        $fscanf(config_data_file, "%h %h", &config_addr_i,&config_data_i); 
-          ///        if (!$feof(config_data_file)) begin
-          ///          config_addr <= config_addr_i;
-          ///          config_data <= config_data_i;
-          ///        end else begin
-          ///          tile_config_done <= 1'b1;
-          ///        end
-          ///      end
-          ///    end
+            ///    always @(posedge clk) begin
+            ///      if (!reset) begin
+            ///        $fscanf(config_data_file, "%h %h", &config_addr_i,&config_data_i); 
+            ///        if (!$feof(config_data_file)) begin
+            ///          config_addr <= config_addr_i;
+            ///          config_data <= config_data_i;
+            ///        end else begin
+            ///          tile_config_done <= 1'b1;
+            ///        end
+            ///      end
+            ///    end
 
-          if (clk == 0) { // So it will be stable for posedge events, I guess
-              // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
-              // if (!reset && ) {
-              if (!reset) {
-                  fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
-                  if (!feof(config_data_file)) {
-                      // printf("scanned config data %08X %08X\n", config_addr_i, config_data_i);
-                      sprintf(what_i_did, "scanned config data %08X %08X", config_addr_i, config_data_i);
-                      config_addr = config_addr_i;
-                      config_data = config_data_i;
-                  } else {
-                      tile_config_done = 1;
-                  }
-              }
+            if (clk == 0) { // So it will be stable for posedge events, I guess
+                // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
+                // if (!reset && ) {
+                if (!reset) {
+                    fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
+                    if (!feof(config_data_file)) {
+                        // printf("scanned config data %08X %08X\n", config_addr_i, config_data_i);
+                        sprintf(what_i_did, "scanned config data %08X %08X", config_addr_i, config_data_i);
+                        config_addr = config_addr_i;
+                        config_data = config_data_i;
+                    } else {
+                        tile_config_done = 1;
+                    }
+                }
 
-              if (!reset && tile_config_done) {
-                  if (input_filename == NULL) {
+                if (!reset && tile_config_done) {
+                    if (input_filename == NULL) {
 
-                      // add4, no input file, use four rando's
-                      in_0_0 = random() & 0xffff;
-                      in_0_1 = random() & 0xffff;
-                      in_1_0 = random() & 0xffff;
-                      in_1_1 = random() & 0xffff;
+                        // add4, no input file, use four rando's
+                        in_0_0 = random() & 0xffff;
+                        in_0_1 = random() & 0xffff;
+                        in_1_0 = random() & 0xffff;
+                        in_1_1 = random() & 0xffff;
 
-                      // add4 emulating mul2, no input file, use rando
-                      in_0_0 = random() & 0xffff;
-                      in_0_1 = in_0_0;
-                      in_1_0 = 0;
-                      in_1_1 = 0;
-                  }
-                  else {
+                        // add4 emulating mul2, no input file, use rando
+                        in_0_0 = random() & 0xffff;
+                        in_0_1 = in_0_0;
+                        in_1_0 = 0;
+                        in_1_1 = 0;
+                    }
+                    else {
 
-                      // add4 w/input file
-                      // in_0_0 = (unsigned int)fgetc(input_file);
-                      // in_0_1 = (unsigned int)fgetc(input_file);
-                      // in_1_0 = (unsigned int)fgetc(input_file);
-                      // in_1_1 = (unsigned int)fgetc(input_file);
-                      // // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
+                        // add4 w/input file
+                        // in_0_0 = (unsigned int)fgetc(input_file);
+                        // in_0_1 = (unsigned int)fgetc(input_file);
+                        // in_1_0 = (unsigned int)fgetc(input_file);
+                        // in_1_1 = (unsigned int)fgetc(input_file);
+                        // // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
 
-                      // add4 emulating mul2 (out = 2 * in), w/input file
-                      in_0_0 = (unsigned int)fgetc(input_file);
-                      in_0_1 = in_0_0;
-                      in_1_0 = 0;
-                      in_1_1 = 0;
-                      // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
+                        // add4 emulating mul2 (out = 2 * in), w/input file
+                        in_0_0 = (unsigned int)fgetc(input_file);
+                        in_0_1 = in_0_0;
+                        in_1_0 = 0;
+                        in_1_1 = 0;
+                        // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
 
-                      if (feof(input_file)) {
-                          printf("\nINFO Simulation ran for %d cycles\n\n", i);
-                          if (input_file)       { fclose(input_file ); }
-                          if (output_file)      { fclose(output_file); }
-                          if (config_data_file) { fclose(config_data_file); }
-                          exit(0);
-                      }
-                  }
-              }
-          }
+                        if (feof(input_file)) {
+                            printf("\nINFO Simulation ran for %d cycles\n\n", i);
+                            if (input_file)       { fclose(input_file ); }
+                            if (output_file)      { fclose(output_file); }
+                            if (config_data_file) { fclose(config_data_file); }
+                            exit(0);
+                        }
+                    }
+                }
+            }
 
-          // Tile configuration run END
-          /////////////////////////////////////////////////////////
+            // Tile configuration run END
+            /////////////////////////////////////////////////////////
 
-          /////////////////////////////////////////////////////////
-          // DUT instantiation
-          /////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////
+            // DUT instantiation
+            /////////////////////////////////////////////////////////
 
-          ///top dut (
-          ///.clk(clk),
-          ///.reset(reset),
-          ///.wire_0_m1_BUS16_S0_T0(in_0_0),
-          ///.wire_m1_0_BUS16_S1_T0(in_0_1),
-          ///.wire_1_m1_BUS16_S0_T2(in_1_0),
-          ///.wire_2_0_BUS16_S3_T2(in_1_1),
-          ///.config_addr(config_addr),
-          ///.config_data(config_data)
-          ///);
+            ///top dut (
+            ///.clk(clk),
+            ///.reset(reset),
+            ///.wire_0_m1_BUS16_S0_T0(in_0_0),
+            ///.wire_m1_0_BUS16_S1_T0(in_0_1),
+            ///.wire_1_m1_BUS16_S0_T2(in_1_0),
+            ///.wire_2_0_BUS16_S3_T2(in_1_1),
+            ///.config_addr(config_addr),
+            ///.config_data(config_data)
+            ///);
 
-          top->clk = clk;
-          top->reset = reset;
+            top->clk = clk;
+            top->reset = reset;
 
-          if (0) {
-              // Using add4 config file
-              top->wire_0_m1_BUS16_S0_T0 = in_0_0;
-              top->wire_m1_0_BUS16_S1_T0 = in_0_1;
-              top->wire_1_m1_BUS16_S0_T2 = in_1_0;
-              // top->wire_2_0_BUS16_S3_T2  = in_1_1;
-              top->wire_4_0_BUS16_S3_T2  = in_1_1;
-          }
+            // 6/10/2017: What is this?  Why is it here?  And why did verilator
+            // throw an error for a missing wire in the "if (0)" block?
+            // 
+            //           if (0) {
+            //               // Using add4 config file
+            //               top->wire_0_m1_BUS16_S0_T0 = in_0_0;
+            //               top->wire_m1_0_BUS16_S1_T0 = in_0_1;
+            //               top->wire_1_m1_BUS16_S0_T2 = in_1_0;
+            //               // top->wire_2_0_BUS16_S3_T2  = in_1_1;
+            //               top->wire_4_0_BUS16_S3_T2  = in_1_1;
+            //           }
+            // 
+            //           else {
+            //               // mul2 config file
+            //               // top->wire_0_3_BUS16_S2_T0 = 0x10;
+            //               // top->wire_1_2_BUS16_S3_T1 = 0x11;
+            //               // top->wire_0_0_BUS16_S1_T0 = 0x22;
+            //               // INWIRE = 0x22;
+            //               INWIRE = in_0_0;
+            //           }
 
-          else {
-              // mul2 config file
-              // top->wire_0_3_BUS16_S2_T0 = 0x10;
-              // top->wire_1_2_BUS16_S3_T1 = 0x11;
-              // top->wire_0_0_BUS16_S1_T0 = 0x22;
-              // INWIRE = 0x22;
-              INWIRE = in_0_0;
-          }
-
-
-          top->config_addr = config_addr;
-          top->config_data = config_data;
-
-          ///
-          ///always @(posedge clk) begin
-          ///
-          ///   $display ("%h + %h + %h + %h = %h (%h)", in_0_0, in_0_1, in_1_0,
-          ///   in_1_1, dut.wire_0_1_BUS16_S0_T4 ,in_0_0+in_0_1+in_1_0+in_1_1);
-
-          // printf("  top:clk,reset = %d,%d, ", top->clk, top->reset);
+            INWIRE = in_0_0;
 
 
-          top->eval ();
+            top->config_addr = config_addr;
+            top->config_data = config_data;
 
-          // if (! printed_something) { printf("\n"); }
-      } // for (clk)
-      if (!reset && tile_config_done) {
-          nprints++;
+            ///
+            ///always @(posedge clk) begin
+            ///
+            ///   $display ("%h + %h + %h + %h = %h (%h)", in_0_0, in_0_1, in_1_0,
+            ///   in_1_1, dut.wire_0_1_BUS16_S0_T4 ,in_0_0+in_0_1+in_1_0+in_1_1);
 
-          // Only print info for first 40 cycles, see how that goes
-          if (i == 40) { sprintf(what_i_did, "..."); }
-          else if (i < 40) {
-              if (0) {
-                  /*
-                  // out = sum(4in)
-                  sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
-                          in_0_0, in_0_1, in_1_0, in_1_1,
-                          top->wire_0_1_BUS16_S0_T4,
-                          (in_0_0 + in_0_1 + in_1_0 + in_1_1),
-                          top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
-                          );
-                  */
-              }
-              else {
-                  // out = 2in
-                  // int inwire  = top->wire_0_0_BUS16_S1_T0;
-                  // int outwire = top->wire_1_0_BUS16_S1_T0;
+            // printf("  top:clk,reset = %d,%d, ", top->clk, top->reset);
 
-                  sprintf(what_i_did, "Two times %d = %d  *%s*", 
-                          //top->wire_0_3_BUS16_S2_T0,
-                          //top->wire_1_2_BUS16_S3_T1,
-                          //top->wire_0_2_BUS16_S0_T0);
-                          INWIRE,
-                          OUTWIRE,
-                          OUTWIRE == 2*INWIRE ? "PASS" : "FAIL"
-                          );
-              }
-          }
 
-          // Output to output file if specified.
-          if (output_file != NULL) {
-              // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
-              char c = (char)(OUTWIRE & 0xff);
-              // printf("\nemit %d to output file\n", c);
-              fputc(c, output_file);
-          }
+            top->eval ();
 
-      }
-      if (nprints==1) {
-          printf("\n");
-      }
+            // if (! printed_something) { printf("\n"); }
+        } // for (clk)
+        if (!reset && tile_config_done) {
+            nprints++;
 
-      if (i <= 40) {
-          // printf("cy.clk %05d.%d: ", i, top->clk);
-          printf("%05d: ", i);
-          printf("%s\n", what_i_did);
-      }
+            // Only print info for first 40 cycles, see how that goes
+            if (i == 40) { sprintf(what_i_did, "..."); }
+            else if (i < 40) {
+                if (0) {
+                    /*
+                    // out = sum(4in)
+                    sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
+                    in_0_0, in_0_1, in_1_0, in_1_1,
+                    top->wire_0_1_BUS16_S0_T4,
+                    (in_0_0 + in_0_1 + in_1_0 + in_1_1),
+                    top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
+                    );
+                    */
+                }
+                else {
+                    // out = 2in
+                    // int inwire  = top->wire_0_0_BUS16_S1_T0;
+                    // int outwire = top->wire_1_0_BUS16_S1_T0;
 
-      // FIXME/TODO maybe build a "close_all_and_exit" subroutine and call it before exit(s)
-      if (input_filename != NULL) {
-          if (feof(input_file)) {
-              printf("\n\nINFO Simulation ran for %d cycles\n\n", i);
-              // fclose(input_file);
-              // if (output_file) { fclose(output_file); }
-              if (input_file)       { fclose(input_file ); }
-              if (output_file)      { fclose(output_file); }
-              if (config_data_file) { fclose(config_data_file); }
-              // CLOSETRACE // why not? FIXME: tell my why not and/or put it in and see what happens...
-              exit(0);
-          }
-      }
-  } // for (i)
+                    sprintf(what_i_did, "Two times %d = %d  *%s*", 
+                            //top->wire_0_3_BUS16_S2_T0,
+                            //top->wire_1_2_BUS16_S3_T1,
+                            //top->wire_0_2_BUS16_S0_T0);
+                            INWIRE,
+                            OUTWIRE,
+                            OUTWIRE == 2*INWIRE ? "PASS" : "FAIL"
+                            );
+                }
+            }
 
-  if (Verilated::gotFinish()) {
-      printf("\n\nINFO Simulation ran for %d cycles\n\n", NCLOCKS);
-      if (input_file)       { fclose(input_file ); }
-      if (output_file)      { fclose(output_file); }
-      if (config_data_file) { fclose(config_data_file); }
-      // CLOSETRACE // why not? FIXME: tell my why not and/or put it in and see what happens...
-      exit(0);
-  }
-  CLOSETRACE
+            // Output to output file if specified.
+            if (output_file != NULL) {
+                // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
+                char c = (char)(OUTWIRE & 0xff);
+                // printf("\nemit %d to output file\n", c);
+                fputc(c, output_file);
+            }
+
+        }
+        if (nprints==1) {
+            printf("\n");
+        }
+
+        if (i <= 40) {
+            // printf("cy.clk %05d.%d: ", i, top->clk);
+            printf("%05d: ", i);
+            printf("%s\n", what_i_did);
+        }
+
+        // FIXME/TODO maybe build a "close_all_and_exit" subroutine and call it before exit(s)
+        if (input_filename != NULL) {
+            if (feof(input_file)) {
+                printf("\n\nINFO Simulation ran for %d cycles\n\n", i);
+                // fclose(input_file);
+                // if (output_file) { fclose(output_file); }
+                if (input_file)       { fclose(input_file ); }
+                if (output_file)      { fclose(output_file); }
+                if (config_data_file) { fclose(config_data_file); }
+                // CLOSETRACE // why not? FIXME: tell my why not and/or put it in and see what happens...
+                exit(0);
+            }
+        }
+    } // for (i)
+
+    if (Verilated::gotFinish()) {
+        printf("\n\nINFO Simulation ran for %d cycles\n\n", NCLOCKS);
+        if (input_file)       { fclose(input_file ); }
+        if (output_file)      { fclose(output_file); }
+        if (config_data_file) { fclose(config_data_file); }
+        // CLOSETRACE // why not? FIXME: tell my why not and/or put it in and see what happens...
+        exit(0);
+    }
+    CLOSETRACE
 } // main()
 
 /////////////////////////////////////////////////////////

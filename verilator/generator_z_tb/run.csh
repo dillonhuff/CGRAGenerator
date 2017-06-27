@@ -1,5 +1,10 @@
 #!/bin/csh -f
 
+# setenv CGRA_GEN_USE_MEM 1
+# setenv CGRA_GEN_ALL_REG 1
+
+# setenv OLDMEM
+
 # Travis flow (CGRAFlow/.travis.yml)
 #  travis script calls "travis-test" to do the initial generate
 #  travis script calls PNR to build map, io info from generated cgra_info.txt
@@ -16,39 +21,55 @@
 # builds small parrot
 
 # DEFAULTS
+set gridsize = "4x4"
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
-set config    = ../../bitstream/examples/calebscript.bs
+# set config    = ../../bitstream/examples/calebscript.bs
+# set config    = ../../bitstream/examples/cd.bs
+
+# New memtile regime swaps r,c tile addresses HA
+# set config    = ../../bitstream/examples/cd-swizzled.bs
+
+# No, use swizzler instead
+# cd2 is suspect, may be WRONG
+set config    = ../../bitstream/examples/cd2.bs  # cd2 broken i think
+set config    = ../../bitstream/examples/cd.bsv1
+set config    = ../../bitstream/examples/cd387-good.bs
+
+# works under new regime: cd2, cd387
+
+
 set input     = io/gray_small.png
 set output    = /tmp/output.raw
 set nclocks   = "1M"
 unset tracefile
 
 if ($#argv == 1) then
-  if ($argv[1] == '--help') then
+  if ("$argv[1]" == '--help') then
     echo "Usage:"
-    echo "    $0 <textbench.cpp> [-gen]"
-    echo "        -config     <config_filename>"
-    echo "        -input      <input_filename>"
-    echo "        -output     <output_filename>"
-    echo "       [-buildtrace <trace_filename>]"
+    echo "    $0 <textbench.cpp> [-gen | -nogen]"
+    echo "        -usemem -allreg [ -4x4 | -8x8 ]"
+    echo "        -config <config_filename.bs>"
+    echo "        -input   <input_filename.png>"
+    echo "        -output <output_filename.raw>"
+    echo "       [-trace   <trace_filename.vcd>]"
     echo "        -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>"
     echo
     echo "Defaults:"
     echo "    $0 top_tb.cpp \"
     echo "       $GENERATE         \"
-    echo "       -config   $config \"
-    echo "       -input    $input  \"
-    echo "       -output   $output \"
+    echo "       -$gridsize \"
+    echo "       -config  $config \"
+    echo "       -input   $input  \"
+    echo "       -output  $output \"
     if ($?tracefile) then
-      echo "       -buildtrace $tracefile \"
+      echo "       -trace $tracefile \"
     endif
     echo "       -nclocks  $nclocks                                          \"
     echo
     exit 0
   endif
 endif
-
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
@@ -57,20 +78,37 @@ foreach f (obj_dir counter.cvd tile_config.dat)
   if (-e $f) rm -rf $f
 end
 
+unset HACKMEM
+
 while ($#argv)
   # echo "Found switch '$1'"
   switch ("$1")
 
+    case '-hackmem':
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      set HACKMEM = 1
+      breaksw
+
     case '-clean':
       exit 0;
+
+    case '-4x4':
+      set gridsize = "4x4"; breaksw;
+
+    case '-8x8':
+    case -usemem:
+    case -newmem:
+      set gridsize = "8x8";
+      setenv CGRA_GEN_USE_MEM 1;
+      breaksw;
 
     case '-gen':
       set GENERATE = '-gen'; breaksw;
 
     case '-nogen':
-      # echo "'nogen' is the default already"; breaksw;
       set GENERATE = '-nogen'; breaksw;
-      
 
     case '-config':
       set config = "$2"; shift; breaksw
@@ -89,7 +127,7 @@ while ($#argv)
     case -output:
       set output = "$2"; shift; breaksw
 
-    case -buildtrace:
+    case -trace:
       set tracefile = "$2"; shift; breaksw
 
     case -nclocks:
@@ -97,7 +135,21 @@ while ($#argv)
       set nclocks = $2;
       shift; breaksw
 
+    case -allreg:
+      setenv CGRA_GEN_ALL_REG 1; breaksw
+
+    # Unused / undocumented for now
+    case -oldmem:
+      unsetenv CGRA_GEN_USE_MEM
+      unsetenv CGRA_GEN_ALL_REG
+      breaksw
+
     default:
+      if (`expr "$1" : "-"`) then
+        echo "ERROR: Unknown switch '$1'"
+        exec $0 --help
+        exit -1
+      endif
       set testbench = "$1";
   endsw
   shift;
@@ -122,16 +174,52 @@ if (! $?embedded_io) then
   exit -1
 endif
 
+# Swizzle the bitstream to match new mem regime (unless bypassed)
+
+set swizzled = /tmp/{$config:t}.swizzled
+if (-e $swizzled) rm $swizzled
+
+# if ($?OLDMEM) then
+#     cp $config $swizzled
+# else
+#   echo "Unswizzling bitstream.  Before:"
+#   cat $config
+# 
+#   ./swizzle.py < $config > $swizzled
+# 
+#   echo "After:"
+#   cat $swizzled
+# endif
+
+cp $config $swizzled
+
+
 echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
 
 set decoded = /tmp/{$config:t}.decoded
-../../bitstream/decoder/decode.py $config > $decoded
+if (-e $decoded) rm $decoded
+# ../../bitstream/decoder/decode.py $config > $decoded
+# New memtile regime swaps r,c tile addresses HA
+
+# ../../bitstream/decoder/decode.py -newmem $config > $decoded
+
+if ($?OLDMEM) then
+  set echo
+  ../../bitstream/decoder/decode.py $swizzled > $decoded
+else
+  set echo
+  ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled > $decoded
+endif
+
+unset echo >& /dev/null
+
 
 # Show IO info derived from bitstream
 echo; sed -n '/O Summary/,$p' $decoded; echo
 
 # Clean bitstream (strip out hacked-in IO info)
 set newbs = /tmp/bs.txt
+if (-e $newbs) rm $newbs
 echo "Will strip out IO hack from '$config'"
 echo "to create clean bitstream '$newbs'"
 echo
@@ -149,7 +237,7 @@ echo "   -config   $config   \"
 echo "   -input    $input  \"
 echo "   -output   $output    \"
 if ($?tracefile) then
-  echo "   -buildtrace $tracefile \"
+  echo "   -trace $tracefile \"
 endif
 echo "   -nclocks  $nclocks                 \"
 
@@ -172,10 +260,12 @@ if ("$GENERATE" == "-nogen") then
 else
   # Build CGRA 
   echo "Building CGRA because you asked for it with '-gen'..."
-  pushd ../..
-    ./travis-test.csh
-  popd
 
+  ../../bin/generate.csh || exit -1
+
+  set gztop = ../../hardware/generator_z/top/
+  echo DIFF
+  ls -l $gztop/cgra_info.txt $gztop/examples/*.txt
 endif
 
 # If config files has an xml extension, use Ankita's perl script
@@ -214,9 +304,16 @@ echo ""
     set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
     echo "  OUT $outwires"
 
+    set yikeswires = `egrep '^# YIKES' $decoded | awk '{print $NF}'`
+    if ("$yikeswires" != "") then
+        set yikeswires = "-yikeswires '$yikeswires'"
+    endif
+    echo "  YIKES $yikeswires"
+    
     echo
     echo "  inwires  = $inwires"
     echo "  outwires = $outwires"
+    echo "  yikeswires = $yikeswires"
     echo
 
 echo "END find input and output wires"
@@ -250,6 +347,46 @@ echo '------------------------------------------------------------------------'
 echo ''
 echo "Building the verilator simulator executable..."
 
+  # (Temporary (I hope)) SRAM hack(s)
+
+  echo
+  echo '  SRAM hack'
+  if ($?CGRA_GEN_USE_MEM) then
+     cp ./sram_stub.v $vdir/sram_512w_16b.v
+     ls -l $vdir/sram*
+  endif
+  echo
+
+  # Temporary wen/ren hacks.  
+  if ($?HACKMEM) then
+    # In memory_core_unq1.v, change:
+    #   assign wen = (`$ENABLE_CHAIN`)?chain_wen_in:xwen;
+    # To:
+    #   assign wen = WENHACK
+
+    mv $vdir/memory_core_unq1.v /tmp/memory_core_unq1.v.orig
+    cat /tmp/memory_core_unq1.v.orig \
+      | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
+      > $vdir/memory_core_unq1.v
+
+    # No longer doing:
+    #  | sed 's/assign int_ren = .*/assign int_ren = 1;/' \
+    #  | sed 's/assign int_wen = .*/assign int_wen = 1;/' \
+    #  | sed 's/assign wen = .*/assign wen = 1;/' \
+
+    echo
+    echo '------------------------------------------------------------------------'
+    echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
+    echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
+    echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
+    echo diff /tmp/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
+    diff /tmp/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
+    echo '------------------------------------------------------------------------'
+    echo
+    echo
+
+  endif
+
   # Build the necessary switches
 
   # Gather the verilog files for verilator command line
@@ -264,6 +401,8 @@ echo "Building the verilator simulator executable..."
 
   # Add trace switch if trace requested
   if ($?tracefile) set myswitches = "$myswitches --trace"
+
+  # Note default trace_filename in top_tb.cpp is "top_tb.vcd"
 
   # Run verilator to build the simulator.
 
@@ -357,11 +496,12 @@ echo '  First prepare input and output files...'
   # If no trace requested, simulator will not create a waveform file.
   set trace = ''
   if ($?tracefile) then
-    set trace = "-buildtrace $tracefile"
+    set trace = "-trace $tracefile"
   endif
 
   echo
   echo "# Run executable simulation"
+  echo -n " TIME NOW: "; date
 
   set echo
     obj_dir/V$top \
@@ -370,13 +510,21 @@ echo '  First prepare input and output files...'
       $out \
       $trace \
       $nclocks \
+      | tee /tmp/run.log.$$ \
       || exit -1
   unset echo >& /dev/null
+  echo -n " TIME NOW: "; date
+
+  grep FAIL /tmp/run.log.$$ && exit -1
+
 
   echo
   echo "# Show output vs. input; output should be 2x input for most common testbench"
 
   if ($?input) then
+    echo
+    ls -l /tmp/input.raw $output
+
     echo
     set cmd = "od -t x1 /tmp/input.raw"
     set cmd = "od -t u1 /tmp/input.raw"

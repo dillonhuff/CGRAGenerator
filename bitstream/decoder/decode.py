@@ -18,27 +18,47 @@ from lib.sb_decode_5tracks import *
 scriptname = sys.argv[0];
 args = sys.argv[1:];
 
-usage = "\n"\
-  + "Decodes/annotates the indicated bitstream file\n"\
-  + "Usage:\n"\
-  + "   %s <bitstream-file>\n" % scriptname\
-  + "   %s --help\n" % scriptname\
-  + ""
+# usage = "\n"\
+#   + "Decodes/annotates the indicated bitstream file\n"\
+#   + "Usage:\n"\
+#   + "   %s <bitstream-file>\n" % scriptname\
+#   + "   %s -newmem <bitstream-file>\n" % scriptname\
+#   + "   %s --help\n" % scriptname\
+#   + ""
 
-if (len(args) < 1):      print usage; sys.exit(-1);
+scriptname_tail = scriptname
+parse = re.search('([/].*$)', scriptname)
+parse = re.search('([^/]+$)', scriptname)
+if (parse): scriptname_tail = parse.group(1)
+
+usage = '''
+Decodes/annotates the indicated bitstream file
+Usage:
+   %s [ -nodefaults ] [ -newmem | -oldmem | -swaprc | -4x4 | -8x8 ] <bitstream-file>
+   %s --help
+''' % (scriptname_tail, scriptname_tail)
+
+sbdefaults = True;
+
+# GRIDSIZE = "4x4"
+# SWAP = False
+
+# No! default should be 8x8 / newmem
+GRIDSIZE = "8x8"
+SWAP = True
+
+
+if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
-bitstream_filename = args[0];
-
-#       "                           \n"+\
-#       "          0    4    8    12\n"+\
-#       "                           \n"+\
-#       "          1    5    9    13\n"+\
-#       "                           \n"+\
-#       "          2    6    10   14\n"+\
-#       "                           \n"+\
-#       "          3    7    11   15\n"+\
-#       "";
-
+while (len(args) > 0):
+    if   (args[0] == '-nodefaults'): sbdefaults = False
+    elif (args[0] == '-swaprc'):     SWAP = True
+    elif (args[0] == '-newmem'):     SWAP = True
+    elif (args[0] == '-oldmem'):     SWAP = False
+    elif (args[0] == '-4x4'):        GRIDSIZE = "4x4"
+    elif (args[0] == '-8x8'):        GRIDSIZE = "8x8"
+    else:              bitstream_filename = args[0];
+    args = args[1:]
 
 # TBD this (below) could be a separate "print_intro()" function like
 print "";
@@ -64,9 +84,117 @@ def tileno2rc(tileno):
     #  2  6  10  14      (2,0) (2,1) (2,2) (2,3)
     #  3  7  11  15      (3,0) (3,1) (3,2) (3,3)
     #
+    # Unless SWAP = True, in which case...just the opposite (ugh!)
+    #
+    #      tileno                    r,c
+    #   0   1   2   3      (0,0) (0,1) (0,2) (0,3)
+    #   4   5   6   7      (1,0) (1,1) (1,2) (1,3)
+    #   8   9  10  11      (2,0) (2,1) (2,2) (2,3)
+    #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
+
+    # Is this smart? Ans: NO   # FIXME/TODO
+    if (GRIDSIZE == "8x8"):
+        return tileno2rc_8x8(tileno)
+
     row = tileno%4
     col = int(tileno/4)
-    return [row, col];
+    
+    if (not SWAP): return [row, col];
+    else:          return [col, row];
+
+# Oh no
+cgra_tile_info = '''
+  <tile type='pe_tile_new' tile_addr='0' row='0' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='1' row='0' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='2' row='0' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='3' row='0' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='4' row='0' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='5' row='0' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='6' row='0' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='7' row='0' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='8' row='1' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='9' row='1' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='10' row='1' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='11' row='1' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='12' row='1' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='13' row='1' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='14' row='2' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='15' row='2' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='16' row='2' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='17' row='2' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='18' row='2' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='19' row='2' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='20' row='2' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='21' row='2' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='22' row='3' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='23' row='3' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='24' row='3' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='25' row='3' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='26' row='3' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='27' row='3' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='28' row='4' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='29' row='4' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='30' row='4' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='31' row='4' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='32' row='4' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='33' row='4' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='34' row='4' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='35' row='4' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='36' row='5' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='37' row='5' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='38' row='5' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='39' row='5' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='40' row='5' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='41' row='5' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='42' row='6' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='43' row='6' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='44' row='6' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='45' row='6' col='3' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='46' row='6' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='47' row='6' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='48' row='6' col='6' tracks='BUS1:5 BUS16:5 '>
+  <tile type='memory_tile' tile_addr='49' row='6' col='7' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='50' row='7' col='0' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='51' row='7' col='1' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='52' row='7' col='2' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='53' row='7' col='4' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='54' row='7' col='5' tracks='BUS1:5 BUS16:5 '>
+  <tile type='pe_tile_new' tile_addr='55' row='7' col='6' tracks='BUS1:5 BUS16:5 '>
+'''
+
+def tileno2rc_8x8(tileno):
+    DBG = 0
+    search_string = "tile_addr='%s'.*row='(\d+)'.*col='(\d+)'" % str(tileno)
+    parse = re.search(search_string, cgra_tile_info)
+    if (not parse):
+        global PRINTED_CONFIG
+        if (DBG):
+            print 'WARNING: Using search string "%s"\n' % search_string
+            print "WARNING: Could not find tile number %s in this lookup table: %s" \
+                % (str(tileno), cgra_tile_info)
+        return False
+        
+    row = int(parse.group(1))
+    col = int(parse.group(2))
+    if (DBG): print "Found tile number '%d' => row '%d' col '%d'" % (tileno, row, col)
+    return (row,col)
+
+def test_tileno2rc_8x8():
+    for i in range(0, 55):
+        tileno2rc_8x8(i)
+# test_tileno2rc_8x8(); sys.exit(0)
+    
+
+
+# def tiletype(tileno):
+#     # Is this smart? Ans: NO   # FIXME/TODO
+#     if (GRIDSIZE == "8x8"):
+#         search_string = 
+#         parse = re.search("type='([^']*)'", cgra_tile_info)
+#         return 
+# 
+#     else: return "pe_tile_new";
+
 
 def find_source(row, col, wirename):
     # Given tile number (r,c) in a 4x4 grid as shown...
@@ -156,7 +284,8 @@ def EE_decode(EE):
     element["04"] =   "cb4";
     element["05"] =   "sb1";
     element["06"] =   "sb2";
-    return element[EE];
+    # return element[EE];
+    return "sb2"
 
 # Given 8-digit hex string DDDDDDDD = e.g. "00000002", tell what
 # switchbox will do with the data, e.g. sb_decode("00000000") = "out <= in_0"
@@ -173,10 +302,17 @@ def cb_decode(EE, DDDDDDDD):
     #     [01234]: pe_inp_b = in_BUS16_S0_T[01234]
     #     [56789]: pe_inp_b = in_BUS16_S2_T[01234]
 
-    if (not re.search("0000000[0-9]", DDDDDDDD)):
-        sys.stdout.flush();
-        sys.stderr.write("\nERROR bad value '%s' for connection box\n" % DDDDDDDD);
-        sys.exit(-1);
+#     if (not re.search("0000000[0-9A-Fa-f]", DDDDDDDD)):
+#         sys.stdout.flush();
+#         sys.stderr.write("\nERROR bad value '%s' for connection box\n" % DDDDDDDD);
+#         sys.exit(-1);
+
+    if (not re.search("0000000[0-9A-Fa-f]", DDDDDDDD)):
+        print ""
+        print "WARNING unexpected value '%s' for connection box" % DDDDDDDD
+        print "WARNING I will assume this has to do with memory tiles..."
+        print ""
+        return "wireB <= in_s9t9"
 
     st = {};
 
@@ -209,28 +345,88 @@ def cb_decode(EE, DDDDDDDD):
     st["03.00000009"] = "wireB <= in_s2t4"
 
     cb_connection = st[EE + '.' + DDDDDDDD]
+    return st[EE + '.' + DDDDDDDD]
 
-    # return st[EE + '.' + DDDDDDDD]
-    return cb_connection
 
+#     if (GRIDSIZE == "8x8"):
+#         cb_connection = "wireB <= in_s2t4"
+#         return cb_connection
+#     else:
+#         cb_connection = st[EE + '.' + DDDDDDDD]
+#         return st[EE + '.' + DDDDDDDD]
+
+yikes_wire = None
 def sb_iohack_find_pe_out(connection_list):
     # Find the wire that's connected to pe_out
     # An item in the list should look like this: "out_s1t0 <= pe_out"
+    DBG = 0
+    list_of_pe_outs = []
     for c in connection_list:
         # print "FOO " + c;
         pe_out = re.search("([A-z_0-9]+).*pe_out$", c);
         if (pe_out):
             iohack_pe_out = pe_out.group(1);
-            # print "FOUND IT! (%s); " % c,
-            # print "pe connects to %s" % iohack_pe_out
-            return iohack_pe_out;
+            if (DBG): print "FOUND IT! (%s); " % c,
+            if (DBG): print "pe connects to %s" % iohack_pe_out
+            list_of_pe_outs.append(iohack_pe_out);
+            if (DBG): print "FOO " + str(list_of_pe_outs)
 
-    return 0;
+    howmany = len(list_of_pe_outs);
+    if (DBG): print "Found %d pe_out's" % howmany
+    if (howmany == 0):
+        return 0;
 
-def sb_print(connection_list):
+    elif (howmany == 1):
+        rval = list_of_pe_outs[0];
+        if (DBG): print "One pe_out: " + rval
+        return rval
+
+    else:
+        if (DBG): print "YIKES!  Too many pe_out's (for now)."
+        rval = list_of_pe_outs[0];
+        global yikes_wire
+        yikes_wire = list_of_pe_outs[1];
+        return rval;
+
+def sb_print_nonzero(connection_list):
+    # Print only sb connections with declared nonzero (nondefault) values
+
     # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
+    # Connection list contains a bunch of items
+    # ['in_s1t0 -> out_s0t0', 'in_s1t0 -> out_s0t1', 'in_s1t0 -> out_s0t2',
+    #  'in_s1t0 -> out_s0t3', 'in_s1t0 -> out_s0t4', 'in_s0t1 -> out_s1t0',
+    #  'in_s0t1 -> out_s1t1', 'in_s0t1 -> out_s1t2', 'in_s0t1 -> out_s1t3',
+    #  ...
 
-    # Connection list should contain fifteen items
+    # Start with list of all connections, then
+    # remove default (zero) connections from list.
+    # Default (zero) connections look like this:
+    #    out_s0.*in_s1
+    #    out_s[123].*in_s0
+    
+    DBG = 0
+    if DBG: print ""
+    if DBG: print connection_list
+
+    valid = []
+    for c in connection_list:
+        if (re.search("out_s0.*in_s1", c)):     continue
+        if (re.search("out_s[123].*in_s0", c)): continue
+        valid.append(c)
+        if DBG: print "VALID " + str(valid)
+
+    if (valid == []): print "(defaults only)"
+
+    pad = ""
+    for c in valid:
+        print "%s%-19s" % (pad,c)
+        pad = "%8s %8s %5s " % ("", "", "")
+
+def sb_print_all(connection_list):
+    # Print all sb connections, including defaults
+
+    # connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
+    # Connection list should contain sixteen items
     # ['in_s1t0 -> out_s0t0', 'in_s1t0 -> out_s0t1', 'in_s1t0 -> out_s0t2',
     #  'in_s1t0 -> out_s0t3', 'in_s1t0 -> out_s0t4', 'in_s0t1 -> out_s1t0',
     #  'in_s0t1 -> out_s1t1', 'in_s0t1 -> out_s1t2', 'in_s0t1 -> out_s1t3',
@@ -252,9 +448,14 @@ def sb_print(connection_list):
     # print connection_list
     # print "\n".join(connection_list)
 
+    # Behavior will change depending on whether we're decoding reg 1 or reg 2
+    sbreg = 0;
     first_out = connection_list[0][0:8]
-    if (first_out[0:8] == "out_s3t1"):
+    if (first_out[0:8] == "out_s3t1"): sbreg = 1
 
+#     first_out = connection_list[0][0:8]
+#     if (first_out[0:8] == "out_s3t1"):
+    if (sbreg==1):
         # Things are different if the switchbox reg is R1 instead of R0.
         # The connection list will have exactly FOUR "out" connections,
         # followed by an indeterminate number of "reg" directives:
@@ -281,11 +482,18 @@ def sb_print(connection_list):
     col2 = connection_list[5:10];  # print col2;
     col3 = connection_list[10:15]; # print col3;
 
-    for i in range(0,5):
+    # for i in range(0,5):
+    for i in range(0, 5):
         # print "%8s %8s" % ("", ""),
         # if (i): print "%8s %8s %19s" % ("", "", ""),
         if (i): print "%8s %8s %5s" % ("", "", ""),
         print "%-19s    %-19s    %-19s" % (col1[i], col2[i], col3[i]);
+    # One more
+    print "%8s %8s %5s" % ("", "", ""),
+    print "%-19s    %-19s    %-19s" % ("","",connection_list[15]);
+
+
+
 
 def pe_decode(RR, DDDDDDDD):
 
@@ -539,11 +747,19 @@ for line in inputstream:
 
         # IO hack
         op = DDDDDDDD[6:8] # last two hex digits
+
+        # print "RR=%s and op=%s" % (RR,op)
+
+
         if ( (RR=="FF") and (op=="FF") ): iohack_io_tiles[thistile] = "output";
-        if ( (RR=="FF") and (op=="F0") ): iohack_io_tiles[thistile] = "input";
+        if ( (RR=="FF") and (op=="F0") ):
+            iohack_io_tiles[thistile] = "input";
+            # print "iohack_io_tiles[%s] = %s" % (thistile, iohack_io_tiles[thistile])
             # print "\n\nFOO input\n\n"
             # print "\n\nFOO output\n\n"
             
+
+
     # Connection box
     elif (EE == "02" or EE == "03"):
         # print "%s   # %s" % (line, cb_decode(EE,DDDDDDDD));
@@ -556,10 +772,9 @@ for line in inputstream:
         iohack_cb_out[thistile] = cb_connection[-7:]
 
     elif (EE == "05"):
-        # print "";
-        # sb_print(RR, DDDDDDDD);
         connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
-        sb_print(connection_list);
+        if (sbdefaults): sb_print_all(connection_list);
+        else:            sb_print_nonzero(connection_list);
         pe_out = sb_iohack_find_pe_out(connection_list);
         if (pe_out):
             # print "FOUND IT! pe connects to %s" % pe_out
@@ -596,6 +811,13 @@ for t in iohack_io_tiles:
         inwire = iohack_pe_out[t]
         input_wirename  = "%8s / %s" % ( inwire, find_source(r,c, inwire))
         print "# INPUT  %s / %s" % (tile, input_wirename)
+
+        if (not yikes_wire == None):
+            yikes_wirename  = "%8s / %s" % ( inwire, find_source(r,c, yikes_wire))
+            print "# YIKES  %s / %s" % (tile, yikes_wirename)
+
+        # else: print "FOO no yikes wire"
+
     if (io == "output"):
         outwire = iohack_cb_out[t];
         output_wirename = "%8s / %s" % (outwire, find_source(r,c,outwire));
