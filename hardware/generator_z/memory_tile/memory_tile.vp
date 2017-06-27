@@ -331,7 +331,7 @@ tile_id
 //;               my $opposite_side = $i + int($sides*0.5);
 //;               if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
       assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row+1`_`$bus`_`$opposite_side`_`$j`;
-      assign  sb_wire_out_`$row`_`$bus`_`$i`_`$j` = sb_wire_in_`$row+1`_`$bus`_`$opposite_side`_`$j`;
+      assign  sb_wire_in_`$row+1`_`$bus`_`$opposite_side`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
 //;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "sb_wire_in_".(${row}+1)."_${bus}_${opposite_side}_${j}";
 //;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "sb_wire_out_".(${row}+1)."_${bus}_${opposite_side}_${j}";
 //;             }
