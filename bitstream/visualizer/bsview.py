@@ -2,13 +2,6 @@
 import sys
 import re
 
-global PRINTED
-PRINTED = [] # oh this is awful
-def print_once(s):
-    global PRINTED
-    if (s not in PRINTED):
-        PRINTED.append(s); print s
-
 # # gi a.k.a. pygobjects, pygtk
 # import gi
 # gi.require_version('Gtk', '3.0')
@@ -26,11 +19,28 @@ from subprocess import call
 import traceback
 # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
 
+####################################################
+# Some random utilities here in this random place...
+
 def exit(): sys.exit(0)
 
 def errmsg(m):
     sys.stdout.write("ERROR: %s\n" % (m))
     sys.exit(-1)
+
+global PRINTED
+PRINTED = [] # oh this is awful
+def print_once(s):
+    global PRINTED
+    if (s not in PRINTED):
+        PRINTED.append(s); print s
+
+####################################################
+
+
+# Want to list all the random globals here
+global CUR_TILENO
+global CUR_CURSOR # Currently includes 'magplus', 'arrow'
 
 # print dir(gtk.gdk.Window.props)
 # sys.exit(0)
@@ -1604,6 +1614,37 @@ def test_ports():  # Meh
     tile[2].draw(cr)
     tile[3].draw(cr)
 
+def get_cursor_magplus():
+
+    xpm_data = [
+        "15 15 3 1",
+        "       c None",
+        ".      c #000000000000",
+        "X      c #FFFFFFFFFFFF",
+        "               ",
+        "               ",
+        "               ",
+        "               ",
+        "      . .      ",
+        "    .     .    ",
+        "   .   .   .   ",
+        "   .  ...  .   ",
+        "   .   .   .   ",
+        "    .     .    ",
+        "      . . .    ",
+        "           .   ",
+        "            .  ",
+        "             . ",
+        "               "
+        ]
+
+    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data (xpm_data)
+    display = gtk.gdk.display_get_default()
+    magplus = gtk.gdk.Cursor(display, pixbuf, 07, 7)
+    global CUR_CURSOR
+    CUR_CURSOR = 'magplus'
+    return magplus
+
 # TODO someday maybe
 # A GdkWindow is a rectangular region on the screen. It's a low-level
 #  object, used to implement high-level objects such as
@@ -1708,8 +1749,11 @@ class CGRAWin(gtk.Window):
         button_magminus.show()
 
         # BUTTON: misc TBD
+        button_arrow   = gtk.Button("no zoom")
+        button_arrow.connect("clicked", self.button_arrow_action)
+        button_arrow.show()
+
         button_hand    = gtk.Button("grabby hand")
-        button_arrow   = gtk.Button("arrow")
 
         # BUTTON: exit
         button_exit   = gtk.Button("exit")
@@ -1724,8 +1768,8 @@ class CGRAWin(gtk.Window):
         top_toolbar.props.height_request = 30
         top_toolbar.pack_start(button_magplus,  expand, fill)
         top_toolbar.pack_start(button_magminus, expand, fill)
-        top_toolbar.pack_start(button_hand,     expand, fill)
         top_toolbar.pack_start(button_arrow,    expand, fill)
+        top_toolbar.pack_start(button_hand,     expand, fill)
         top_toolbar.pack_start(button_exit,     expand, fill)
         # print dir(top_toolbar.props)
         ########################################################################
@@ -1742,8 +1786,14 @@ class CGRAWin(gtk.Window):
         vbox.pack_start(top_toolbar, expand, fill)
         vbox.pack_start(scrolled_window, True, True, 0)
         self.add(vbox)
-
         self.show()
+
+        #       if (0):
+        #           # Cannot set cursor until after show()!!
+        #           # Change the cursor to a awful watch thing
+        #           watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
+        #           self.window.set_cursor(watch)
+        #           sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
 
         # A dumb way to keep track of the current window and drawing area widget
         # global CUR_WINDOW;      CUR_WINDOW = win;
@@ -1759,7 +1809,7 @@ class CGRAWin(gtk.Window):
         draw_handler_id = da.connect("expose-event", draw_handler)
 
         # https://stackoverflow.com/questions/23946791/mouse-event-in-drawingarea-with-pygtk
-         # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
+        # http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
         button_press_handler_id = da.connect("button-press-event", button_press_handler)
 
         # FIXME/TODO add to 0bugs and/or 0notes: gtk.gdk.BUTTON_PRESS_MASK = Gdk.EventMask.BUTTON_PRESS_MASK
@@ -1770,19 +1820,29 @@ class CGRAWin(gtk.Window):
 
         self.connect("delete-event", Gtk.main_quit)
 
-    def button_magplus_action(widget, event):
-        global SCALE_FACTOR
-        print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
-        SCALE_FACTOR = round(SCALE_FACTOR * 1.2, 1)
+        # https://stackoverflow.com/questions/6718586/pygtk-hide-cursor
+        # As stated in the PyGTK FAQ, you should set the cursor on the
+        # realize signal. If you don't wait for the realize signal,
+        # the gtk.gdk.window hasn't been created yet, so you can't
+        # change the cursor.
+        # 
+        # self.connect("realize", self.realize_cb)
+        # def realize_cb(self, widget): set_cursor()
 
-        (h,w) = CUR_DRAW_WIDGET.get_size_request()
-        print "FOO h=%d w=%d" % (h,w)
-        print "Drawing area size(%d,%d) " % (h,w),
-        baked_in_fudge_factor = 2 # FIXME!!!
-        h = int(WIN_HEIGHT * SCALE_FACTOR * baked_in_fudge_factor)
-        w = int(WIN_WIDTH  * SCALE_FACTOR * baked_in_fudge_factor)
-        CUR_DRAW_WIDGET.set_size_request(h, w)
-        print "=> (%d,%d)" % (h,w)
+    def button_arrow_action(widget, event):
+        # Reset cursor back to normal (arrow)
+        widget.window.set_cursor(None)
+        CUR_CURSOR = 'arrow'
+
+        # c = gtk.gdk.Cursor(gtk.gdk.ARROW)
+        # widget.window.set_cursor(c)
+
+    def button_magplus_action(widget, event):
+        # OLD: zoom_in()
+
+        # tch = gtk.gdk.Cursor(gtk.gdk.WATCH)
+        c = get_cursor_magplus()
+        widget.window.set_cursor(c)
 
         # Redraw after zoom
         CUR_DRAW_WIDGET.queue_draw()
@@ -1801,15 +1861,40 @@ class CGRAWin(gtk.Window):
         CUR_DRAW_WIDGET.set_size_request(h, w)
         print "=> (%d,%d)" % (h,w)
 
-        # Redraw after zoom
-        CUR_DRAW_WIDGET.queue_draw()
-
     def button_exit_action(widget, event):
         Gtk.main_quit()
 
 
+def zoom_in():
+    global SCALE_FACTOR
+    print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
+    SCALE_FACTOR = round(SCALE_FACTOR * 1.2, 1)
+    
+    (h,w) = CUR_DRAW_WIDGET.get_size_request()
+    print "FOO h=%d w=%d" % (h,w)
+    print "Drawing area size(%d,%d) " % (h,w),
+    baked_in_fudge_factor = 2 # FIXME!!!
+    h = int(WIN_HEIGHT * SCALE_FACTOR * baked_in_fudge_factor)
+    w = int(WIN_WIDTH  * SCALE_FACTOR * baked_in_fudge_factor)
+    CUR_DRAW_WIDGET.set_size_request(h, w)
+    print "=> (%d,%d)" % (h,w)
+    
+    # Redraw after zoom
+    CUR_DRAW_WIDGET.queue_draw()
+
 def button_press_handler(widget, event):
     DBG = 0
+
+    if event.type == gtk.gdk._2BUTTON_PRESS :
+        print " double click "
+
+    elif event.type == gtk.gdk.BUTTON_PRESS :
+        print " single click "
+        if (CUR_CURSOR == 'magplus'): zoom_in()
+        return
+
+
+
 
     # Need to know current scale factor so we keep track of it in a global
     print ""
@@ -1849,9 +1934,6 @@ def button_press_handler(widget, event):
 
     # Redraw after zoom
     CUR_DRAW_WIDGET.queue_draw()
-
-# import traceback
-#     traceback.print_stack()
 
 class Tile:
     # id = -1;
