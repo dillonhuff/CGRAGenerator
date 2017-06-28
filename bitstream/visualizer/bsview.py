@@ -41,6 +41,7 @@ def print_once(s):
 # Want to list all the random globals here
 global CUR_TILENO
 global CUR_CURSOR # Currently includes 'magplus', 'magminus', 'arrow'
+CUR_CURSOR = 'arrow'
 
 # print dir(gtk.gdk.Window.props)
 # sys.exit(0)
@@ -1876,26 +1877,8 @@ def zoom(in_or_out):
     # Redraw after zoom
     CUR_DRAW_WIDGET.queue_draw()
 
-def button_press_handler(widget, event):
+def zoom_to_tile(event):
     DBG = 0
-
-    # if event.type == gtk.gdk.BUTTON_PRESS:   print " single click "
-    # if event.type == gtk.gdk._2BUTTON_PRESS: print " double click "
-
-    if (CUR_CURSOR == 'magplus'):
-        zoom('in')
-        return
-
-    if (CUR_CURSOR == 'magminus'):
-        zoom('out')
-        return
-
-
-    # ZOOM TO TILE (ugh FIXME should be a separate routine)
-    # Only zoom on 1) normal (arrow) cursor and 2) double-click
-
-    if event.type != gtk.gdk._2BUTTON_PRESS: return
-    if (CUR_CURSOR != 'arrow'): return
 
     # Need to know current scale factor so we keep track of it in a global
     print ""
@@ -1935,6 +1918,26 @@ def button_press_handler(widget, event):
 
     # Redraw after zoom
     CUR_DRAW_WIDGET.queue_draw()
+
+def button_press_handler(widget, event):
+    # if event.type == gtk.gdk.BUTTON_PRESS:   print " single click "
+    # if event.type == gtk.gdk._2BUTTON_PRESS: print " double click "
+
+    if (CUR_CURSOR == 'magplus'):
+        zoom('in')
+        return
+
+    if (CUR_CURSOR == 'magminus'):
+        zoom('out')
+        return
+
+    # ZOOM TO TILE (ugh FIXME should be a separate routine)
+    # Only zoom on 1) normal (arrow) cursor and 2) double-click
+
+    if event.type != gtk.gdk._2BUTTON_PRESS: return
+    if (CUR_CURSOR != 'arrow'): return
+
+    zoom_to_tile(event)
 
 class Tile:
     # id = -1;
