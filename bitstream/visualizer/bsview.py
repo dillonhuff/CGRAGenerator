@@ -241,17 +241,20 @@ def test_rc2tileno_8x8():
 
 
 # A really dumb way to keep track of current scale factor, for
-# button-press events
-SCALE_FACTOR = 1;
+# button-press events FIXME do something better maybe
+CUR_SCALE_FACTOR = 1;
 SF_ALL       = 1; # No zoom when displaying all tiles in a window # FIXME NOT USED
 SF_ALL_2x2   = 2; # Zoom 2x when displaying 2x2 grid              # FIXME NOT USED
+INIT_SCALE_FACTOR = 1;
 
 def set_initial_scale_factor():
-    global SCALE_FACTOR;                   # Others should know
+    global CUR_SCALE_FACTOR;                   # Others should know
+    global INIT_SCALE_FACTOR;                  # Others should know
 
-    SCALE_FACTOR = 1
-    if (GRID_WIDTH <= 2): SCALE_FACTOR = 2   # Why squint if you don't need to?
-    if (GRID_WIDTH  > 4): SCALE_FACTOR = 0.5 # Let's try this
+    INIT_SCALE_FACTOR = 1                         # Default is one
+    if (GRID_WIDTH <= 2): INIT_SCALE_FACTOR = 2   # Why squint if you don't need to?
+    if (GRID_WIDTH  > 4): INIT_SCALE_FACTOR = 0.5 # Let's try this
+    CUR_SCALE_FACTOR = INIT_SCALE_FACTOR
 
 # Could/should derive these from "BUS:5" etc.
 NTRACKS_PE_BUS_H = 5;
@@ -1507,9 +1510,9 @@ def draw_handler(widget, cr):
 
 def set_zoom_scale_factor():
 
-    global SCALE_FACTOR;
+    global CUR_SCALE_FACTOR;
     
-    # OLD: Draw at 4x requested size; SCALE_FACTOR = 4
+    # OLD: Draw at 4x requested size; CUR_SCALE_FACTOR = 4
     # NEW:
     #   For now, unzoomed (grid) view is scaled to 2x (USF=2).
     #   And zoomed (onetile) view is 2x of that.  Ish.
@@ -1519,17 +1522,18 @@ def set_zoom_scale_factor():
     # Canvas width = tile width + length of ports on each side
     # In zoomed view, want width of one tile to match
     # (two tiles + gap) in unzoomed (2x) view
-    unzoomed_scale_factor = 2 # Scale factor for unzoomed tiles
+    # unzoomed_scale_factor = 2 # Scale factor for unzoomed tiles
+    unzoomed_scale_factor = 1/INIT_SCALE_FACTOR # Scale factor for unzoomed tiles
     tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
     two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
     fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
-    SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
+    CUR_SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
 
 def draw_one_tile(cr, tileno):
 
     # Save
-    global SCALE_FACTOR;
-    save_scale_factor = SCALE_FACTOR
+    global CUR_SCALE_FACTOR;
+    save_scale_factor = CUR_SCALE_FACTOR
     cr.save()
 
     # scalefactor = 10 # zoom in for debugging
@@ -1540,10 +1544,10 @@ def draw_one_tile(cr, tileno):
 
 
     set_zoom_scale_factor()
-    cr.scale(SCALE_FACTOR,SCALE_FACTOR)
+    cr.scale(CUR_SCALE_FACTOR,CUR_SCALE_FACTOR)
 
     if (0): print "Zoom scale factor %d/%d = %f." \
-        % (two_tiles_plus_gap_2x, tile_width, SCALE_FACTOR)
+        % (two_tiles_plus_gap_2x, tile_width, CUR_SCALE_FACTOR)
 
     ########################################################################
     # OLD: cr.translate(ARRAY_PAD, ARRAY_PAD)
@@ -1554,7 +1558,7 @@ def draw_one_tile(cr, tileno):
     # so: should suffice to make sure zoomed corners are centered.
 
     # Things that were 40px wide in unzoomed view are now just 10px wide ish
-    scaled_win_width    = WIN_WIDTH/SCALE_FACTOR
+    scaled_win_width    = WIN_WIDTH/CUR_SCALE_FACTOR
     scaled_canvas_width = CANVAS_WIDTH
     print "sww=%0.2f scw=%0.2f" % (scaled_win_width,scaled_canvas_width)
     xmargin = (scaled_win_width - scaled_canvas_width)/2
@@ -1562,12 +1566,12 @@ def draw_one_tile(cr, tileno):
     cr.translate(xmargin, ymargin)
 
     # Okay done with scale and translate.  Now draw!
-    if (0): print "...at scale factor %f." % SCALE_FACTOR
+    if (0): print "...at scale factor %f." % CUR_SCALE_FACTOR
     TILE_LIST[tileno].draw(cr)
 
     # Restore
     cr.restore()
-    SCALE_FACTOR = save_scale_factor
+    CUR_SCALE_FACTOR = save_scale_factor
 
 global TILES_DRAWN_AT_LEAST_ONCE           # FIXME Yes this is awful
 TILES_DRAWN_AT_LEAST_ONCE = False          # FIXME Yes this is awful
@@ -1577,7 +1581,7 @@ def draw_all_tiles(cr):
 
     cr.save()
     cr.translate(ARRAY_PAD, ARRAY_PAD)     # Whitespace margin at top and left
-    cr.scale(SCALE_FACTOR,SCALE_FACTOR)
+    cr.scale(CUR_SCALE_FACTOR,CUR_SCALE_FACTOR)
     # draw_big_ghost_arrows(cr)            # Big ghost arrows in background of grid
                                            # view show general flow dir for tracks
     for tile in TILE_LIST:                 # Draw ALL the tiles
@@ -1717,6 +1721,11 @@ class CGRAWin(gtk.Window):
         da.props.height_request= WIN_HEIGHT
         # self.add(da)
 
+        #         def focus_in(widget, event, adj):
+        #             global ADJ; adj = ADJ
+        #             adj.set_value(200.0)
+        #             adj.value_changed()
+
         # White background for better contrast / less ink wastage when printing
         MAXCOLOR = 65535
         col = gtk.gdk.Color(MAXCOLOR,MAXCOLOR,MAXCOLOR)
@@ -1792,6 +1801,17 @@ class CGRAWin(gtk.Window):
         vbox.pack_start(top_toolbar, expand, fill)
         vbox.pack_start(scrolled_window, True, True, 0)
         self.add(vbox)
+
+        global SW
+        SW = scrolled_window
+        # scrolled_window = gtk.ScrolledWindow()
+        adj = scrolled_window.get_vadjustment()
+        # ... create child widget
+        # da.connect('focus_in_event', focus_in, adj)
+        # self.connect('focus_in_event', focus_in, adj)
+
+
+
         self.show()
 
         #       if (0):
@@ -1838,6 +1858,7 @@ class CGRAWin(gtk.Window):
     def button_arrow_action(widget, event):
         # Reset cursor back to normal (arrow)
         widget.window.set_cursor(None)
+        global CUR_CURSOR
         CUR_CURSOR = 'arrow'
 
         # c = gtk.gdk.Cursor(gtk.gdk.ARROW)
@@ -1856,33 +1877,156 @@ class CGRAWin(gtk.Window):
     def button_exit_action(widget, event):
         Gtk.main_quit()
 
+def adjust_scrollbar(adj, amt):
+    ps = adj.page_size
+    adj.set_value(amt)
+    adj.value_changed()
+    u = adj.upper; l = adj.lower; v = adj.value
+    # print "AFTER  lvu = (%4d-> %4d    <-%-4d)" % (int(l), int(v), int(u))
+    print "[%4d|-> %4d   <-|%-4d]" % (int(l), int(v), int(u))
+    print "PAGESIZE %d" % ps
+    
+def recenter(x,y):
+    global SW; # adj = SW.get_vadjustment()
+
+    #     print "ALLOCX", ; print SW.get_allocation().x
+    #     print "ALLOCY", ; print SW.get_allocation().y
+    # 
+    #     print "ALLOCX_DA", ; print CUR_DRAW_WIDGET.get_allocation().x
+    #     print "ALLOCY_DA", ; print CUR_DRAW_WIDGET.get_allocation().y
+
+    global ACTUAL_SCALE
+    (hprev,w) = CUR_DRAW_WIDGET.get_size_request()
+    baked_in_fudge_factor = 2 # FIXME!!!
+    sf = 1.2
+    csf = float(CUR_SCALE_FACTOR * sf)
+    h = int(WIN_HEIGHT * csf * baked_in_fudge_factor)
+    ACTUAL_SCALE = float(h)/float(hprev)
+
+    net_scale = (CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+
+    print ""
+    print "clicked x = ", ; print x
+    print "scale factor = ", ; print CUR_SCALE_FACTOR
+    print "base zoom = ", ; print INIT_SCALE_FACTOR
+    print "net scale = ", ; print net_scale
+    print "actual scale = ", ; print ACTUAL_SCALE
+    print "final factor? = ", ; print ACTUAL_SCALE/1.2
+
+
+    xadj = x
+    xadj = x*1.2-10 # PERFECT!!!!  NO MUCKIN'!!!
+    print "ADJUSTING BY %f" % xadj
+    adjust_scrollbar(SW.get_hadjustment(), xadj)
+    return
+
+#     ZU2 = SW.get_hadjustment().upper
+#     print "post-zoom hupper = " + str(ZU2)
+#     print "sf = " + str(ZU2/ZU1)
+#     print ""
+# 
+#     (h,w) = CUR_DRAW_WIDGET.get_size_request()
+#     print "BEFORE: x = %f, h = %f" % (x, h)
+#     print "old h was %f" % HPREV
+#     print "new h will be %f" % HNEW
+#     print "So new x should be...?"
+#     xnew = x * HNEW/HPREV
+#     print "%f ...?" % xnew
+# 
+# 
+# 
+#     xpad = 100*net_scale  # This works poorly
+#     xpad = 0.15*ZU1 # This works pretty well...
+#     xpad = x * 1.2
+#     xpad = x * ACTUAL_SCALE
+# 
+# 
+#     print "xpad = ", ; print xpad
+#     print "xpad as % of upper = " + str(xpad/ZU1)
+# 
+# 
+#     page_size = SW.get_hadjustment().page_size
+#     # adjust_scrollbar(SW.get_hadjustment(), prev_value*1.2)
+#     # adjust_scrollbar(SW.get_hadjustment(), x-(page_size/2)/net_scale)
+#     xadj = x*0.8 # nope
+#     xadj = x*0.5 # Nope still too much
+#     xadj = x/net_scale # Nope still too much
+#     xadj = 0.5*x/net_scale
+#     xadj = x*1.2 # Just the tiniest bit too much
+#     xadj = x*ACTUAL_SCALE  # Pretty close? but needs just a tad more...
+# 
+#     xadj = x # Not quite enough...
+#     xadj = (x/ACTUAL_SCALE)/1.2
+#     xadj = xnew
+#     xadj = x
+#     print "ADJUSTING BY %f" % xadj
+#     adjust_scrollbar(SW.get_hadjustment(), xadj)
+#     print ""
+# 
+#     return
+# 
+#     global CUR_SCALE_FACTOR
+# 
+#     x_scaled = x * (CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+# 
+#     print "scale factor = ", ; print CUR_SCALE_FACTOR
+#     print "base zoom = ", ; print INIT_SCALE_FACTOR
+#     print "net scale = ", ; print (CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+#     print "scaled  x = ", ; print x_scaled
+#     print ""
+# 
+#     print "HADJUST",
+#     # adjust_scrollbar(SW.get_hadjustment(), x)
+#     adjust_scrollbar(SW.get_hadjustment(), x_scaled)
+# 
+#     print "VADJUST",
+#     adjust_scrollbar(SW.get_vadjustment(), y)
 
 def zoom(in_or_out):
     if (in_or_out == 'in' ): sf = 1.2
     if (in_or_out == 'out'): sf = 0.8
 
-    global SCALE_FACTOR
-    print "magplus! 1 scale factor now %s" % str(SCALE_FACTOR)
-    SCALE_FACTOR = round(SCALE_FACTOR * sf, 1)
+    global CUR_SCALE_FACTOR
+    print "magplus! 1 scale factor now %s" % str(CUR_SCALE_FACTOR)
+    # CUR_SCALE_FACTOR = round(CUR_SCALE_FACTOR * sf, 1)
+    CUR_SCALE_FACTOR = float(CUR_SCALE_FACTOR * sf)
     
     (h,w) = CUR_DRAW_WIDGET.get_size_request()
+    hprev = h
+    global HPREV
+    HPREV = h
+
+    global ZU1
+    ZU1 = SW.get_hadjustment().upper
+    print "pre-zoom hupper = " + str(ZU1)
+
+
     print "FOO h=%d w=%d" % (h,w)
     print "Drawing area size(%d,%d) " % (h,w),
     baked_in_fudge_factor = 2 # FIXME!!!
-    h = int(WIN_HEIGHT * SCALE_FACTOR * baked_in_fudge_factor)
-    w = int(WIN_WIDTH  * SCALE_FACTOR * baked_in_fudge_factor)
+
+    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR * baked_in_fudge_factor)
+    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR * baked_in_fudge_factor)
+
+#     h = float(WIN_HEIGHT * CUR_SCALE_FACTOR * baked_in_fudge_factor)
+#     w = float(WIN_WIDTH  * CUR_SCALE_FACTOR * baked_in_fudge_factor)
+
+    global HNEW
+    HNEW = h
+
     CUR_DRAW_WIDGET.set_size_request(h, w)
     print "=> (%d,%d)" % (h,w)
-    
-    # Redraw after zoom
-    CUR_DRAW_WIDGET.queue_draw()
 
+    global ACTUAL_SCALE; ACTUAL_SCALE = float(h)/hprev
+    print "SF " + str(ACTUAL_SCALE)
+
+    
 def zoom_to_tile(event):
     DBG = 0
 
     # Need to know current scale factor so we keep track of it in a global
     print ""
-    print "SCALE_FACTOR %s" % SCALE_FACTOR
+    print "CUR_SCALE_FACTOR %s" % CUR_SCALE_FACTOR
     print ""
 
     # Can't get scale factor from context matrix, it's always (1,0,0,1,0,0) why?
@@ -1893,7 +2037,7 @@ def zoom_to_tile(event):
     if DBG: print "%d %d" % (x,y)
 
     # Subtract off the scale-independent paddings and divide by scale factor I guess
-    x = (x - ARRAY_PAD)/SCALE_FACTOR; y = (y - ARRAY_PAD)/SCALE_FACTOR;
+    x = (x - ARRAY_PAD)/CUR_SCALE_FACTOR; y = (y - ARRAY_PAD)/CUR_SCALE_FACTOR;
     if DBG: print "Transformed x,y = (%d,%d)" % (x,y)
     if DBG: print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
 
@@ -1920,11 +2064,22 @@ def zoom_to_tile(event):
     CUR_DRAW_WIDGET.queue_draw()
 
 def button_press_handler(widget, event):
-    # if event.type == gtk.gdk.BUTTON_PRESS:   print " single click "
-    # if event.type == gtk.gdk._2BUTTON_PRESS: print " double click "
+    if event.type == gtk.gdk.BUTTON_PRESS:   print " single click "
+    if event.type == gtk.gdk._2BUTTON_PRESS: print " double click "
+
+    print "CC='%s'" % CUR_CURSOR
 
     if (CUR_CURSOR == 'magplus'):
+
+        global ZU1
+        ZU1 = SW.get_hadjustment().upper
+        # recenter(100,0)
+        # recenter(event.x,event.y)
         zoom('in')
+
+        # FIXME how many of these (redraws) are there?
+        # Redraw after zoom
+        CUR_DRAW_WIDGET.queue_draw()
         return
 
     if (CUR_CURSOR == 'magminus'):
