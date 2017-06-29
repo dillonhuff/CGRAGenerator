@@ -38,7 +38,7 @@ def print_once(s):
         PRINTED.append(s); print s
 
 ####################################################
-
+# FIXME should have a CGRA class for globals...?
 
 # Want to list all the random globals here
 global CUR_TILENO
@@ -1880,7 +1880,24 @@ class CGRAWin(gtk.Window):
         Gtk.main_quit()
 
 def adjust_scrollbar(adj, amt):
-    ps = adj.page_size
+    # ps = adj.page_size
+
+    pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+
+    # sf = 1.2 # I have a better idea!
+    hupper = adj.upper
+    sf = pagewidth/hupper
+    scaled_amt = sf * amt
+
+    # print "  hupper is ", ; print hupper
+    # print "  pagewidth is ", ; print pagewidth
+    # print "  scale factor is", ; print sf
+    # print "  scaled  x = ", ; print scaled_x
+
+    amt_prime = (scaled_amt-10) - adj.page_size/2
+
+    print "Adjusting to f(%d,%d)" % (amt, pagewidth),
+
 
     # print "about to adjust..."; sys.stdout.flush(); time.sleep(2)
     adj.set_value(amt)
@@ -1890,7 +1907,7 @@ def adjust_scrollbar(adj, amt):
 
     u = adj.upper; l = adj.lower; v = adj.value
     # print "AFTER  lvu = (%4d-> %4d    <-%-4d)" % (int(l), int(v), int(u))
-    print "  [%4d|-> %4d   <-|%-4d]" % (int(l), int(v), int(u))
+    print "[%4d|-> %4d   <-|%-4d]" % (int(l), int(v), int(u))
     # print "PAGESIZE %d" % ps
     
 def recenter(x,y):
@@ -1902,11 +1919,11 @@ def recenter(x,y):
 
         # print "HADJUST",
         adj = SW.get_hadjustment()
-        # maybe "-10" (below) b/c "set_border_width(10)" above?
-        xadj = (x-10) - adj.page_size/2
-        # print "  Adjusting by %f (minus half pagesize)" % xadj
-        print "  Adjusting to %d'" % x, 
-        adjust_scrollbar(adj, xadj)
+
+#         # maybe "-10" (below) b/c "set_border_width(10)" above?
+#         xadj = (scaled_x-10) - adj.page_size/2
+#         print "Adjusting to f(%d,%d)" % (x, pagewidth),
+        adjust_scrollbar(adj, x)
 
         # print "VADJUST",
         # adjust_scrollbar(SW.get_vadjustment(), y)
@@ -1918,6 +1935,9 @@ def recenter(x,y):
     # print "ALLOCX_DA", ; print CUR_DRAW_WIDGET.get_allocation().x
 
 def zoom(in_or_out):
+
+    # Set scale factor
+    # TODO/FIXME these should be globals / BSVIEW top-level parms / env vars
     if (in_or_out == 'in' ): sf = 1.2
     if (in_or_out == 'out'): sf = 0.8
 
@@ -1993,26 +2013,14 @@ def button_press_handler(widget, event):
 
         # global ZU1; ZU1 = SW.get_hadjustment().upper
 
-        # FIXME should have a CGRA class for globals...?
-        sf = 1.2 # FIXME sf should be a global or something
         zoom('in')
 
         # recenter(100,0)
         # recenter(event.x,event.y)
         # print "  clicked x = ", ; print event.x
 
-        hupper = SW.get_hadjustment().upper
-        # print "  hupper is ", ; print hupper
-
-        pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
-        # print "  pagewidth is ", ; print pagewidth
-
-        sf = 1.2 # I have a better idea!
-        sf = pagewidth/hupper
-        # print "  scale factor is", ; print sf
-        # print "  scaled  x = ", ; print sf*event.x
-
-        recenter(sf*event.x, sf*event.y)
+        # recenter(sf*event.x, sf*event.y)
+        recenter(event.x, event.y)
 
         # Redraw after zoom
         # CUR_DRAW_WIDGET.queue_draw()
