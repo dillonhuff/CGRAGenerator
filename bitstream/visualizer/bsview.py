@@ -19,6 +19,8 @@ from subprocess import call
 import traceback
 # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
 
+import time # for time.sleep(2)
+
 ####################################################
 # Some random utilities here in this random place...
 
@@ -1879,8 +1881,9 @@ class CGRAWin(gtk.Window):
 
 def adjust_scrollbar(adj, amt):
     ps = adj.page_size
+
     adj.set_value(amt)
-    adj.value_changed()
+
     u = adj.upper; l = adj.lower; v = adj.value
     # print "AFTER  lvu = (%4d-> %4d    <-%-4d)" % (int(l), int(v), int(u))
     print "[%4d|-> %4d   <-|%-4d]" % (int(l), int(v), int(u))
@@ -1915,65 +1918,37 @@ def recenter(x,y):
 
 
     xadj = x
+
+    # I think maybe the "10" comes from "scrolled_window.set_border_width(10)"
     xadj = x*1.2-10 # PERFECT!!!!  NO MUCKIN'!!!
-    print "ADJUSTING BY %f" % xadj
-    adjust_scrollbar(SW.get_hadjustment(), xadj)
+    print "ADJUSTING BY %f (minus half pagesize)" % xadj
+    page_size = SW.get_hadjustment().page_size
+    adj = SW.get_hadjustment()
+    adjust_scrollbar(adj, xadj - page_size/2)
+    print ""
+    # THIS CAUSES REDRAW even though a zoom is coming...
+    # adj.value_changed()
     return
 
 #     ZU2 = SW.get_hadjustment().upper
 #     print "post-zoom hupper = " + str(ZU2)
 #     print "sf = " + str(ZU2/ZU1)
 #     print ""
-# 
-#     (h,w) = CUR_DRAW_WIDGET.get_size_request()
-#     print "BEFORE: x = %f, h = %f" % (x, h)
-#     print "old h was %f" % HPREV
-#     print "new h will be %f" % HNEW
-#     print "So new x should be...?"
-#     xnew = x * HNEW/HPREV
-#     print "%f ...?" % xnew
-# 
-# 
-# 
-#     xpad = 100*net_scale  # This works poorly
-#     xpad = 0.15*ZU1 # This works pretty well...
-#     xpad = x * 1.2
-#     xpad = x * ACTUAL_SCALE
-# 
-# 
-#     print "xpad = ", ; print xpad
-#     print "xpad as % of upper = " + str(xpad/ZU1)
-# 
-# 
-#     page_size = SW.get_hadjustment().page_size
-#     # adjust_scrollbar(SW.get_hadjustment(), prev_value*1.2)
-#     # adjust_scrollbar(SW.get_hadjustment(), x-(page_size/2)/net_scale)
+
+#     xadj = x # Not quite enough...
 #     xadj = x*0.8 # nope
 #     xadj = x*0.5 # Nope still too much
 #     xadj = x/net_scale # Nope still too much
 #     xadj = 0.5*x/net_scale
 #     xadj = x*1.2 # Just the tiniest bit too much
 #     xadj = x*ACTUAL_SCALE  # Pretty close? but needs just a tad more...
-# 
-#     xadj = x # Not quite enough...
 #     xadj = (x/ACTUAL_SCALE)/1.2
 #     xadj = xnew
 #     xadj = x
-#     print "ADJUSTING BY %f" % xadj
-#     adjust_scrollbar(SW.get_hadjustment(), xadj)
-#     print ""
 # 
 #     return
 # 
 #     global CUR_SCALE_FACTOR
-# 
-#     x_scaled = x * (CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
-# 
-#     print "scale factor = ", ; print CUR_SCALE_FACTOR
-#     print "base zoom = ", ; print INIT_SCALE_FACTOR
-#     print "net scale = ", ; print (CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
-#     print "scaled  x = ", ; print x_scaled
-#     print ""
 # 
 #     print "HADJUST",
 #     # adjust_scrollbar(SW.get_hadjustment(), x)
@@ -2061,7 +2036,7 @@ def zoom_to_tile(event):
         ZOOMTILE = -1;
 
     # Redraw after zoom
-    CUR_DRAW_WIDGET.queue_draw()
+    # CUR_DRAW_WIDGET.queue_draw()
 
 def button_press_handler(widget, event):
     if event.type == gtk.gdk.BUTTON_PRESS:   print " single click "
@@ -2075,11 +2050,26 @@ def button_press_handler(widget, event):
         ZU1 = SW.get_hadjustment().upper
         # recenter(100,0)
         # recenter(event.x,event.y)
+
         zoom('in')
 
         # FIXME how many of these (redraws) are there?
         # Redraw after zoom
-        CUR_DRAW_WIDGET.queue_draw()
+        # CUR_DRAW_WIDGET.queue_draw()
+        # gtk.gdk.flush()
+
+        # All this (below) will move to / replace what's in recenter()
+
+        # print "about to adjust..."
+        # sys.stdout.flush()
+        # time.sleep(2)
+
+        SW.hide()
+        adj = SW.get_hadjustment()
+        page_size = adj.page_size
+        adjust_scrollbar(adj, (1.2*event.x-10) - page_size/2)
+        SW.show()
+
         return
 
     if (CUR_CURSOR == 'magminus'):
