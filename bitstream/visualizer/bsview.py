@@ -1889,18 +1889,18 @@ def adjust_scrollbar(adj, amt):
     sf = pagewidth/hupper
     scaled_amt = sf * amt
 
-    # print "  hupper is ", ; print hupper
-    # print "  pagewidth is ", ; print pagewidth
-    # print "  scale factor is", ; print sf
-    # print "  scaled  x = ", ; print scaled_x
+    print "  hupper is ", ; print hupper
+    print "  pagewidth is ", ; print pagewidth
+    print "  scale factor is", ; print sf
+    print "  scaled  x = ", ; print scaled_amt
 
     amt_prime = (scaled_amt-10) - adj.page_size/2
 
-    print "Adjusting to f(%d,%d)" % (amt, pagewidth),
+    print "Adjusting to f(%d,%d)" % (amt_prime, pagewidth),
 
 
     # print "about to adjust..."; sys.stdout.flush(); time.sleep(2)
-    adj.set_value(amt)
+    adj.set_value(amt_prime)
 
     # THIS CAUSES REDRAW even though a zoom is coming...
     adj.value_changed()
@@ -1911,22 +1911,16 @@ def adjust_scrollbar(adj, amt):
     # print "PAGESIZE %d" % ps
     
 def recenter(x,y):
-    print "RECENTER  :",
+    # print "RECENTER  :",
 
     # Hide and show, otherwise jumps around disturbingly
     SW.hide();
     if (1):
+        print "HADJUST   :",
+        adjust_scrollbar(SW.get_hadjustment(), x)
 
-        # print "HADJUST",
-        adj = SW.get_hadjustment()
-
-#         # maybe "-10" (below) b/c "set_border_width(10)" above?
-#         xadj = (scaled_x-10) - adj.page_size/2
-#         print "Adjusting to f(%d,%d)" % (x, pagewidth),
-        adjust_scrollbar(adj, x)
-
-        # print "VADJUST",
-        # adjust_scrollbar(SW.get_vadjustment(), y)
+        print "VADJUST   :",
+        adjust_scrollbar(SW.get_vadjustment(), y)
 
     SW.show()
     return
@@ -2017,13 +2011,10 @@ def button_press_handler(widget, event):
 
         # recenter(100,0)
         # recenter(event.x,event.y)
-        # print "  clicked x = ", ; print event.x
+        print "  clicked x = ", ; print event.x
 
         # recenter(sf*event.x, sf*event.y)
         recenter(event.x, event.y)
-
-        # Redraw after zoom
-        # CUR_DRAW_WIDGET.queue_draw()
 
         return
 
@@ -2037,7 +2028,11 @@ def button_press_handler(widget, event):
     if event.type != gtk.gdk._2BUTTON_PRESS: return
     if (CUR_CURSOR != 'arrow'): return
 
+    print "zoom to tile"
     zoom_to_tile(event)
+
+    # Redraw after zoom
+    CUR_DRAW_WIDGET.queue_draw()
 
 class Tile:
     # id = -1;
