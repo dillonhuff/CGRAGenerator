@@ -1882,120 +1882,66 @@ class CGRAWin(gtk.Window):
 def adjust_scrollbar(adj, amt):
     ps = adj.page_size
 
+    # print "about to adjust..."; sys.stdout.flush(); time.sleep(2)
     adj.set_value(amt)
+
+    # THIS CAUSES REDRAW even though a zoom is coming...
+    adj.value_changed()
 
     u = adj.upper; l = adj.lower; v = adj.value
     # print "AFTER  lvu = (%4d-> %4d    <-%-4d)" % (int(l), int(v), int(u))
-    print "[%4d|-> %4d   <-|%-4d]" % (int(l), int(v), int(u))
-    print "PAGESIZE %d" % ps
+    print "  [%4d|-> %4d   <-|%-4d]" % (int(l), int(v), int(u))
+    # print "PAGESIZE %d" % ps
     
 def recenter(x,y):
-    global SW; # adj = SW.get_vadjustment()
+    print "RECENTER  :",
 
-    #     print "ALLOCX", ; print SW.get_allocation().x
-    #     print "ALLOCY", ; print SW.get_allocation().y
-    # 
-    #     print "ALLOCX_DA", ; print CUR_DRAW_WIDGET.get_allocation().x
-    #     print "ALLOCY_DA", ; print CUR_DRAW_WIDGET.get_allocation().y
+    # Hide and show, otherwise jumps around disturbingly
+    SW.hide();
+    if (1):
 
-    global ACTUAL_SCALE
-    (hprev,w) = CUR_DRAW_WIDGET.get_size_request()
-    baked_in_fudge_factor = 2 # FIXME!!!
-    sf = 1.2
-    csf = float(CUR_SCALE_FACTOR * sf)
-    h = int(WIN_HEIGHT * csf * baked_in_fudge_factor)
-    ACTUAL_SCALE = float(h)/float(hprev)
+        # print "HADJUST",
+        adj = SW.get_hadjustment()
+        # maybe "-10" (below) b/c "set_border_width(10)" above?
+        xadj = (x-10) - adj.page_size/2
+        # print "  Adjusting by %f (minus half pagesize)" % xadj
+        print "  Adjusting to %d'" % x, 
+        adjust_scrollbar(adj, xadj)
 
-    net_scale = (CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+        # print "VADJUST",
+        # adjust_scrollbar(SW.get_vadjustment(), y)
 
-    print ""
-    print "clicked x = ", ; print x
-    print "scale factor = ", ; print CUR_SCALE_FACTOR
-    print "base zoom = ", ; print INIT_SCALE_FACTOR
-    print "net scale = ", ; print net_scale
-    print "actual scale = ", ; print ACTUAL_SCALE
-    print "final factor? = ", ; print ACTUAL_SCALE/1.2
-
-
-    xadj = x
-
-    # I think maybe the "10" comes from "scrolled_window.set_border_width(10)"
-    xadj = x*1.2-10 # PERFECT!!!!  NO MUCKIN'!!!
-    print "ADJUSTING BY %f (minus half pagesize)" % xadj
-    page_size = SW.get_hadjustment().page_size
-    adj = SW.get_hadjustment()
-    adjust_scrollbar(adj, xadj - page_size/2)
-    print ""
-    # THIS CAUSES REDRAW even though a zoom is coming...
-    # adj.value_changed()
+    SW.show()
     return
 
-#     ZU2 = SW.get_hadjustment().upper
-#     print "post-zoom hupper = " + str(ZU2)
-#     print "sf = " + str(ZU2/ZU1)
-#     print ""
-
-#     xadj = x # Not quite enough...
-#     xadj = x*0.8 # nope
-#     xadj = x*0.5 # Nope still too much
-#     xadj = x/net_scale # Nope still too much
-#     xadj = 0.5*x/net_scale
-#     xadj = x*1.2 # Just the tiniest bit too much
-#     xadj = x*ACTUAL_SCALE  # Pretty close? but needs just a tad more...
-#     xadj = (x/ACTUAL_SCALE)/1.2
-#     xadj = xnew
-#     xadj = x
-# 
-#     return
-# 
-#     global CUR_SCALE_FACTOR
-# 
-#     print "HADJUST",
-#     # adjust_scrollbar(SW.get_hadjustment(), x)
-#     adjust_scrollbar(SW.get_hadjustment(), x_scaled)
-# 
-#     print "VADJUST",
-#     adjust_scrollbar(SW.get_vadjustment(), y)
+    # print "ALLOCX", ; print SW.get_allocation().x
+    # print "ALLOCX_DA", ; print CUR_DRAW_WIDGET.get_allocation().x
 
 def zoom(in_or_out):
     if (in_or_out == 'in' ): sf = 1.2
     if (in_or_out == 'out'): sf = 0.8
 
     global CUR_SCALE_FACTOR
-    print "magplus! 1 scale factor now %s" % str(CUR_SCALE_FACTOR)
-    # CUR_SCALE_FACTOR = round(CUR_SCALE_FACTOR * sf, 1)
-    CUR_SCALE_FACTOR = float(CUR_SCALE_FACTOR * sf)
+    # print "magplus! 1 scale factor now %s" % str(CUR_SCALE_FACTOR)
+    CUR_SCALE_FACTOR = round(CUR_SCALE_FACTOR * sf, 1)
+    # CUR_SCALE_FACTOR = float(CUR_SCALE_FACTOR * sf)
+    # float v. round doesn't seem to make much diff
     
     (h,w) = CUR_DRAW_WIDGET.get_size_request()
-    hprev = h
-    global HPREV
-    HPREV = h
 
-    global ZU1
-    ZU1 = SW.get_hadjustment().upper
-    print "pre-zoom hupper = " + str(ZU1)
+    # global ZU1; ZU1 = SW.get_hadjustment().upper; print "pre-zoom hupper = " + str(ZU1)
 
+    print "ZOOM 1.2x :",
+    print "Drawing area size (%d,%d) " % (h,w),
 
-    print "FOO h=%d w=%d" % (h,w)
-    print "Drawing area size(%d,%d) " % (h,w),
-    baked_in_fudge_factor = 2 # FIXME!!!
-
-    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR * baked_in_fudge_factor)
-    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR * baked_in_fudge_factor)
-
-#     h = float(WIN_HEIGHT * CUR_SCALE_FACTOR * baked_in_fudge_factor)
-#     w = float(WIN_WIDTH  * CUR_SCALE_FACTOR * baked_in_fudge_factor)
-
-    global HNEW
-    HNEW = h
+    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
 
     CUR_DRAW_WIDGET.set_size_request(h, w)
     print "=> (%d,%d)" % (h,w)
 
-    global ACTUAL_SCALE; ACTUAL_SCALE = float(h)/hprev
-    print "SF " + str(ACTUAL_SCALE)
+    # global ACTUAL_SCALE; ACTUAL_SCALE = float(h)/hprev    # print "SF " + str(ACTUAL_SCALE)
 
-    
 def zoom_to_tile(event):
     DBG = 0
 
@@ -2039,36 +1985,37 @@ def zoom_to_tile(event):
     # CUR_DRAW_WIDGET.queue_draw()
 
 def button_press_handler(widget, event):
-    if event.type == gtk.gdk.BUTTON_PRESS:   print " single click "
-    if event.type == gtk.gdk._2BUTTON_PRESS: print " double click "
+    if event.type == gtk.gdk.BUTTON_PRESS:   print "\nsingle click "
+    if event.type == gtk.gdk._2BUTTON_PRESS: print "\ndouble click "
 
-    print "CC='%s'" % CUR_CURSOR
-
+    # print "CC='%s'" % CUR_CURSOR
     if (CUR_CURSOR == 'magplus'):
 
-        global ZU1
-        ZU1 = SW.get_hadjustment().upper
-        # recenter(100,0)
-        # recenter(event.x,event.y)
+        # global ZU1; ZU1 = SW.get_hadjustment().upper
 
+        # FIXME should have a CGRA class for globals...?
+        sf = 1.2 # FIXME sf should be a global or something
         zoom('in')
 
-        # FIXME how many of these (redraws) are there?
+        # recenter(100,0)
+        # recenter(event.x,event.y)
+        # print "  clicked x = ", ; print event.x
+
+        hupper = SW.get_hadjustment().upper
+        # print "  hupper is ", ; print hupper
+
+        pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+        # print "  pagewidth is ", ; print pagewidth
+
+        sf = 1.2 # I have a better idea!
+        sf = pagewidth/hupper
+        # print "  scale factor is", ; print sf
+        # print "  scaled  x = ", ; print sf*event.x
+
+        recenter(sf*event.x, sf*event.y)
+
         # Redraw after zoom
         # CUR_DRAW_WIDGET.queue_draw()
-        # gtk.gdk.flush()
-
-        # All this (below) will move to / replace what's in recenter()
-
-        # print "about to adjust..."
-        # sys.stdout.flush()
-        # time.sleep(2)
-
-        SW.hide()
-        adj = SW.get_hadjustment()
-        page_size = adj.page_size
-        adjust_scrollbar(adj, (1.2*event.x-10) - page_size/2)
-        SW.show()
 
         return
 
