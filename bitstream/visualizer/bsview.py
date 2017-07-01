@@ -1428,6 +1428,9 @@ def connectwires(cr, connection):
         pe_b    = parse.group(3)
         if DBG: print "Found PE '%s' w/ inputs a='%s' b='%s'" % (pe_name,pe_a,pe_b)
 
+        if (pe_name == "INPUT"): pe_name = "IN"
+        if (pe_name == "OUTPUT"): pe_name = "OUT"
+
         draw_pe(cr, pe_name, pe_a, pe_b)
         return True
 
@@ -1621,13 +1624,53 @@ def test_ports():  # Meh
     tile[2].draw(cr)
     tile[3].draw(cr)
 
+def get_icon_arrow():
+
+    xpm_data = [
+        # <width> <height> <colors> <char on pixel>
+        "16 16 2 1",
+        # Defining the two colors
+        "       c None",          # clear
+        ".      c #000000000000", # black
+        # The pixels ----
+        "                ",
+        "                ",
+        "    .           ",
+        "    ..          ",
+        "    ...         ",
+        "    ....        ",
+        "    .....       ",
+        "    ......      ",
+        "    ....        ",
+        "    . ...       ",
+        "       ..       ",
+        "        ..      "
+        "        ..      ",
+        "        ..      ",
+        "                ",
+        "                ",
+        ]
+
+    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data (xpm_data)
+    
+    # http://www.pygtk.org/pygtk2reference/class-gtkiconset.html
+    # http://www.pygtk.org/pygtk2reference/class-gtkimage.html#method-gtkimage--set-from-pixbuf
+    image = gtk.Image()
+    image.set_from_icon_set(
+        gtk.IconSet(pixbuf),
+        gtk.ICON_SIZE_SMALL_TOOLBAR)
+
+    # image.show() # why?
+    return(image)
+
+
 def get_cursor_magplus():
 
     xpm_data = [
         "15 15 3 1",
-        "       c None",
-        ".      c #000000000000",
-        "X      c #FFFFFFFFFFFF",
+        "       c None",          # clear
+        ".      c #000000000000", # white
+        "X      c #FFFFFFFFFFFF", # black
         "               ",
         "               ",
         "               ",
@@ -1765,11 +1808,15 @@ class CGRAWin(gtk.Window):
         button_magminus.connect("clicked", self.button_magminus_action)
         button_magminus.show()
 
-        # BUTTON: misc TBD
-        button_arrow   = gtk.Button("no zoom")
+        # BUTTON: arrow
+        # button_arrow   = gtk.Button("no zoom")
+        button_arrow   = gtk.Button()
+        image = get_icon_arrow()
+        button_arrow.add(image)
         button_arrow.connect("clicked", self.button_arrow_action)
         button_arrow.show()
 
+        # BUTTON: grabby hand
         button_hand    = gtk.Button("grabby hand")
 
         # BUTTON: exit
@@ -1783,10 +1830,10 @@ class CGRAWin(gtk.Window):
         top_toolbar = gtk.HBox()
         # neva-2 wants height 30; kiwi is happy with 25 FIXME
         top_toolbar.props.height_request = 30
+        top_toolbar.pack_start(button_arrow,    expand, fill)
         top_toolbar.pack_start(button_magplus,  expand, fill)
         top_toolbar.pack_start(button_magminus, expand, fill)
-        top_toolbar.pack_start(button_arrow,    expand, fill)
-        top_toolbar.pack_start(button_hand,     expand, fill)
+        # top_toolbar.pack_start(button_hand,   expand, fill)
         top_toolbar.pack_start(button_exit,     expand, fill)
         # print dir(top_toolbar.props)
         ########################################################################
@@ -2020,6 +2067,7 @@ def button_press_handler(widget, event):
 
     if (CUR_CURSOR == 'magminus'):
         zoom('out')
+        recenter(event.x, event.y)
         return
 
     # ZOOM TO TILE (ugh FIXME should be a separate routine)
@@ -2373,8 +2421,10 @@ def process_decoded_bitstream(bs):
 
         # Find inputs and outputs
         # Note this must happen BEFORE finding other op names :(
-        if   re.search("op = input",  line): tile[tileno].label = "IN"
-        elif re.search("op = output", line): tile[tileno].label = "OUT"
+        if   re.search("op = input",  line):
+            # tile[tileno].label = "IN"
+            (operand['A'],operand['B']) = ('wire','wire')
+        # elif re.search("op = output", line): tile[tileno].label = "OUT"
         elif re.search("mem_out",     line): tile[tileno].label = "MEM"
 
         # Transformations
