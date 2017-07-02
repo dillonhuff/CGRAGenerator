@@ -293,8 +293,8 @@ int main(int argc, char **argv, char **env) {
             // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
 
             /////////////////////////////////////////////////////////
-            if (!reset && !clk) { // negedge
-//            if (!reset && clk) { // posedge
+//            if (!reset && !clk) { // negedge
+            if (!reset && clk) { // posedge
                 // TILE CONFIGURATION - Change config data "on posedge"
                 // E.g. set config when clk==0, after posedge event processed
 
