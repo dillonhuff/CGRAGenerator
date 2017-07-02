@@ -247,6 +247,8 @@ int main(int argc, char **argv, char **env) {
 
     // First config addr/data should be stable well before reset goes low...
     fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
+    config_addr = config_addr_i;
+    config_data = config_data_i;
 
     for (int i=0; i<NCLOCKS; i++) {
         // travis freaks out if no output for 10 minutes...
@@ -348,9 +350,9 @@ int main(int argc, char **argv, char **env) {
             // printf("  top:clk,reset = %d,%d, ", top->clk, top->reset);
 
             // PROCESS THE NEXT ROUND OF VERILOG EVENTS (posedge, negedge, repeat...)
-            if (i <= 40) { printf("\n%d %d before: scanned config data %08X %08X\n", reset, clk, config_addr, config_data); }
+//            if (i <= 40) { printf("\n%d %d before: scanned config data %08X %08X\n", reset, clk, config_addr, config_data); }
             top->eval ();
-            if (i <= 40) { printf("%d %d after:  scanned config data %08X %08X\n\n", reset, clk, config_addr, config_data); }
+//            if (i <= 40) { printf("%d %d after:  scanned config data %08X %08X\n\n", reset, clk, config_addr, config_data); }
             
 
             // if (! printed_something) { printf("\n"); }
