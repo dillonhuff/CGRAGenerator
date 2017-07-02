@@ -245,6 +245,9 @@ int main(int argc, char **argv, char **env) {
 
     int nprints = 0;
 
+    // First config addr/data should be stable well before reset goes low...
+    fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
+
     for (int i=0; i<NCLOCKS; i++) {
         // travis freaks out if no output for 10 minutes...
         // if ( (i%100000) == 0) {
@@ -293,8 +296,8 @@ int main(int argc, char **argv, char **env) {
             // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
 
             /////////////////////////////////////////////////////////
-//            if (!reset && !clk) { // negedge
-            if (!reset && clk) { // posedge
+//            if (!reset && !clk) { // negedge GOOD
+            if (!reset && clk) { // posedge BAD
                 // TILE CONFIGURATION - Change config data "on posedge"
                 // E.g. set config when clk==0, after posedge event processed
 
