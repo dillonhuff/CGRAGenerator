@@ -287,34 +287,17 @@ int main(int argc, char **argv, char **env) {
             // char prefix[256];
             // sprintf(prefix, "cy.clk %05d.%d R%d: ", i, clk, reset);
             // printf("cy.clk %05d.%d R%d: ", i, clk, reset);
-
             // top->clk = !top->clk;
-
             // printf("Sim-cycle.clock %03d.%d, ", i, clk);
-
-            /////////////////////////////////////////////////////////
-            // Tile configuration run BEGIN
-
-            ///    always @(posedge clk) begin
-            ///      if (!reset) begin
-            ///        $fscanf(config_data_file, "%h %h", &config_addr_i,&config_data_i); 
-            ///        if (!$feof(config_data_file)) begin
-            ///          config_addr <= config_addr_i;
-            ///          config_data <= config_data_i;
-            ///        end else begin
-            ///          tile_config_done <= 1'b1;
-            ///        end
-            ///      end
-            ///    end
-
-//            // if (clk == 0) { // So it will be stable for posedge events, I guess
-//            //if (1) { // UH OH...
 
             // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
 
-            // Change config data "on posedge"
-            // e.g. set config after posedge event processed
-            if (!reset && !clk) {
+            /////////////////////////////////////////////////////////
+            // if (!reset && !clk) { // negedge BAD
+            if (!reset && clk) {
+                // TILE CONFIGURATION - Change config data "on posedge"
+                // E.g. set config when clk==0, after posedge event processed
+
                 fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
                 if (!feof(config_data_file)) {
                     // printf("scanned config data %08X %08X\n", config_addr_i, config_data_i);
@@ -326,27 +309,9 @@ int main(int argc, char **argv, char **env) {
                 }
             } // (!reset && !clk)
 
-//            // if (!reset && tile_config_done && !clk) {
-//            if (!reset && tile_config_done && clk) { // UH OH...
-//
-//                // This is not really used anymore, I think...
-//                if (input_filename == NULL) {
-//                    // This is not really used anymore, I think...
-//                    set_rando(in_0_0, in_0_1, in_1_0, in_1_1)
-//                } // (input_filename == NULL)
-//                else {
-
-
-//                // add4 emulating mul2 (out = 2 * in), w/input file
-//                in_0_0 = (unsigned int)fgetc(input_file);
-//                in_0_1 = in_0_0;
-//                in_1_0 = 0;
-//                in_1_1 = 0;
-
-
-
             if (!reset && tile_config_done && clk) {
-                // READ INPUT DATA
+                // READ INPUT DATA - Change input data "on posedge"
+                // E.g. set config when clk==1, after posedge event processed
                 in_0_0 = (unsigned int)fgetc(input_file);
                 // printf("Scanned input data %04x\n", in_0_0);
 
