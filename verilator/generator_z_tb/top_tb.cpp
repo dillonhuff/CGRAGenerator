@@ -288,7 +288,8 @@ int main(int argc, char **argv, char **env) {
             tfp->dump (2*i+clk);
 #endif
 
-            if (clk==1) {
+            if (clk==0) {
+                // Note "clk==0" makes reset go low on negedge of clock
                 if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
                 if (i==4) { sprintf(what_i_did, "reset=0\n"); }
             }
@@ -356,10 +357,7 @@ int main(int argc, char **argv, char **env) {
             // printf("  top:clk,reset = %d,%d, ", top->clk, top->reset);
 
             // PROCESS THE NEXT ROUND OF VERILOG EVENTS (posedge, negedge, repeat...)
-//            if (i <= 40) { printf("\n%d %d before: scanned config data %08X %08X\n", reset, clk, config_addr, config_data); }
             top->eval ();
-//            if (i <= 40) { printf("%d %d after:  scanned config data %08X %08X\n\n", reset, clk, config_addr, config_data); }
-            
 
             // if (! printed_something) { printf("\n"); }
         } // for (clk)
