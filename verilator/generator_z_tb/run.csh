@@ -38,6 +38,7 @@ set config    = ../../bitstream/examples/cd387-good.bs
 
 # works under new regime: cd2, cd387
 
+set DELAY = 0
 
 set input     = io/gray_small.png
 set output    = /tmp/output.raw
@@ -52,6 +53,7 @@ if ($#argv == 1) then
     echo "        -config <config_filename.bs>"
     echo "        -input   <input_filename.png>"
     echo "        -output <output_filename.raw>"
+    echo "        -delay <ncycles>"
     echo "       [-trace   <trace_filename.vcd>]"
     echo "        -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>"
     echo
@@ -62,6 +64,7 @@ if ($#argv == 1) then
     echo "       -config  $config \"
     echo "       -input   $input  \"
     echo "       -output  $output \"
+    echo "        -delay $DELAY"
     if ($?tracefile) then
       echo "       -trace $tracefile \"
     endif
@@ -126,6 +129,9 @@ while ($#argv)
 
     case -output:
       set output = "$2"; shift; breaksw
+
+    case -delay:
+      set DELAY = "$2"; shift; breaksw
 
     case -trace:
       set tracefile = "$2"; shift; breaksw
@@ -236,6 +242,7 @@ echo "   -config   $config   \"
 #echo "   -io       $iofile   \"
 echo "   -input    $input  \"
 echo "   -output   $output    \"
+echo "   -delay   $DELAY    \"
 if ($?tracefile) then
   echo "   -trace $tracefile \"
 endif
@@ -493,6 +500,8 @@ echo '  First prepare input and output files...'
       set out = "-output $output"
   endif
 
+  set delay = "-delay $DELAY"
+
   # If no trace requested, simulator will not create a waveform file.
   set trace = ''
   if ($?tracefile) then
@@ -508,6 +517,7 @@ echo '  First prepare input and output files...'
       -config $config \
       $in \
       $out \
+      $delay \
       $trace \
       $nclocks \
       | tee /tmp/run.log.$$ \

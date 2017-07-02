@@ -74,7 +74,7 @@ int main(int argc, char **argv, char **env) {
     int final_delay_so_far = 0;
 
     for (int i=1; i< argc; i++) {
-        // printf("    arg%d is maybe %s\n\n", argv[i]);
+        // printf("    arg%d is maybe %s\n", i, argv[i]);
         if      (! strcmp(argv[i], "-config"))  { config_filename = argv[++i]; }
         else if (! strcmp(argv[i], "-input" ))  { input_filename  = argv[++i]; }
         else if (! strcmp(argv[i], "-output" )) { output_filename = argv[++i]; }
@@ -144,6 +144,8 @@ int main(int argc, char **argv, char **env) {
     printf("NOTE no trace file was requested.\n");
 #endif
 
+
+    if (delay) { printf("NOTE REQUESTED OUTPUT DELAY OF %d CYCLES\n", delay); }
     printf("\n");
 
     /*
@@ -393,7 +395,7 @@ int main(int argc, char **argv, char **env) {
                             );
                 }
                 else {
-                    sprintf(what_i_did, "Input %d => output %d", 
+                    sprintf(what_i_did, "Input %d => result %d", 
                             INWIRE,
                             OUTWIRE
                             );
@@ -408,6 +410,13 @@ int main(int argc, char **argv, char **env) {
                     char c = (char)(OUTWIRE & 0xff);
                     // printf("\nemit %d to output file\n", c);
                     fputc(c, output_file);
+                    if ((delay > 0) && (i < 40)) {
+                        sprintf(what_i_did, "Input %d => result %d => OUT", 
+                                INWIRE,
+                                OUTWIRE
+                                );
+                    }
+
                 }
                 else {
                     initial_delay_so_far++;
