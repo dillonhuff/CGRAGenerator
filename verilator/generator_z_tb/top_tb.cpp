@@ -65,6 +65,14 @@ int main(int argc, char **argv, char **env) {
     // printf("    arg2 is maybe %s\n", argv[2]);  // "../../hardware/generator_z/top_tb/tile_config.dat"
     // printf("\n");
 
+//    int do_2x = 1
+//    else if (! strcmp(argv[i], "-no_2x" ))  { do_2x = 0; }
+
+
+    int delay = 0; // How long to wait before sending output
+    int initial_delay_so_far = 0;
+    int final_delay_so_far = 0;
+
     for (int i=1; i< argc; i++) {
         // printf("    arg%d is maybe %s\n\n", argv[i]);
         if      (! strcmp(argv[i], "-config"))  { config_filename = argv[++i]; }
@@ -73,6 +81,9 @@ int main(int argc, char **argv, char **env) {
         else if (! strcmp(argv[i], "-trace" ))  { trace_filename  = argv[++i]; }
         else if (! strcmp(argv[i], "-nclocks")) { 
                 sscanf(argv[++i], "%d", &NCLOCKS);
+        }
+        else if (! strcmp(argv[i], "-delay")) { 
+                sscanf(argv[++i], "%d", &delay);
         }
         else if (! strcmp(argv[i], "--help" )) {
             fprintf(stderr, "Usage: %s\n%s%s%s%s%s\n",
@@ -287,13 +298,12 @@ int main(int argc, char **argv, char **env) {
             // dump variables into VCD file
             tfp->dump (2*i+clk);
 #endif
-
             if (clk==0) {
                 // Note "clk==0" makes reset go low on negedge of clock
+                // Note2 seems to work either way
                 if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
                 if (i==4) { sprintf(what_i_did, "reset=0\n"); }
             }
-
 
             //printf("CyNum-rst-clk %05d %d %d, ", i, reset, clk);
             // char prefix[256];
@@ -328,12 +338,17 @@ int main(int argc, char **argv, char **env) {
                 // printf("Scanned input data %04x\n", in_0_0);
 
                 if (feof(input_file)) {
-                    printf("\nINFO Simulation ran for %d cycles\n\n", i);
-                    if (input_file)       { fclose(input_file ); }
-                    if (output_file)      { fclose(output_file); }
-                    if (config_data_file) { fclose(config_data_file); }
-                    exit(0);
-                } // (input_filename == NULL) {} else {
+                    if (final_delay_so_far == delay) {
+                        printf("\nINFO Simulation ran for %d cycles\n\n", i);
+                        if (input_file)       { fclose(input_file ); }
+                        if (output_file)      { fclose(output_file); }
+                        if (config_data_file) { fclose(config_data_file); }
+                        exit(0);
+                    } // (input_filename == NULL) {} else {
+                }
+                else {
+                    final_delay_so_far++;
+                }
 
             } // (!reset && tile_config_done && !clk)
 
@@ -366,24 +381,38 @@ int main(int argc, char **argv, char **env) {
 
             // Only print info for first 40 cycles, see how that goes
             if (i < 40) {
-                // Queue up output in "what_i_did" buffer, to display later
-                // INWIRE and OUTWIRE get set by sed script in run.csh maybe
-                sprintf(what_i_did, "Two times %d = %d  *%s*", 
-                        INWIRE,
-                        OUTWIRE,
-                        OUTWIRE == 2*INWIRE ? "PASS" : "FAIL"
-                        );
+                if (delay == 0) {
+                    // If delay zero, assume we're doing the 2x thing (oh so terrible)
+                    // 
+                    // Queue up output in "what_i_did" buffer, to display later
+                    // INWIRE and OUTWIRE get set by sed script in run.csh maybe
+                    sprintf(what_i_did, "Two times %d = %d  *%s*", 
+                            INWIRE,
+                            OUTWIRE,
+                            OUTWIRE == 2*INWIRE ? "PASS" : "FAIL"
+                            );
+                }
+                else {
+                    sprintf(what_i_did, "Input %d => output %d", 
+                            INWIRE,
+                            OUTWIRE
+                            );
+                }
             }
             else sprintf(what_i_did, "...");
 
             // Output to output file if specified.
             if (output_file != NULL) {
-                // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
-                char c = (char)(OUTWIRE & 0xff);
-                // printf("\nemit %d to output file\n", c);
-                fputc(c, output_file);
+                if (initial_delay_so_far == delay) {
+                    // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
+                    char c = (char)(OUTWIRE & 0xff);
+                    // printf("\nemit %d to output file\n", c);
+                    fputc(c, output_file);
+                }
+                else {
+                    initial_delay_so_far++;
+                }
             }
-
         }
         if (nprints==1) {
             printf("\n");
