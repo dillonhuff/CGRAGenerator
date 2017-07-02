@@ -302,6 +302,8 @@ int main(int argc, char **argv, char **env) {
                 if (!feof(config_data_file)) {
                     // printf("scanned config data %08X %08X\n", config_addr_i, config_data_i);
                     sprintf(what_i_did, "scanned config data %08X %08X", config_addr_i, config_data_i);
+                    if (i <= 40) { printf("\n%05d: ", i); printf("%s\n", what_i_did); }
+
                     config_addr = config_addr_i;
                     config_data = config_data_i;
                 } else {
@@ -345,9 +347,11 @@ int main(int argc, char **argv, char **env) {
             // printf("  top:clk,reset = %d,%d, ", top->clk, top->reset);
 
             // PROCESS THE NEXT ROUND OF VERILOG EVENTS (posedge, negedge, repeat...)
-            sprintf(what_i_did, "\nscanned config data %08X %08X", config_addr_i, config_data_i);
+            sprintf(what_i_did, "scanned config data %08X %08X", config_addr_i, config_data_i);
+            if (i <= 40) { printf("%05d: ", i); printf("%s\n", what_i_did); }
+
             top->eval ();
-            sprintf(what_i_did, "\nscanned config data %08X %08X\n", config_addr_i, config_data_i);
+            sprintf(what_i_did, "scanned config data %08X %08X", config_addr_i, config_data_i);
             
 
             // if (! printed_something) { printf("\n"); }
@@ -379,6 +383,7 @@ int main(int argc, char **argv, char **env) {
         if (nprints==1) {
             printf("\n");
         }
+
 
         if (i <= 40) {
             // printf("cy.clk %05d.%d: ", i, top->clk);
