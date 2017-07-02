@@ -284,7 +284,7 @@ int main(int argc, char **argv, char **env) {
             if (clk == 0) { // UH OH...
                 // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
                 // if (!reset && ) {
-                if (!reset) {
+                if (!reset && !clk) {
                     fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
                     if (!feof(config_data_file)) {
                         // printf("scanned config data %08X %08X\n", config_addr_i, config_data_i);
@@ -294,9 +294,9 @@ int main(int argc, char **argv, char **env) {
                     } else {
                         tile_config_done = 1;
                     }
-                }
+                } // (!reset && !clk)
 
-                if (!reset && tile_config_done) {
+                if (!reset && tile_config_done && !clk) {
                     if (input_filename == NULL) {
 
                         // add4, no input file, use four rando's
@@ -310,7 +310,7 @@ int main(int argc, char **argv, char **env) {
                         in_0_1 = in_0_0;
                         in_1_0 = 0;
                         in_1_1 = 0;
-                    }
+                    } // (input_filename == NULL)
                     else {
 
                         // add4 w/input file
@@ -334,9 +334,9 @@ int main(int argc, char **argv, char **env) {
                             if (config_data_file) { fclose(config_data_file); }
                             exit(0);
                         }
-                    }
-                }
-            }
+                    } // (input_filename == NULL) {} else {
+                } // (!reset && tile_config_done && !clk)
+            } // (clk == 0)
 
             // Tile configuration run END
             /////////////////////////////////////////////////////////
