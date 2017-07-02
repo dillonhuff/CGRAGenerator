@@ -147,8 +147,10 @@ int main(int argc, char **argv, char **env) {
 #endif
 
 
-    if (delay_in)  { printf("NOTE REQUESTED OUTPUT SEND DELAY OF %d CYCLES\n", delay_in); }
-    if (delay_out) { printf("NOTE REQUESTED OUTPUT  END DELAY OF %d CYCLES\n", delay_out); }
+//    if (delay_in)  { printf("NOTE REQUESTED OUTPUT SEND DELAY OF %d CYCLES\n", delay_in); }
+//    if (delay_out) { printf("NOTE REQUESTED OUTPUT  END DELAY OF %d CYCLES\n", delay_out); }
+    if (1) { printf("NOTE REQUESTED OUTPUT SEND DELAY OF %d CYCLES\n", delay_in); }
+    if (1) { printf("NOTE REQUESTED OUTPUT  END DELAY OF %d CYCLES\n", delay_out); }
     printf("\n");
 
     /*
