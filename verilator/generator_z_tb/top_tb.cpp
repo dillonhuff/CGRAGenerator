@@ -296,7 +296,8 @@ int main(int argc, char **argv, char **env) {
                     }
                 } // (!reset && !clk)
 
-                if (!reset && tile_config_done && !clk) {
+                // if (!reset && tile_config_done && !clk) {
+                if (!reset && tile_config_done && clk) { // UH OH...
                     if (input_filename == NULL) {
 
                         // add4, no input file, use four rando's
