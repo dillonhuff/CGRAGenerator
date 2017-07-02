@@ -293,8 +293,8 @@ int main(int argc, char **argv, char **env) {
             // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
 
             /////////////////////////////////////////////////////////
-            // if (!reset && !clk) { // negedge BAD
-            if (!reset && clk) {
+            if (!reset && !clk) { // negedge
+//            if (!reset && clk) { // posedge
                 // TILE CONFIGURATION - Change config data "on posedge"
                 // E.g. set config when clk==0, after posedge event processed
 
@@ -309,7 +309,7 @@ int main(int argc, char **argv, char **env) {
                 }
             } // (!reset && !clk)
 
-            if (!reset && tile_config_done && clk) {
+            if (!reset && tile_config_done && clk) { // posedge
                 // READ INPUT DATA - Change input data "on posedge"
                 // E.g. set config when clk==1, after posedge event processed
                 in_0_0 = (unsigned int)fgetc(input_file);
@@ -325,43 +325,24 @@ int main(int argc, char **argv, char **env) {
 
             } // (!reset && tile_config_done && !clk)
 
-//            // } // (clk == 0)
-
-            // Tile configuration run END
+            // Tile configuration END
             /////////////////////////////////////////////////////////
 
             /////////////////////////////////////////////////////////
             // DUT instantiation
             /////////////////////////////////////////////////////////
 
-            ///top dut (
-            ///.clk(clk),
-            ///.reset(reset),
-            ///.wire_0_m1_BUS16_S0_T0(in_0_0),
-            ///.wire_m1_0_BUS16_S1_T0(in_0_1),
-            ///.wire_1_m1_BUS16_S0_T2(in_1_0),
-            ///.wire_2_0_BUS16_S3_T2(in_1_1),
-            ///.config_addr(config_addr),
-            ///.config_data(config_data)
-            ///);
-
+            // These happen on EVERY clock edge, pos and neg
             top->clk = clk;
             top->reset = reset;
-
-            INWIRE = in_0_0;
-
-
             top->config_addr = config_addr;
             top->config_data = config_data;
+            INWIRE = in_0_0;
 
-            ///
             ///always @(posedge clk) begin
-            ///
             ///   $display ("%h + %h + %h + %h = %h (%h)", in_0_0, in_0_1, in_1_0,
             ///   in_1_1, dut.wire_0_1_BUS16_S0_T4 ,in_0_0+in_0_1+in_1_0+in_1_1);
-
             // printf("  top:clk,reset = %d,%d, ", top->clk, top->reset);
-
 
             // PROCESS THE NEXT ROUND OF VERILOG EVENTS (posedge, negedge, repeat...)
             top->eval ();
@@ -372,34 +353,16 @@ int main(int argc, char **argv, char **env) {
             nprints++;
 
             // Only print info for first 40 cycles, see how that goes
-            if (i == 40) { sprintf(what_i_did, "..."); }
-            else if (i < 40) {
-                if (0) {
-                    /*
-                    // out = sum(4in)
-                    sprintf(what_i_did, "%04x + %04x + %04x + %04x = %04x (%04x)    *%s*",
-                    in_0_0, in_0_1, in_1_0, in_1_1,
-                    top->wire_0_1_BUS16_S0_T4,
-                    (in_0_0 + in_0_1 + in_1_0 + in_1_1),
-                    top->wire_0_1_BUS16_S0_T4 == (in_0_0 + in_0_1 + in_1_0 + in_1_1) ? "PASS" : "FAIL"
-                    );
-                    */
-                }
-                else {
-                    // out = 2in
-                    // int inwire  = top->wire_0_0_BUS16_S1_T0;
-                    // int outwire = top->wire_1_0_BUS16_S1_T0;
-
-                    sprintf(what_i_did, "Two times %d = %d  *%s*", 
-                            //top->wire_0_3_BUS16_S2_T0,
-                            //top->wire_1_2_BUS16_S3_T1,
-                            //top->wire_0_2_BUS16_S0_T0);
-                            INWIRE,
-                            OUTWIRE,
-                            OUTWIRE == 2*INWIRE ? "PASS" : "FAIL"
-                            );
-                }
+            if (i < 40) {
+                // Queue up output in "what_i_did" buffer, to display later
+                // INWIRE and OUTWIRE get set by sed script in run.csh maybe
+                sprintf(what_i_did, "Two times %d = %d  *%s*", 
+                        INWIRE,
+                        OUTWIRE,
+                        OUTWIRE == 2*INWIRE ? "PASS" : "FAIL"
+                        );
             }
+            else sprintf(what_i_did, "...");
 
             // Output to output file if specified.
             if (output_file != NULL) {
