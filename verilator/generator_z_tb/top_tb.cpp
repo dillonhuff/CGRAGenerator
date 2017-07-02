@@ -345,7 +345,10 @@ int main(int argc, char **argv, char **env) {
             // printf("  top:clk,reset = %d,%d, ", top->clk, top->reset);
 
             // PROCESS THE NEXT ROUND OF VERILOG EVENTS (posedge, negedge, repeat...)
+            sprintf(what_i_did, "\nscanned config data %08X %08X", config_addr_i, config_data_i);
             top->eval ();
+            sprintf(what_i_did, "\nscanned config data %08X %08X\n", config_addr_i, config_data_i);
+            
 
             // if (! printed_something) { printf("\n"); }
         } // for (clk)
