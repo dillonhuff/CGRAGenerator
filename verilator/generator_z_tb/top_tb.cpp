@@ -69,7 +69,9 @@ int main(int argc, char **argv, char **env) {
 //    else if (! strcmp(argv[i], "-no_2x" ))  { do_2x = 0; }
 
 
-    int delay = 0; // How long to wait before sending output
+    int delay_in = 0;  // How long to wait before sending output
+    int delay_out = 0; // How long to wait before  ending output
+
     int initial_delay_so_far = 0;
     int final_delay_so_far = 0;
 
@@ -83,7 +85,7 @@ int main(int argc, char **argv, char **env) {
                 sscanf(argv[++i], "%d", &NCLOCKS);
         }
         else if (! strcmp(argv[i], "-delay")) { 
-                sscanf(argv[++i], "%d", &delay);
+            sscanf(argv[++i], "%d,%d", &delay_in, &delay_out);
         }
         else if (! strcmp(argv[i], "--help" )) {
             fprintf(stderr, "Usage: %s\n%s%s%s%s%s\n",
@@ -145,7 +147,8 @@ int main(int argc, char **argv, char **env) {
 #endif
 
 
-    if (delay) { printf("NOTE REQUESTED OUTPUT DELAY OF %d CYCLES\n", delay); }
+    if (delay_in)  { printf("NOTE REQUESTED OUTPUT SEND DELAY OF %d CYCLES\n", delay_in); }
+    if (delay_out) { printf("NOTE REQUESTED OUTPUT  END DELAY OF %d CYCLES\n", delay_out); }
     printf("\n");
 
     /*
@@ -340,7 +343,7 @@ int main(int argc, char **argv, char **env) {
                 // printf("Scanned input data %04x\n", in_0_0);
 
                 if (feof(input_file)) {
-                    if (final_delay_so_far == delay) {
+                    if (final_delay_so_far == delay_out) {
                         printf("\nINFO Simulation ran for %d cycles\n\n", i);
                         if (input_file)       { fclose(input_file ); }
                         if (output_file)      { fclose(output_file); }
@@ -383,7 +386,7 @@ int main(int argc, char **argv, char **env) {
 
             // Only print info for first 40 cycles, see how that goes
             if (i < 40) {
-                if (delay == 0) {
+                if (delay_in == 0) {
                     // If delay zero, assume we're doing the 2x thing (oh so terrible)
                     // 
                     // Queue up output in "what_i_did" buffer, to display later
@@ -405,12 +408,12 @@ int main(int argc, char **argv, char **env) {
 
             // Output to output file if specified.
             if (output_file != NULL) {
-                if (initial_delay_so_far == delay) {
+                if (initial_delay_so_far == delay_in) {
                     // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
                     char c = (char)(OUTWIRE & 0xff);
                     // printf("\nemit %d to output file\n", c);
                     fputc(c, output_file);
-                    if ((delay > 0) && (i < 40)) {
+                    if ((delay_in > 0) && (i < 40)) {
                         sprintf(what_i_did, "Input %d => result %d => OUT", 
                                 INWIRE,
                                 OUTWIRE
