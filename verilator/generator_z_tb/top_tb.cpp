@@ -281,7 +281,7 @@ int main(int argc, char **argv, char **env) {
             ///    end
 
             // if (clk == 0) { // So it will be stable for posedge events, I guess
-            if (clk == 0) { // UH OH...
+            if (1) { // UH OH...
                 // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
                 // if (!reset && ) {
                 if (!reset && !clk) {
