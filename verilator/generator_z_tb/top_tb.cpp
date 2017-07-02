@@ -16,6 +16,33 @@
 #define CLOSETRACE
 #endif
 
+// This is not really used anymore, I think...
+//int set_rando(
+//              unsigned int *in_0_0,
+//              unsigned int *in_0_1,
+//              unsigned int *in_1_0,
+//              unsigned int *in_1_1
+//              ) {
+//    // add4, no input file, use four rando's
+//    in_0_0 = random() & 0xffff;
+//    in_0_1 = random() & 0xffff;
+//    in_1_0 = random() & 0xffff;
+//    in_1_1 = random() & 0xffff;
+//    
+//    // add4 emulating mul2, no input file, use rando
+//    in_0_0 = random() & 0xffff;
+//    in_0_1 = in_0_0;
+//    in_1_0 = 0;
+//    in_1_1 = 0;
+//    
+//    // add4 w/input file
+//    // in_0_0 = (unsigned int)fgetc(input_file);
+//    // in_0_1 = (unsigned int)fgetc(input_file);
+//    // in_1_0 = (unsigned int)fgetc(input_file);
+//    // in_1_1 = (unsigned int)fgetc(input_file);
+//    // // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
+//}
+
 int main(int argc, char **argv, char **env) {
     char *config_filename = NULL;
     char  *input_filename = NULL;
@@ -280,64 +307,60 @@ int main(int argc, char **argv, char **env) {
             ///      end
             ///    end
 
-            // if (clk == 0) { // So it will be stable for posedge events, I guess
-            if (1) { // UH OH...
-                // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
-                // if (!reset && ) {
-                if (!reset && !clk) {
-                    fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
-                    if (!feof(config_data_file)) {
-                        // printf("scanned config data %08X %08X\n", config_addr_i, config_data_i);
-                        sprintf(what_i_did, "scanned config data %08X %08X", config_addr_i, config_data_i);
-                        config_addr = config_addr_i;
-                        config_data = config_data_i;
-                    } else {
-                        tile_config_done = 1;
-                    }
-                } // (!reset && !clk)
+//            // if (clk == 0) { // So it will be stable for posedge events, I guess
+//            //if (1) { // UH OH...
 
-                // if (!reset && tile_config_done && !clk) {
-                if (!reset && tile_config_done && clk) { // UH OH...
-                    if (input_filename == NULL) {
+            // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
 
-                        // add4, no input file, use four rando's
-                        in_0_0 = random() & 0xffff;
-                        in_0_1 = random() & 0xffff;
-                        in_1_0 = random() & 0xffff;
-                        in_1_1 = random() & 0xffff;
+            // Change config data "on posedge"
+            // e.g. set config after posedge event processed
+            if (!reset && !clk) {
+                fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
+                if (!feof(config_data_file)) {
+                    // printf("scanned config data %08X %08X\n", config_addr_i, config_data_i);
+                    sprintf(what_i_did, "scanned config data %08X %08X", config_addr_i, config_data_i);
+                    config_addr = config_addr_i;
+                    config_data = config_data_i;
+                } else {
+                    tile_config_done = 1;
+                }
+            } // (!reset && !clk)
 
-                        // add4 emulating mul2, no input file, use rando
-                        in_0_0 = random() & 0xffff;
-                        in_0_1 = in_0_0;
-                        in_1_0 = 0;
-                        in_1_1 = 0;
-                    } // (input_filename == NULL)
-                    else {
+//            // if (!reset && tile_config_done && !clk) {
+//            if (!reset && tile_config_done && clk) { // UH OH...
+//
+//                // This is not really used anymore, I think...
+//                if (input_filename == NULL) {
+//                    // This is not really used anymore, I think...
+//                    set_rando(in_0_0, in_0_1, in_1_0, in_1_1)
+//                } // (input_filename == NULL)
+//                else {
 
-                        // add4 w/input file
-                        // in_0_0 = (unsigned int)fgetc(input_file);
-                        // in_0_1 = (unsigned int)fgetc(input_file);
-                        // in_1_0 = (unsigned int)fgetc(input_file);
-                        // in_1_1 = (unsigned int)fgetc(input_file);
-                        // // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
 
-                        // add4 emulating mul2 (out = 2 * in), w/input file
-                        in_0_0 = (unsigned int)fgetc(input_file);
-                        in_0_1 = in_0_0;
-                        in_1_0 = 0;
-                        in_1_1 = 0;
-                        // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
+//                // add4 emulating mul2 (out = 2 * in), w/input file
+//                in_0_0 = (unsigned int)fgetc(input_file);
+//                in_0_1 = in_0_0;
+//                in_1_0 = 0;
+//                in_1_1 = 0;
 
-                        if (feof(input_file)) {
-                            printf("\nINFO Simulation ran for %d cycles\n\n", i);
-                            if (input_file)       { fclose(input_file ); }
-                            if (output_file)      { fclose(output_file); }
-                            if (config_data_file) { fclose(config_data_file); }
-                            exit(0);
-                        }
-                    } // (input_filename == NULL) {} else {
-                } // (!reset && tile_config_done && !clk)
-            } // (clk == 0)
+
+
+            if (!reset && tile_config_done && clk) {
+                // READ INPUT DATA
+                in_0_0 = (unsigned int)fgetc(input_file);
+                // printf("Scanned input data %04x\n", in_0_0);
+
+                if (feof(input_file)) {
+                    printf("\nINFO Simulation ran for %d cycles\n\n", i);
+                    if (input_file)       { fclose(input_file ); }
+                    if (output_file)      { fclose(output_file); }
+                    if (config_data_file) { fclose(config_data_file); }
+                    exit(0);
+                } // (input_filename == NULL) {} else {
+
+            } // (!reset && tile_config_done && !clk)
+
+//            // } // (clk == 0)
 
             // Tile configuration run END
             /////////////////////////////////////////////////////////
@@ -360,27 +383,6 @@ int main(int argc, char **argv, char **env) {
             top->clk = clk;
             top->reset = reset;
 
-            // 6/10/2017: What is this?  Why is it here?  And why did verilator
-            // throw an error for a missing wire in the "if (0)" block?
-            // 
-            //           if (0) {
-            //               // Using add4 config file
-            //               top->wire_0_m1_BUS16_S0_T0 = in_0_0;
-            //               top->wire_m1_0_BUS16_S1_T0 = in_0_1;
-            //               top->wire_1_m1_BUS16_S0_T2 = in_1_0;
-            //               // top->wire_2_0_BUS16_S3_T2  = in_1_1;
-            //               top->wire_4_0_BUS16_S3_T2  = in_1_1;
-            //           }
-            // 
-            //           else {
-            //               // mul2 config file
-            //               // top->wire_0_3_BUS16_S2_T0 = 0x10;
-            //               // top->wire_1_2_BUS16_S3_T1 = 0x11;
-            //               // top->wire_0_0_BUS16_S1_T0 = 0x22;
-            //               // INWIRE = 0x22;
-            //               INWIRE = in_0_0;
-            //           }
-
             INWIRE = in_0_0;
 
 
@@ -396,6 +398,7 @@ int main(int argc, char **argv, char **env) {
             // printf("  top:clk,reset = %d,%d, ", top->clk, top->reset);
 
 
+            // PROCESS THE NEXT ROUND OF VERILOG EVENTS (posedge, negedge, repeat...)
             top->eval ();
 
             // if (! printed_something) { printf("\n"); }
