@@ -245,10 +245,10 @@ int main(int argc, char **argv, char **env) {
 
     int nprints = 0;
 
-    // First config addr/data should be stable well before reset goes low...
-    fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
-    config_addr = config_addr_i;
-    config_data = config_data_i;
+//    // First config addr/data should be stable well before reset goes low...
+//    fscanf(config_data_file, "%x %x", &config_addr_i, &config_data_i);
+//    config_addr = config_addr_i;
+//    config_data = config_data_i;
 
     for (int i=0; i<NCLOCKS; i++) {
         // travis freaks out if no output for 10 minutes...
@@ -273,8 +273,8 @@ int main(int argc, char **argv, char **env) {
         ///    end
         ///    assign reset = !reset_count[3];
     
-        if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
-        if (i==4) { sprintf(what_i_did, "reset=0\n"); }
+//        if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
+//        if (i==4) { sprintf(what_i_did, "reset=0\n"); }
 
         unsigned int in_0_0;
         unsigned int in_0_1;
@@ -288,6 +288,12 @@ int main(int argc, char **argv, char **env) {
             tfp->dump (2*i+clk);
 #endif
 
+            if (clk==1) {
+                if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
+                if (i==4) { sprintf(what_i_did, "reset=0\n"); }
+            }
+
+
             //printf("CyNum-rst-clk %05d %d %d, ", i, reset, clk);
             // char prefix[256];
             // sprintf(prefix, "cy.clk %05d.%d R%d: ", i, clk, reset);
@@ -298,8 +304,8 @@ int main(int argc, char **argv, char **env) {
             // FIXME (below) why not "if (!reset && !tile_config_done)" instead?
 
             /////////////////////////////////////////////////////////
-//            if (!reset && !clk) { // negedge GOOD
-            if (!reset && clk) { // posedge BAD
+            if (!reset && !clk) { // negedge GOOD
+//            if (!reset && clk) { // posedge BAD
                 // TILE CONFIGURATION - Change config data "on posedge"
                 // E.g. set config when clk==0, after posedge event processed
 
