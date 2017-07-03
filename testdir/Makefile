@@ -83,7 +83,7 @@ test_4x4_gray_small:
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        echo FAIL
+        cmp io/$${image}.png io/$${image}_out.raw || echo FAIL
 
 test_4x4_gray:
 	bitstream=../../bitstream/examples/cd387-good.bs; \
