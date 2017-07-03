@@ -535,6 +535,23 @@ echo '  First prepare input and output files...'
     echo
     ls -l /tmp/input.raw $output
 
+    if ("$output:t" == "conv_1_2_CGRA_out.raw") then
+      echo
+      set cmd = "od -t u1 $output"
+      echo $cmd; $cmd | head
+
+      echo "FOUND conv_1_2 output"
+      ./conv_1_2_convert.csh < $output > /tmp/tmp.raw
+      mv /tmp/tmp.raw $output
+      ls -l /tmp/input.raw $output
+
+      echo
+      set cmd = "od -t u1 $output"
+      echo $cmd; $cmd | head
+
+    endif
+
+
     echo
     set cmd = "od -t x1 /tmp/input.raw"
     set cmd = "od -t u1 /tmp/input.raw"
