@@ -49,7 +49,8 @@ VERILATOR_TOP := ../verilator/generator_z_tb
 
 test_all:
 	make test_4x4_gray_small 2>&1 | tee /tmp/test_4x4_gray_small.log
-	grep '\*PASS\*' /tmp/test_4x4_gray_small.log | head -1
+#	grep '\*PASS\*' /tmp/test_4x4_gray_small.log | head -1
+	grep 'FAIL' /tmp/test_4x4_gray_small.log && exit -1
 
 	make test_8x8_gray_small 2>&1 | tee /tmp/test_8x8_gray_small.log
 	grep '\*PASS\*' /tmp/test_8x8_gray_small.log | head -1
@@ -81,7 +82,8 @@ test_4x4_gray_small:
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
-	   -nclocks 5M
+	   -nclocks 5M;                     \
+        echo FAIL
 
 test_4x4_gray:
 	bitstream=../../bitstream/examples/cd387-good.bs; \
