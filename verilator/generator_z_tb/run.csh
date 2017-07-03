@@ -541,7 +541,7 @@ echo '  First prepare input and output files...'
       echo $cmd; $cmd | head
 
       echo "FOUND conv_1_2 output"
-      ./conv_1_2_convert.csh < $output > /tmp/tmp.raw
+      ./conv_1_2_convert < $output > /tmp/tmp.raw
       mv /tmp/tmp.raw $output
       ls -l /tmp/input.raw $output
 
