@@ -536,18 +536,14 @@ echo '  First prepare input and output files...'
     ls -l /tmp/input.raw $output
 
     if ("$output:t" == "conv_1_2_CGRA_out.raw") then
-      echo
-      set cmd = "od -t u1 $output"
-      echo $cmd; $cmd | head
+      # echo; set cmd = "od -t u1 $output"; echo $cmd; $cmd | head
 
-      echo "FOUND conv_1_2 output"
+      echo; echo "FOUND conv_1_2 output; converting to 9x9..."
       ./conv_1_2_convert < $output > /tmp/tmp.raw
       mv /tmp/tmp.raw $output
-      ls -l /tmp/input.raw $output
+      ls -l $output
 
-      echo
-      set cmd = "od -t u1 $output"
-      echo $cmd; $cmd | head
+      # echo; set cmd = "od -t u1 $output"; echo $cmd; $cmd | head
 
     endif
 
