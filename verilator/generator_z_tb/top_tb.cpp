@@ -352,9 +352,9 @@ int main(int argc, char **argv, char **env) {
                         if (config_data_file) { fclose(config_data_file); }
                         exit(0);
                     } // (input_filename == NULL) {} else {
-                }
-                else {
-                    final_delay_so_far++;
+                    else {
+                        final_delay_so_far++;
+                    }
                 }
 
             } // (!reset && tile_config_done && !clk)
