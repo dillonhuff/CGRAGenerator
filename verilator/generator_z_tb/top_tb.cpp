@@ -387,7 +387,7 @@ int main(int argc, char **argv, char **env) {
             nprints++;
 
             // Only print info for first 40 cycles, see how that goes
-            if (i < 40) {
+            if (i < 60) {
                 if (delay_in == 0) {
                     // If delay zero, assume we're doing the 2x thing (oh so terrible)
                     // 
@@ -433,7 +433,7 @@ int main(int argc, char **argv, char **env) {
         }
 
 
-        if (i <= 40) {
+        if (i <= 60) {
             // printf("cy.clk %05d.%d: ", i, top->clk);
             printf("%05d: ", i);
             printf("%s\n", what_i_did);
