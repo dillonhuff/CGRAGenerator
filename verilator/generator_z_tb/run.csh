@@ -525,7 +525,8 @@ echo '  First prepare input and output files...'
   unset echo >& /dev/null
   echo -n " TIME NOW: "; date
 
-  grep FAIL /tmp/run.log.$$ && exit -1
+  unset FAIL
+  grep FAIL /tmp/run.log.$$ && set FAIL
 
 
   echo
@@ -558,6 +559,8 @@ echo '  First prepare input and output files...'
     echo $cmd; $cmd | head
   endif
 
+
+  if ($?FAIL) exit -1
 
 # Tell how to clean up (not necessary for travis VM of course)
 # if (`hostname` == "kiwi") then
