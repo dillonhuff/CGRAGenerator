@@ -46,23 +46,22 @@ VERILATOR_TOP := ../verilator/generator_z_tb
 # 
 # bar.baz: ../bitstream/examples/cd387-good.bs
 
-
 test_all:
 	make test_4x4_gray_small 2>&1 | tee /tmp/test_4x4_gray_small.log
 #	grep '\*PASS\*' /tmp/test_4x4_gray_small.log | head -1
-	grep 'FAIL'     /tmp/test_4x4_gray_small.log && exit -1 || exit 0
+	grep 'FAIL'     /tmp/test_4x4_gray_small.log && exit 9 || exit 0
 
 	make test_8x8_gray_small 2>&1 | tee /tmp/test_8x8_gray_small.log
 #	grep '\*PASS\*' /tmp/test_8x8_gray_small.log | head -1
-	grep 'FAIL'     /tmp/test_8x8_gray_small.log && exit -1 || exit 0
+	grep 'FAIL'     /tmp/test_8x8_gray_small.log && exit 9 || exit 0
 
 	make test_4x4_gray       2>&1 | tee /tmp/test_4x4_gray.log
 #	grep '\*PASS\*' /tmp/test_4x4_gray.log | head -1
-	grep 'FAIL'     /tmp/test_4x4_gray.log && exit -1 || exit 0
+	grep 'FAIL'     /tmp/test_4x4_gray.log && exit 9 || exit 0
 
 	make test_8x8_gray       2>&1 | tee /tmp/test_8x8_gray.log
 #	grep '\*PASS\*' /tmp/test_8x8_gray.log | head -1
-	grep 'FAIL'     /tmp/test_8x8_gray.log && exit -1 || exit 0
+	grep 'FAIL'     /tmp/test_8x8_gray.log && exit 9 || exit 0
 
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
