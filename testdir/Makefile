@@ -87,7 +87,7 @@ test_4x4_gray_small:
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        cmp io/$${image}.png /tmp/$${image}_out.raw || echo FAIL
+        cmp io/$${image}_out.raw /tmp/$${image}_out.raw || echo FAIL
 
 test_4x4_gray:
 	bitstream=../../bitstream/examples/cd387-good.bs; \
@@ -98,7 +98,7 @@ test_4x4_gray:
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        cmp io/$${image}.png /tmp/$${image}_out.raw || echo FAIL
+        cmp io/$${image}_out.raw /tmp/$${image}_out.raw || echo FAIL
 
 test_8x8_gray_small:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
@@ -109,7 +109,7 @@ test_8x8_gray_small:
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        cmp io/$${image}.png /tmp/$${image}_out.raw || echo FAIL
+        cmp io/$${image}_out.raw /tmp/$${image}_out.raw || echo FAIL
 
 test_8x8_gray:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
@@ -120,4 +120,4 @@ test_8x8_gray:
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        cmp io/$${image}.png /tmp/$${image}_out.raw || echo FAIL
+        cmp io/$${image}_out.raw /tmp/$${image}_out.raw || echo FAIL
