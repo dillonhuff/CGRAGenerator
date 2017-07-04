@@ -50,16 +50,19 @@ VERILATOR_TOP := ../verilator/generator_z_tb
 test_all:
 	make test_4x4_gray_small 2>&1 | tee /tmp/test_4x4_gray_small.log
 #	grep '\*PASS\*' /tmp/test_4x4_gray_small.log | head -1
-	grep 'FAIL' /tmp/test_4x4_gray_small.log && exit -1
+	grep 'FAIL'     /tmp/test_4x4_gray_small.log && exit -1 || exit 0
 
 	make test_8x8_gray_small 2>&1 | tee /tmp/test_8x8_gray_small.log
-	grep '\*PASS\*' /tmp/test_8x8_gray_small.log | head -1
+#	grep '\*PASS\*' /tmp/test_8x8_gray_small.log | head -1
+	grep 'FAIL'     /tmp/test_8x8_gray_small.log && exit -1 || exit 0
 
 	make test_4x4_gray       2>&1 | tee /tmp/test_4x4_gray.log
-	grep '\*PASS\*' /tmp/test_4x4_gray.log | head -1
+#	grep '\*PASS\*' /tmp/test_4x4_gray.log | head -1
+	grep 'FAIL'     /tmp/test_4x4_gray.log && exit -1 || exit 0
 
 	make test_8x8_gray       2>&1 | tee /tmp/test_8x8_gray.log
-	grep '\*PASS\*' /tmp/test_8x8_gray.log | head -1
+#	grep '\*PASS\*' /tmp/test_8x8_gray.log | head -1
+	grep 'FAIL'     /tmp/test_8x8_gray.log && exit -1 || exit 0
 
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
@@ -70,6 +73,8 @@ test_all:
 	  /tmp/test_4x4_gray.log       \
 	  /tmp/test_8x8_gray.log
 
+# TODO can combine all these down to one
+# TODO make it look more like other makefile (cgraflow)
 test_4x4_gray_small:
 # 	@echo ""
 # 	@echo TEST $@
@@ -83,7 +88,7 @@ test_4x4_gray_small:
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        cmp io/$${image}.png io/$${image}_out.raw || echo FAIL
+        cmp io/$${image}.png /tmp/$${image}_out.raw || echo FAIL
 
 test_4x4_gray:
 	bitstream=../../bitstream/examples/cd387-good.bs; \
@@ -93,7 +98,8 @@ test_4x4_gray:
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
-	   -nclocks 5M
+	   -nclocks 5M;                     \
+        cmp io/$${image}.png /tmp/$${image}_out.raw || echo FAIL
 
 test_8x8_gray_small:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
@@ -103,7 +109,8 @@ test_8x8_gray_small:
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
-	   -nclocks 5M
+	   -nclocks 5M;                     \
+        cmp io/$${image}.png /tmp/$${image}_out.raw || echo FAIL
 
 test_8x8_gray:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
@@ -113,4 +120,5 @@ test_8x8_gray:
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
 	   -output /tmp/$${image}_out.raw   \
-	   -nclocks 5M
+	   -nclocks 5M;                     \
+        cmp io/$${image}.png /tmp/$${image}_out.raw || echo FAIL
