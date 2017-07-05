@@ -317,8 +317,12 @@ CANVAS_WIDTH  = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
 
-WIN_WIDTH  = 4*CANVAS_WIDTH+2*ARRAY_PAD
-WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
+# WIN_WIDTH  = 4*CANVAS_WIDTH+2*ARRAY_PAD
+# WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
+
+WIN_WIDTH  = 4*CANVAS_WIDTH + ARRAY_PAD
+WIN_HEIGHT = 4*CANVAS_HEIGHT+ ARRAY_PAD
+
 
 ##############################################################################
 # These could all be part of a Wire class if we wanted to...
@@ -1497,11 +1501,62 @@ def draw_all_ports(cr):
                 wirename = "%s_s%dt%d" % (dir, side, track)
                 drawport(cr, wirename, options="ghost")
 
+def zoom_to_tile2(tileno):
+    print "Zoom in to tile %s!" % str(tileno)
+
+    #         x = TILE_LIST[tileno].col*CANVAS_WIDTH    # + CANVAS_WIDTH/2
+    #         y = TILE_LIST[tileno].row*CANVAS_HEIGHT   # + CANVAS_HEIGHT/2
+    #         
+    #         DBG = 0;
+    #         if DBG:
+    #             (ww,wh) = (WIN_WIDTH, min(WIN_HEIGHT,600)) 
+    #             print ""
+    #             print "recenter to w=%d/%d" % (x,ww)
+    #             print "except now it's ?/%d maybe" % u
+    #             print "%d/%d is %.2f" % (u,ww,u/ww)
+    #             print "CUR_SF is %.2f" % CUR_SCALE_FACTOR
+    #             print "INIT_SF is %.2f" % INIT_SCALE_FACTOR
+    #             print "? is maybe %d" % (x * u/ww)
+    # 
+    #         x = (INIT_SCALE_FACTOR * x * hadj.upper/ww)
+    #         print "recenter tooo w=%d/%d" % (x,hadj.upper)
+    #         y = (y * vadj.upper/wh)
+
+    scaled_array_pad     = ARRAY_PAD     * CUR_SCALE_FACTOR
+    scaled_canvas_width  = CANVAS_WIDTH  * CUR_SCALE_FACTOR
+    scaled_canvas_height = CANVAS_HEIGHT * CUR_SCALE_FACTOR
+    print "Calculated win width is...%d...?" % \
+          (4 * scaled_array_pad + 8 * scaled_canvas_width)
+    print "Original win width was...%d...?" % \
+          (4 * ARRAY_PAD + 8 * CANVAS_WIDTH)
+
+    pad = scaled_array_pad
+    col = TILE_LIST[tileno].col
+    row = TILE_LIST[tileno].row
+
+    x = pad + col * scaled_canvas_width
+    y = pad + row * scaled_canvas_height
+
+    # print "x is %d" % x; print "pad is %d" % pad
+
+    (hadj,vadj) = (SW.get_hadjustment(),SW.get_vadjustment())
+    # print "Window width now = %d" % hadj.upper
+
+    # Each "value_changed" triggers a "draw" event I think...
+    # Seems to work fine w/o them
+    hadj.set_value(x); # hadj.value_changed()
+    vadj.set_value(y); # vadj.value_changed()
+
+    # u = hadj.upper; l = hadj.lower; v = hadj.value
+    # print "AFTER AFTER AFTER: [%4d|-> %4d   <-| %-4d]\n" % (int(l), int(v), int(u))
+
+
 # Invaluable cairo drawing reference:
 # http://pygtk.org/articles/cairo-pygtk-widgets/cairo-pygtk-widgets.htm
 # Looks good but did not use: http://zetcode.com/gui/pygtk/
 # Ditto for: http://pygtk.org/pygtk2tutorial/ch-DrawingArea.html
 
+global PREV_HUPPER; PREV_HUPPER = -1
 def draw_handler(widget, cr):
     global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = widget;
 
@@ -1509,9 +1564,20 @@ def draw_handler(widget, cr):
     context = widget.window.cairo_create()
     cr = context
 
-    global ZOOMTILE; tileno = ZOOMTILE
-    if (tileno == -1):   draw_all_tiles(cr);
-    else:                draw_one_tile(cr, tileno);
+    draw_all_tiles(cr);
+
+    # ON EACH REDRAW
+    # Must check to see if tile_zoom_in has taken effect yet
+    # - before zoom, set PREV_HUPPER
+    # - if upper != PREV_HUPPER then recenter and set PREV_UPPER = upper.  right?
+
+    global ZOOMTILE; 
+    if (ZOOMTILE != -1):
+        global PREV_HUPPER; 
+        hupper = SW.get_hadjustment().upper
+        if (PREV_HUPPER != hupper):
+            zoom_to_tile2(ZOOMTILE)
+            PREV_HUPPER = hupper
 
 def set_zoom_scale_factor():
 
@@ -1584,8 +1650,8 @@ def draw_all_tiles(cr):
     if DBG: print "Draw all tiles!"
 
     cr.save()
-    cr.translate(ARRAY_PAD, ARRAY_PAD)     # Whitespace margin at top and left
     cr.scale(CUR_SCALE_FACTOR,CUR_SCALE_FACTOR)
+    cr.translate(ARRAY_PAD, ARRAY_PAD)     # Whitespace margin at top and left
     # draw_big_ghost_arrows(cr)            # Big ghost arrows in background of grid
                                            # view show general flow dir for tracks
     for tile in TILE_LIST:                 # Draw ALL the tiles
@@ -1751,7 +1817,7 @@ class CGRAWin(gtk.Window):
         title = "Tilesy" # haha LOL
         gtk.Window.__init__(self)
         self.props.title = title
-        self.props.width_request = WIN_WIDTH
+        self.props.width_request = WIN_WIDTH + 40 # Extra for borders etc
         self.props.height_request= min(WIN_HEIGHT,600)
 
         # FIXME minimum width (above) should be based on screen height,
@@ -1935,15 +2001,22 @@ def adjust_scrollbar(adj, amt):
     hupper = adj.upper
     sf = pagewidth/hupper
     scaled_amt = sf * amt
-
-    if DBG: print "  hupper is ", ; print hupper
-    if DBG: print "  pagewidth is ", ; print pagewidth
-    if DBG: print "  scale factor is", ; print sf
-    if DBG: print "  scaled  x = ", ; print scaled_amt
-
     amt_prime = (scaled_amt-10) - adj.page_size/2
 
-    if DBG: print "Adjusting to f(%d,%d)" % (amt_prime, pagewidth),
+
+    if DBG:
+        ps = adj.page_size
+        print "  hupper is ", ; print hupper
+        print "  pagewidth is ", ; print pagewidth
+        print "  page_size is ", ; print ps
+        print "  scale factor is", ; print sf
+        print "  scaled  x = ", ; print scaled_amt
+        print ""
+        print "  requested adjustment %d/%d" % (amt,hupper)
+        print "  scaled    adjustment %d/%d" % (scaled_amt,pagewidth)
+        # print "  final     adjustment %d" % amt_prime
+        # print "Adjusting to f(%d,%d)" % (amt_prime, pagewidth),
+        print "Adjusting to f(%d,%d)" % (amt_prime, ps),
 
 
     # print "about to adjust..."; sys.stdout.flush(); time.sleep(2)
@@ -1954,7 +2027,7 @@ def adjust_scrollbar(adj, amt):
 
     u = adj.upper; l = adj.lower; v = adj.value
     # print "AFTER  lvu = (%4d-> %4d    <-%-4d)" % (int(l), int(v), int(u))
-    if DBG: print "[%4d|-> %4d   <-|%-4d]" % (int(l), int(v), int(u))
+    if DBG: print "[%4d|-> %4d   <-| %-4d]" % (int(l), int(v), int(u))
     # print "PAGESIZE %d" % ps
     
 def recenter(x,y):
@@ -2008,9 +2081,16 @@ def zoom(sf):
     CUR_DRAW_WIDGET.set_size_request(h, w)
     print "=> (%d,%d)" % (h,w)
 
+    # These don't seem to be necessary?  Also, Each one causes a draw event I think.
+    # SW.get_hadjustment().value_changed()
+    # SW.get_vadjustment().value_changed()
+
     # global ACTUAL_SCALE; ACTUAL_SCALE = float(h)/hprev    # print "SF " + str(ACTUAL_SCALE)
 
-def zoom_to_tile(event):
+def zoom_to_tile1(event):
+    # This (button-press event) queues up the zoom.
+    # After tiles are drawn, zoom will have completed.
+    # Later, final scroll-adjust for zoom happens, during draw event.
     DBG = 0
 
     # Need to know current scale factor so we keep track of it in a global
@@ -2021,36 +2101,87 @@ def zoom_to_tile(event):
     # Can't get scale factor from context matrix, it's always (1,0,0,1,0,0) why?
     if (0): print "matrix = " + str(DRAW_HANDLER_CR.get_matrix())
 
-    # x,y coordinates of button-press
-    x = event.x; y = event.y
-    if DBG: print "%d %d" % (x,y)
-
-    # Subtract off the scale-independent paddings and divide by scale factor I guess
-    x = (x - ARRAY_PAD)/CUR_SCALE_FACTOR; y = (y - ARRAY_PAD)/CUR_SCALE_FACTOR;
-    if DBG: print "Transformed x,y = (%d,%d)" % (x,y)
-    if DBG: print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
-
-    # Find row, col of tile indicated by sclaed/translated (x,y)
-    row = y/CANVAS_WIDTH; col = x/CANVAS_HEIGHT;
-    row = int(row); col = int(col)
-
-    # Find tile number indicated by (row,col)
-    tileno = rc2tileno(row,col)
-
-    print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
-
     # If already zoomed out (ZOOMTILE === -1), zoom in to tile indicated.
     # Otherwise, zoom out.
     global ZOOMTILE;
     if (ZOOMTILE == -1):
+
+        # Save prev adjusts, scale factor
+        global SAVE_SCALE_FACTOR
+        SAVE_SCALE_FACTOR = CUR_SCALE_FACTOR
+
+        global PREV_HUPPER
+        PREV_HUPPER = SW.get_hadjustment().upper
+        print "HUPPERS 1 %d" % (PREV_HUPPER)
+
+        # tileno = find_tile_clicked(event.x, event.y)
+        ########################################################################
+        DBG = 1
+        # x,y coordinates of button-press
+        x = event.x; y = event.y
+        if DBG: print "clicked on %d %d" % (x,y)
+
+        # Subtract off the scale-independent paddings and divide by scale factor I guess
+        x = (x - ARRAY_PAD)/CUR_SCALE_FACTOR; y = (y - ARRAY_PAD)/CUR_SCALE_FACTOR;
+        if DBG: print "Transformed x,y = (%d,%d)" % (x,y)
+        if DBG: print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
+
+        # Find row, col of tile indicated by sclaed/translated (x,y)
+        row = y/CANVAS_WIDTH; col = x/CANVAS_HEIGHT;
+        row = int(row); col = int(col)
+
+        # Find tile number indicated by (row,col)
+        tileno = rc2tileno(row,col)
+
+        print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
+        # tileno = find_tile_clicked(x,y)
+        ########################################################################
+
         if DBG: print "Zoom in to tile %s!" % str(tileno)
         ZOOMTILE = tileno;
+
+        # Zoom and cut out crap it's just four.
+
+        global CUR_SCALE_FACTOR
+#         unzoomed_scale_factor = 1/INIT_SCALE_FACTOR # Scale factor for unzoomed tiles
+#         tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
+#         two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
+#         fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
+#         CUR_SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
+        CUR_SCALE_FACTOR = 4.0 # sound about right!!?
+
+#         # Tile draws from (0,0) to (CANVAS_WIDTH,CANVAS_HEIGHT), yes?
+#         print "canwidth,canheight = %d,%d" % (CANVAS_WIDTH,CANVAS_HEIGHT)
+# 
+#         # Original window size request is
+#         # self.props.width_request = WIN_WIDTH
+#         # self.props.height_request= min(WIN_HEIGHT,600)
+#         print "winwidth,winheight = %d,%d" % (WIN_WIDTH, min(WIN_HEIGHT,600)) 
+# 
+#         (cw,ch) = (CANVAS_WIDTH,CANVAS_HEIGHT)
+#         (ww,wh) = (WIN_WIDTH, min(WIN_HEIGHT,600)) 
+# 
+#         print "CUR_SCALE_FACTOR = %.2f" % CUR_SCALE_FACTOR
+# 
+#         (hadj,vadj) = (SW.get_hadjustment(),SW.get_vadjustment())
+#         u = hadj.upper; l = hadj.lower; v = hadj.value
+#         print "BEFORE ZOOM/Q: [%4d|-> %4d   <-| %-4d]" % (int(l), int(v), int(u))
+
+        # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
+        zoom(1)
+        # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
+
     else:
         if DBG: print "Zoom out!"
         ZOOMTILE = -1;
 
-    # Redraw after zoom
-    # CUR_DRAW_WIDGET.queue_draw()
+        # Restore scale factor
+        global SAVE_SCALE_FACTOR
+        CUR_SCALE_FACTOR = SAVE_SCALE_FACTOR
+
+        # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
+        zoom(1)
+        # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
 
 def button_press_handler(widget, event):
     if event.type == gtk.gdk.BUTTON_PRESS:   print "\nsingle click "
@@ -2062,7 +2193,7 @@ def button_press_handler(widget, event):
     # 
     if (CUR_CURSOR == 'arrow') and (event.type == gtk.gdk._2BUTTON_PRESS):
         print "zoom to tile"
-        zoom_to_tile(event)
+        zoom_to_tile1(event)
 
         # Redraw after zoom
         CUR_DRAW_WIDGET.queue_draw()
@@ -2121,8 +2252,8 @@ class Tile:
 
         # If not zooming, draw relative to tile's col, row coords;
         # (otherwise draw tile at canvas' actual 0,0)
-        # if (1):
-        if (ZOOMTILE == -1):
+        # if (ZOOMTILE == -1):
+        if (1):
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
         # note draw_pe MUST HAPPEN BEFORE CALLING connectwires()
