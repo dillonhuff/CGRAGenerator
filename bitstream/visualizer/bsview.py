@@ -2049,8 +2049,20 @@ def button_press_handler(widget, event):
     if event.type == gtk.gdk.BUTTON_PRESS:   print "\nsingle click "
     if event.type == gtk.gdk._2BUTTON_PRESS: print "\ndouble click "
 
+    # ZOOM TO TILE (ugh FIXME should be a separate routine)
+    # Double click should ALWAYS be zoom-to-tile maybe
+    # Nope that's just a mess
+    # 
+    if (CUR_CURSOR == 'arrow') and (event.type == gtk.gdk._2BUTTON_PRESS):
+        print "zoom to tile"
+        zoom_to_tile(event)
+
+        # Redraw after zoom
+        CUR_DRAW_WIDGET.queue_draw()
+
+
     # print "CC='%s'" % CUR_CURSOR
-    if (CUR_CURSOR == 'magplus'):
+    elif (CUR_CURSOR == 'magplus'):
 
         # global ZU1; ZU1 = SW.get_hadjustment().upper
 
@@ -2063,24 +2075,22 @@ def button_press_handler(widget, event):
         # recenter(sf*event.x, sf*event.y)
         recenter(event.x, event.y)
 
-        return
 
-    if (CUR_CURSOR == 'magminus'):
+    elif (CUR_CURSOR == 'magminus'):
         zoom('out')
         recenter(event.x, event.y)
-        return
 
-    # ZOOM TO TILE (ugh FIXME should be a separate routine)
-    # Only zoom on 1) normal (arrow) cursor and 2) double-click
-
-    if event.type != gtk.gdk._2BUTTON_PRESS: return
-    if (CUR_CURSOR != 'arrow'): return
-
-    print "zoom to tile"
-    zoom_to_tile(event)
-
-    # Redraw after zoom
-    CUR_DRAW_WIDGET.queue_draw()
+#     # ZOOM TO TILE (ugh FIXME should be a separate routine)
+#     # Only zoom on 1) normal (arrow) cursor and 2) double-click
+# 
+#     if event.type != gtk.gdk._2BUTTON_PRESS: return
+#     if (CUR_CURSOR != 'arrow'): return
+# 
+#     print "zoom to tile"
+#     zoom_to_tile(event)
+# 
+#     # Redraw after zoom
+#     CUR_DRAW_WIDGET.queue_draw()
 
 class Tile:
     # id = -1;
@@ -2109,6 +2119,9 @@ class Tile:
     def draw(self, cr):
         cr.save()
 
+        # If not zooming, draw relative to tile's col, row coords;
+        # (otherwise draw tile at canvas' actual 0,0)
+#        if (1):
         if (ZOOMTILE == -1):
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
