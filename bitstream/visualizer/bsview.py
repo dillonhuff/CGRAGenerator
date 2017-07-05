@@ -1547,7 +1547,6 @@ def draw_one_tile(cr, tileno):
     ########################################################################
     # Scale and translate
 
-
     set_zoom_scale_factor()
     cr.scale(CUR_SCALE_FACTOR,CUR_SCALE_FACTOR)
 
@@ -1927,6 +1926,7 @@ class CGRAWin(gtk.Window):
         Gtk.main_quit()
 
 def adjust_scrollbar(adj, amt):
+    DBG=0
     # ps = adj.page_size
 
     pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
@@ -1936,14 +1936,14 @@ def adjust_scrollbar(adj, amt):
     sf = pagewidth/hupper
     scaled_amt = sf * amt
 
-    print "  hupper is ", ; print hupper
-    print "  pagewidth is ", ; print pagewidth
-    print "  scale factor is", ; print sf
-    print "  scaled  x = ", ; print scaled_amt
+    if DBG: print "  hupper is ", ; print hupper
+    if DBG: print "  pagewidth is ", ; print pagewidth
+    if DBG: print "  scale factor is", ; print sf
+    if DBG: print "  scaled  x = ", ; print scaled_amt
 
     amt_prime = (scaled_amt-10) - adj.page_size/2
 
-    print "Adjusting to f(%d,%d)" % (amt_prime, pagewidth),
+    if DBG: print "Adjusting to f(%d,%d)" % (amt_prime, pagewidth),
 
 
     # print "about to adjust..."; sys.stdout.flush(); time.sleep(2)
@@ -1954,7 +1954,7 @@ def adjust_scrollbar(adj, amt):
 
     u = adj.upper; l = adj.lower; v = adj.value
     # print "AFTER  lvu = (%4d-> %4d    <-%-4d)" % (int(l), int(v), int(u))
-    print "[%4d|-> %4d   <-|%-4d]" % (int(l), int(v), int(u))
+    if DBG: print "[%4d|-> %4d   <-|%-4d]" % (int(l), int(v), int(u))
     # print "PAGESIZE %d" % ps
     
 def recenter(x,y):
@@ -1975,28 +1975,35 @@ def recenter(x,y):
     # print "ALLOCX", ; print SW.get_allocation().x
     # print "ALLOCX_DA", ; print CUR_DRAW_WIDGET.get_allocation().x
 
-def zoom(in_or_out):
+# def zoom(in_or_out):
+def zoom(sf):
 
-    # Set scale factor
-    # TODO/FIXME these should be globals / BSVIEW top-level parms / env vars
-    if (in_or_out == 'in' ): sf = 1.2
-    if (in_or_out == 'out'): sf = 0.8
+#     # Set scale factor
+#     # TODO/FIXME these should be globals / BSVIEW top-level parms / env vars
+#     if (in_or_out == 'in' ): sf = 1.2
+#     if (in_or_out == 'out'): sf = 0.8
 
     global CUR_SCALE_FACTOR
-    # print "magplus! 1 scale factor now %s" % str(CUR_SCALE_FACTOR)
-    CUR_SCALE_FACTOR = round(CUR_SCALE_FACTOR * sf, 1)
-    # CUR_SCALE_FACTOR = float(CUR_SCALE_FACTOR * sf)
-    # float v. round doesn't seem to make much diff
+
+    # round = DISASTER.  Why?  WHY??
+    # CUR_SCALE_FACTOR = round(CUR_SCALE_FACTOR * sf, 1)
+
+    CUR_SCALE_FACTOR = float(CUR_SCALE_FACTOR * sf)
+    # print "magplus! 2 scale factor now %s" % str(CUR_SCALE_FACTOR)
+    # float v. round doesn't seem to make much diff WRONG!  IDIOT!!
+    # round gets stuck at (0.2 * (1.2,0.8)) = (0.2)
     
     (h,w) = CUR_DRAW_WIDGET.get_size_request()
 
     # global ZU1; ZU1 = SW.get_hadjustment().upper; print "pre-zoom hupper = " + str(ZU1)
 
-    print "ZOOM 1.2x :",
+    print "ZOOM %sx :" % str(sf), # Usually sf is 0.8 or 1.2
     print "Drawing area size (%d,%d) " % (h,w),
 
     h = int(WIN_HEIGHT * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
     w = int(WIN_WIDTH  * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+
+    # (h,w) = (h*sf,w*sf) # not sure why, but the other one seems to work better i guess
 
     CUR_DRAW_WIDGET.set_size_request(h, w)
     print "=> (%d,%d)" % (h,w)
@@ -2063,21 +2070,14 @@ def button_press_handler(widget, event):
 
     # print "CC='%s'" % CUR_CURSOR
     elif (CUR_CURSOR == 'magplus'):
-
-        # global ZU1; ZU1 = SW.get_hadjustment().upper
-
-        zoom('in')
-
-        # recenter(100,0)
-        # recenter(event.x,event.y)
         print "  clicked x = ", ; print event.x
-
-        # recenter(sf*event.x, sf*event.y)
+        zoom(1.2)
+        # recenter(100,0)
         recenter(event.x, event.y)
 
 
     elif (CUR_CURSOR == 'magminus'):
-        zoom('out')
+        zoom(0.8)
         recenter(event.x, event.y)
 
 #     # ZOOM TO TILE (ugh FIXME should be a separate routine)
@@ -2121,7 +2121,7 @@ class Tile:
 
         # If not zooming, draw relative to tile's col, row coords;
         # (otherwise draw tile at canvas' actual 0,0)
-#        if (1):
+        # if (1):
         if (ZOOMTILE == -1):
             cr.translate(self.col*CANVAS_WIDTH, self.row*CANVAS_HEIGHT)
 
