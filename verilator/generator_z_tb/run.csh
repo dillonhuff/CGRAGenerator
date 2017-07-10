@@ -1,6 +1,16 @@
 #!/bin/csh -f
 
-set echo
+# Build a tmp space for intermediate files
+set tmpdir = deleteme
+if (! -e $tmpdir) then
+  unset ERR
+  mkdir $tmpdir || set ERR
+  if ($?ERR) then
+    echo "Could not make dir '$tmpdir'"
+    exit 99
+  endif
+endif
+
 
 # setenv CGRA_GEN_USE_MEM 1
 # setenv CGRA_GEN_ALL_REG 1
@@ -43,7 +53,7 @@ set config    = ../../bitstream/examples/cd387-good.bs
 set DELAY = '0,0'
 
 set input     = io/gray_small.png
-set output    = /tmp/output.raw
+set output    = $tmpdir/output.raw
 set nclocks   = "1M"
 unset tracefile
 
@@ -184,7 +194,7 @@ endif
 
 # Swizzle the bitstream to match new mem regime (unless bypassed)
 
-set swizzled = /tmp/{$config:t}.swizzled
+set swizzled = $tmpdir/{$config:t}.swizzled
 if (-e $swizzled) rm $swizzled
 
 # if ($?OLDMEM) then
@@ -204,7 +214,7 @@ cp $config $swizzled
 
 echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
 
-set decoded = /tmp/{$config:t}.decoded
+set decoded = $tmpdir/{$config:t}.decoded
 if (-e $decoded) rm $decoded
 # ../../bitstream/decoder/decode.py $config > $decoded
 # New memtile regime swaps r,c tile addresses HA
@@ -226,7 +236,7 @@ unset echo >& /dev/null
 echo; sed -n '/O Summary/,$p' $decoded; echo
 
 # Clean bitstream (strip out hacked-in IO info)
-set newbs = /tmp/bs.txt
+set newbs = $tmpdir/bs.txt
 if (-e $newbs) rm $newbs
 echo "Will strip out IO hack from '$config'"
 echo "to create clean bitstream '$newbs'"
@@ -373,8 +383,8 @@ echo "Building the verilator simulator executable..."
     # To:
     #   assign wen = WENHACK
 
-    mv $vdir/memory_core_unq1.v /tmp/memory_core_unq1.v.orig
-    cat /tmp/memory_core_unq1.v.orig \
+    mv $vdir/memory_core_unq1.v $tmpdir/memory_core_unq1.v.orig
+    cat $tmpdir/memory_core_unq1.v.orig \
       | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
       > $vdir/memory_core_unq1.v
 
@@ -388,8 +398,8 @@ echo "Building the verilator simulator executable..."
     echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
     echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
     echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
-    echo diff /tmp/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
-    diff /tmp/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
+    echo diff $tmpdir/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
+    diff $tmpdir/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
     echo '------------------------------------------------------------------------'
     echo
     echo
@@ -421,15 +431,15 @@ echo "Building the verilator simulator executable..."
   echo
 
   verilator $myswitches -Wall $myswitches --cc --exe $testbench -y $vdir $vfiles --top-module $top \
-    >& /tmp/verilator.out
+    >& $tmpdir/verilator.out
 
   set verilator_exit_status = $status
 
   echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
   echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
-  echo '%Warning3 See /tmp/verilator.out for full log.'
+  echo '%Warning3 See $tmpdir/verilator.out for full log.'
   echo
-  cat /tmp/verilator.out \
+  cat $tmpdir/verilator.out \
     | awk -f ./run-verilator-warning-filter.awk \
     | head -n 40 
 
@@ -475,17 +485,17 @@ echo '  First prepare input and output files...'
   else if ("$input:e" == "png") then
     # Convert to raw format
     echo "  Converting input file '$input' to '.raw'..."
-    echo "  io/myconvert.csh $input /tmp/input.raw"
+    echo "  io/myconvert.csh $input $tmpdir/input.raw"
     echo
     echo -n "  "
-    io/myconvert.csh $input /tmp/input.raw
-    set in = "-input /tmp/input.raw"
+    io/myconvert.csh $input $tmpdir/input.raw
+    set in = "-input $tmpdir/input.raw"
 
   else if ("$input:e" == "raw") then
     echo "Using raw input from '$input'..."
-    echo cp $input /tmp/input.raw
-    cp $input /tmp/input.raw
-    set in = "-input /tmp/input.raw"
+    echo cp $input $tmpdir/input.raw
+    cp $input $tmpdir/input.raw
+    set in = "-input $tmpdir/input.raw"
 
   else
     echo "ERROR Input file '$input' has invalid extension"
@@ -494,7 +504,7 @@ echo '  First prepare input and output files...'
   endif
 
   # echo "First few lines of input file for comparison..."
-  # od -t x1 /tmp/input.raw | head
+  # od -t x1 $tmpdir/input.raw | head
 
   # If no output requested, simulator will not create an output file.
   set out = ''
@@ -522,13 +532,13 @@ echo '  First prepare input and output files...'
       $delay \
       $trace \
       $nclocks \
-      | tee /tmp/run.log.$$ \
+      | tee $tmpdir/run.log.$$ \
       || exit -1
   unset echo >& /dev/null
   echo -n " TIME NOW: "; date
 
   unset FAIL
-  grep FAIL /tmp/run.log.$$ && set FAIL
+  grep FAIL $tmpdir/run.log.$$ && set FAIL
 
 
   echo
@@ -536,14 +546,14 @@ echo '  First prepare input and output files...'
 
   if ($?input) then
     echo
-    ls -l /tmp/input.raw $output
+    ls -l $tmpdir/input.raw $output
 
     if ("$output:t" == "conv_1_2_CGRA_out.raw") then
       # echo; set cmd = "od -t u1 $output"; echo $cmd; $cmd | head
 
       echo; echo "FOUND conv_1_2 output; converting to 9x9..."
-      ./conv_1_2_convert < $output > /tmp/tmp.raw
-      mv /tmp/tmp.raw $output
+      ./conv_1_2_convert < $output > $tmpdir/tmp.raw
+      mv $tmpdir/tmp.raw $output
       ls -l $output
 
       # echo; set cmd = "od -t u1 $output"; echo $cmd; $cmd | head
@@ -552,8 +562,8 @@ echo '  First prepare input and output files...'
 
 
     echo
-    set cmd = "od -t x1 /tmp/input.raw"
-    set cmd = "od -t u1 /tmp/input.raw"
+    set cmd = "od -t x1 $tmpdir/input.raw"
+    set cmd = "od -t u1 $tmpdir/input.raw"
     echo $cmd; $cmd | head
 
     echo
