@@ -1564,7 +1564,14 @@ def draw_handler(widget, cr):
     context = widget.window.cairo_create()
     cr = context
 
+    # First redraw after zoom-to-tile (ZOOMTILE != -1)
+    # is a bogus redraw centered at (0,0) after which
+    # there will be another redraw recentered in the right place.
+    # W'e optimally like to suppress the first redraw but
+    # I'm not going to fix that now.  FIXME later
+    # if (ZOOMTILE != -1): print "predrawall"; sys.stdout.flush(); time.sleep(2)
     draw_all_tiles(cr);
+    # if (ZOOMTILE != -1): print "postdrawall"; sys.stdout.flush(); time.sleep(2)
 
     # ON EACH REDRAW
     # Must check to see if tile_zoom_in has taken effect yet
@@ -1709,17 +1716,17 @@ def get_icon_arrow():
         "    ....        ",
         "    . ...       ",
         "       ..       ",
-        "        ..      "
+        "        ..      ",
         "        ..      ",
         "        ..      ",
         "                ",
-        "                ",
+        "                "
         ]
 
-    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data (xpm_data)
-    
     # http://www.pygtk.org/pygtk2reference/class-gtkiconset.html
     # http://www.pygtk.org/pygtk2reference/class-gtkimage.html#method-gtkimage--set-from-pixbuf
+    # pixbuf_new_from_xpm_data() segfaults if xpm_data has its commas wrong :(
+    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
     image = gtk.Image()
     image.set_from_icon_set(
         gtk.IconSet(pixbuf),
@@ -1753,7 +1760,7 @@ def get_cursor_magplus():
         "               "
         ]
 
-    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data (xpm_data)
+    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
     display = gtk.gdk.display_get_default()
     magplus = gtk.gdk.Cursor(display, pixbuf, 07, 7)
     global CUR_CURSOR
@@ -1784,7 +1791,7 @@ def get_cursor_magminus():
         "               "
         ]
 
-    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data (xpm_data)
+    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
     display = gtk.gdk.display_get_default()
     magminus = gtk.gdk.Cursor(display, pixbuf, 07, 7)
     global CUR_CURSOR
@@ -1888,7 +1895,6 @@ class CGRAWin(gtk.Window):
         button_exit   = gtk.Button("exit")
         button_exit.connect("clicked", self.button_exit_action)
         button_exit.show()
-
 
         # Pack buttons into a toolbar on top
         expand = False; fill = False;
@@ -2056,6 +2062,7 @@ def zoom(sf):
 #     if (in_or_out == 'in' ): sf = 1.2
 #     if (in_or_out == 'out'): sf = 0.8
 
+    DBG=0
     global CUR_SCALE_FACTOR
 
     # round = DISASTER.  Why?  WHY??
@@ -2070,8 +2077,8 @@ def zoom(sf):
 
     # global ZU1; ZU1 = SW.get_hadjustment().upper; print "pre-zoom hupper = " + str(ZU1)
 
-    print "ZOOM %sx :" % str(sf), # Usually sf is 0.8 or 1.2
-    print "Drawing area size (%d,%d) " % (h,w),
+    if DBG: print "ZOOM %sx :" % str(sf), # Usually sf is 0.8 or 1.2
+    if DBG: print "Drawing area size (%d,%d) " % (h,w),
 
     h = int(WIN_HEIGHT * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
     w = int(WIN_WIDTH  * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
@@ -2094,9 +2101,9 @@ def zoom_to_tile1(event):
     DBG = 0
 
     # Need to know current scale factor so we keep track of it in a global
-    print ""
-    print "CUR_SCALE_FACTOR %s" % CUR_SCALE_FACTOR
-    print ""
+    if DBG: print ""
+    if DBG: print "CUR_SCALE_FACTOR %s" % CUR_SCALE_FACTOR
+    if DBG: print ""
 
     # Can't get scale factor from context matrix, it's always (1,0,0,1,0,0) why?
     if (0): print "matrix = " + str(DRAW_HANDLER_CR.get_matrix())
@@ -2116,7 +2123,7 @@ def zoom_to_tile1(event):
 
         # tileno = find_tile_clicked(event.x, event.y)
         ########################################################################
-        DBG = 1
+        DBG = 0
         # x,y coordinates of button-press
         x = event.x; y = event.y
         if DBG: print "clicked on %d %d" % (x,y)
@@ -2198,14 +2205,12 @@ def button_press_handler(widget, event):
         # Redraw after zoom
         CUR_DRAW_WIDGET.queue_draw()
 
-
     # print "CC='%s'" % CUR_CURSOR
     elif (CUR_CURSOR == 'magplus'):
         print "  clicked x = ", ; print event.x
         zoom(1.2)
         # recenter(100,0)
         recenter(event.x, event.y)
-
 
     elif (CUR_CURSOR == 'magminus'):
         zoom(0.8)
@@ -2369,6 +2374,7 @@ def build_and_launch_main_window(title):
     print "------------------------------------------------------------------------"
     print title
     print "------------------------------------------------------------------------"
+
     win = CGRAWin();
     win.props.title = title
     if DBG: win.move(0,0) # put window at top left corner of screen
