@@ -119,6 +119,10 @@ while ($#argv)
       setenv CGRA_GEN_USE_MEM 1;
       breaksw;
 
+    case -egregious_conv21_hack:
+      set EGREGIOUS_CONV21_HACK
+      breaksw
+
     case '-gen':
       set GENERATE = '-gen'; breaksw;
 
@@ -236,7 +240,9 @@ unset echo >& /dev/null
 echo; sed -n '/O Summary/,$p' $decoded; echo
 
 # Clean bitstream (strip out hacked-in IO info)
-set newbs = $tmpdir/bs.txt
+# set newbs = $tmpdir/bs.txt
+set newbs = $decoded.bs
+
 if (-e $newbs) rm $newbs
 echo "Will strip out IO hack from '$config'"
 echo "to create clean bitstream '$newbs'"
@@ -298,6 +304,18 @@ if ("$config:e" == "xml") then
 else
   echo "Use existing config bitstream '$config'..."
   echo
+endif
+
+if ($?EGREGIOUS_CONV21_HACK) then
+  echo ------------------------------------
+  echo WARNING: USING EGREGIOUS_CONV21_HACK
+  echo WARNING: USING EGREGIOUS_CONV21_HACK
+  echo WARNING: USING EGREGIOUS_CONV21_HACK
+  echo ******  DANGER WILL ROBINSON  ******
+  echo ------------------------------------
+
+  mv $config $tmpdir/prehack.bs
+  bin/egregious_conv21_hack.csh $tmpdir/prehack.bs $config 
 endif
 
 echo "BITSTREAM:"
