@@ -344,8 +344,12 @@ def cb_decode(EE, DDDDDDDD):
     st["03.00000008"] = "wireB <= in_s2t3"
     st["03.00000009"] = "wireB <= in_s2t4"
 
-    cb_connection = st[EE + '.' + DDDDDDDD]
-    return st[EE + '.' + DDDDDDDD]
+    try:
+        cb_connection = st[EE + '.' + DDDDDDDD]
+    except:
+        cb_connection = "unknown 44"
+        
+    return cb_connection
 
 
 #     if (GRIDSIZE == "8x8"):
@@ -704,6 +708,8 @@ for line in inputstream:
 
     # Address RREETTTT
     f = re.search("(..)(..)(....) (........)", line);
+    if (not f): continue
+
     RR = f.group(1);       # register
     EE = f.group(2);       # element
     TTTT = f.group(3);     # tile
