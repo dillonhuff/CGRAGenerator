@@ -22,17 +22,42 @@ if ("$sfx" == "bs")  set BS
 set oldbsa = $1
 set newbsa = /tmp/newbsa.$$
 
-echo "Changing fifo_depth from 10 back to 7"
-echo Found `grep 00000054 $oldbsa | wc -l` instances of fifo_depth=10
+cp $oldbsa $newbsa.1
+cp $oldbsa $newbsa.2
+
+echo "Looking for fifo_depth 10"
+set n10 = `grep 00000054 $oldbsa | wc -l`
+if ($n10 > 0) then
+  echo "Found $n10 instance(s) of fifo_depth=10"
+  echo "Changing fifo_depth from 10 back to 7"
+  sed 's/00000054/0000003C/'              $oldbsa > $newbsa.1
+  if ($?BSA) then
+    sed 's/fifo_depth = 10/fifo_depth = 7/' $newbsa.1 > $newbsa.2
+  endif
+endif
 echo
 
-sed 's/00000054/0000003C/'              $oldbsa > $newbsa.1
-
-if ($?BSA) then
-  sed 's/fifo_depth = 10/fifo_depth = 7/' $newbsa.1 > $newbsa.2
-else
-  cat $newbsa.1 > $newbsa.2
+# 0008002D 00000034
+echo "Looking for fifo_depth 6"
+set n6 = `grep 00000034 $oldbsa | wc -l`
+if ($n6 > 0) then
+  echo "Found $n6 instance(s) of fifo_depth=6"
+  echo "Changing fifo_depth from 6 to 7"
+  sed 's/00000034/0000003C/'              $oldbsa > $newbsa.1
+  if ($?BSA) then
+    sed 's/fifo_depth = 6/fifo_depth = 7/' $newbsa.1 > $newbsa.2
+  endif
 endif
+
+# echo Found `grep 00000054 $oldbsa | wc -l` instances of fifo_depth=10
+# echo
+
+
+# if ($?BSA) then
+#   sed 's/fifo_depth = 10/fifo_depth = 7/' $newbsa.1 > $newbsa.2
+# else
+#   cat $newbsa.1 > $newbsa.2
+# endif
 
 diff $oldbsa $newbsa.2 | grep '<' | awk '{print "    " $0}'
 echo

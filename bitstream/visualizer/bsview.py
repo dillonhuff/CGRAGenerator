@@ -2575,9 +2575,11 @@ def process_decoded_bitstream(bs):
         # Find inputs and outputs
         # Note this must happen BEFORE finding other op names :(
         if   re.search("op = input",  line):
-            # tile[tileno].label = "IN"
             (operand['A'],operand['B']) = ('wire','wire')
-        # elif re.search("op = output", line): tile[tileno].label = "OUT"
+
+        elif   re.search("op = output",  line):
+            (operand['A'],operand['B']) = ('wire','wire')
+
         elif re.search("mem_out",     line): tile[tileno].label = "MEM"
 
         # Transformations
