@@ -2557,6 +2557,9 @@ def process_decoded_bitstream(bs):
         if (DBG>1): print line.rstrip()
         line = line.strip() # why not
 
+        # This happens sometimes
+        if re.search('^cat.*', line): continue;
+
         # Need to know current tile
         # Every non-comment line is a bitstream ADDR/DATA pair;
         # Last four hex digits of 8-digit ADDR is tile number
