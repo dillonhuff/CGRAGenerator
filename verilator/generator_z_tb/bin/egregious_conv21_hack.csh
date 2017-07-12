@@ -24,6 +24,8 @@ set newbsa = /tmp/newbsa.$$
 
 cp $oldbsa $newbsa.1
 cp $oldbsa $newbsa.2
+cp $oldbsa $newbsa.3
+cp $oldbsa $newbsa.4
 
 echo "Looking for fifo_depth 10"
 set n10 = `grep 00000054 $oldbsa | wc -l`
