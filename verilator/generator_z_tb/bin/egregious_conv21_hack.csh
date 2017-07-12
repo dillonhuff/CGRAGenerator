@@ -33,6 +33,7 @@ if ($n10 > 0) then
   echo "Found $n10 instance(s) of fifo_depth=10"
   echo "Changing fifo_depth from 10 back to 7"
   sed 's/00000054/0000003C/'              $oldbsa > $newbsa.1
+  cp $newbsa.1 $newbsa.2
   if ($?BSA) then
     sed 's/fifo_depth = 10/fifo_depth = 7/' $newbsa.1 > $newbsa.2
   endif
@@ -46,6 +47,7 @@ if ($n6 > 0) then
   echo "Found $n6 instance(s) of fifo_depth=6"
   echo "Changing fifo_depth from 6 to 7"
   sed 's/00000034/0000003C/'              $oldbsa > $newbsa.1
+  cp $newbsa.1 $newbsa.2
   if ($?BSA) then
     sed 's/fifo_depth = 6/fifo_depth = 7/' $newbsa.1 > $newbsa.2
   endif
@@ -66,7 +68,7 @@ echo
 diff $oldbsa $newbsa.2 | grep '>' | awk '{print "    " $0}'
 echo
 
-goto NOREG
+# goto NOREG
 
 ##############################################################################
 echo ""
@@ -85,17 +87,18 @@ echo
 #    # data[(4, 0)] : op = add
 
 # Print out the adder info found
-set lno = `cat -n $oldbsa | egrep 'FF00.... 0000A000' | awk '{print $1}'`
+set lno = `cat -n $newbsa.2 | egrep 'FF00.... 0000A000' | awk '{print $1}'`
 
 
 if ($?BSA) then
   @ lno_end = $lno + 3
-  sed -n "${lno},${lno_end}p" $oldbsa
+  sed -n "${lno},${lno_end}p" $newbsa.2
   echo
 endif
 
 # Change adder to read B input from reg instead of wire
 sed 's/0000A000/00009000/' $newbsa.2 > $newbsa.3
+cp $newbsa.3 $newbsa.4
 
 
 if ($?BSA) then
