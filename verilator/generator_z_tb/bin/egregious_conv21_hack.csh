@@ -68,7 +68,11 @@ echo
 diff $oldbsa $newbsa.2 | grep '>' | awk '{print "    " $0}'
 echo
 
-# goto NOREG
+cp $newbsa.2 $newbsa.3
+cp $newbsa.3 $newbsa.4
+
+
+goto NOREG
 
 ##############################################################################
 echo ""
