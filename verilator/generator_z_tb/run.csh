@@ -296,7 +296,7 @@ else
     ../../bin/generate.csh || exit -1
   else
     echo not verbose
-    ../../bin/generate.csh >& /dev/null || exit -1
+    ../../bin/generate.csh |& tail -n 5 || exit -1
   endif
 
 
