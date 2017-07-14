@@ -292,9 +292,11 @@ else
   echo "Building CGRA because you asked for it with '-gen'..."
 
   if ($?VERBOSE) then
+    echo verbose
     ../../bin/generate.csh || exit -1
   else
-    ../../bin/generate.csh > /dev/null || exit -1
+    echo not verbose
+    ../../bin/generate.csh >& /dev/null || exit -1
   endif
 
 
