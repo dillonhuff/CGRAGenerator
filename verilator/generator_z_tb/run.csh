@@ -124,9 +124,9 @@ while ($#argv)
       setenv CGRA_GEN_USE_MEM 1;
       breaksw;
 
-    case -egregious_conv21_hack:
-      set EGREGIOUS_CONV21_HACK
-      breaksw
+#     case -egregious_conv21_hack:
+#       set EGREGIOUS_CONV21_HACK
+#       breaksw
 
     case '-gen':
       set GENERATE = '-gen'; breaksw;
@@ -231,15 +231,12 @@ if (-e $decoded) rm $decoded
 # ../../bitstream/decoder/decode.py -newmem $config > $decoded
 
 if ($?OLDMEM) then
-  set echo
+  echo ../../bitstream/decoder/decode.py $swizzled
   ../../bitstream/decoder/decode.py $swizzled > $decoded
 else
-  set echo
+  echo ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled
   ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled > $decoded
 endif
-
-unset echo >& /dev/null
-
 
 # Show IO info derived from bitstream
 echo; sed -n '/O Summary/,$p' $decoded; echo
@@ -253,9 +250,11 @@ echo "Will strip out IO hack from '$config'"
 echo "to create clean bitstream '$newbs'"
 echo
 grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
-diff $config $newbs | grep -v d
+if ($?VERBOSE) then
+  diff $config $newbs | grep -v d
+  echo
+endif
 set config = $newbs
-echo
 
 # Backslashes line up better when printed...
 echo "Running with the following switches:"
@@ -275,9 +274,7 @@ echo "   -nclocks  $nclocks                 \"
 set nclocks = `echo $nclocks | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
 set nclocks = "-nclocks $nclocks"
 
-
-which verilator
-
+# which verilator
 
 # By default, we assume generate has already been done.
 # Otherwise, user must set "-gen" to make it happen here.
@@ -292,19 +289,14 @@ else
   echo "Building CGRA because you asked for it with '-gen'..."
 
   if ($?VERBOSE) then
-    echo verbose
     ../../bin/generate.csh || exit -1
   else
-    echo not verbose
-    ../../bin/generate.csh |& tail -n 5 || exit -1
+    ../../bin/generate.csh -q || exit -1
   endif
 
-
-
-
   set gztop = ../../hardware/generator_z/top/
-  echo DIFF
-  ls -l $gztop/cgra_info.txt $gztop/examples/*.txt
+  # echo DIFF
+  # ls -l $gztop/cgra_info.txt $gztop/examples/*.txt
 endif
 
 # If config files has an xml extension, use Ankita's perl script
@@ -317,23 +309,25 @@ if ("$config:e" == "xml") then
   set config = tmpconfig.dat
 else
   echo "Use existing config bitstream '$config'..."
+endif
+
+# if ($?EGREGIOUS_CONV21_HACK) then
+#   echo ------------------------------------
+#   echo WARNING: USING EGREGIOUS_CONV21_HACK
+#   echo WARNING: USING EGREGIOUS_CONV21_HACK
+#   echo WARNING: USING EGREGIOUS_CONV21_HACK
+#   echo ******  DANGER WILL ROBINSON  ******
+#   echo ------------------------------------
+# 
+#   mv $config $tmpdir/prehack.bs
+#   bin/egregious_conv21_hack.csh $tmpdir/prehack.bs $config 
+# endif
+
+if ($?VERBOSE) then
   echo
+  echo "BITSTREAM:"
+  cat $config
 endif
-
-if ($?EGREGIOUS_CONV21_HACK) then
-  echo ------------------------------------
-  echo WARNING: USING EGREGIOUS_CONV21_HACK
-  echo WARNING: USING EGREGIOUS_CONV21_HACK
-  echo WARNING: USING EGREGIOUS_CONV21_HACK
-  echo ******  DANGER WILL ROBINSON  ******
-  echo ------------------------------------
-
-  mv $config $tmpdir/prehack.bs
-  bin/egregious_conv21_hack.csh $tmpdir/prehack.bs $config 
-endif
-
-echo "BITSTREAM:"
-cat $config
 
 
 echo ""
@@ -350,28 +344,28 @@ echo ""
     #     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
    
     set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
-    echo "  IN  $inwires"
+    # echo "  IN  $inwires"
 
     set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
-    echo "  OUT $outwires"
+    # echo "  OUT $outwires"
 
-    set yikeswires = `egrep '^# YIKES' $decoded | awk '{print $NF}'`
-    if ("$yikeswires" != "") then
-        set yikeswires = "-yikeswires '$yikeswires'"
-    endif
-    echo "  YIKES $yikeswires"
+    # set yikeswires = `egrep '^# YIKES' $decoded | awk '{print $NF}'`
+    # if ("$yikeswires" != "") then
+    #     set yikeswires = "-yikeswires '$yikeswires'"
+    # endif
+    # echo "  YIKES $yikeswires"
     
-    echo
+    # echo
     echo "  inwires  = $inwires"
     echo "  outwires = $outwires"
-    echo "  yikeswires = $yikeswires"
+    # echo "  yikeswires = $yikeswires"
     echo
 
 echo "END find input and output wires"
 
 echo ""
 echo '------------------------------------------------------------------------'
-echo ""
+# echo ""
 
 set vdir = ../../hardware/generator_z/top/genesis_verif
 if (! -e $vdir) then
@@ -389,24 +383,26 @@ echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
     ./run-wirehack.csh \
         -inwires "$inwires" \
         -outwires "$outwires" \
-        -vtop "$vdir/top.v"
+        -vtop "$vdir/top.v" > $tmpdir/wirehack.log
+
+    if ($?VERBOSE) cat $tmpdir/wirehack.log
 
 echo END top.v manipulation
 
 echo ''
 echo '------------------------------------------------------------------------'
-echo ''
 echo "Building the verilator simulator executable..."
 
   # (Temporary (I hope)) SRAM hack(s)
 
   echo
   echo '  SRAM hack'
+  echo '  SRAM hack'
+  echo '  SRAM hack'
   if ($?CGRA_GEN_USE_MEM) then
      cp ./sram_stub.v $vdir/sram_512w_16b.v
      ls -l $vdir/sram*
   endif
-  echo
 
   # Temporary wen/ren hacks.  
   if ($?HACKMEM) then
@@ -483,7 +479,6 @@ echo "Building the verilator simulator executable..."
 
 echo ''
 echo '------------------------------------------------------------------------'
-echo ''
 echo "Build the simulator..."
 
   # build C++ project
@@ -491,10 +486,13 @@ echo "Build the simulator..."
   echo
   echo "# Build testbench"
 
-  echo
-  echo "make \"
-  echo "  VM_USER_CFLAGS='-DINWIRE=top->$inwires -DOUTWIRE=top->$outwires' \"
-  echo "  -j -C obj_dir/ -f V$top.mk V$top"
+  if ($?VERBOSE) then
+    echo
+    echo "make \"
+    echo "  VM_USER_CFLAGS='-DINWIRE=top->$inwires -DOUTWIRE=top->$outwires' \"
+    echo "  -j -C obj_dir/ -f V$top.mk V$top"
+  endif
+
   echo
   echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
   echo
@@ -504,12 +502,12 @@ echo "Build the simulator..."
     >& $tmpdir/make_vtop.log \
     || exit -1
 
-  if ($?VERBOSE) cat $tmpdir/make_vtop.log
+  if ($?VERBOSE) then
+    cat $tmpdir/make_vtop.log
+    echo
+  endif
 
-
-echo ''
 echo '------------------------------------------------------------------------'
-echo ''
 echo "Run the simulator..."
 echo ''
 echo '  First prepare input and output files...'
@@ -565,6 +563,19 @@ echo '  First prepare input and output files...'
   echo "# Run executable simulation"
   echo -n " TIME NOW: "; date
 
+  # 00020: Two times 19 = 38  *PASS*
+  # 00021: Two times 22 = 44  *PASS*
+  # 00022: Two times 23 = 46  *PASS*
+  # ...
+  # 00058: Two times 31 = 62  *PASS*
+  # 00059: Two times 29 = 58  *PASS*
+
+  set quietfilter = (grep -v "scanned config")
+  if ($?VERBOSE) set quietfilter = (cat)
+
+  set qf2 = (grep -v "^000[23456789].*Two times")
+  if ($?VERBOSE) set qf2 = (cat)
+
   set echo
     obj_dir/V$top \
       -config $config \
@@ -574,6 +585,7 @@ echo '  First prepare input and output files...'
       $trace \
       $nclocks \
       | tee $tmpdir/run.log.$$ \
+      | $quietfilter:q | $qf2:q \
       || exit -1
   unset echo >& /dev/null
   echo -n " TIME NOW: "; date
