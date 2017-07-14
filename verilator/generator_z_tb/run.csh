@@ -474,7 +474,7 @@ echo "Building the verilator simulator executable..."
       | awk -f ./run-verilator-warning-filter.awk \
       | head -n 40 
   else
-    echo "See $tmpdir/verilator.out for full log of verilator warnings.'
+    echo "See $tmpdir/verilator.out for full log of verilator warnings."
   endif
 
   if ($verilator_exit_status != 0) exit -1
