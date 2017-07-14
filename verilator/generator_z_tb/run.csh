@@ -570,7 +570,7 @@ echo '  First prepare input and output files...'
       # echo; set cmd = "od -t u1 $output"; echo $cmd; $cmd | head
 
       echo; echo "FOUND conv_1_2 output; converting to 9x9..."
-      ./conv_1_2_convert < $output > $tmpdir/tmp.raw
+      ./bin/conv_1_2_convert < $output > $tmpdir/tmp.raw
       mv $tmpdir/tmp.raw $output
       ls -l $output
 
@@ -578,6 +578,12 @@ echo '  First prepare input and output files...'
 
     endif
 
+    if ("$output:t" == "conv_bw_CGRA_out.raw") then
+      echo; echo "FOUND conv_bw output; converting to 62x62..."
+      ./bin/crop31 < $output > $tmpdir/tmp.raw
+      mv $tmpdir/tmp.raw $output
+      ls -l $output
+    endif
 
     echo
     set cmd = "od -t x1 $tmpdir/input.raw"
