@@ -14,7 +14,8 @@ addons:
 script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
-  - cd testdir; make test_all
+  # - cd testdir; make test_all
+  - cd testdir; make SILENT=TRUE test_all
   
 
 

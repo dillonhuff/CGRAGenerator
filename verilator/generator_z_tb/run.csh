@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+set VERBOSE
+
 # Build a tmp space for intermediate files
 set tmpdir = deleteme
 if (! -e $tmpdir) then
@@ -60,7 +62,7 @@ unset tracefile
 if ($#argv == 1) then
   if ("$argv[1]" == '--help') then
     echo "Usage:"
-    echo "    $0 <textbench.cpp> [-gen | -nogen]"
+    echo "    $0 <textbench.cpp> -q [-gen | -nogen]"
     echo "        -usemem -allreg [ -4x4 | -8x8 ]"
     echo "        -config <config_filename.bs>"
     echo "        -input   <input_filename.png>"
@@ -108,6 +110,9 @@ while ($#argv)
 
     case '-clean':
       exit 0;
+
+    case '-q':
+      unset VERBOSE; breaksw;
 
     case '-4x4':
       set gridsize = "4x4"; breaksw;
@@ -453,13 +458,17 @@ echo "Building the verilator simulator executable..."
 
   set verilator_exit_status = $status
 
-  echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
-  echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
-  echo '%Warning3 See $tmpdir/verilator.out for full log.'
-  echo
-  cat $tmpdir/verilator.out \
-    | awk -f ./run-verilator-warning-filter.awk \
-    | head -n 40 
+  if ($?VERBOSE) then
+    echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
+    echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
+    echo '%Warning3 See $tmpdir/verilator.out for full log.'
+    echo
+    cat $tmpdir/verilator.out \
+      | awk -f ./run-verilator-warning-filter.awk \
+      | head -n 40 
+  else
+    echo "See $tmpdir/verilator.out for full log of verilator warnings.'
+  endif
 
   if ($verilator_exit_status != 0) exit -1
 
@@ -482,7 +491,12 @@ echo "Build the simulator..."
   echo
   make \
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
-    -j -C obj_dir/ -f V$top.mk V$top || exit -1
+    -j -C obj_dir/ -f V$top.mk V$top \
+    >& $tmpdir/make_vtop.log \
+    || exit -1
+
+  if ($?VERBOSE) cat $tmpdir/make_vtop.log
+
 
 echo ''
 echo '------------------------------------------------------------------------'
