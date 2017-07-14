@@ -291,7 +291,14 @@ else
   # Build CGRA 
   echo "Building CGRA because you asked for it with '-gen'..."
 
-  ../../bin/generate.csh || exit -1
+  if ($?VERBOSE) then
+    ../../bin/generate.csh || exit -1
+  else
+    ../../bin/generate.csh > /dev/null || exit -1
+  endif
+
+
+
 
   set gztop = ../../hardware/generator_z/top/
   echo DIFF
