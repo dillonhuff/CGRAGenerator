@@ -1637,7 +1637,7 @@ def draw_one_tile(cr, tileno):
         % (two_tiles_plus_gap_2x, tile_width, CUR_SCALE_FACTOR)
 
     ########################################################################
-    # OLD: cr.translate(ARRAY_PAD, ARRAY_PAD)
+    # OLD: cr.translate(ARRAY_PAD, ARRAY_PAD) [draw tile such that UL corner is at (AP,AP)
     # NEW: -----------------------------------------------------------------
     # Translate so that zoomed tile corners match unzoomed tile corners
     # Unzoomed corners were centered in window, and above scaling (supposedly)
