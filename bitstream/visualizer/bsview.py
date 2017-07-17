@@ -59,8 +59,6 @@ def deg2rad(rad): return rad*180/PI
 global PE_WIDTH;  PE_WIDTH = 30
 global PE_HEIGHT; PE_HEIGHT = 12
 
-
-
 GRID_WIDTH  = 2;
 GRID_HEIGHT = 2;
 NTILES = GRID_WIDTH*GRID_HEIGHT
@@ -245,8 +243,6 @@ def test_rc2tileno_8x8():
 # A really dumb way to keep track of current scale factor, for
 # button-press events FIXME do something better maybe
 CUR_SCALE_FACTOR = 1;
-SF_ALL       = 1; # No zoom when displaying all tiles in a window # FIXME NOT USED
-SF_ALL_2x2   = 2; # Zoom 2x when displaying 2x2 grid              # FIXME NOT USED
 INIT_SCALE_FACTOR = 1;
 
 def set_initial_scale_factor():
@@ -1502,6 +1498,12 @@ def draw_all_ports(cr):
                 drawport(cr, wirename, options="ghost")
 
 def zoom_to_tile2(tileno):
+    '''
+    Button-press event calls zoom_to_tile1() to queue up the zoom.
+    Later, draw event calls zoom_to_tile2(), which does final
+    scroll-adjust for the zoom.
+
+    '''
     print "Zoom in to tile %s!" % str(tileno)
 
     #         x = TILE_LIST[tileno].col*CANVAS_WIDTH    # + CANVAS_WIDTH/2
@@ -1588,24 +1590,27 @@ def draw_handler(widget, cr):
 
 def set_zoom_scale_factor():
 
+    # This is good enough...right?
     global CUR_SCALE_FACTOR;
-    
-    # OLD: Draw at 4x requested size; CUR_SCALE_FACTOR = 4
-    # NEW:
-    #   For now, unzoomed (grid) view is scaled to 2x (USF=2).
-    #   And zoomed (onetile) view is 2x of that.  Ish.
-    #   Except that, for no good reason, want the zoomed tile
-    #   to occupy the same space as four unzoomed tiles.
+    CUR_SCALE_FACTOR = 4.0;
+    return;
 
-    # Canvas width = tile width + length of ports on each side
-    # In zoomed view, want width of one tile to match
-    # (two tiles + gap) in unzoomed (2x) view
-    # unzoomed_scale_factor = 2 # Scale factor for unzoomed tiles
-    unzoomed_scale_factor = 1/INIT_SCALE_FACTOR # Scale factor for unzoomed tiles
-    tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
-    two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
-    fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
-    CUR_SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
+#     # OLD: Draw at 4x requested size; CUR_SCALE_FACTOR = 4
+#     # NEW:
+#     #   For now, unzoomed (grid) view is scaled to 2x (USF=2).
+#     #   And zoomed (onetile) view is 2x of that.  Ish.
+#     #   Except that, for no good reason, want the zoomed tile
+#     #   to occupy the same space as four unzoomed tiles.
+# 
+#     # Canvas width = tile width + length of ports on each side
+#     # In zoomed view, want width of one tile to match
+#     # (two tiles + gap) in unzoomed (2x) view
+#     # unzoomed_scale_factor = 2 # Scale factor for unzoomed tiles
+#     unzoomed_scale_factor = 1/INIT_SCALE_FACTOR # Scale factor for unzoomed tiles
+#     tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
+#     two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
+#     fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
+#     CUR_SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
 
 def draw_one_tile(cr, tileno):
 
@@ -2095,26 +2100,30 @@ def zoom(sf):
     # global ACTUAL_SCALE; ACTUAL_SCALE = float(h)/hprev    # print "SF " + str(ACTUAL_SCALE)
 
 def zoom_to_tile1(event):
-    # This (button-press event) queues up the zoom.
-    # After tiles are drawn, zoom will have completed.
-    # Later, final scroll-adjust for zoom happens, during draw event.
-    DBG = 0
+    '''
+    Button-press event calls zoom_to_tile1() to queue up the zoom.
+    Later, draw event calls zoom_to_tile2(), which does final
+    scroll-adjust for the zoom.
+
+    '''
+    global ZOOMTILE;
+    global CUR_SCALE_FACTOR
+    global SAVE_SCALE_FACTOR
 
     # Need to know current scale factor so we keep track of it in a global
+    DBG = 0
     if DBG: print ""
     if DBG: print "CUR_SCALE_FACTOR %s" % CUR_SCALE_FACTOR
     if DBG: print ""
 
     # Can't get scale factor from context matrix, it's always (1,0,0,1,0,0) why?
-    if (0): print "matrix = " + str(DRAW_HANDLER_CR.get_matrix())
+    # if (0): print "matrix = " + str(DRAW_HANDLER_CR.get_matrix())
 
-    # If already zoomed out (ZOOMTILE === -1), zoom in to tile indicated.
-    # Otherwise, zoom out.
-    global ZOOMTILE;
+    # If already zoomed out (ZOOMTILE = -1), zoom in to tile indicated.
+    # If already zoomed in (ZOOMTILE=tileno), zoom out.
     if (ZOOMTILE == -1):
 
         # Save prev adjusts, scale factor
-        global SAVE_SCALE_FACTOR
         SAVE_SCALE_FACTOR = CUR_SCALE_FACTOR
 
         global PREV_HUPPER
@@ -2148,14 +2157,18 @@ def zoom_to_tile1(event):
         ZOOMTILE = tileno;
 
         # Zoom and cut out crap it's just four.
+        # Why? => INIT_SCALE_FACTOR = 0.5 (for 8x8 after calling initial_scale_factor())
 
-        global CUR_SCALE_FACTOR
 #         unzoomed_scale_factor = 1/INIT_SCALE_FACTOR # Scale factor for unzoomed tiles
 #         tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
 #         two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
 #         fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
 #         CUR_SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
         CUR_SCALE_FACTOR = 4.0 # sound about right!!?
+
+        # In unzoomed view, each tile occupies 1/8 of the window width
+        # In zoomed view, each tile is 4x larger and window is 8x larger
+
 
 #         # Tile draws from (0,0) to (CANVAS_WIDTH,CANVAS_HEIGHT), yes?
 #         print "canwidth,canheight = %d,%d" % (CANVAS_WIDTH,CANVAS_HEIGHT)
@@ -2175,6 +2188,8 @@ def zoom_to_tile1(event):
 #         print "BEFORE ZOOM/Q: [%4d|-> %4d   <-| %-4d]" % (int(l), int(v), int(u))
 
         # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
+        # Sets draw widget size to WIN_HEIGHT * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR
+        # or WIN_HEIGHT * 4.0 / 0.5, or 8 * WIN_HEIGHT
         zoom(1)
         # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
 
@@ -2183,7 +2198,6 @@ def zoom_to_tile1(event):
         ZOOMTILE = -1;
 
         # Restore scale factor
-        global SAVE_SCALE_FACTOR
         CUR_SCALE_FACTOR = SAVE_SCALE_FACTOR
 
         # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
