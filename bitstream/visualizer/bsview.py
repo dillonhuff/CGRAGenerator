@@ -296,9 +296,6 @@ PORT_PAD = PORT_WIDTH/2   # Padding before and between groups of ports
 REG_WIDTH  = PORT_WIDTH - 2;
 REG_HEIGHT = 2;
 
-# Edge of first tile in array (grid) view is ARRAY_PAD + PORT_HEIGHT
-ARRAY_PAD = 60
-
 # Canvas size for displaying a single tile edge-to-edge w/ no padding
 #   How big is a tile canvas?  Refer to diagram in doc
 #   Short answer is:
@@ -312,10 +309,18 @@ ARRAY_PAD = 60
 CANVAS_WIDTH  = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
+# Edge of first tile in array (grid) view is ARRAY_PAD + PORT_HEIGHT
+ARRAY_PAD = 60
+
+# Drawing area will be WIN_WIDTH x WIN_HEIGHT;
+# actual enclosing window will be bigger or smaller as defined later
+# (smaller means scrollbars will be added)
 
 # WIN_WIDTH  = 4*CANVAS_WIDTH+2*ARRAY_PAD
 # WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
 
+# Make each window dimension big enough for 4 tiles
+# plus some amount of padding for the ports
 WIN_WIDTH  = 4*CANVAS_WIDTH + ARRAY_PAD
 WIN_HEIGHT = 4*CANVAS_HEIGHT+ ARRAY_PAD
 
@@ -1829,6 +1834,8 @@ class CGRAWin(gtk.Window):
         title = "Tilesy" # haha LOL
         gtk.Window.__init__(self)
         self.props.title = title
+
+        # Note "request" size has nothing to do with actual drawing-area dimensions
         self.props.width_request = WIN_WIDTH + 40 # Extra for borders etc
         self.props.height_request= min(WIN_HEIGHT,600)
 
@@ -2121,7 +2128,12 @@ def zoom_to_tile1(event):
 
     # If already zoomed out (ZOOMTILE = -1), zoom in to tile indicated.
     # If already zoomed in (ZOOMTILE=tileno), zoom out.
+    global PREZOOMx; global PREZOOMy
     if (ZOOMTILE == -1):
+        if DBG: print "Zoom in!"
+
+        # Save x,y coords (Is this terrible?  this is probably terrible.)
+        (PREZOOMx,PREZOOMy) = (event.x, event.y)
 
         # Save prev adjusts, scale factor
         SAVE_SCALE_FACTOR = CUR_SCALE_FACTOR
@@ -2203,6 +2215,10 @@ def zoom_to_tile1(event):
         # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
         zoom(1)
         # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
+
+        # Don't forget to recenter!
+        recenter(PREZOOMx, PREZOOMy)
+        
 
 def button_press_handler(widget, event):
     if event.type == gtk.gdk.BUTTON_PRESS:   print "\nsingle click "
