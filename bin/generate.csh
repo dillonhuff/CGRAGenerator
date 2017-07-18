@@ -4,8 +4,8 @@
 
 # Script should be in CGROOT/bin
 
-if (! $?CGRA_GEN_ALL_REG) echo NOT SET
-if ($?CGRA_GEN_ALL_REG) echo $?CGRA_GEN_ALL_REG
+if (! $?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG NOT SET
+if ($?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
 setenv CGRA_GEN_ALL_REG 1
 echo $?CGRA_GEN_ALL_REG
 
