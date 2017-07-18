@@ -309,20 +309,22 @@ REG_HEIGHT = 2;
 CANVAS_WIDTH  = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
-# Edge of first tile in array (grid) view is ARRAY_PAD + PORT_HEIGHT
-ARRAY_PAD = 60
 
 # Drawing area will be WIN_WIDTH x WIN_HEIGHT;
 # actual enclosing window will be bigger or smaller as defined later
-# (smaller means scrollbars will be added)
+# (smaller window means scrollbars will be added)
 
-# WIN_WIDTH  = 4*CANVAS_WIDTH+2*ARRAY_PAD
-# WIN_HEIGHT = 4*CANVAS_HEIGHT+2*ARRAY_PAD
+# It LOOKS LIKE this is going to set initial win size to equal four tiles across.
+# But NOOOOOO it's eight tiles across  because CUR_SCALE
+# It's actually doing this, kinda:
+# WWTILES = 8
+# WIN_WIDTH  = (WWTILES*SCALE_FACTOR)*CANVAS_WIDTH + UL_MARGIN
 
-# Make each window dimension big enough for 4 tiles
-# plus some amount of padding for the ports
-WIN_WIDTH  = 4*CANVAS_WIDTH + ARRAY_PAD
-WIN_HEIGHT = 4*CANVAS_HEIGHT+ ARRAY_PAD
+# Edge of first tile in array (grid) view is UL_MARGIN + PORT_HEIGHT
+UL_MARGIN = 60
+
+WIN_WIDTH  = 4*CANVAS_WIDTH + UL_MARGIN
+WIN_HEIGHT = 4*CANVAS_HEIGHT+ UL_MARGIN
 
 
 ##############################################################################
@@ -1529,13 +1531,13 @@ def zoom_to_tile2(tileno):
     #         print "recenter tooo w=%d/%d" % (x,hadj.upper)
     #         y = (y * vadj.upper/wh)
 
-    scaled_array_pad     = ARRAY_PAD     * CUR_SCALE_FACTOR
+    scaled_array_pad     = UL_MARGIN     * CUR_SCALE_FACTOR
     scaled_canvas_width  = CANVAS_WIDTH  * CUR_SCALE_FACTOR
     scaled_canvas_height = CANVAS_HEIGHT * CUR_SCALE_FACTOR
     print "Calculated win width is...%d...?" % \
           (4 * scaled_array_pad + 8 * scaled_canvas_width)
     print "Original win width was...%d...?" % \
-          (4 * ARRAY_PAD + 8 * CANVAS_WIDTH)
+          (4 * UL_MARGIN + 8 * CANVAS_WIDTH)
 
     pad = scaled_array_pad
     col = TILE_LIST[tileno].col
@@ -1637,7 +1639,7 @@ def draw_one_tile(cr, tileno):
         % (two_tiles_plus_gap_2x, tile_width, CUR_SCALE_FACTOR)
 
     ########################################################################
-    # OLD: cr.translate(ARRAY_PAD, ARRAY_PAD) [draw tile such that UL corner is at (AP,AP)
+    # OLD: cr.translate(UL_MARGIN, UL_MARGIN) [draw tile such that UL corner is at (AP,AP)
     # NEW: -----------------------------------------------------------------
     # Translate so that zoomed tile corners match unzoomed tile corners
     # Unzoomed corners were centered in window, and above scaling (supposedly)
@@ -1668,7 +1670,7 @@ def draw_all_tiles(cr):
 
     cr.save()
     cr.scale(CUR_SCALE_FACTOR,CUR_SCALE_FACTOR)
-    cr.translate(ARRAY_PAD, ARRAY_PAD)     # Whitespace margin at top and left
+    cr.translate(UL_MARGIN, UL_MARGIN)     # Whitespace margin at top and left
     # draw_big_ghost_arrows(cr)            # Big ghost arrows in background of grid
                                            # view show general flow dir for tracks
     for tile in TILE_LIST:                 # Draw ALL the tiles
@@ -1681,7 +1683,7 @@ def draw_all_tiles(cr):
 def test_ports():  # Meh
 
     cr.save()
-    cr.translate(ARRAY_PAD, ARRAY_PAD); cr.scale(2,2)
+    cr.translate(UL_MARGIN, UL_MARGIN); cr.scale(2,2)
     if (0):
         drawport(cr, "in_s0t0", options="foo,bar,baz")
         drawport(cr, "out_s0t0", options="foo")
@@ -2158,7 +2160,7 @@ def zoom_to_tile1(event):
         if DBG: print "clicked on %d %d" % (x,y)
 
         # Subtract off the scale-independent paddings and divide by scale factor I guess
-        x = (x - ARRAY_PAD)/CUR_SCALE_FACTOR; y = (y - ARRAY_PAD)/CUR_SCALE_FACTOR;
+        x = (x - UL_MARGIN)/CUR_SCALE_FACTOR; y = (y - UL_MARGIN)/CUR_SCALE_FACTOR;
         if DBG: print "Transformed x,y = (%d,%d)" % (x,y)
         if DBG: print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
 
