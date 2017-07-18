@@ -4,6 +4,12 @@
 
 # Script should be in CGROOT/bin
 
+if (! $?CGRA_GEN_ALL_REG) echo NOT SET
+if ($?CGRA_GEN_ALL_REG) print $?CGRA_GEN_ALL_REG
+setenv CGRA_GEN_ALL_REG 1
+print $?CGRA_GEN_ALL_REG
+
+
 set scriptpath = "$0"
 set scriptpath = $scriptpath:h
 if ("$scriptpath" == "$0") then
