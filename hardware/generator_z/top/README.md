@@ -16,12 +16,6 @@ For providing registers on all outputs of all SBs, do
     setenv CGRA_GEN_ALL_REG 1
     ./run.csh
 
-Alternatively, you can use the makefile, e.g. one of:
-    make gen
-    make gen CGRA_GEN_USE_MEM=1
-    make gen CGRA_GEN_ALL_REG=1
-    make gen CGRA_GEN_ALL_REG=1 CGRA_GEN_USE_MEM=1
-    
 To clean up after running the generator, use the "genesis_clean"
 script, which is created every time you execute "run.csh":
 
@@ -46,4 +40,10 @@ TBD    % ls /tmp/cgra
 TBD        genesis_clean.cmd*  genesis_synth/         genesis_vlog.verif.vf
 TBD        genesis.log         genesis_verif/         genesis_vlog.vf
 TBD        genesis_raw/        genesis_vlog.synth.vf  genesis_work/
+
+UNUSED Alternatively, you can use the makefile, e.g. one of:
+UNUSED     make gen
+UNUSED     make gen CGRA_GEN_USE_MEM=1
+UNUSED     make gen CGRA_GEN_ALL_REG=1
+UNUSED     make gen CGRA_GEN_ALL_REG=1 CGRA_GEN_USE_MEM=1
 </pre>
