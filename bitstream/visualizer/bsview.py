@@ -446,59 +446,59 @@ def draw_arrow(cr, al, ahl,ahw,fill):
         cr.stroke()
     cr.restore()
 
-# Big ghost arrows in background of grid view show prevailing port direction
-def draw_big_ghost_arrows(cr):
-
-    # Ghost Arrow parms, used by big_ghost_arrow(), 
-    aw = 10                # line width
-    ahl = 20; ahw = 3*aw   # arrowhead length, width
-
-    # Arrow goes across two tiles, sticks out apad on one side and (apad + ahl/2) on the other
-    apad = 10;
-    al = 2*CANVAS_WIDTH + 2*apad + ahl/2  # length of arrow
-    al = GRID_WIDTH*CANVAS_WIDTH + 2*apad + ahl/2  # length of arrow
-
-    fill = True;  # For solid filled-in arrowhead
-
-    # Ghost arrows are ghooooostly graaaaaay, woooooooo!
-    # graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
-    setcolor(cr, "ghostgray")
-
-    def draw_big_ghost_arrow(cr,x,y,dir):
-
-        cr.save()
-        if (1):
-            cr.translate(x,y)
-            cr.set_line_width(aw);
-            if (dir=='left'): cr.rotate(PI)
-            if (dir=='down'): cr.rotate(PI/2)
-            if (dir=='up'):   cr.rotate(3*PI/2)
-            draw_arrow(cr,al,ahl,ahw,fill)
-        cr.restore()
-
-    # Right-pointing arrows start apad back from left edge of the tile
-    # and ra_v_offset down from the top
-    ra_start    = -apad;
-    ra_v_offset = PORT_LENGTH + 2 * PORT_WIDTH
-
-    # Left-pointing arrows start apad beyond the right edge of the tile
-    # and ra_h_offset up from the bottom
-    la_start    = GRID_WIDTH*CANVAS_WIDTH + apad;
-    la_v_offset = CANVAS_HEIGHT - ra_v_offset
-
-    for tilerow in range (0, GRID_HEIGHT):
-        draw_big_ghost_arrow(cr, ra_start, ra_v_offset + tilerow*CANVAS_HEIGHT, 'right')
-        draw_big_ghost_arrow(cr, la_start, la_v_offset + tilerow*CANVAS_HEIGHT, 'left')
-
-    # Similar for up/down arrows
-    da_start = -apad;
-    da_h_offset = ra_v_offset;
-    ua_start = GRID_HEIGHT*CANVAS_HEIGHT + apad;
-    ua_h_offset = CANVAS_WIDTH - da_h_offset
-
-    for tilecol in range (0, GRID_HEIGHT):
-        draw_big_ghost_arrow(cr, da_h_offset + tilecol*CANVAS_WIDTH, da_start, 'down')
-        draw_big_ghost_arrow(cr, ua_h_offset + tilecol*CANVAS_WIDTH, ua_start, 'up')
+# # Big ghost arrows in background of grid view show prevailing port direction
+# def draw_big_ghost_arrows(cr):
+# 
+#     # Ghost Arrow parms, used by big_ghost_arrow(), 
+#     aw = 10                # line width
+#     ahl = 20; ahw = 3*aw   # arrowhead length, width
+# 
+#     # Arrow goes across two tiles, sticks out apad on one side and (apad + ahl/2) on the other
+#     apad = 10;
+#     al = 2*CANVAS_WIDTH + 2*apad + ahl/2  # length of arrow
+#     al = GRID_WIDTH*CANVAS_WIDTH + 2*apad + ahl/2  # length of arrow
+# 
+#     fill = True;  # For solid filled-in arrowhead
+# 
+#     # Ghost arrows are ghooooostly graaaaaay, woooooooo!
+#     # graylevel = 0.9; cr.set_source_rgb(graylevel,graylevel,graylevel)
+#     setcolor(cr, "ghostgray")
+# 
+#     def draw_big_ghost_arrow(cr,x,y,dir):
+# 
+#         cr.save()
+#         if (1):
+#             cr.translate(x,y)
+#             cr.set_line_width(aw);
+#             if (dir=='left'): cr.rotate(PI)
+#             if (dir=='down'): cr.rotate(PI/2)
+#             if (dir=='up'):   cr.rotate(3*PI/2)
+#             draw_arrow(cr,al,ahl,ahw,fill)
+#         cr.restore()
+# 
+#     # Right-pointing arrows start apad back from left edge of the tile
+#     # and ra_v_offset down from the top
+#     ra_start    = -apad;
+#     ra_v_offset = PORT_LENGTH + 2 * PORT_WIDTH
+# 
+#     # Left-pointing arrows start apad beyond the right edge of the tile
+#     # and ra_h_offset up from the bottom
+#     la_start    = GRID_WIDTH*CANVAS_WIDTH + apad;
+#     la_v_offset = CANVAS_HEIGHT - ra_v_offset
+# 
+#     for tilerow in range (0, GRID_HEIGHT):
+#         draw_big_ghost_arrow(cr, ra_start, ra_v_offset + tilerow*CANVAS_HEIGHT, 'right')
+#         draw_big_ghost_arrow(cr, la_start, la_v_offset + tilerow*CANVAS_HEIGHT, 'left')
+# 
+#     # Similar for up/down arrows
+#     da_start = -apad;
+#     da_h_offset = ra_v_offset;
+#     ua_start = GRID_HEIGHT*CANVAS_HEIGHT + apad;
+#     ua_h_offset = CANVAS_WIDTH - da_h_offset
+# 
+#     for tilecol in range (0, GRID_HEIGHT):
+#         draw_big_ghost_arrow(cr, da_h_offset + tilecol*CANVAS_WIDTH, da_start, 'down')
+#         draw_big_ghost_arrow(cr, ua_h_offset + tilecol*CANVAS_WIDTH, ua_start, 'up')
 
 # This could be an extension of cr's class I suppose
 def setcolor(cr, colorname):
