@@ -1535,7 +1535,7 @@ def zoom_to_tile2(tileno):
     #             print "INIT_SF is %.2f" % (INIT_SCALE_FACTOR/2.0)
     #             print "? is maybe %d" % (x * u/ww)
     # 
-    #         x = ((INIT_SCALE_FACTOR/2.0) * x * hadj.upper/ww)
+    #         x = ((0.5) * x * hadj.upper/ww)
     #         print "recenter tooo w=%d/%d" % (x,hadj.upper)
     #         y = (y * vadj.upper/wh)
 
@@ -1621,7 +1621,7 @@ def set_zoom_scale_factor():
 #     # In zoomed view, want width of one tile to match
 #     # (two tiles + gap) in unzoomed (2x) view
 #     # unzoomed_scale_factor = 2 # Scale factor for unzoomed tiles
-#     unzoomed_scale_factor = 1/(INIT_SCALE_FACTOR/2.0) # Scale factor for unzoomed tiles
+#     unzoomed_scale_factor = 1/(0.5) # Scale factor for unzoomed tiles
 #     tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
 #     two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
 #     fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
@@ -2031,7 +2031,7 @@ def adjust_scrollbar(adj, amt):
     DBG=0
     # ps = adj.page_size
 
-    pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (INIT_SCALE_FACTOR/2.0))
+    pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (0.5))
 
     # sf = 1.2 # I have a better idea!
     hupper = adj.upper
@@ -2110,8 +2110,8 @@ def zoom(sf):
     if DBG: print "ZOOM %sx :" % str(sf), # Usually sf is 0.8 or 1.2
     if DBG: print "Drawing area size (%d,%d) " % (h,w),
 
-    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR / (INIT_SCALE_FACTOR/2.0))
-    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (INIT_SCALE_FACTOR/2.0))
+    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR / (0.5))
+    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (0.5))
 
     # (h,w) = (h*sf,w*sf) # not sure why, but the other one seems to work better i guess
 
@@ -2187,9 +2187,9 @@ def zoom_to_tile1(event):
         ZOOMTILE = tileno;
 
         # Zoom and cut out crap it's just four.
-        # Why? => (INIT_SCALE_FACTOR/2.0) = 0.5 (for 8x8 after calling initial_scale_factor())
+        # Why? => (0.5) = 0.5 (for 8x8 after calling initial_scale_factor())
 
-#         unzoomed_scale_factor = 1/(INIT_SCALE_FACTOR/2.0) # Scale factor for unzoomed tiles
+#         unzoomed_scale_factor = 1/(0.5) # Scale factor for unzoomed tiles
 #         tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
 #         two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
 #         fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
@@ -2218,7 +2218,7 @@ def zoom_to_tile1(event):
 #         print "BEFORE ZOOM/Q: [%4d|-> %4d   <-| %-4d]" % (int(l), int(v), int(u))
 
         # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
-        # Sets draw widget size to WIN_HEIGHT * CUR_SCALE_FACTOR / (INIT_SCALE_FACTOR/2.0)
+        # Sets draw widget size to WIN_HEIGHT * CUR_SCALE_FACTOR / (0.5)
         # or WIN_HEIGHT * 4.0 / 0.5, or 8 * WIN_HEIGHT
         zoom(1)
         # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
