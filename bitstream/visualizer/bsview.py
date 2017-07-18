@@ -331,9 +331,15 @@ CANVAS_HEIGHT = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 # Edge of first tile in array (grid) view is UL_MARGIN + PORT_HEIGHT
 UL_MARGIN = 60
 
+# At this point, can set win_width/height to any value and program still
+# works correctly; only affects initial window size (hooray!)
+
 WIN_WIDTH  = 4*CANVAS_WIDTH + UL_MARGIN
 WIN_HEIGHT = 4*CANVAS_HEIGHT+ UL_MARGIN
 
+# # what does this do?
+# WIN_WIDTH  = 400
+# WIN_HEIGHT = 400
 
 ##############################################################################
 # These could all be part of a Wire class if we wanted to...
@@ -2044,7 +2050,8 @@ def adjust_scrollbar(adj, amt):
     DBG=0
     # ps = adj.page_size
 
-    pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (0.5))
+#     pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (0.5))
+    pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR)
 
     # sf = 1.2 # I have a better idea!
     hupper = adj.upper
@@ -2123,8 +2130,8 @@ def zoom(sf):
     if DBG: print "ZOOM %sx :" % str(sf), # Usually sf is 0.8 or 1.2
     if DBG: print "Drawing area size (%d,%d) " % (h,w),
 
-    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR / (0.5))
-    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (0.5))
+    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR)
+    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR)
 
     # (h,w) = (h*sf,w*sf) # not sure why, but the other one seems to work better i guess
 
