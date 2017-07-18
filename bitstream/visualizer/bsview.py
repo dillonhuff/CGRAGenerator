@@ -255,6 +255,7 @@ def set_initial_scale_factor():
 #     if (GRID_WIDTH  > 4): INIT_SCALE_FACTOR = 1 # Let's try this
 #     CUR_SCALE_FACTOR = (INIT_SCALE_FACTOR/2.0)
 
+    global CUR_SCALE_FACTOR;   # Others should know
     if (GRID_WIDTH <= 2): CUR_SCALE_FACTOR = 2.0 # Why squint?
     if (GRID_WIDTH  > 4): CUR_SCALE_FACTOR = 0.5
 
