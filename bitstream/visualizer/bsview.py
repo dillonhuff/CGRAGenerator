@@ -240,28 +240,6 @@ def test_rc2tileno_8x8():
 # test_rc2tileno_8x8(); sys.exit(0);
 
 
-# A really dumb way to keep track of current scale factor, for
-# button-press events FIXME do something better maybe
-CUR_SCALE_FACTOR = 1;
-INIT_SCALE_FACTOR = 1;
-
-def set_initial_scale_factor():
-#     global CUR_SCALE_FACTOR;   # Others should know
-#     global INIT_SCALE_FACTOR;  # Others should know
-# 
-#     INIT_SCALE_FACTOR = 1                         # Default is one
-#     if (GRID_WIDTH <= 2): INIT_SCALE_FACTOR = 2   # Why squint if you don't need to?
-#     # if (GRID_WIDTH  > 4): INIT_SCALE_FACTOR = 0.5 # Let's try this
-#     if (GRID_WIDTH  > 4): INIT_SCALE_FACTOR = 1 # Let's try this
-#     CUR_SCALE_FACTOR = (INIT_SCALE_FACTOR/2.0)
-
-    global CUR_SCALE_FACTOR;   # Others should know
-    if (GRID_WIDTH <= 2): CUR_SCALE_FACTOR = 2.0 # Why squint?
-    if (GRID_WIDTH  > 4): CUR_SCALE_FACTOR = 0.5
-
-
-
-
 # Could/should derive these from "BUS:5" etc.
 NTRACKS_PE_BUS_H = 5;
 NTRACKS_PE_BUS_V = 5;
@@ -318,33 +296,41 @@ CANVAS_WIDTH  = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
 
+
 # Drawing area will be WIN_WIDTH x WIN_HEIGHT;
 # actual enclosing window will be bigger or smaller as defined later
 # (smaller window means scrollbars will be added)
-
-# It LOOKS LIKE this is going to set initial win size to equal four tiles across.
-# But NOOOOOO it's eight tiles across  because CUR_SCALE
-# It's actually doing this, kinda:
-# WWTILES = 8
-# WIN_WIDTH  = (WWTILES*SCALE_FACTOR)*CANVAS_WIDTH + UL_MARGIN
 
 # Edge of first tile in array (grid) view is UL_MARGIN + PORT_HEIGHT
 UL_MARGIN = 60
 
 # At this point, can set win_width/height to any value and program still
-# works correctly; only affects initial window size (hooray!)
-
+# works correctly; only affects initial window size (hooray!) sorta...
 WIN_WIDTH  = 4*CANVAS_WIDTH + UL_MARGIN
 WIN_HEIGHT = 4*CANVAS_HEIGHT+ UL_MARGIN
 
-# # what does this do?
-# WIN_WIDTH  = 400
-# WIN_HEIGHT = 400
+# A really dumb way (using a global) to keep track of current scale
+# factor, for button-press events FIXME do something better maybe
+CUR_SCALE_FACTOR = 1;
+
+def set_initial_scale_factor():
+    global WIN_WIDTH; global WIN_HEIGHT; global UL_MARGIN
+    global CUR_SCALE_FACTOR;
+
+    if (GRID_WIDTH <= 2):
+        CUR_SCALE_FACTOR = 2.0 # Why squint?
+        WIN_WIDTH  = int(4*CANVAS_WIDTH *CUR_SCALE_FACTOR) + UL_MARGIN
+        WIN_HEIGHT = int(4*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + UL_MARGIN
+
+    if (GRID_WIDTH  > 4):
+        CUR_SCALE_FACTOR = 0.5
+        WIN_WIDTH  = int(8*CANVAS_WIDTH *CUR_SCALE_FACTOR) + UL_MARGIN
+        WIN_HEIGHT = int(8*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + UL_MARGIN
+       
+
 
 ##############################################################################
 # These could all be part of a Wire class if we wanted to...
-
-
 
 def quickfix(wirename):
     DBG=0
@@ -1545,12 +1531,13 @@ def zoom_to_tile2(tileno):
     #         print "recenter tooo w=%d/%d" % (x,hadj.upper)
     #         y = (y * vadj.upper/wh)
 
+    DBG=0
     scaled_array_pad     = UL_MARGIN     * CUR_SCALE_FACTOR
     scaled_canvas_width  = CANVAS_WIDTH  * CUR_SCALE_FACTOR
     scaled_canvas_height = CANVAS_HEIGHT * CUR_SCALE_FACTOR
-    print "Calculated win width is...%d...?" % \
+    if DBG: print "Calculated win width is...%d...?" % \
           (4 * scaled_array_pad + 8 * scaled_canvas_width)
-    print "Original win width was...%d...?" % \
+    if DBG: print "Original win width was...%d...?" % \
           (4 * UL_MARGIN + 8 * CANVAS_WIDTH)
 
     pad = scaled_array_pad
@@ -1560,18 +1547,19 @@ def zoom_to_tile2(tileno):
     x = pad + col * scaled_canvas_width
     y = pad + row * scaled_canvas_height
 
-    # print "x is %d" % x; print "pad is %d" % pad
+    if DBG: print "x is %d" % x; print "pad is %d" % pad
 
     (hadj,vadj) = (SW.get_hadjustment(),SW.get_vadjustment())
-    # print "Window width now = %d" % hadj.upper
+    if DBG: print "Window width now = %d" % hadj.upper
 
     # Each "value_changed" triggers a "draw" event I think...
     # Seems to work fine w/o them
     hadj.set_value(x); # hadj.value_changed()
     vadj.set_value(y); # vadj.value_changed()
 
-    # u = hadj.upper; l = hadj.lower; v = hadj.value
-    # print "AFTER AFTER AFTER: [%4d|-> %4d   <-| %-4d]\n" % (int(l), int(v), int(u))
+    if DBG:
+        u = hadj.upper; l = hadj.lower; v = hadj.value
+        print "AFTER AFTER AFTER: [%4d|-> %4d   <-| %-4d]\n" % (int(l), int(v), int(u))
 
 
 # Invaluable cairo drawing reference:
@@ -1855,15 +1843,30 @@ def get_cursor_magminus():
 # class CGRAWin(Gtk.Window):
 class CGRAWin(gtk.Window):
     def __init__(self):
+        '''
+        Set up the main window and connect to callback routine that draws everything.
+        '''
         # DBG = 2
 
-        # Set up the main window and connect to callback routine that draws everything.
+        def set_initial_window_size():
+            # See above for definition of globals WIN_WIDTH, WIN_HEIGHT
+            # resize() see http://pygtk.org/pygtk2reference/class-gtkwindow.html
+
+            screen_width  = self.get_screen().get_width()
+            screen_height = self.get_screen().get_height()
+            desired_width  = min( WIN_WIDTH + 40, screen_width  - 40) # Extra for borders etc
+            desired_height = min(WIN_HEIGHT + 40, screen_height - 40)
+
+            self.resize(desired_width, desired_height)
+
+
 
         title = "Tilesy" # haha LOL
         gtk.Window.__init__(self)
         self.props.title = title
 
-        self.set_initial_window_size()
+        set_initial_scale_factor()
+        set_initial_window_size()
 
         # FIXME minimum width (above) should be based on screen height,
         # not just an arbitrary 600.
@@ -2013,17 +2016,6 @@ class CGRAWin(gtk.Window):
         # self.connect("realize", self.realize_cb)
         # def realize_cb(self, widget): set_cursor()
 
-    def set_initial_window_size(self):
-        # See above for definition of globals WIN_WIDTH, WIN_HEIGHT
-        # resize() see http://pygtk.org/pygtk2reference/class-gtkwindow.html
-
-        screen_width  = self.get_screen().get_width()
-        screen_height = self.get_screen().get_height()
-        desired_width  = min( WIN_WIDTH + 40, screen_width  - 40) # Extra for borders etc
-        desired_height = min(WIN_HEIGHT + 40, screen_height - 40)
-
-        self.resize(desired_width, desired_height)
-        
     def button_arrow_action(widget, event):
         # Reset cursor back to normal (arrow)
         widget.window.set_cursor(None)
@@ -2106,12 +2098,6 @@ def recenter(x,y):
 
 # def zoom(in_or_out):
 def zoom(sf):
-
-#     # Set scale factor
-#     # TODO/FIXME these should be globals / BSVIEW top-level parms / env vars
-#     if (in_or_out == 'in' ): sf = 1.2
-#     if (in_or_out == 'out'): sf = 0.8
-
     DBG=0
     global CUR_SCALE_FACTOR
 
@@ -2130,10 +2116,10 @@ def zoom(sf):
     if DBG: print "ZOOM %sx :" % str(sf), # Usually sf is 0.8 or 1.2
     if DBG: print "Drawing area size (%d,%d) " % (h,w),
 
-    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR)
-    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR)
-
-    # (h,w) = (h*sf,w*sf) # not sure why, but the other one seems to work better i guess
+    # FIXME UL margin next to tile 0 is a bit screwed up on zoom-in
+    global NTILES
+    h = int(NTILES*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + int(UL_MARGIN*CUR_SCALE_FACTOR)
+    w = int(NTILES*CANVAS_WIDTH *CUR_SCALE_FACTOR) + int(UL_MARGIN*CUR_SCALE_FACTOR)
 
     CUR_DRAW_WIDGET.set_size_request(h, w)
     print "=> (%d,%d)" % (h,w)
@@ -2214,6 +2200,8 @@ def zoom_to_tile1(event):
 #         two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
 #         fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
 #         CUR_SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
+
+        # FIXME FIXME pretty sure this doesn't do anything
         CUR_SCALE_FACTOR = 4.0 # sound about right!!?
 
         # In unzoomed view, each tile occupies 1/8 of the window width
