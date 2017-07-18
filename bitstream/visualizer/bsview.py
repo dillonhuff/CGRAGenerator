@@ -1829,15 +1829,12 @@ class CGRAWin(gtk.Window):
         DBG = 2
 
         # Set up the main window and connect to callback routine that draws everything.
-        # See above for definition of globals WIN_WIDTH, WIN_HEIGHT
 
         title = "Tilesy" # haha LOL
         gtk.Window.__init__(self)
         self.props.title = title
 
-        # Note "request" size has nothing to do with actual drawing-area dimensions
-        self.props.width_request = WIN_WIDTH + 40 # Extra for borders etc
-        self.props.height_request= min(WIN_HEIGHT,600)
+        self.set_initial_window_size()
 
         # FIXME minimum width (above) should be based on screen height,
         # not just an arbitrary 600.
@@ -1987,6 +1984,17 @@ class CGRAWin(gtk.Window):
         # self.connect("realize", self.realize_cb)
         # def realize_cb(self, widget): set_cursor()
 
+    def set_initial_window_size(self):
+        # See above for definition of globals WIN_WIDTH, WIN_HEIGHT
+        # resize() see http://pygtk.org/pygtk2reference/class-gtkwindow.html
+
+        screen_width  = self.get_screen().get_width()
+        screen_height = self.get_screen().get_height()
+        desired_width  = min( WIN_WIDTH + 40, screen_width  - 40) # Extra for borders etc
+        desired_height = min(WIN_HEIGHT + 40, screen_height - 40)
+
+        self.resize(desired_width, desired_height)
+        
     def button_arrow_action(widget, event):
         # Reset cursor back to normal (arrow)
         widget.window.set_cursor(None)
