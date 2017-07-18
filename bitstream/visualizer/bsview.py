@@ -246,13 +246,20 @@ CUR_SCALE_FACTOR = 1;
 INIT_SCALE_FACTOR = 1;
 
 def set_initial_scale_factor():
-    global CUR_SCALE_FACTOR;                   # Others should know
-    global INIT_SCALE_FACTOR;                  # Others should know
+#     global CUR_SCALE_FACTOR;   # Others should know
+#     global INIT_SCALE_FACTOR;  # Others should know
+# 
+#     INIT_SCALE_FACTOR = 1                         # Default is one
+#     if (GRID_WIDTH <= 2): INIT_SCALE_FACTOR = 2   # Why squint if you don't need to?
+#     # if (GRID_WIDTH  > 4): INIT_SCALE_FACTOR = 0.5 # Let's try this
+#     if (GRID_WIDTH  > 4): INIT_SCALE_FACTOR = 1 # Let's try this
+#     CUR_SCALE_FACTOR = (INIT_SCALE_FACTOR/2.0)
 
-    INIT_SCALE_FACTOR = 1                         # Default is one
-    if (GRID_WIDTH <= 2): INIT_SCALE_FACTOR = 2   # Why squint if you don't need to?
-    if (GRID_WIDTH  > 4): INIT_SCALE_FACTOR = 0.5 # Let's try this
-    CUR_SCALE_FACTOR = INIT_SCALE_FACTOR
+    if (GRID_WIDTH <= 2): CUR_SCALE_FACTOR = 2.0 # Why squint?
+    if (GRID_WIDTH  > 4): CUR_SCALE_FACTOR = 0.5
+
+
+
 
 # Could/should derive these from "BUS:5" etc.
 NTRACKS_PE_BUS_H = 5;
@@ -1524,10 +1531,10 @@ def zoom_to_tile2(tileno):
     #             print "except now it's ?/%d maybe" % u
     #             print "%d/%d is %.2f" % (u,ww,u/ww)
     #             print "CUR_SF is %.2f" % CUR_SCALE_FACTOR
-    #             print "INIT_SF is %.2f" % INIT_SCALE_FACTOR
+    #             print "INIT_SF is %.2f" % (INIT_SCALE_FACTOR/2.0)
     #             print "? is maybe %d" % (x * u/ww)
     # 
-    #         x = (INIT_SCALE_FACTOR * x * hadj.upper/ww)
+    #         x = ((INIT_SCALE_FACTOR/2.0) * x * hadj.upper/ww)
     #         print "recenter tooo w=%d/%d" % (x,hadj.upper)
     #         y = (y * vadj.upper/wh)
 
@@ -1613,7 +1620,7 @@ def set_zoom_scale_factor():
 #     # In zoomed view, want width of one tile to match
 #     # (two tiles + gap) in unzoomed (2x) view
 #     # unzoomed_scale_factor = 2 # Scale factor for unzoomed tiles
-#     unzoomed_scale_factor = 1/INIT_SCALE_FACTOR # Scale factor for unzoomed tiles
+#     unzoomed_scale_factor = 1/(INIT_SCALE_FACTOR/2.0) # Scale factor for unzoomed tiles
 #     tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
 #     two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
 #     fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
@@ -2023,7 +2030,7 @@ def adjust_scrollbar(adj, amt):
     DBG=0
     # ps = adj.page_size
 
-    pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+    pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (INIT_SCALE_FACTOR/2.0))
 
     # sf = 1.2 # I have a better idea!
     hupper = adj.upper
@@ -2102,8 +2109,8 @@ def zoom(sf):
     if DBG: print "ZOOM %sx :" % str(sf), # Usually sf is 0.8 or 1.2
     if DBG: print "Drawing area size (%d,%d) " % (h,w),
 
-    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
-    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR)
+    h = int(WIN_HEIGHT * CUR_SCALE_FACTOR / (INIT_SCALE_FACTOR/2.0))
+    w = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (INIT_SCALE_FACTOR/2.0))
 
     # (h,w) = (h*sf,w*sf) # not sure why, but the other one seems to work better i guess
 
@@ -2179,9 +2186,9 @@ def zoom_to_tile1(event):
         ZOOMTILE = tileno;
 
         # Zoom and cut out crap it's just four.
-        # Why? => INIT_SCALE_FACTOR = 0.5 (for 8x8 after calling initial_scale_factor())
+        # Why? => (INIT_SCALE_FACTOR/2.0) = 0.5 (for 8x8 after calling initial_scale_factor())
 
-#         unzoomed_scale_factor = 1/INIT_SCALE_FACTOR # Scale factor for unzoomed tiles
+#         unzoomed_scale_factor = 1/(INIT_SCALE_FACTOR/2.0) # Scale factor for unzoomed tiles
 #         tile_width            = CANVAS_WIDTH - 2*PORT_WIDTH
 #         two_tiles_plus_gap_2x = (2*tile_width + 2*PORT_LENGTH)*unzoomed_scale_factor
 #         fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
@@ -2210,7 +2217,7 @@ def zoom_to_tile1(event):
 #         print "BEFORE ZOOM/Q: [%4d|-> %4d   <-| %-4d]" % (int(l), int(v), int(u))
 
         # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
-        # Sets draw widget size to WIN_HEIGHT * CUR_SCALE_FACTOR / INIT_SCALE_FACTOR
+        # Sets draw widget size to WIN_HEIGHT * CUR_SCALE_FACTOR / (INIT_SCALE_FACTOR/2.0)
         # or WIN_HEIGHT * 4.0 / 0.5, or 8 * WIN_HEIGHT
         zoom(1)
         # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
