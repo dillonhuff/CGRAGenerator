@@ -1603,12 +1603,25 @@ def draw_handler(widget, cr):
             zoom_to_tile2(ZOOMTILE)
             PREV_HUPPER = hupper
 
-def set_zoom_scale_factor():
+# def set_zoom_scale_factor():
+# 
+#     # This is good enough...right?
+#     # scale factor 4 means tile occupies same as four unzoomed tiles
+#     global CUR_SCALE_FACTOR;
+#     CUR_SCALE_FACTOR = 4.0;
+# 
+#     # Better: find current window dimensions;
+#     # set zoom factor such that tile fits in current window plus some margin
+#     # current window is CUR_WINDOW i think
+# 
+#     print "FOOOO CW = ", ; print CUR_WINDOW.get_width()
+#     
+# 
+# 
+#     return;
 
-    # This is good enough...right?
-    global CUR_SCALE_FACTOR;
-    CUR_SCALE_FACTOR = 4.0;
-    return;
+
+
 
 #     # OLD: Draw at 4x requested size; CUR_SCALE_FACTOR = 4
 #     # NEW:
@@ -1627,48 +1640,48 @@ def set_zoom_scale_factor():
 #     fudge                 = .09 # yeah I dunno whatevs OCD OKAY?
 #     CUR_SCALE_FACTOR = float(two_tiles_plus_gap_2x)/float(tile_width) + fudge
 
-def draw_one_tile(cr, tileno):
-
-    # Save
-    global CUR_SCALE_FACTOR;
-    save_scale_factor = CUR_SCALE_FACTOR
-    cr.save()
-
-    # scalefactor = 10 # zoom in for debugging
-    # cr.scale(scalefactor,scalefactor)
-
-    ########################################################################
-    # Scale and translate
-
-    set_zoom_scale_factor()
-    cr.scale(CUR_SCALE_FACTOR,CUR_SCALE_FACTOR)
-
-    if (0): print "Zoom scale factor %d/%d = %f." \
-        % (two_tiles_plus_gap_2x, tile_width, CUR_SCALE_FACTOR)
-
-    ########################################################################
-    # OLD: cr.translate(UL_MARGIN, UL_MARGIN) [draw tile such that UL corner is at (AP,AP)
-    # NEW: -----------------------------------------------------------------
-    # Translate so that zoomed tile corners match unzoomed tile corners
-    # Unzoomed corners were centered in window, and above scaling (supposedly)
-    # ensures that zoomed corners are same distance apart as unzoomed,
-    # so: should suffice to make sure zoomed corners are centered.
-
-    # Things that were 40px wide in unzoomed view are now just 10px wide ish
-    scaled_win_width    = WIN_WIDTH/CUR_SCALE_FACTOR
-    scaled_canvas_width = CANVAS_WIDTH
-    print "sww=%0.2f scw=%0.2f" % (scaled_win_width,scaled_canvas_width)
-    xmargin = (scaled_win_width - scaled_canvas_width)/2
-    ymargin = xmargin
-    cr.translate(xmargin, ymargin)
-
-    # Okay done with scale and translate.  Now draw!
-    if (0): print "...at scale factor %f." % CUR_SCALE_FACTOR
-    TILE_LIST[tileno].draw(cr)
-
-    # Restore
-    cr.restore()
-    CUR_SCALE_FACTOR = save_scale_factor
+# def draw_one_tile(cr, tileno):
+# 
+#     # Save
+#     global CUR_SCALE_FACTOR;
+#     save_scale_factor = CUR_SCALE_FACTOR
+#     cr.save()
+# 
+#     # scalefactor = 10 # zoom in for debugging
+#     # cr.scale(scalefactor,scalefactor)
+# 
+#     ########################################################################
+#     # Scale and translate
+# 
+#     set_zoom_scale_factor()
+#     cr.scale(CUR_SCALE_FACTOR,CUR_SCALE_FACTOR)
+# 
+#     if (0): print "Zoom scale factor %d/%d = %f." \
+#         % (two_tiles_plus_gap_2x, tile_width, CUR_SCALE_FACTOR)
+# 
+#     ########################################################################
+#     # OLD: cr.translate(UL_MARGIN, UL_MARGIN) [draw tile such that UL corner is at (AP,AP)
+#     # NEW: -----------------------------------------------------------------
+#     # Translate so that zoomed tile corners match unzoomed tile corners
+#     # Unzoomed corners were centered in window, and above scaling (supposedly)
+#     # ensures that zoomed corners are same distance apart as unzoomed,
+#     # so: should suffice to make sure zoomed corners are centered.
+# 
+#     # Things that were 40px wide in unzoomed view are now just 10px wide ish
+#     scaled_win_width    = WIN_WIDTH/CUR_SCALE_FACTOR
+#     scaled_canvas_width = CANVAS_WIDTH
+#     print "sww=%0.2f scw=%0.2f" % (scaled_win_width,scaled_canvas_width)
+#     xmargin = (scaled_win_width - scaled_canvas_width)/2
+#     ymargin = xmargin
+#     cr.translate(xmargin, ymargin)
+# 
+#     # Okay done with scale and translate.  Now draw!
+#     if (0): print "...at scale factor %f." % CUR_SCALE_FACTOR
+#     TILE_LIST[tileno].draw(cr)
+# 
+#     # Restore
+#     cr.restore()
+#     CUR_SCALE_FACTOR = save_scale_factor
 
 global TILES_DRAWN_AT_LEAST_ONCE           # FIXME Yes this is awful
 TILES_DRAWN_AT_LEAST_ONCE = False          # FIXME Yes this is awful
@@ -1836,7 +1849,7 @@ def get_cursor_magminus():
 # class CGRAWin(Gtk.Window):
 class CGRAWin(gtk.Window):
     def __init__(self):
-        DBG = 2
+        # DBG = 2
 
         # Set up the main window and connect to callback routine that draws everything.
 
