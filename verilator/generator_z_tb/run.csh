@@ -16,13 +16,6 @@ endif
 
 # setenv CGRA_GEN_USE_MEM 1
 
-echo FOOOO
-if (! $?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG NOT SET
-if ($?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
-setenv CGRA_GEN_ALL_REG 1
-echo $?CGRA_GEN_ALL_REG
-
-
 # setenv OLDMEM
 
 # Travis flow (CGRAFlow/.travis.yml)

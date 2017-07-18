@@ -4,11 +4,14 @@
 
 # Script should be in CGROOT/bin
 
-if (! $?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG NOT SET
+if (! $?CGRA_GEN_ALL_REG) echo 'CGRA_GEN_ALL_REG NOT SET (yet)'
 if ($?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
 setenv CGRA_GEN_ALL_REG 1
-echo $?CGRA_GEN_ALL_REG
+echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
 
+echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
+echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
+echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
 
 set scriptpath = "$0"
 set scriptpath = $scriptpath:h
