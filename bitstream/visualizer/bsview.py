@@ -2,6 +2,17 @@
 import sys
 import re
 
+'''
+NEXT
+Want "whereami(x,y)" fn (enhancement to find_tile_clicked(x,y) probably)
+that, given (x,y) coords, tells
+- what tile am i closest to?
+- what port (wirename) in that tile am i closest to?
+- am i inside or outside of the tile?
+'''
+
+
+
 # # gi a.k.a. pygobjects, pygtk
 # import gi
 # gi.require_version('Gtk', '3.0')
@@ -212,7 +223,7 @@ def test_tileno2rc_8x8():
 
 
 def rc2tileno_8x8(row,col):
-    DBG = 1
+    DBG = 0
     search_string = "tile_addr='(\d+)'.*row='%d'.*col='%d'" % (row,col)
     parse = re.search(search_string, cgra_tile_info)
     # if (not parse):
@@ -1160,7 +1171,7 @@ def drawmemtile(cr):
 
 # E.g. ab_connect(cr, "in_s3t0", "wireA")
 def ab_connect(cr, inport, PE_input):
-    DBG=1;
+    DBG=0;
     if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
 
     if DBG: print "AB connecting wire '%s' to pe_in wire '%s'" % (inport, PE_input)
@@ -1426,7 +1437,7 @@ def connectwires(cr, connection):
     # For connections of the form "pe_out <= MUL(wireA,regB)" or "pe_out <= MUL(wireA,0x0002)"
     # parse = re.search("^(pe_out) .* (.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
     if (from_type == "pe"):
-        DBG = 1;
+        DBG = 0;
         if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
         if DBG: print "CW/pe found valid connection %s" % connection
         parse = re.search("^(.*)[(](wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)[)]", pfrom)
@@ -2130,6 +2141,32 @@ def zoom(sf):
 
     # global ACTUAL_SCALE; ACTUAL_SCALE = float(h)/hprev    # print "SF " + str(ACTUAL_SCALE)
 
+def find_tile_clicked(x,y):
+    '''
+    Find closest tile to the given (x,y) coordinates
+    '''
+    DBG = 1
+    if DBG: print "clicked on %d %d" % (x,y)
+    if DBG: print "  UL_MARGIN = " + str(UL_MARGIN)
+    if DBG: print "  CUR_SCALE_FACTOR = " + str(CUR_SCALE_FACTOR)
+    if DBG: print "  CANVAS_WIDTH = %d" % CANVAS_WIDTH
+
+    unscaled_x = x/CUR_SCALE_FACTOR
+    unbordered_unscaled_x = unscaled_x - UL_MARGIN
+    col = int(unbordered_unscaled_x/CANVAS_WIDTH)
+
+    unscaled_y = y/CUR_SCALE_FACTOR
+    unbordered_unscaled_y = unscaled_y - UL_MARGIN
+    row = int(unbordered_unscaled_y/CANVAS_HEIGHT)
+
+    if DBG: print "  Unbordered unscaled x,y = (%d,%d)" % (unbordered_unscaled_x,unbordered_unscaled_y)
+
+    # Find tile number indicated by (row,col)
+    tileno = rc2tileno(row,col)
+
+    if DBG: print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
+    return tileno
+
 def zoom_to_tile1(event):
     '''
     Button-press event calls zoom_to_tile1() to queue up the zoom.
@@ -2166,28 +2203,10 @@ def zoom_to_tile1(event):
         PREV_HUPPER = SW.get_hadjustment().upper
         print "HUPPERS 1 %d" % (PREV_HUPPER)
 
-        # tileno = find_tile_clicked(event.x, event.y)
-        ########################################################################
-        DBG = 0
         # x,y coordinates of button-press
         x = event.x; y = event.y
-        if DBG: print "clicked on %d %d" % (x,y)
 
-        # Subtract off the scale-independent paddings and divide by scale factor I guess
-        x = (x - UL_MARGIN)/CUR_SCALE_FACTOR; y = (y - UL_MARGIN)/CUR_SCALE_FACTOR;
-        if DBG: print "Transformed x,y = (%d,%d)" % (x,y)
-        if DBG: print "CANVAS_WIDTH = %d" % CANVAS_WIDTH
-
-        # Find row, col of tile indicated by sclaed/translated (x,y)
-        row = y/CANVAS_WIDTH; col = x/CANVAS_HEIGHT;
-        row = int(row); col = int(col)
-
-        # Find tile number indicated by (row,col)
-        tileno = rc2tileno(row,col)
-
-        print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
-        # tileno = find_tile_clicked(x,y)
-        ########################################################################
+        tileno = find_tile_clicked(event.x, event.y)
 
         if DBG: print "Zoom in to tile %s!" % str(tileno)
         ZOOMTILE = tileno;
@@ -2245,13 +2264,19 @@ def zoom_to_tile1(event):
         # Don't forget to recenter!
         recenter(PREZOOMx, PREZOOMy)
         
-
 def button_press_handler(widget, event):
     double_click = (event.type == gtk.gdk._2BUTTON_PRESS)
     single_click = (event.type == gtk.gdk.BUTTON_PRESS)
     
-    if double_click: print "\nsingle click "
-    if single_click: print "\ndouble click "
+    if double_click: print "\ndouble click "
+    if single_click: print "\nsingle click "
+
+    if single_click:
+        # print "Where is the nearest wire to me?"
+        find_tile_clicked(event.x, event.y)
+
+
+
 
     # ZOOM TO TILE (ugh FIXME should be a separate routine)
     # Double click should ALWAYS be zoom-to-tile maybe
