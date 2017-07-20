@@ -34,7 +34,7 @@ if (parse): scriptname_tail = parse.group(1)
 usage = '''
 Decodes/annotates the indicated bitstream file
 Usage:
-   %s [ -nodefaults ] [ -newmem | -oldmem | -swaprc | -4x4 | -8x8 ] <bitstream-file>
+   %s [ -nodefaults ] [ -4x4 | -8x8 ] <bitstream-file>
    %s --help
 ''' % (scriptname_tail, scriptname_tail)
 
@@ -45,16 +45,15 @@ sbdefaults = True;
 
 # No! default should be 8x8 / newmem
 GRIDSIZE = "8x8"
-SWAP = True
+
+# SWAP is ALWAYS TRUE now (so why not get rid of it)
+# SWAP = True
 
 
 if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
 while (len(args) > 0):
     if   (args[0] == '-nodefaults'): sbdefaults = False
-    elif (args[0] == '-swaprc'):     SWAP = True
-    elif (args[0] == '-newmem'):     SWAP = True
-    elif (args[0] == '-oldmem'):     SWAP = False
     elif (args[0] == '-4x4'):        GRIDSIZE = "4x4"
     elif (args[0] == '-8x8'):        GRIDSIZE = "8x8"
     else:              bitstream_filename = args[0];
@@ -66,10 +65,10 @@ print "-------------------------------------------------------------------------
 print "Assume 4x4 grid of tiles, all with 2-input PEs\n"+\
       "                                           \n"+\
       "     tileno                   r,c          \n"+\
-      "  0  4   8  12      (0,0) (0,1) (0,2) (0,3)\n"+\
-      "  1  5   9  13      (1,0) (1,1) (1,2) (1,3)\n"+\
-      "  2  6  10  14      (2,0) (2,1) (2,2) (2,3)\n"+\
-      "  3  7  11  15      (3,0) (3,1) (3,2) (3,3)\n"+\
+      "  0   1   2   3     (0,0) (0,1) (0,2) (0,3)\n"+\
+      "  4   5   6   7     (1,0) (1,1) (1,2) (1,3)\n"+\
+      "  8   9  10  11     (2,0) (2,1) (2,2) (2,3)\n"+\
+      " 12  13  14  15     (3,0) (3,1) (3,2) (3,3)\n"+\
       "";
 print "Note: 's1t3' means 'side 1 track 3' (sides [0123] map to [ESWN] respectively)"
 print "-----------------------------------------------------------------------------"
@@ -77,14 +76,6 @@ print "-------------------------------------------------------------------------
 def tileno2rc(tileno):
     # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown above.
     # Given tile number tileno return the (row,column) equivalent
-    #
-    #    tileno                    r,c
-    #  0  4   8  12      (0,0) (0,1) (0,2) (0,3)
-    #  1  5   9  13      (1,0) (1,1) (1,2) (1,3)
-    #  2  6  10  14      (2,0) (2,1) (2,2) (2,3)
-    #  3  7  11  15      (3,0) (3,1) (3,2) (3,3)
-    #
-    # Unless SWAP = True, in which case...just the opposite (ugh!)
     #
     #      tileno                    r,c
     #   0   1   2   3      (0,0) (0,1) (0,2) (0,3)
@@ -99,8 +90,10 @@ def tileno2rc(tileno):
     row = tileno%4
     col = int(tileno/4)
     
-    if (not SWAP): return [row, col];
-    else:          return [col, row];
+    # if (not SWAP): return [row, col];
+    # else:          return [col, row];
+
+    return [col, row];
 
 # Oh no
 cgra_tile_info = '''
