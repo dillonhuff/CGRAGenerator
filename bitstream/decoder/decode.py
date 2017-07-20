@@ -40,15 +40,8 @@ Usage:
 
 sbdefaults = True;
 
-# GRIDSIZE = "4x4"
-# SWAP = False
-
-# No! default should be 8x8 / newmem
+# Default should be 8x8
 GRIDSIZE = "8x8"
-
-# SWAP is ALWAYS TRUE now (so why not get rid of it)
-# SWAP = True
-
 
 if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
@@ -74,15 +67,16 @@ print "Note: 's1t3' means 'side 1 track 3' (sides [0123] map to [ESWN] respectiv
 print "-----------------------------------------------------------------------------"
 
 def tileno2rc(tileno):
-    # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown above.
+    '''
     # Given tile number tileno return the (row,column) equivalent
+    # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown above.
     #
     #      tileno                    r,c
     #   0   1   2   3      (0,0) (0,1) (0,2) (0,3)
     #   4   5   6   7      (1,0) (1,1) (1,2) (1,3)
     #   8   9  10  11      (2,0) (2,1) (2,2) (2,3)
     #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
-
+    '''
     # Is this smart? Ans: NO   # FIXME/TODO
     if (GRIDSIZE == "8x8"):
         return tileno2rc_8x8(tileno)
