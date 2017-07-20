@@ -2247,14 +2247,17 @@ def zoom_to_tile1(event):
         
 
 def button_press_handler(widget, event):
-    if event.type == gtk.gdk.BUTTON_PRESS:   print "\nsingle click "
-    if event.type == gtk.gdk._2BUTTON_PRESS: print "\ndouble click "
+    double_click = (event.type == gtk.gdk._2BUTTON_PRESS)
+    single_click = (event.type == gtk.gdk.BUTTON_PRESS)
+    
+    if double_click: print "\nsingle click "
+    if single_click: print "\ndouble click "
 
     # ZOOM TO TILE (ugh FIXME should be a separate routine)
     # Double click should ALWAYS be zoom-to-tile maybe
     # Nope that's just a mess
     # 
-    if (CUR_CURSOR == 'arrow') and (event.type == gtk.gdk._2BUTTON_PRESS):
+    if double_click and (CUR_CURSOR == 'arrow'):
         print "zoom to tile"
         zoom_to_tile1(event)
 
