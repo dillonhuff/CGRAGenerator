@@ -15,6 +15,7 @@ endif
 
 
 # setenv CGRA_GEN_USE_MEM 1
+# setenv CGRA_GEN_ALL_REG 1
 
 # setenv OLDMEM
 
