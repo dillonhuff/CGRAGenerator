@@ -241,20 +241,21 @@ echo; echo "Bitstream appears to have embedded i/o information (as it should).  
 
 set decoded = $tmpdir/{$config:t}.decoded
 if (-e $decoded) rm $decoded
-# ../../bitstream/decoder/decode.py $config > $decoded
-# New memtile regime swaps r,c tile addresses HA
 
-# ../../bitstream/decoder/decode.py -newmem $config > $decoded
+# NOTE newmem is default now
+# # ../../bitstream/decoder/decode.py -newmem $config > $decoded
+# 
+# if ($?OLDMEM) then
+#   echo ../../bitstream/decoder/decode.py -oldmem $config
+#   ../../bitstream/decoder/decode.py $config -oldmem > $decoded
+# else
+#   echo ../../bitstream/decoder/decode.py -newmem -$gridsize $config
+#   ../../bitstream/decoder/decode.py -newmem -$gridsize $config > $decoded
+# endif
 
-if ($?OLDMEM) then
-  echo ../../bitstream/decoder/decode.py $config
-  ../../bitstream/decoder/decode.py $config > $decoded
-else
-  echo ../../bitstream/decoder/decode.py -newmem -$gridsize $config
-  ../../bitstream/decoder/decode.py -newmem -$gridsize $config > $decoded
-endif
-
-
+echo \
+../../bitstream/decoder/decode.py -$gridsize $config
+../../bitstream/decoder/decode.py -$gridsize $config > $decoded
 
 
 
