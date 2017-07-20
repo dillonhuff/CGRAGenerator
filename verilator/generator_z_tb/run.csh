@@ -201,25 +201,41 @@ if (! $?embedded_io) then
   exit -1
 endif
 
-# Swizzle the bitstream to match new mem regime (unless bypassed)
-
-set swizzled = $tmpdir/{$config:t}.swizzled
-if (-e $swizzled) rm $swizzled
-
+# # Swizzle the bitstream to match new mem regime (unless bypassed)
+# 
+# set swizzled = $tmpdir/{$config:t}.swizzled
+# if (-e $swizzled) rm $swizzled
+# 
+# # if ($?OLDMEM) then
+# #     cp $config $swizzled
+# # else
+# #   echo "Unswizzling bitstream.  Before:"
+# #   cat $config
+# # 
+# #   ./swizzle.py < $config > $swizzled
+# # 
+# #   echo "After:"
+# #   cat $swizzled
+# # endif
+# 
+# cp $config $swizzled
+# 
+# echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
+# 
+# set decoded = $tmpdir/{$config:t}.decoded
+# if (-e $decoded) rm $decoded
+# # ../../bitstream/decoder/decode.py $config > $decoded
+# # New memtile regime swaps r,c tile addresses HA
+# 
+# # ../../bitstream/decoder/decode.py -newmem $config > $decoded
+# 
 # if ($?OLDMEM) then
-#     cp $config $swizzled
+#   echo ../../bitstream/decoder/decode.py $swizzled
+#   ../../bitstream/decoder/decode.py $swizzled > $decoded
 # else
-#   echo "Unswizzling bitstream.  Before:"
-#   cat $config
-# 
-#   ./swizzle.py < $config > $swizzled
-# 
-#   echo "After:"
-#   cat $swizzled
+#   echo ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled
+#   ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled > $decoded
 # endif
-
-cp $config $swizzled
-
 
 echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
 
@@ -231,12 +247,18 @@ if (-e $decoded) rm $decoded
 # ../../bitstream/decoder/decode.py -newmem $config > $decoded
 
 if ($?OLDMEM) then
-  echo ../../bitstream/decoder/decode.py $swizzled
-  ../../bitstream/decoder/decode.py $swizzled > $decoded
+  echo ../../bitstream/decoder/decode.py $config
+  ../../bitstream/decoder/decode.py $config > $decoded
 else
-  echo ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled
-  ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled > $decoded
+  echo ../../bitstream/decoder/decode.py -newmem -$gridsize $config
+  ../../bitstream/decoder/decode.py -newmem -$gridsize $config > $decoded
 endif
+
+
+
+
+
+
 
 # Show IO info derived from bitstream
 echo; sed -n '/O Summary/,$p' $decoded; echo
