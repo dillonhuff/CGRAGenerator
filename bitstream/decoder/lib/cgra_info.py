@@ -62,6 +62,95 @@ import sys
 #     elif (e.tag != 'sb'): return (False, False)
 #     sb = e
 
+# def build_mask(bith,bitl):
+def extract_field(dword, bith, bitl):
+    '''
+    Given a (32-bit) data word "dword" extract the value
+    in the field bounded by bits bith and bitl inclusive.
+    E.g. extract_field(0x0000C000, 15,14) = 3
+    '''
+    DBG = 0
+    field_width = bith - bitl + 1
+    field_mask  = 2**field_width - 1
+    mask = field_mask << bitl
+    if DBG: print("    mux mask 0x%x = (0x%x << %d)" \
+                  % (mask, field_mask, bitl))
+    # return mask
+    rval = (dword & mask) >> bitl
+    if DBG: print "    val 0x%08x >> %d = %d" % (dword & mask, bitl, rval)
+    return rval
+
+def mem_decode(e,DDDDDDDD):
+    '''
+    # When we see this:
+    #   00080011 00000204
+    # 
+    # We call this function with a pointer to the xml (below)
+    # and the data (DDDDDDDD = "00000204")
+    # 
+    # We use this:
+    # <mem feature_address='8' data_bus='BUS16' control_bus='BUS1'>
+    #    <mode bith='1' bitl='0'>00</mode>
+    #    <tile_en bit='2'>0</tile_en>
+    #    <fifo_depth bith='15' bitl='3'>0</fifo_depth>
+    #    <almost_full_count bith='18' bitl='16'>0</almost_full_count>
+    #    <chain_enable bit='19'>0</chain_enable>
+    # </mem>
+    #
+    # To print this:
+    #    # data[(1, 0)] : mode = linebuffer      
+    #    # data[(2, 2)] : tile_en = 1            
+    #    # data[(15, 3)] : fifo_depth = 64       
+    #    # data[(18, 16)] : almost_full_count = 0
+    #    # data[(19, 19)] : chain_enable = 0     
+    '''
+
+    # for se in e: print se
+
+    for se in e:
+        if se.tag == 'mode':
+            # mode: 00=LB 01=FIFO 10=SRAM 11=reserved
+            mode = range(4)
+            mode[0] = "linebuffer"
+            mode[1] = "fifo"
+            mode[2] = "sram"
+            mode[3] = "INVALID MODE 3"
+            data = int(DDDDDDDD,16)
+            bith = int(se.attrib['bith'])
+            bitl = int(se.attrib['bitl'])
+            val = extract_field(data, bith, bitl)
+            print "# data[(%d, %d)] : mode = %s" % (bith, bitl, mode[val])
+
+        elif se.tag == 'tile_en':
+            data = int(DDDDDDDD,16)
+            bith = int(se.attrib['bit'])
+            bitl = int(se.attrib['bit'])
+            val = extract_field(data, bith, bitl)
+            print "# data[(%d, %d)] : tile_en = %d" % (bith, bitl, val)
+
+        elif se.tag == 'almost_full_count':
+            # IN: <almost_full_count bith='18' bitl='16'>0</almost_full_count>            
+            # OUT: # data[(18, 16)] : almost_full_count = 0
+            data = int(DDDDDDDD,16)
+            bith = int(se.attrib['bith'])
+            bitl = int(se.attrib['bitl'])
+            val = extract_field(data, bith, bitl)
+            print "# data[(%d, %d)] : almost_full_count = %d" % (bith, bitl, val)
+
+        elif se.tag == 'chain_enable':
+            data = int(DDDDDDDD,16)
+            bith = int(se.attrib['bit'])
+            bitl = int(se.attrib['bit'])
+            val = extract_field(data, bith, bitl)
+            print "# data[(%d, %d)] : chain_enable = %d" % (bith, bitl, val)
+
+        elif se.tag == 'fifo_depth':
+            data = int(DDDDDDDD,16)
+            bith = int(se.attrib['bith'])
+            bitl = int(se.attrib['bitl'])
+            val = extract_field(data, bith, bitl)
+            print "# data[(%d, %d)] : fifo_depth = %d" % (bith, bitl, val)
+
 
 # def sb_decode_cgra(sb,RR,DDDDDDDD):
 def sb_decode(sb,RR,DDDDDDDD):
@@ -118,19 +207,28 @@ def sb_decode(sb,RR,DDDDDDDD):
             if DBG: print "    wrong register"
         else:
             if DBG: print("    Found mux for output '%s'" % snk)
-            field_width = configh - configl + 1
-            field_mask  = 2**field_width - 1
-            regbitl = (configl % 32)
-            mask = field_mask << regbitl
-            if DBG: print("    mux mask 0x%x = (0x%x << %d)" \
-                          % (mask, field_mask, regbitl))
+
+
+#             mask = build_mask(configh % 32, configl % 32)
+#             regbitl = (configl % 32)
+# 
+# #             field_width = configh - configl + 1
+# #             field_mask  = 2**field_width - 1
+# #             mask = field_mask << regbitl
+# #             if DBG: print("    mux mask 0x%x = (0x%x << %d)" \
+# #                           % (mask, field_mask, regbitl))
+# 
+#             data = int(DDDDDDDD, 16)
+#             if DBG: print("    data & mask = 0x%08x & 0x%08x = %08x"\
+#                           % (data, mask, data & mask))
+#             val = (data & mask) >> regbitl 
+#             if DBG: print("    val 0x%08x >> %d = %d"\
+#                           % (data & mask, regbitl, val))
 
             data = int(DDDDDDDD, 16)
-            if DBG: print("    data & mask = 0x%08x & 0x%08x = %08x"\
-                          % (data, mask, data & mask))
-            val = (data & mask) >> regbitl 
-            if DBG: print("    val 0x%08x >> %d = %d"\
-                          % (data & mask, regbitl, val))
+            bith= configh % 32; bitl = configl % 32;
+            val = extract_field(data, bith, bitl)
+
             outwire = mux.attrib['snk']
             for src in mux:
                 if DBG: print "      Found %s %s %s" % (src.tag, str(src.attrib), src.text)

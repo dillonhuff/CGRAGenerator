@@ -562,16 +562,6 @@ def pe_decode(RR, DDDDDDDD):
 # 
 #     print opstr;
 
-    # Me:
-    # FF00000F 00008000
-    # pe_out <= ADD(wireA,0x0000)
-    # 
-    # Them:
-    # FF00000F 00008000
-    # # data[15] : read from wire `a` CHECK
-    # # data[13] : read from reg `b`
-    # # data[(4, 0)] : op = add
-
     iohack = 0;
 
     op = DDDDDDDD[6:8] # last two hex digits
@@ -792,8 +782,28 @@ for line in inputstream:
               % (EE,TTTT, thistile)
         sys.exit(-1)
 
+    if (e.tag == "mem"):
+        # print "OOP found memory"
+        cgra_info.mem_decode(e, DDDDDDDD)
+
+        # <mem feature_address='8' data_bus='BUS16' control_bus='BUS1'>
+        #    <mode bith='1' bitl='0'>00</mode>
+        #    <tile_en bit='2'>0</tile_en>
+        #    <fifo_depth bith='15' bitl='3'>0</fifo_depth>
+        #    <almost_full_count bith='18' bitl='16'>0</almost_full_count>
+        #    <chain_enable bit='19'>0</chain_enable>
+        # </mem>
+
+        # 00080011 00000204
+        # data[(18, 16)] : almost_full_count = 0
+        # data[(1, 0)] : mode = linebuffer      
+        # data[(19, 19)] : chain_enable = 0     
+        # data[(15, 3)] : fifo_depth = 64       
+        # data[(2, 2)] : tile_en = 1            
+        
+
     # Switchbox (new)
-    if (e.tag == "sb"):
+    elif (e.tag == "sb"):
         DBG=0
         (regs,connections) = cgra_info.sb_decode(e,RR,DDDDDDDD)
         if DBG:
