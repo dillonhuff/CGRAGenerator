@@ -624,16 +624,22 @@ def pe_decode(RR, DDDDDDDD):
     # PRINT:
     # "pe_out <= MUL(wireA,wireB) ; regA <= wireA (always) ; regB <= wireB (always)"
 
-    if (iohack): print opstr,
-    else:        print "pe_out <= " + opstr,
+    if (not iohack): opstr = "pe_out <= " + opstr
+    print opstr,
 
-    # indent = "%8s %8s %6s" % ('','','')
+    reg = ""
     indent = "; "
-    if (areg == "wireA"): print indent + "regA <= wireA (always)",
-    if (breg == "wireB"): print indent + "regB <= wireB (always)",
-    if (creg == "wireC"): print indent + "regC <= wireC (always)",
-    if (dreg == "wireD"): print indent + "regD <= wireD (always)",
-    print ""
+    if (areg == "wireA"): reg = indent + "regA <= wireA (always)"
+    if (breg == "wireB"): reg = indent + "regB <= wireB (always)"
+    if (creg == "wireC"): reg = indent + "regC <= wireC (always)"
+    if (dreg == "wireD"): reg = indent + "regD <= wireD (always)"
+    print reg
+
+
+
+
+
+
 
 
 ##############################################################################
