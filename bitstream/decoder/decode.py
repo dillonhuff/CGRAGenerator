@@ -274,7 +274,7 @@ def cb_decode(EE, DDDDDDDD):
         ann = Annotations.connect_wire(wireno,inwire,outwire,6,0)
 
         # "data[(3, 0)] : @ tile (6, 0) connect wire 0 (in_BUS16_S1_T0) to a"
-        cb_connection = "\n# %s : %s" % (dbits, ann)
+        cb_connection = "# %s : %s" % (dbits, ann)
 
         # print Annotations.op_config('op', 'output')
         # backends.py: comment[reg][(c.sel_w + offset - 1, offset)] \
@@ -457,7 +457,7 @@ def pe_decode(RR, DDDDDDDD):
         iohack = "";
         if (DDDDDDDD == "FFFFFFFF"): iohack = "IO HACK: "
         if verbose: print "%sreg%s <= %s" % (iohack, k, dstring);
-        else:       print ""
+        # else:       print ""
         return;
 
     # Only other valid option is "FF" (load opcode)
@@ -597,7 +597,7 @@ def pe_decode(RR, DDDDDDDD):
         #   F000xxxx FFFFFFFF   # IO input pad: ignore pe_in_a
         #   F100xxxx FFFFFFFF   # IO input pad: ignore pe_in_b
 
-        opstr = "\n# data[(4, 0)] : op = input"
+        opstr = "# data[(4, 0)] : op = input"
         if verbose: opstr = "IO HACK: pe_out is CGRA INPUT" + opstr;
         iohack = 1;
         # opstr = opstr + "\n                        " + \
@@ -608,7 +608,7 @@ def pe_decode(RR, DDDDDDDD):
         #   FF00xxxx 000000FF    # (op==FF): pe_in_a (wireA) is CGRA output
         #   F1000004 00000000    # IO output pad: ignore pe_in_b
 
-        opstr = "\n# data[(4, 0)] : op = output"
+        opstr = "# data[(4, 0)] : op = output"
         if verbose: opstr = "IO HACK: pe_in_a (wireA) is CGRA OUTPUT" + opstr;
         iohack = 1;
 
@@ -684,12 +684,15 @@ for line in inputstream:
             print ""
             print "                        TILE %d %s" % (thistile, rc)
 
-    print line,
-    # print "[ r%02X e%02X %-5s ]  " % \
-    #     (int(RR,16) ,int(EE,16) ,"(" + EE_decode(EE) + ")" \
-    #  ),
-    # print "%-5s  " % ("(" + EE_decode(EE) + ")"),
-    print "[%-3s]" % (EE_decode(EE)),
+    # print line,
+    # # print "[ r%02X e%02X %-5s ]  " % \
+    # #     (int(RR,16) ,int(EE,16) ,"(" + EE_decode(EE) + ")" \
+    # #  ),
+    # # print "%-5s  " % ("(" + EE_decode(EE) + ")"),
+    # print "[%-3s]" % (EE_decode(EE)),
+
+    if verbose: print "%s [%-3s]" % (line, (EE_decode(EE))),
+    else:       print line
 
     # Processing element
     if (EE == "00"):
@@ -743,7 +746,7 @@ for line in inputstream:
     #         iohack_pe_out[thistile] = pe_out;
 
     else:
-        print "";
+        if verbose: print "";
 
     # Switchbox (new)
     e = cgra_info.get_element(EE, TTTT)
