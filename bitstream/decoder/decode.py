@@ -625,22 +625,14 @@ def pe_decode(RR, DDDDDDDD):
     # "pe_out <= MUL(wireA,wireB) ; regA <= wireA (always) ; regB <= wireB (always)"
 
     if (not iohack): opstr = "pe_out <= " + opstr
-    print opstr,
 
     reg = ""
-    indent = "; "
+    indent = " ; "
     if (areg == "wireA"): reg = indent + "regA <= wireA (always)"
     if (breg == "wireB"): reg = indent + "regB <= wireB (always)"
     if (creg == "wireC"): reg = indent + "regC <= wireC (always)"
     if (dreg == "wireD"): reg = indent + "regD <= wireD (always)"
-    print reg
-
-
-
-
-
-
-
+    print opstr + reg
 
 ##############################################################################
 # MAIN
