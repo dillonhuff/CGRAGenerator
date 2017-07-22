@@ -97,7 +97,10 @@ def sb_decode(sb,RR,DDDDDDDD):
                     snk = mux.attrib['snk']
                     if DBG: print "*** Found registered output for '%s'" % snk
                     is_registered = True;
-                    regs.append(snk)
+
+                    # regs.append(snk)
+                    regs.append( (snk, regbit) )
+
                     if DBG: print "*** Now regs =", ; print regs
                     
 

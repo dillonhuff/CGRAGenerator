@@ -449,15 +449,17 @@ def pe_decode(RR, DDDDDDDD):
     DDDD = DDDDDDDD[4:8]   # last four hex digits
     dstring = "0x" + DDDD  # Same, with a "0x" in front
     # Note: C input unused/invalid for 2-input PEs!
-    if (RR == "F0"): areg = dstring; k="A"
-    if (RR == "F1"): breg = dstring; k="B"
-    if (RR == "F2"): creg = dstring; k="C"
-    if (RR == "F3"): dreg = dstring; k="D"; print "\n\nFOOOOOOOOOOOOOOO\n\n"
+    if (RR == "F0"): areg = dstring; k="a"
+    if (RR == "F1"): breg = dstring; k="b"
+    if (RR == "F2"): creg = dstring; k="c"
+    if (RR == "F3"): dreg = dstring; k="d"; print "\n\nFOOOOOOOOOOOOOOO\n\n"
     if (k):
-        iohack = "";
-        if (DDDDDDDD == "FFFFFFFF"): iohack = "IO HACK: "
-        if verbose: print "%sreg%s <= %s" % (iohack, k, dstring);
-        # else:       print ""
+        if verbose:
+            iohack = "";
+            if (DDDDDDDD == "FFFFFFFF"): iohack = "IO HACK: "
+            print "%sreg%s <= %s" % (iohack, k, dstring);
+        if (DDDDDDDD == "FFFFFFFF"): return
+        print "# data[(15, 0)] : load `%s` reg with const: %d" % (k,int(dstring,16))
         return;
 
     # Only other valid option is "FF" (load opcode)
@@ -770,14 +772,36 @@ for line in inputstream:
         for outwire in sorted(connections.iterkeys()):
             # print outwire + " " + str(connections[outwire])
             (inwire,configh,configl,wireno) = connections[outwire]
-            print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
-                  % (configh,configl,r,c,wireno,inwire,outwire)
+
+            # HACK HACK FIXME
+            # For now, only list connections where wireno != 0
+
+            # if (1):
+            if (wireno):
+                print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
+                      % (configh,configl,r,c,wireno,inwire,outwire)
 
             if (inwire == "pe_out_res"):
                 DBG=0
                 if (DBG): print "FOUND IT!",
                 if (DBG): print "pe connects to %s in tile %d" % (outwire,thistile)
                 iohack_pe_out[thistile] = outwire;
+
+        # LIST RESGISTERS like so
+        # data[(13, 13)] : @ tile (0, 2) latch wire 0 (in_BUS16_S0_T0)
+        # before connecting to out_BUS16_S1_T0
+
+        # for outwire in sorted(connections.iterkeys()):
+        for reg in regs:
+            if DBG: print "OOP found reg %s" % str(reg)
+            (outwire,bitno) = reg
+            wireno = 999
+            inwire = "UNKNOWN"
+            # print "# data[(%d, %d)] : @ tile (%d, %d) latch wire %d (%s) before connecting to %s"\
+            print "# data[(%d, %d)] : @ tile (%d, %d) latch %s connected to input wire %d (%s)"\
+                  % (bitno,bitno,r,c,outwire,wireno,inwire)
+
+
 
 
 # OUTPUT tiles go to wire indicated by iohack_cb_out
