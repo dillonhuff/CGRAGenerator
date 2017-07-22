@@ -16,13 +16,19 @@ import re;
 # deprecated, will go away soon i hope
 from lib.sb_decode_5tracks import *
 
-import os
 from lib import cgra_info
-mydir = os.path.dirname(os.path.realpath(__file__))
-print("I think I am here:\n  %s" % mydir)
-filename = mydir + "/examples/cgra_info.txt"
-print("Using cgra_info file\n  %s" % filename)
-cgra_info.read_cgra_info(filename)
+
+global verbose
+verbose = False
+
+def get_default_cgra_info_filename():
+    import os
+    mydir = os.path.dirname(os.path.realpath(__file__))
+    cgra_filename = mydir + "/examples/cgra_info.txt"
+
+    if verbose: print("I think I am here:\n  %s" % mydir)
+    if verbose: print("Default cgra_info file is\n  %s" % cgra_filename)
+    return cgra_filename
 
 # from lib import sb_decode_cgra
 
@@ -51,14 +57,6 @@ from lib.annotations import Annotations
 scriptname = sys.argv[0];
 args = sys.argv[1:];
 
-# usage = "\n"\
-#   + "Decodes/annotates the indicated bitstream file\n"\
-#   + "Usage:\n"\
-#   + "   %s <bitstream-file>\n" % scriptname\
-#   + "   %s -newmem <bitstream-file>\n" % scriptname\
-#   + "   %s --help\n" % scriptname\
-#   + ""
-
 scriptname_tail = scriptname
 parse = re.search('([/].*$)', scriptname)
 parse = re.search('([^/]+$)', scriptname)
@@ -67,11 +65,13 @@ if (parse): scriptname_tail = parse.group(1)
 usage = '''
 Decodes/annotates the indicated bitstream file
 Usage:
-   %s [ -nodefaults ] [ -4x4 | -8x8 ] <bitstream-file>
+   %s [ -v ] [ -4x4 | -8x8 ] <bitstream-file> -cgra <cgra_info_file>
    %s --help
 ''' % (scriptname_tail, scriptname_tail)
 
-sbdefaults = True;
+# sbdefaults = True;
+cgra_filename = get_default_cgra_info_filename()
+
 
 # Default should be 8x8
 GRIDSIZE = "8x8"
@@ -79,25 +79,35 @@ GRIDSIZE = "8x8"
 if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
 while (len(args) > 0):
-    if   (args[0] == '-nodefaults'): sbdefaults = False
-    elif (args[0] == '-4x4'):        GRIDSIZE = "4x4"
-    elif (args[0] == '-8x8'):        GRIDSIZE = "8x8"
-    else:              bitstream_filename = args[0];
+    # if   (args[0] == '-nodefaults'): sbdefaults = False
+    if   (args[0] == '-v'):    verbose = True
+    elif (args[0] == '-4x4'): GRIDSIZE = "4x4"
+    elif (args[0] == '-8x8'): GRIDSIZE = "8x8"
+    elif (args[0] == '-cgra'):
+        cgra_filename = args[1]
+        args = args[1:];
+    else:
+        bitstream_filename = args[0];
     args = args[1:]
 
+if verbose: print("Using cgra_info file %s" % cgra_filename)
+cgra_info.read_cgra_info(cgra_filename)
+
+
 # TBD this (below) could be a separate "print_intro()" function like
-print "";
-print "-----------------------------------------------------------------------------"
-print "Assume 4x4 grid of tiles, all with 2-input PEs\n"+\
-      "                                           \n"+\
-      "     tileno                   r,c          \n"+\
-      "  0   1   2   3     (0,0) (0,1) (0,2) (0,3)\n"+\
-      "  4   5   6   7     (1,0) (1,1) (1,2) (1,3)\n"+\
-      "  8   9  10  11     (2,0) (2,1) (2,2) (2,3)\n"+\
-      " 12  13  14  15     (3,0) (3,1) (3,2) (3,3)\n"+\
-      "";
-print "Note: 's1t3' means 'side 1 track 3' (sides [0123] map to [ESWN] respectively)"
-print "-----------------------------------------------------------------------------"
+if (verbose):
+    print "";
+    print "-----------------------------------------------------------------------------"
+    print "Assume 4x4 grid of tiles, all with 2-input PEs\n"+\
+          "                                           \n"+\
+          "     tileno                   r,c          \n"+\
+          "  0   1   2   3     (0,0) (0,1) (0,2) (0,3)\n"+\
+          "  4   5   6   7     (1,0) (1,1) (1,2) (1,3)\n"+\
+          "  8   9  10  11     (2,0) (2,1) (2,2) (2,3)\n"+\
+          " 12  13  14  15     (3,0) (3,1) (3,2) (3,3)\n"+\
+          "";
+    print "Note: 's1t3' means 'side 1 track 3' (sides [0123] map to [ESWN] respectively)"
+    print "-----------------------------------------------------------------------------"
 
 def tileno2rc(tileno):
     '''
@@ -838,7 +848,7 @@ for line in inputstream:
     # Switchbox (old)
     # elif (EE == "05"):
     #     connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
-    #     if (sbdefaults): sb_print_all(connection_list);
+    #     if (verbose): sb_print_all(connection_list);
     #     else:            sb_print_nonzero(connection_list);
     #     pe_out = sb_iohack_find_pe_out(connection_list);
     #     if (pe_out):
