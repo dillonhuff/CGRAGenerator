@@ -15,6 +15,32 @@ import re;
 
 from lib.sb_decode_5tracks import *
 
+from lib import cgra_info
+
+# from lib import sb_decode_cgra
+
+# sys.path.insert(0, "../../../SMT-PNR/src")
+# # from config.annotations import Annotations
+from lib.annotations import Annotations
+
+# print Annotations.op_config('op', 'output')
+# sys.exit(-1)
+
+# backends.py:from config import configindex, Annotations
+# backends.py: comment[0][(c.sel_w-1, 0)] = Annotations.connect_wire(data[0], c.src_name,
+# backends.py: comment[reg][(offset, offset)] = Annotations.latch_wire(c.sel, c.src_name, c.snk_name, row=y, col=x)
+# backends.py: comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=y, col=x)
+# backends.py: comment[_pe_reg[port]][(15,0)] = Annotations.init_reg(port, src.config)
+# backends.py: comment[_pe_reg['op']][_read_wire[port]] = Annotations.read_from('reg', port)
+# backends.py: comment[_pe_reg['op']][_load_reg[port]] = Annotations.load_reg(port)
+# backends.py: comment[_pe_reg['op']][_read_wire[port]] = Annotations.read_from('reg', port)
+# backends.py: comment[_pe_reg['op']][_read_wire[port]]  = Annotations.read_from('wire', port)
+# backends.py: comment[_pe_reg['op']][(4, 0)] = Annotations.op_config('op', 'input')
+# backends.py: comment[_pe_reg['op']][(4, 0)] = Annotations.op_config('op', 'output')
+# backends.py: comment[reg][(sel_w + offset - 1, offset)] = Annotations.op_config(opt, value)
+# backends.py: suffix =  Annotations.format_comment(comment[reg])
+
+
 scriptname = sys.argv[0];
 args = sys.argv[1:];
 
@@ -206,6 +232,15 @@ def find_source(row, col, wirename):
     # print "FOO " + wirename
     # deconstruct = re.search("(in|out)_s([0-9]+)_t([0-9]+)", wirename)
     deconstruct = re.search("(in|out)_s([0-9]+)t([0-9]+)", wirename)
+
+    if (not deconstruct):
+        # Try, try again
+        deconstruct = re.search("(in|out)_BUS16_S([0-9]+)_T([0-9]+)", wirename)
+
+    if (not deconstruct):
+        print "OOOPS could not deconstruct %s" % wirename
+        print "OOOPS"; sys.stdout.flush();
+
     in_or_out = deconstruct.group(1)
     side      = deconstruct.group(2)
     track     = deconstruct.group(3)
@@ -301,38 +336,56 @@ def cb_decode(EE, DDDDDDDD):
         print ""
         return "wireB <= in_s9t9"
 
-    st = {};
+    cb = {};
 
     # input A side 0 (S)
-    st["02.00000000"] = "wireA <= in_s1t0"
-    st["02.00000001"] = "wireA <= in_s1t1"
-    st["02.00000002"] = "wireA <= in_s1t2"
-    st["02.00000003"] = "wireA <= in_s1t3"
-    st["02.00000004"] = "wireA <= in_s1t4"
+    # st["02.00000000"] = "wireA <= in_s1t0"
+    cb["02.00000000"] = ("data[(3, 0)]", "in_BUS16_S1_T0", "a")
+    cb["02.00000001"] = ("data[(3, 0)]", "in_BUS16_S1_T1", "a")
+    cb["02.00000002"] = ("data[(3, 0)]", "in_BUS16_S1_T2", "a")
+    cb["02.00000003"] = ("data[(3, 0)]", "in_BUS16_S1_T3", "a")
+    cb["02.00000004"] = ("data[(3, 0)]", "in_BUS16_S1_T4", "a")
 
     # input A side 3 (N)
-    st["02.00000005"] = "wireA <= in_s3t0"
-    st["02.00000006"] = "wireA <= in_s3t1"
-    st["02.00000007"] = "wireA <= in_s3t2"
-    st["02.00000008"] = "wireA <= in_s3t3"
-    st["02.00000009"] = "wireA <= in_s3t4"
+    cb["02.00000005"] = ("data[(3, 0)]", "in_BUS16_S3_T0", "a")
+    cb["02.00000006"] = ("data[(3, 0)]", "in_BUS16_S3_T1", "a")
+    cb["02.00000007"] = ("data[(3, 0)]", "in_BUS16_S3_T2", "a")
+    cb["02.00000008"] = ("data[(3, 0)]", "in_BUS16_S3_T3", "a")
+    cb["02.00000009"] = ("data[(3, 0)]", "in_BUS16_S3_T4", "a")
 
     # input B side 0 (E)
-    st["03.00000000"] = "wireB <= in_s0t0"
-    st["03.00000001"] = "wireB <= in_s0t1"
-    st["03.00000003"] = "wireB <= in_s0t2"
-    st["03.00000003"] = "wireB <= in_s0t3"
-    st["03.00000004"] = "wireB <= in_s0t4"
+    cb["03.00000000"] = ("data[(3, 0)]", "in_BUS16_S0_T0", "b")
+    cb["03.00000001"] = ("data[(3, 0)]", "in_BUS16_S0_T1", "b")
+    cb["03.00000002"] = ("data[(3, 0)]", "in_BUS16_S0_T2", "b")
+    cb["03.00000003"] = ("data[(3, 0)]", "in_BUS16_S0_T3", "b")
+    cb["03.00000004"] = ("data[(3, 0)]", "in_BUS16_S0_T4", "b")
 
     # input B side 2 (W)
-    st["03.00000005"] = "wireB <= in_s2t0"
-    st["03.00000006"] = "wireB <= in_s2t1"
-    st["03.00000007"] = "wireB <= in_s2t2"
-    st["03.00000008"] = "wireB <= in_s2t3"
-    st["03.00000009"] = "wireB <= in_s2t4"
+    cb["03.00000005"] = ("data[(3, 0)]", "in_BUS16_S2_T0", "b")
+    cb["03.00000006"] = ("data[(3, 0)]", "in_BUS16_S2_T1", "b")
+    cb["03.00000007"] = ("data[(3, 0)]", "in_BUS16_S2_T2", "b")
+    cb["03.00000008"] = ("data[(3, 0)]", "in_BUS16_S2_T3", "b")
+    cb["03.00000009"] = ("data[(3, 0)]", "in_BUS16_S2_T4", "b")
 
+    # Terrible, terrible.  But should be better soon.
     try:
-        cb_connection = st[EE + '.' + DDDDDDDD]
+        (dbits,inwire,outwire) = cb[EE + '.' + DDDDDDDD]
+        wireno = int(DDDDDDDD[-1:],16)
+        # cb_connection = "\n# %s : @ tile (6, 0) connect wire %d (%s) to %s" \
+        #                 % (dbits,wireno,inwire,outwire)
+
+        # "@ tile (6, 0) connect wire 0 (in_BUS16_S1_T0) to a"
+        ann = Annotations.connect_wire(wireno,inwire,outwire,6,0)
+
+        # "data[(3, 0)] : @ tile (6, 0) connect wire 0 (in_BUS16_S1_T0) to a"
+        cb_connection = "\n# %s : %s" % (dbits, ann)
+
+        # print Annotations.op_config('op', 'output')
+        # backends.py: comment[reg][(c.sel_w + offset - 1, offset)] \
+        # = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=y, col=x)
+        # print "FOOOOO"
+        # print Annotations.connect_wire(wireno,inwire,outwire,6,0)
+
     except:
         cb_connection = "unknown 44"
         
@@ -759,22 +812,68 @@ for line in inputstream:
         cb_connection = cb_decode(EE,DDDDDDDD);  # E.g. "wireA <= in_s1t0"
         print "%s" % (cb_connection);
 
-        # Support for io hack
-        # Last 7 chars of string I guess e.g. iohack_cb_out[4] = "in_s1t0"
-        # global iohack_cb_out[];
-        iohack_cb_out[thistile] = cb_connection[-7:]
+        # cb_connection = '...connect wire 3 (in_BUS16_S1_T1) to a'
+        parse = re.search("((in|out)_BUS16_.*)\)", cb_connection)
 
-    elif (EE == "05"):
-        connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
-        if (sbdefaults): sb_print_all(connection_list);
-        else:            sb_print_nonzero(connection_list);
-        pe_out = sb_iohack_find_pe_out(connection_list);
-        if (pe_out):
-            # print "FOUND IT! pe connects to %s" % pe_out
-            iohack_pe_out[thistile] = pe_out;
+        # IOHACK/new
+        if (parse):
+            # Support for io hack (new)
+            # print "\n\nGOOOO '%s'" % parse.group(1)
+            iohack_cb_out[thistile] = parse.group(1)
+
+        # IOHACK/old
+        else:
+            # Support for io hack (old)
+            # Last 7 chars of string I guess e.g. iohack_cb_out[4] = "in_s1t0"
+            # global iohack_cb_out[];
+            iohack_cb_out[thistile] = cb_connection[-7:]
+
+    # Switchbox (old)
+    # elif (EE == "05"):
+    #     connection_list = sb_decode(int(RR), int(DDDDDDDD, 16));
+    #     if (sbdefaults): sb_print_all(connection_list);
+    #     else:            sb_print_nonzero(connection_list);
+    #     pe_out = sb_iohack_find_pe_out(connection_list);
+    #     if (pe_out):
+    #         # print "FOUND IT! pe connects to %s" % pe_out
+    #         iohack_pe_out[thistile] = pe_out;
 
     else:
         print "";
+
+    # Switchbox (new)
+    e = cgra_info.get_element(EE, TTTT)
+    if (e == False):
+        print "ERROR Cannot find element '%s' in tile '%s' (%d)" \
+              % (EE,TTTT, thistile)
+        sys.exit(-1)
+
+    # Switchbox (new)
+    if (e.tag == "sb"):
+        DBG=0
+        (regs,connections) = cgra_info.sb_decode(e,RR,DDDDDDDD)
+        if DBG:
+            print "----------------------------------------"
+            print connections
+            print regs
+            print "----------------------------------------"
+
+        # Want:
+        # "data[(1, 0)] : @ tile (0, 1) connect wire 3 (pe_out_res) to out_BUS16_S0_T0"
+        t = thistile
+        [r,c] = tileno2rc(t); rc = "(%d, %d)" % (r,c);
+        for outwire in sorted(connections.iterkeys()):
+            # print outwire + " " + str(connections[outwire])
+            (inwire,configh,configl,wireno) = connections[outwire]
+            print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
+                  % (configh,configl,r,c,wireno,inwire,outwire)
+
+            if (inwire == "pe_out_res"):
+                DBG=0
+                if (DBG): print "FOUND IT!",
+                if (DBG): print "pe connects to %s in tile %d" % (outwire,thistile)
+                iohack_pe_out[thistile] = outwire;
+
 
 # OUTPUT tiles go to wire indicated by iohack_cb_out
 # INPUT tiles take input from wire idicated by sb[pe_out]
