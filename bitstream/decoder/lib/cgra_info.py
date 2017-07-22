@@ -160,6 +160,32 @@ def read_cgra_info(filename):
     # return root
 
 
+def tileno2rc(tileno):
+    '''
+    Search CGRA xml data structure with tile info e.g.
+    <tile type='pe_tile_new' tile_addr='0' row='0' col='0' tracks='BUS1:5 BUS16:5 '>
+    and return (row,col) corresponding to the given tile number.
+    '''
+    for tile in CGRA.iter('tile'):
+        t = int(tile.attrib['tile_addr'])
+        r = int(tile.attrib['row'])
+        c = int(tile.attrib['col'])
+        if t == tileno: return (r,c)
+    print "ERROR Cannot find tile %d in cgra_info" % tileno
+
+def rc2tileno(row,col):
+    '''
+    Search CGRA xml data structure with tile info e.g.
+    <tile type='pe_tile_new' tile_addr='0' row='0' col='0' tracks='BUS1:5 BUS16:5 '>
+    and return tile number corresponding to given (row,col)
+    '''
+    for tile in CGRA.iter('tile'):
+        t = int(tile.attrib['tile_addr'])
+        r = int(tile.attrib['row'])
+        c = int(tile.attrib['col'])
+        if (r,c) == (row,col): return t
+    print "ERROR Cannot find tile corresponding to row %d col %d in cgra_info" \
+          % (row,col)
 
 def get_element(EE, TTTT):
     '''
