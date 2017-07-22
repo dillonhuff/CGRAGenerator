@@ -13,9 +13,16 @@ import re;
 
 # To use: decoder.py < examples/bitstream.ankita
 
+# deprecated, will go away soon i hope
 from lib.sb_decode_5tracks import *
 
+import os
 from lib import cgra_info
+mydir = os.path.dirname(os.path.realpath(__file__))
+print("I think I am here:\n  %s" % mydir)
+filename = mydir + "/examples/cgra_info.txt"
+print("Using cgra_info file\n  %s" % filename)
+cgra_info.read_cgra_info(filename)
 
 # from lib import sb_decode_cgra
 

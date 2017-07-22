@@ -147,21 +147,20 @@ def sb_decode(sb,RR,DDDDDDDD):
 
 
 # global CGRA
-
-def read_cgra_info():
+global CGRA
+CGRA = False
+def read_cgra_info(filename):
     # https://docs.python.org/3/library/xml.etree.elementtree.html
     import xml.etree.ElementTree
 
-    filename = "examples/cgra_info.txt"
-    root = xml.etree.ElementTree.parse(filename).getroot()
+    global CGRA
+    CGRA = xml.etree.ElementTree.parse(filename).getroot()
     # print root
     # CGRA = root
-    return root
+    # return root
 
 
 
-global CGRA
-CGRA = False
 def get_element(EE, TTTT):
     '''
     Retrieve the feature associated with element EE in tile TTTT.
@@ -175,7 +174,11 @@ def get_element(EE, TTTT):
     '''
     DBG=0
     global CGRA
-    if (CGRA == False): CGRA = read_cgra_info()
+    # if (CGRA == False): CGRA = read_cgra_info()
+    if (CGRA == False):
+        print "ERROR No CGRA data structure.  Did you call read_cgra_info()?"
+        sys.exit(-1)
+
     tileno = int(TTTT,16)
     elemno = int(  EE,16)
     if DBG: print "Looking up tile %d element %d" % (tileno, elemno)
