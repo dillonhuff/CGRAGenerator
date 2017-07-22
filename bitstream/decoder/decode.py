@@ -456,8 +456,8 @@ def pe_decode(RR, DDDDDDDD):
     if (k):
         iohack = "";
         if (DDDDDDDD == "FFFFFFFF"): iohack = "IO HACK: "
-        # print "\n\nFOOAA %s\n\n" % breg
-        print "%sreg%s <= %s" % (iohack, k, dstring);
+        if verbose: print "%sreg%s <= %s" % (iohack, k, dstring);
+        else:       print ""
         return;
 
     # Only other valid option is "FF" (load opcode)
@@ -597,7 +597,9 @@ def pe_decode(RR, DDDDDDDD):
         #   F000xxxx FFFFFFFF   # IO input pad: ignore pe_in_a
         #   F100xxxx FFFFFFFF   # IO input pad: ignore pe_in_b
 
-        opstr = "IO HACK: pe_out is CGRA INPUT"; iohack = 1;
+        opstr = "\n# data[(4, 0)] : op = input"
+        if verbose: opstr = "IO HACK: pe_out is CGRA INPUT" + opstr;
+        iohack = 1;
         # opstr = opstr + "\n                        " + \
         #         "(IN  wire_0_3_BUS16_S1_T0) (out_s1t0)"
 
@@ -605,7 +607,11 @@ def pe_decode(RR, DDDDDDDD):
         # IO hack/outputs
         #   FF00xxxx 000000FF    # (op==FF): pe_in_a (wireA) is CGRA output
         #   F1000004 00000000    # IO output pad: ignore pe_in_b
-        opstr = "IO HACK: pe_in_a (wireA) is CGRA OUTPUT"; iohack = 1;
+
+        opstr = "\n# data[(4, 0)] : op = output"
+        if verbose: opstr = "IO HACK: pe_in_a (wireA) is CGRA OUTPUT" + opstr;
+        iohack = 1;
+
         # opstr = opstr + "\n                        " + \
         #         "(OUT wire_1_1_BUS16_S3_T0) (in_s1t0)"
 
@@ -670,12 +676,13 @@ for line in inputstream:
         dreg = "unset"   # valid values: "0x[0-9]+" or 'wireD' or 'unset'
 
         prevtile = thistile
-        print ""
         [r,c] = cgra_info.tileno2rc(thistile); rc = "(%d,%d)" % (r,c)
 
         # print "# TILE %d %s" % (thistile, rc)
         # print "####################### TILE %d %s" % (thistile, rc)
-        print "                        TILE %d %s" % (thistile, rc)
+        if (verbose):
+            print ""
+            print "                        TILE %d %s" % (thistile, rc)
 
     print line,
     # print "[ r%02X e%02X %-5s ]  " % \
