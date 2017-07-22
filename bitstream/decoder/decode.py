@@ -432,9 +432,6 @@ def sb_print_all(connection_list):
     print "%8s %8s %5s" % ("", "", ""),
     print "%-19s    %-19s    %-19s" % ("","",connection_list[15]);
 
-
-
-
 def pe_decode(RR, DDDDDDDD):
 
     global asrc, bsrc, csrc, dsrc
@@ -493,14 +490,22 @@ def pe_decode(RR, DDDDDDDD):
 
     # (Note default value for all tiles is opcode = 16'h0000 (ADD, src=reg, reg=wire)
 
-    if (dddd & 0x80): asrc = "wireA";
+    if (dddd & 0x80): asrc = "wire `a`";
+    if (dddd & 0x20): bsrc = "wire `b`";
+    if (dddd & 0x02): dsrc = "wire `d`";
+
+#     if     (asrc == "wireA"): print "# data[15] : read from wire `a`"
+#     else:                     print "# data[15] : read from reg `a`"
+# 
+#     if     (bsrc == "wireB"): print "# data[13] : read from wire `b`"
+#     else:                     print "# data[13] : read from reg `b`"
+# 
+#     if     (dsrc == "wireD"): print "# data[2] : read from wire `d`"
+#     else:                     print "# data[2] : read from reg `d`"
+
     if (dddd & 0x40): areg = "wireA";
-
-    if (dddd & 0x20): bsrc = "wireB";
     if (dddd & 0x10): breg = "wireB";
-
-    if (dddd & 0x02): dsrc = "wireD";
-    if (dddd & 0x01): dreg = "wireD";  print "BOOOOOOOOOOOOOOOOO " + DDDD + "  " + str(dddd);
+    if (dddd & 0x01): dreg = "wireD";
 
     ########################################################################
     # Set the PE operation
@@ -557,6 +562,16 @@ def pe_decode(RR, DDDDDDDD):
 # 
 #     print opstr;
 
+    # Me:
+    # FF00000F 00008000
+    # pe_out <= ADD(wireA,0x0000)
+    # 
+    # Them:
+    # FF00000F 00008000
+    # # data[15] : read from wire `a` CHECK
+    # # data[13] : read from reg `b`
+    # # data[(4, 0)] : op = add
+
     iohack = 0;
 
     op = DDDDDDDD[6:8] # last two hex digits
@@ -564,34 +579,34 @@ def pe_decode(RR, DDDDDDDD):
     A = asrc; B = bsrc;
 
     # areg can be one of "wireA", "0x[0-9]+", "unset"
-    if ((asrc == "regA") and re.search("0x", areg)): A = areg;
-    if ((bsrc == "regB") and re.search("0x", breg)): B = breg;
-    if ((asrc == "regC") and re.search("0x", creg)): A = creg;
-    if ((asrc == "regD") and re.search("0x", dreg)): A = dreg;
+    if ((asrc == "reg `a`") and re.search("0x", areg)): A = areg;
+    if ((bsrc == "reg `b`") and re.search("0x", breg)): B = breg;
+    if ((asrc == "reg `c`") and re.search("0x", creg)): A = creg;
+    if ((asrc == "reg `d`") and re.search("0x", dreg)): A = dreg;
 
-    if   (op == "00"): opstr = "ADD(%s,%s)" % (A,B)
-    elif (op == "01"): opstr = "SUB(%s,%s)" % (A,B)
+    if   (op == "00"): opp="add"; opstr = "ADD(%s,%s)" % (A,B)
+    elif (op == "01"): opp="sub"; opstr = "SUB(%s,%s)" % (A,B)
 
-    elif (op == "04"): opstr = "MAX(%s,%s), pe_out_p <= GE(%s,%s)" % (A,B,A,B)
-    elif (op == "05"): opstr = "MIN(%s,%s), pe_out_p <= LT(%s,%s)" % (A,B,A,B)
+    elif (op == "04"): opp="max/ge"; opstr = "MAX(%s,%s), pe_out_p <= GE(%s,%s)" % (A,B,A,B)
+    elif (op == "05"): opp="min/lt"; opstr = "MIN(%s,%s), pe_out_p <= LT(%s,%s)" % (A,B,A,B)
 
-    elif (op == "06"): opstr = "%s, pe_out_p <= XNOR reduction ~|(a^b) (?)" % (B)
-    elif (op == "07"): opstr = "%s, pe_out_p <= XOR  reduction  |(a^b) (?)" % (A)
+    elif (op == "06"): opp="xnor"; opstr = "%s, pe_out_p <= XNOR reduction ~|(a^b) (?)" % (B)
+    elif (op == "07"): opp="xor";  opstr = "%s, pe_out_p <= XOR  reduction  |(a^b) (?)" % (A)
 
-    elif (op == "08"): opstr = "MUX d ? a : b"
+    elif (op == "08"): opp="mux"; opstr = "MUX d ? a : b"
 
-    elif (op == "0B"): opstr = "MUL(%s,%s)"         % (A,B)
-    elif (op == "0C"): opstr = "MUL(%s,%s) [23:8]"  % (A,B)
-    elif (op == "0D"): opstr = "MUL(%s,%s) [31:16]" % (A,B)
+    elif (op == "0B"): opp="mul";       opstr = "MUL(%s,%s)"         % (A,B)
+    elif (op == "0C"): opp="mul_23_8";  opstr = "MUL(%s,%s) [23:8]"  % (A,B)
+    elif (op == "0D"): opp="mul_31_16"; opstr = "MUL(%s,%s) [31:16]" % (A,B)
 
-    elif (op == "0F"): opstr = "LSHR(%s,%s[3:0])" % (A,B)
-    elif (op == "10"): opstr = "ASHR(%s,%s[3:0])" % (A,B)
-    elif (op == "11"): opstr = " SHL(%s,%s[3:0])" % (A,B)
+    elif (op == "0F"): opp="lshr"; opstr = "LSHR(%s,%s[3:0])" % (A,B)
+    elif (op == "10"): opp="ashr"; opstr = "ASHR(%s,%s[3:0])" % (A,B)
+    elif (op == "11"): opp="shl";  opstr = " SHL(%s,%s[3:0])" % (A,B)
 
-    elif (op == "12"): opstr = " OR(%s,%s)" % (A,B)
-    elif (op == "13"): opstr = "AND(%s,%s)" % (A,B)
-    elif (op == "14"): opstr = "XOR(%s,%s)" % (A,B)
-    elif (op == "15"): opstr = "NOT(%s,%s)" % (A,B)
+    elif (op == "12"): opp="or";  opstr = " OR(%s,%s)" % (A,B)
+    elif (op == "13"): opp="and"; opstr = "AND(%s,%s)" % (A,B)
+    elif (op == "14"): opp="xor"; opstr = "XOR(%s,%s)" % (A,B)
+    elif (op == "15"): opp="not"; opstr = "NOT(%s,%s)" % (A,B)
 
     elif (op == "F0"):
         # IO hack/inputs
@@ -599,8 +614,12 @@ def pe_decode(RR, DDDDDDDD):
         #   F000xxxx FFFFFFFF   # IO input pad: ignore pe_in_a
         #   F100xxxx FFFFFFFF   # IO input pad: ignore pe_in_b
 
-        opstr = "# data[(4, 0)] : op = input"
-        if verbose: opstr = "IO HACK: pe_out is CGRA INPUT" + opstr;
+        # opstr = "# data[(4, 0)] : op = input"
+        # if verbose: opstr = "IO HACK: pe_out is CGRA INPUT" + opstr;
+
+        opp = "input"
+        opstr = "IO HACK: pe_out is CGRA INPUT"
+
         iohack = 1;
         # opstr = opstr + "\n                        " + \
         #         "(IN  wire_0_3_BUS16_S1_T0) (out_s1t0)"
@@ -610,8 +629,12 @@ def pe_decode(RR, DDDDDDDD):
         #   FF00xxxx 000000FF    # (op==FF): pe_in_a (wireA) is CGRA output
         #   F1000004 00000000    # IO output pad: ignore pe_in_b
 
-        opstr = "# data[(4, 0)] : op = output"
-        if verbose: opstr = "IO HACK: pe_in_a (wireA) is CGRA OUTPUT" + opstr;
+        # opstr = "# data[(4, 0)] : op = output"
+        # if verbose: opstr = "IO HACK: pe_in_a (wireA) is CGRA OUTPUT" + opstr;
+
+        opp = "output"
+        opstr = "IO HACK: pe_in_a (wireA) is CGRA OUTPUT"
+
         iohack = 1;
 
         # opstr = opstr + "\n                        " + \
@@ -626,15 +649,29 @@ def pe_decode(RR, DDDDDDDD):
     # PRINT:
     # "pe_out <= MUL(wireA,wireB) ; regA <= wireA (always) ; regB <= wireB (always)"
 
-    if (not iohack): opstr = "pe_out <= " + opstr
+    if (not iohack):
+        opstr = "pe_out <= " + opstr
 
-    reg = ""
-    indent = " ; "
-    if (areg == "wireA"): reg = indent + "regA <= wireA (always)"
-    if (breg == "wireB"): reg = indent + "regB <= wireB (always)"
-    if (creg == "wireC"): reg = indent + "regC <= wireC (always)"
-    if (dreg == "wireD"): reg = indent + "regD <= wireD (always)"
-    print opstr + reg
+        print "# data[15] : read from " + asrc
+        print "# data[13] : read from " + bsrc
+        print "# data[2] : read from "  + dsrc
+
+        if areg == "wireA": print "# data[14] : load `a` reg with wire"
+        if breg == "wireB": print "# data[12] : load `b` reg with wire"
+        if dreg == "wireD": print "BOOOOOOOOOOOOOOOOO " + DDDD + "  " + str(dddd);
+
+    print "# data[(4, 0)] : op = %s" % opp
+
+    if verbose:
+        reg = ""
+        indent = " ; "
+        if (areg == "wireA"): reg = indent + "regA <= wireA (always)"
+        if (breg == "wireB"): reg = indent + "regB <= wireB (always)"
+        if (creg == "wireC"): reg = indent + "regC <= wireC (always)"
+        if (dreg == "wireD"): reg = indent + "regD <= wireD (always)"
+        print opstr + reg
+
+
 
 ##############################################################################
 # MAIN
@@ -663,10 +700,10 @@ for line in inputstream:
 
         # Sources for PE inputs (defaults from verilog test_pe.v and test_opt_reg.v)
         global asrc, bsrc, csrc, dsrc
-        asrc = 'regA' # valid values: 'wireA' or 'regA' or "0x[0-9]+"
-        bsrc = 'regB' # valid values: 'wireB' or 'regB' or "0x[0-9]+"
-        csrc = 'regC' # valid values: 'wireC' or 'regC' or "0x[0-9]+"
-        dsrc = 'regD' # valid values: 'wireD' or 'regD' or "0x[0-9]+"
+        asrc = "reg `a`" # valid values: "wire `a`" or "reg `b`" or (deprecated) "0x[0-9]+"
+        bsrc = "reg `b`"
+        csrc = "reg `c`"
+        dsrc = "reg `d`"
 
         # Contents of PE input regs
         global areg, breg, creg, dreg
