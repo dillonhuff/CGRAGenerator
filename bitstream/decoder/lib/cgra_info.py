@@ -151,6 +151,58 @@ def mem_decode(e,DDDDDDDD):
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : fifo_depth = %d" % (bith, bitl, val)
 
+def cb_decode(cb,tileno,DDDDDDDD,SWAP):
+    # IN:
+    # 00040011 00000005
+    # <cb feature_address='4' bus='BUS1'>
+    #     <sel_width>4</sel_width>
+    #     <mux snk='d'>
+    #       <src sel='0'>in_BUS1_S0_T0</src>
+    #       <src sel='1'>in_BUS1_S0_T1</src>
+    #       <src sel='2'>in_BUS1_S0_T2</src>
+    #       <src sel='3'>in_BUS1_S0_T3</src>
+    #       <src sel='4'>in_BUS1_S0_T4</src>
+    #       <src sel='5'>in_BUS1_S2_T0</src>
+    #       <src sel='6'>in_BUS1_S2_T1</src>
+    #       <src sel='7'>in_BUS1_S2_T2</src>
+    #       <src sel='8'>in_BUS1_S2_T3</src>
+    #       <src sel='9'>in_BUS1_S2_T4</src>
+    # OUT:
+    # data[(3, 0)] : @ tile (3, 2) connect wire 5 (in_0_BUS16_2_0) to din
+    DBG=0
+    if DBG: print "Found %s %s" % (cb.tag, str(cb.attrib))
+
+    for sw in cb.iter('sel_width'):
+
+        # HACK/WRONG/FIXME?
+        configl = 0
+        sel_width = int(sw.text)
+        configh = sel_width - 1
+
+    for mux in cb.iter('mux'):
+        outwire = mux.attrib['snk']
+
+        # HACK/FIXEM/WHY??
+        if (outwire == 'd'): outwire = 'din'
+
+        if DBG: print "  Found %s %s w/outwire %s" % (mux.tag, str(mux.attrib), outwire)
+        for src in mux.iter('src'):
+            if DBG: print "    Found %s %s" % (src.tag, str(src.attrib))
+            data = int(DDDDDDDD,16)
+            sel  = int(src.attrib['sel'])
+            wireno = sel
+            if (data == sel):
+                inwire = src.text
+                [r,c] = tileno2rc(tileno); rc = "(%d, %d)" % (r,c);
+                if SWAP: (r,c) = (c,r)
+                print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
+                      % (configh,configl,r,c,wireno,inwire,outwire)
+                if SWAP: (r,c) = (c,r)
+                return inwire
+                # break;
+                
+
+
 
 # def sb_decode_cgra(sb,RR,DDDDDDDD):
 def sb_decode(sb,RR,DDDDDDDD):

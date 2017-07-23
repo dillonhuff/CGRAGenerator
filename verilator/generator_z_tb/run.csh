@@ -272,7 +272,16 @@ if (-e $newbs) rm $newbs
 echo "Will strip out IO hack from '$config'"
 echo "to create clean bitstream '$newbs'"
 echo
-grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
+
+# grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
+cat $decoded \
+  | egrep -v '^F000.... FFFFFFFF' \
+  | egrep -v '^F100.... FFFFFFFF' \
+  | egrep -v '^FF00.... 000000F0' \
+  | egrep -v '^FF00.... 000000FF' \
+  | awk '/^[0-9A-F]/{print $1 " " $2}' \
+  > $newbs
+
 if ($?VERBOSE) then
   diff $config $newbs | grep -v d
   echo

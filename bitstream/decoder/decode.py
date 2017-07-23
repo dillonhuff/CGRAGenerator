@@ -2,6 +2,17 @@
 import sys;
 import re;
 
+print '''
+------------------------------------------------------------------------
+HACK ALERT - search below for "HACK"
+
+HACK1 only printing connections with wireno != 0
+HACK2 row/col swap in each tile address!
+------------------------------------------------------------------------
+'''
+SWAP = True
+
+
 # import os;
 # print os.path.dirname(__file__)
 # print os.path.join(os.path.dirname(__file__), ".")
@@ -207,7 +218,7 @@ def EE_decode(EE):
 
 # Given 8-digit hex string DDDDDDDD = e.g. "00000002", tell what
 # switchbox will do with the data, e.g. sb_decode("00000000") = "out <= in_0"
-def cb_decode(EE, DDDDDDDD):
+def cb_decode(EE, DDDDDDDD, row, col):
     # Connection box dataword only uses bottom 4 bits interpreted as shown below (see cb.v).
     #   cb1 connects pe input A to a north-south wire track
     #   cb2 connects pe input B to an east-west wire track
@@ -271,7 +282,7 @@ def cb_decode(EE, DDDDDDDD):
         #                 % (dbits,wireno,inwire,outwire)
 
         # "@ tile (6, 0) connect wire 0 (in_BUS16_S1_T0) to a"
-        ann = Annotations.connect_wire(wireno,inwire,outwire,6,0)
+        ann = Annotations.connect_wire(wireno,inwire,outwire,col,row)
 
         # "data[(3, 0)] : @ tile (6, 0) connect wire 0 (in_BUS16_S1_T0) to a"
         cb_connection = "# %s : %s" % (dbits, ann)
@@ -721,6 +732,87 @@ for line in inputstream:
     if verbose: print "%s [%-3s]" % (line, (EE_decode(EE))),
     else:       print line
 
+    # Switchbox (new)
+    e = cgra_info.get_element(EE, TTTT)
+    if (e == False):
+        print "ERROR Cannot find element '%s' in tile '%s' (%d)" \
+              % (EE,TTTT, thistile)
+        sys.exit(-1)
+
+    if (e.tag == "mem"):
+        # print "OOP found memory"
+        cgra_info.mem_decode(e, DDDDDDDD)
+        continue
+
+
+    elif (e.tag == "cb"):
+        # 00040011 00000005
+        # # data[(3, 0)] : @ tile (3, 2) connect wire 5 (in_0_BUS16_2_0) to din
+        inwire = cgra_info.cb_decode(e,thistile,DDDDDDDD,SWAP)
+        iohack_cb_out[thistile] = inwire
+        continue
+
+    # Switchbox (new)
+    elif (e.tag == "sb"):
+        DBG=0
+        (regs,connections) = cgra_info.sb_decode(e,RR,DDDDDDDD)
+        if DBG:
+            print "----------------------------------------"
+            print connections
+            print regs
+            print "----------------------------------------"
+
+        # Want:
+        # "data[(1, 0)] : @ tile (0, 1) connect wire 3 (pe_out_res) to out_BUS16_S0_T0"
+        t = thistile
+        [r,c] = cgra_info.tileno2rc(t); rc = "(%d, %d)" % (r,c);
+        for outwire in sorted(connections.iterkeys()):
+            # print outwire + " " + str(connections[outwire])
+            (inwire,configh,configl,wireno) = connections[outwire]
+
+            # HACK HACK FIXME
+            # For now, only list connections where wireno != 0
+
+            # if (1):
+            if (wireno):
+                # FIXME print "HACK1 only printing connections with wireno != 0"
+                # FIXME print "HACK2 row/col swap in each tile address!"
+                if SWAP: (r,c) = (c,r)
+                print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
+                      % (configh,configl,r,c,wireno,inwire,outwire)
+                if SWAP: (r,c) = (c,r)
+
+            if (inwire == "pe_out_res"):
+                DBG=0
+                if (DBG): print "FOUND IT!",
+                if (DBG): print "pe connects to %s in tile %d" % (outwire,thistile)
+                iohack_pe_out[thistile] = outwire;
+
+        # LIST RESGISTERS like so
+        # data[(13, 13)] : @ tile (0, 2) latch wire 0 (in_BUS16_S0_T0)
+        # before connecting to out_BUS16_S1_T0
+
+        # for outwire in sorted(connections.iterkeys()):
+        for reg in regs:
+            if DBG: print "OOP found reg %s" % str(reg)
+            (outwire,bitno) = reg
+            wireno = 999
+            inwire = "UNKNOWN"
+
+            # print "# data[(%d, %d)] : @ tile (%d, %d) latch wire %d (%s) before connecting to %s"\
+
+            # FIXME print "HACK2 row/col swap in each tile address!"
+            if SWAP: (r,c) = (c,r)
+            print "# data[(%d, %d)] : @ tile (%d, %d) latch %s connected to input wire %d (%s)"\
+                  % (bitno,bitno,r,c,outwire,wireno,inwire)
+            if SWAP: (r,c) = (c,r)
+        continue
+
+    else:
+        if 0: print "Could not find tag %s" %  e.tag
+
+
+
     # Processing element
     if (EE == "00"):
         pe_decode(RR, DDDDDDDD);
@@ -742,9 +834,15 @@ for line in inputstream:
 
     # Connection box
     elif (EE == "02" or EE == "03"):
+        print "FOOOO NEVER USED, RIGHT?"
         # print "%s   # %s" % (line, cb_decode(EE,DDDDDDDD));
-        cb_connection = cb_decode(EE,DDDDDDDD);  # E.g. "wireA <= in_s1t0"
+
+        t = int(TTTT,16)
+        [r,c] = cgra_info.tileno2rc(t); rc = "(%d, %d)" % (r,c);
+        if SWAP: (r,c) = (c,r)
+        cb_connection = cb_decode(EE,DDDDDDDD,r,c);  # E.g. "wireA <= in_s1t0"
         print "%s" % (cb_connection);
+        if SWAP: (r,c) = (c,r)
 
         # cb_connection = '...connect wire 3 (in_BUS16_S1_T1) to a'
         parse = re.search("((in|out)_BUS16_.*)\)", cb_connection)
@@ -774,80 +872,6 @@ for line in inputstream:
 
     else:
         if verbose: print "";
-
-    # Switchbox (new)
-    e = cgra_info.get_element(EE, TTTT)
-    if (e == False):
-        print "ERROR Cannot find element '%s' in tile '%s' (%d)" \
-              % (EE,TTTT, thistile)
-        sys.exit(-1)
-
-    if (e.tag == "mem"):
-        # print "OOP found memory"
-        cgra_info.mem_decode(e, DDDDDDDD)
-
-        # <mem feature_address='8' data_bus='BUS16' control_bus='BUS1'>
-        #    <mode bith='1' bitl='0'>00</mode>
-        #    <tile_en bit='2'>0</tile_en>
-        #    <fifo_depth bith='15' bitl='3'>0</fifo_depth>
-        #    <almost_full_count bith='18' bitl='16'>0</almost_full_count>
-        #    <chain_enable bit='19'>0</chain_enable>
-        # </mem>
-
-        # 00080011 00000204
-        # data[(18, 16)] : almost_full_count = 0
-        # data[(1, 0)] : mode = linebuffer      
-        # data[(19, 19)] : chain_enable = 0     
-        # data[(15, 3)] : fifo_depth = 64       
-        # data[(2, 2)] : tile_en = 1            
-        
-
-    # Switchbox (new)
-    elif (e.tag == "sb"):
-        DBG=0
-        (regs,connections) = cgra_info.sb_decode(e,RR,DDDDDDDD)
-        if DBG:
-            print "----------------------------------------"
-            print connections
-            print regs
-            print "----------------------------------------"
-
-        # Want:
-        # "data[(1, 0)] : @ tile (0, 1) connect wire 3 (pe_out_res) to out_BUS16_S0_T0"
-        t = thistile
-        [r,c] = cgra_info.tileno2rc(t); rc = "(%d, %d)" % (r,c);
-        for outwire in sorted(connections.iterkeys()):
-            # print outwire + " " + str(connections[outwire])
-            (inwire,configh,configl,wireno) = connections[outwire]
-
-            # HACK HACK FIXME
-            # For now, only list connections where wireno != 0
-
-            # if (1):
-            if (wireno):
-                print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
-                      % (configh,configl,r,c,wireno,inwire,outwire)
-
-            if (inwire == "pe_out_res"):
-                DBG=0
-                if (DBG): print "FOUND IT!",
-                if (DBG): print "pe connects to %s in tile %d" % (outwire,thistile)
-                iohack_pe_out[thistile] = outwire;
-
-        # LIST RESGISTERS like so
-        # data[(13, 13)] : @ tile (0, 2) latch wire 0 (in_BUS16_S0_T0)
-        # before connecting to out_BUS16_S1_T0
-
-        # for outwire in sorted(connections.iterkeys()):
-        for reg in regs:
-            if DBG: print "OOP found reg %s" % str(reg)
-            (outwire,bitno) = reg
-            wireno = 999
-            inwire = "UNKNOWN"
-            # print "# data[(%d, %d)] : @ tile (%d, %d) latch wire %d (%s) before connecting to %s"\
-            print "# data[(%d, %d)] : @ tile (%d, %d) latch %s connected to input wire %d (%s)"\
-                  % (bitno,bitno,r,c,outwire,wireno,inwire)
-
 
 
 
