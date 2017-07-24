@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import sys
 import re
+import math # for sqrt
 
 '''
 NEXT
@@ -306,6 +307,12 @@ REG_HEIGHT = 2;
 CANVAS_WIDTH  = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_V*PORT_WIDTH + 3*PORT_PAD
 CANVAS_HEIGHT = 2*PORT_HEIGHT + 3*NTRACKS_PE_BUS_H*PORT_WIDTH + 3*PORT_PAD
 
+# E.g. for n = NTRACKS = 6
+#       |<-----n*pw------>|<-----n*pw+pp------>|<------n*pw----->|
+# |ph+pp|pw pw pw pw pw pw|pw pw pw pp pw pw pw|pw pw pw pw pw pw|ph+pp|
+# +-----+--+--+--+--+--+--+--------------------+--+--+--+--+--+--+-----+
+# |     |/\ /\ /\ /\ /\ /\|                    |/\ /\ /\ /\ /\ /\|     |
+# |     ||| || || || || |||                    ||| || || || || |||     |
 
 
 # Drawing area will be WIN_WIDTH x WIN_HEIGHT;
@@ -2141,31 +2148,88 @@ def zoom(sf):
 
     # global ACTUAL_SCALE; ACTUAL_SCALE = float(h)/hprev    # print "SF " + str(ACTUAL_SCALE)
 
+def unscramble(x,y):
+    '''
+    Given (x,y) in current transformation space, return (x,y) for
+    untransformed space such that (0,0) is TL corner of tile (0,0)
+    '''
+    DBG = 0
+    if DBG: print "clicked on %d %d" % (x,y)
+    if DBG: print "  UL_MARGIN = " + str(UL_MARGIN)
+    if DBG: print "  CUR_SCALE_FACTOR = " + str(CUR_SCALE_FACTOR)
+
+    unscaled_x = x/CUR_SCALE_FACTOR
+    unbordered_unscaled_x = unscaled_x - UL_MARGIN
+
+    unscaled_y = y/CUR_SCALE_FACTOR
+    unbordered_unscaled_y = unscaled_y - UL_MARGIN
+    if DBG: print "  Unbordered unscaled x,y = (%d,%d)" \
+       % (unbordered_unscaled_x,unbordered_unscaled_y)
+
+    return(unbordered_unscaled_x,unbordered_unscaled_y)
+
+def find_rc_clicked(x,y):
+    '''
+    Find tile row, col corresponding to the given (x,y) coordinates
+    '''
+    DBG = 0
+    (unbordered_unscaled_x,unbordered_unscaled_y) = unscramble(x,y)
+    if DBG: print "  Unbordered unscaled x,y = (%d,%d)" \
+       % (unbordered_unscaled_x,unbordered_unscaled_y)
+
+    col = int(unbordered_unscaled_x/CANVAS_WIDTH)
+    row = int(unbordered_unscaled_y/CANVAS_HEIGHT)
+    return (row,col)
+
 def find_tile_clicked(x,y):
     '''
     Find closest tile to the given (x,y) coordinates
     '''
-    DBG = 1
-    if DBG: print "clicked on %d %d" % (x,y)
-    if DBG: print "  UL_MARGIN = " + str(UL_MARGIN)
-    if DBG: print "  CUR_SCALE_FACTOR = " + str(CUR_SCALE_FACTOR)
-    if DBG: print "  CANVAS_WIDTH = %d" % CANVAS_WIDTH
-
-    unscaled_x = x/CUR_SCALE_FACTOR
-    unbordered_unscaled_x = unscaled_x - UL_MARGIN
-    col = int(unbordered_unscaled_x/CANVAS_WIDTH)
-
-    unscaled_y = y/CUR_SCALE_FACTOR
-    unbordered_unscaled_y = unscaled_y - UL_MARGIN
-    row = int(unbordered_unscaled_y/CANVAS_HEIGHT)
-
-    if DBG: print "  Unbordered unscaled x,y = (%d,%d)" % (unbordered_unscaled_x,unbordered_unscaled_y)
-
+    DBG=1
+    if DBG>1: print "clicked on %d %d" % (x,y)
+    (row,col) = find_rc_clicked(x,y)
     # Find tile number indicated by (row,col)
     tileno = rc2tileno(row,col)
-
     if DBG: print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
+    portname = find_port_clicked(x,y) # FIXME/tmp
+    if DBG: print "I think you clicked near port '%s'" % portname
     return tileno
+
+def find_port_clicked(x,y):
+    DBG=0
+    (row,col) = find_rc_clicked(x,y)
+    (TLx,TLy) = (col*CANVAS_WIDTH,row*CANVAS_HEIGHT)
+    if DBG: print "Unscrambled TL corner of clicked tile is maybe (%d,%d)"\
+          % (TLx,TLy)
+
+    (ux,uy) = unscramble(x,y)
+    if DBG: print "Unscrambled click-spot is maybe (%d,%d)" % (ux,uy)
+
+    tileno = rc2tileno(row,col)
+    (ux,uy) = (ux-TLx,uy-TLy)
+    if DBG>1: print "So this is like (%d,%d) in tile %d" % (ux,uy,tileno)
+
+    mindist = CANVAS_WIDTH
+    minport = "UNKNOWN"
+    
+    # Maybe existing connectionpoint() routine can do the heavy lifting...?
+    for side in (1,2,0,3):
+        for dir in ("in","out"):
+            for track in range (NTRACKS_PE_BUS_V):
+                wirename = "%s_s%dt%d" % (dir,side,track)
+                (x,y) = connectionpoint(wirename)
+                if DBG>1: print "FOO %8s = (%4d,%4d)" % (wirename,x,y),
+                if DBG>1: print "me = (%4d,%4d)" % (ux,uy),
+                # Come on you know this
+                (xd,yd) = (x-ux, y-uy)
+                dist = math.sqrt(xd*xd+yd*yd)
+                if DBG>1: print "dist = (%.1f)" % dist
+                if (dist < mindist):
+                    mindist = dist
+                    minwire = wirename
+                    if DBG>1: print "=> %s is closest port so far\n" % (wirename)
+    if DBG: print "Closest port is maybe '%s'in tile %d?" % (minwire,tileno)
+    return minwire
 
 def zoom_to_tile1(event):
     '''
@@ -2268,8 +2332,8 @@ def button_press_handler(widget, event):
     double_click = (event.type == gtk.gdk._2BUTTON_PRESS)
     single_click = (event.type == gtk.gdk.BUTTON_PRESS)
     
-    if double_click: print "\ndouble click "
-    if single_click: print "\nsingle click "
+    if double_click: print "\ndouble click (%d,%d)" % (event.x,event.y)
+    if single_click: print "\nsingle click (%d,%d)" % (event.x,event.y)
 
     if single_click:
         # print "Where is the nearest wire to me?"
