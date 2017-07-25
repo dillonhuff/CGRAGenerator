@@ -2,16 +2,13 @@
 import sys;
 import re;
 
-print '''
-------------------------------------------------------------------------
-HACK ALERT - search below for "HACK"
-
-HACK1 only printing connections with wireno != 0
-HACK2 row/col swap in each tile address!
-------------------------------------------------------------------------
-'''
-SWAP = True
-
+HACK1 = True
+SWAP = False
+if 1:     print "------------------------------------------------------------------------"
+if 1:     print 'HACK ALERT - search source code for "HACK"'
+if HACK1: print "HACK1 only printing connections with wireno != 0"
+if SWAP:  print "HACK2 row/col swap in each tile address!"
+if 1:     print "------------------------------------------------------------------------"
 
 # import os;
 # print os.path.dirname(__file__)
@@ -467,7 +464,7 @@ def pe_decode(RR, DDDDDDDD):
             if (DDDDDDDD == "FFFFFFFF"): iohack = "IO HACK: "
             print "%sreg%s <= %s" % (iohack, k, dstring);
         if (DDDDDDDD == "FFFFFFFF"): return
-        print "# data[(15, 0)] : load `%s` reg with const: %d" % (k,int(dstring,16))
+        print "# data[(15, 0)] : init `%s` reg with const `%d`" % (k,int(dstring,16))
         return;
 
     # Only other valid option is "FF" (load opcode)
@@ -771,9 +768,12 @@ for line in inputstream:
             (inwire,configh,configl,wireno) = connections[outwire]
 
             # HACK HACK FIXME
-            # For now, only list connections where wireno != 0
+            # if HACK1 => only list connections where wireno != 0
 
-            if (1):
+            printwire = True
+            if HACK1: printwire = (wireno != 0)
+
+            if (printwire):
             # if (wireno):
                 # FIXME print "HACK1 only printing connections with wireno != 0"
                 # FIXME print "HACK2 row/col swap in each tile address!"
