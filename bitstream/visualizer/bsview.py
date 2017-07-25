@@ -1236,118 +1236,6 @@ def pe_out_connect(cr, outport, highlight=False):
         cr.restore()
 
 
-# def manhattan_connect(cr, xy1, xy2):
-def manhattan_connect(cr, outport, inport):
-
-
-    # BACKWARDS: outport="out_s2t0" inport="in_s3t0"
-
-
-#     cr.save()
-#     (x,y) = connectionpoint("out_s2t0")
-#     drawdot(cr,x,y,'red')
-#     cr.stroke(); cr.restore()
-
-
-    # Given two points (x1,y1) and (x2,y2) on tile edge, draw
-    # a manhattan connection through the interior of the tile.
-    # Put a dot at the corner when the wire turns (you'll thank me later)
-
-#     x1 = xy1[0]; y1 = xy1[1]
-#     x2 = xy2[0]; y2 = xy2[1]
-
-    (x1,y1) = connectionpoint(outport)
-    (x2,y2) = connectionpoint(inport)
-
-    # Only draw non-ghost ports if connections exist.
-    drawport(cr, outport, options='reg');    drawport(cr, inport)
-
-    # drawdot(cr,x1,y1,'red'); drawdot(cr,x2,y2,'red')
-
-    # Find internal join point
-    # x1 == +/- PORT_HEIGHT means x1 is an edge and x2 is interior
-    if   (x1 ==  PORT_HEIGHT): interior = (x2,y1)
-    elif (x1 == -PORT_HEIGHT): interior = (x2,y1)
-    else:                      interior = (x1,y2)
-
-    # if (outport == "sb_wire_out_1_BUS16_3_0"): print "FOO1 interior = %s" % str(interior)
-
-    # Maybe it works better if join point goes a little bit in toward the
-    # two respective incoming sides
-    
-    k=2
-    sx1 = k*x1/abs(x1) # sign(x1)
-    sx2 = k*x2/abs(x2) # sign(x2)
-
-    sy1 = k*y1/(y1) # sign(y1)
-    sy2 = k*y2/(y2) # sign(y2)
-
-    if   (abs(x1) ==  PORT_HEIGHT): interior = (x2-sx1,y1+sy2)
-    else:                           interior = (x1-sx2,y2-sy1)
-
-    (join_x,join_y) = (0,0)
-
-    k=PORT_WIDTH/3.0
-    l_edge = PORT_HEIGHT
-    r_edge = CANVAS_WIDTH-PORT_HEIGHT
-    t_edge = PORT_HEIGHT
-    b_edge = CANVAS_HEIGHT-PORT_HEIGHT
-    if   (x1 == x2):     join_x = x1
-    elif (x1 == l_edge): join_x = x2-k
-    elif (x1 == r_edge): join_x = x2+k
-    elif (x2 == l_edge): join_x = x1-k
-    elif (x2 == r_edge): join_x = x1+k
-
-    if   (y1 == y2):     join_y = y1
-    elif (y1 == t_edge): join_y = y2-k
-    elif (y1 == b_edge): join_y = y2+k
-    elif (y2 == t_edge): join_y = y1-k
-    elif (y2 == b_edge): join_y = y1+k
-
-    interior = (join_x,join_y)
-
-    # if (outport == "sb_wire_out_1_BUS16_3_0"): print "FOO2 interior = %s" % str(interior)
-    # if (outport == "sb_wire_out_1_BUS16_3_0"):
-    #     print "begin here: %s" % str((x1,y1))
-    #     print "then  here: %s" % str(interior)
-    #     print "end   here: %s" % str((x2,y2))
-
-    # FIXME hackity hack hack hack FIXME
-    # hack for when a lower wire connects to an upper wire in a memory tile
-    # omg i'm losing it
-    # if (interior[1] == 0): interior[1] = CANVAS_HEIGHT
-    # FIXME "TypeError: object does not support item assignment" on neva-2!!?
-    interior_x = interior[0]; interior_y = interior[1]
-    if (interior_y == 0):
-        # print "interor y = zero means a mem-sb1 connection"
-        # print "inport '%s' => outport '%s' in tile %d" % (inport, outport, CUR_TILENO)
-
-        (y1_prev,y2_prev) = (y1,y2)
-        if re.search("^sb_wire_in_1_", outport):
-            y1 -= PORT_HEIGHT
-            # print "subtracting from y1 was %d now %d" % (y1_prev,y1)
-        elif re.search("^sb_wire_out_1_", inport):
-            y2 -= PORT_HEIGHT
-            # print "subtracting from y2 was %d now %d" % (y2_prev,y2)
-
-        # FIXME this could be better
-        (interior_x,interior_y) = (x1,y1)
-        # print ""
-
-    # Okay now connect the dots!  With a blue line.
-    # Put a blue dot at the corner.  You'll thank me later.
-    # TODO if (isbus): linewidth = 1 etc.
-    if (1):
-        cr.save()
-        setcolor(cr,'blue')
-        cr.set_line_width(.5)
-        # drawdot(cr,interior[0],interior[1],'blue')
-        cr.move_to(x1,y1)
-        cr.line_to(interior_x,interior_y)
-        cr.line_to(x2,y2)
-        cr.stroke()
-        cr.restore()
-
 def get_connection_type(c):
     # connection type will be one of "port" "pe_in" "pe_out" "const"
 
@@ -2318,6 +2206,119 @@ class Tile:
         indent = "                "
         print indent + ("\n"+indent).join(self.connectionlist)
 
+    # Called from Tile.connectwires ONLY
+    # def manhattan_connect(cr, xy1, xy2):
+    def manhattan_connect(self, cr, outport, inport):
+
+
+        # BACKWARDS: outport="out_s2t0" inport="in_s3t0"
+
+
+    #     cr.save()
+    #     (x,y) = connectionpoint("out_s2t0")
+    #     drawdot(cr,x,y,'red')
+    #     cr.stroke(); cr.restore()
+
+
+        # Given two points (x1,y1) and (x2,y2) on tile edge, draw
+        # a manhattan connection through the interior of the tile.
+        # Put a dot at the corner when the wire turns (you'll thank me later)
+
+    #     x1 = xy1[0]; y1 = xy1[1]
+    #     x2 = xy2[0]; y2 = xy2[1]
+
+        (x1,y1) = connectionpoint(outport)
+        (x2,y2) = connectionpoint(inport)
+
+        # Only draw non-ghost ports if connections exist.
+        drawport(cr, outport, options='reg');    drawport(cr, inport)
+
+        # drawdot(cr,x1,y1,'red'); drawdot(cr,x2,y2,'red')
+
+        # Find internal join point
+        # x1 == +/- PORT_HEIGHT means x1 is an edge and x2 is interior
+        if   (x1 ==  PORT_HEIGHT): interior = (x2,y1)
+        elif (x1 == -PORT_HEIGHT): interior = (x2,y1)
+        else:                      interior = (x1,y2)
+
+        # if (outport == "sb_wire_out_1_BUS16_3_0"): print "FOO1 interior = %s" % str(interior)
+
+        # Maybe it works better if join point goes a little bit in toward the
+        # two respective incoming sides
+
+        k=2
+        sx1 = k*x1/abs(x1) # sign(x1)
+        sx2 = k*x2/abs(x2) # sign(x2)
+
+        sy1 = k*y1/(y1) # sign(y1)
+        sy2 = k*y2/(y2) # sign(y2)
+
+        if   (abs(x1) ==  PORT_HEIGHT): interior = (x2-sx1,y1+sy2)
+        else:                           interior = (x1-sx2,y2-sy1)
+
+        (join_x,join_y) = (0,0)
+
+        k=PORT_WIDTH/3.0
+        l_edge = PORT_HEIGHT
+        r_edge = CANVAS_WIDTH-PORT_HEIGHT
+        t_edge = PORT_HEIGHT
+        b_edge = CANVAS_HEIGHT-PORT_HEIGHT
+        if   (x1 == x2):     join_x = x1
+        elif (x1 == l_edge): join_x = x2-k
+        elif (x1 == r_edge): join_x = x2+k
+        elif (x2 == l_edge): join_x = x1-k
+        elif (x2 == r_edge): join_x = x1+k
+
+        if   (y1 == y2):     join_y = y1
+        elif (y1 == t_edge): join_y = y2-k
+        elif (y1 == b_edge): join_y = y2+k
+        elif (y2 == t_edge): join_y = y1-k
+        elif (y2 == b_edge): join_y = y1+k
+
+        interior = (join_x,join_y)
+
+        # if (outport == "sb_wire_out_1_BUS16_3_0"): print "FOO2 interior = %s" % str(interior)
+        # if (outport == "sb_wire_out_1_BUS16_3_0"):
+        #     print "begin here: %s" % str((x1,y1))
+        #     print "then  here: %s" % str(interior)
+        #     print "end   here: %s" % str((x2,y2))
+
+        # FIXME hackity hack hack hack FIXME
+        # hack for when a lower wire connects to an upper wire in a memory tile
+        # omg i'm losing it
+        # if (interior[1] == 0): interior[1] = CANVAS_HEIGHT
+        # FIXME "TypeError: object does not support item assignment" on neva-2!!?
+        interior_x = interior[0]; interior_y = interior[1]
+        if (interior_y == 0):
+            # print "interor y = zero means a mem-sb1 connection"
+            # print "inport '%s' => outport '%s' in tile %d" % (inport, outport, CUR_TILENO)
+
+            (y1_prev,y2_prev) = (y1,y2)
+            if re.search("^sb_wire_in_1_", outport):
+                y1 -= PORT_HEIGHT
+                # print "subtracting from y1 was %d now %d" % (y1_prev,y1)
+            elif re.search("^sb_wire_out_1_", inport):
+                y2 -= PORT_HEIGHT
+                # print "subtracting from y2 was %d now %d" % (y2_prev,y2)
+
+            # FIXME this could be better
+            (interior_x,interior_y) = (x1,y1)
+            # print ""
+
+        # Okay now connect the dots!  With a blue line.
+        # Put a blue dot at the corner.  You'll thank me later.
+        # TODO if (isbus): linewidth = 1 etc.
+        if (1):
+            cr.save()
+            setcolor(cr,'blue')
+            cr.set_line_width(.5)
+            # drawdot(cr,interior[0],interior[1],'blue')
+            cr.move_to(x1,y1)
+            cr.line_to(interior_x,interior_y)
+            cr.line_to(x2,y2)
+            cr.stroke()
+            cr.restore()
+
     # Called from Tile.draw() ONLY
     def connectwires(self, cr, connection):
 
@@ -2371,8 +2372,10 @@ class Tile:
                 print "CW connecting wires '%s' and '%s'\n" % (w1,w2)
 
             # Draw a blue rectilinear line connecting w1 and w2 ports
-            manhattan_connect(cr, pto, pfrom)
+            self.manhattan_connect(cr, pto, pfrom)
             return True;
+
+        # still in Tile.connectwires()
 
         if (DBG>1): print "FOO2 %s - %s" % (to_type, from_type)
         # For connections of the form "wireA <= in_s3t0"
@@ -2383,7 +2386,7 @@ class Tile:
             ab_connect(cr, pfrom, pto)
             return True;
 
-        # still in connectwires()
+        # still in Tile.connectwires()
 
         if (DBG>1): print "FOO3 %s - %s" % (to_type, from_type)
         # For connections of the form "out_s1t0 <= pe_out"
