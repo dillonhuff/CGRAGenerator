@@ -2185,10 +2185,10 @@ class Tile:
     # (row,col) = (-1,-1)
     # self.connectionlist = []
 
-    # E.g. wirecolors["out_s1t0"] = "blue"
-    # This can be a very sparse array if we only populate it when
-    # color is changed to non-default.
-    wirecolors = []
+    # List of ports (wires) currently being highlighted e.g.
+    # if ('out_s1t1' in highlights): setcolor(cr, red)
+    highlights = []
+    
 
     def __init__(self, tileno):
         self.label  = "" # E.g. "ADD", "MUL", "I/O"
@@ -2210,15 +2210,12 @@ class Tile:
     # def manhattan_connect(cr, xy1, xy2):
     def manhattan_connect(self, cr, outport, inport):
 
-
         # BACKWARDS: outport="out_s2t0" inport="in_s3t0"
 
-
-    #     cr.save()
-    #     (x,y) = connectionpoint("out_s2t0")
-    #     drawdot(cr,x,y,'red')
-    #     cr.stroke(); cr.restore()
-
+        #     cr.save()
+        #     (x,y) = connectionpoint("out_s2t0")
+        #     drawdot(cr,x,y,'red')
+        #     cr.stroke(); cr.restore()
 
         # Given two points (x1,y1) and (x2,y2) on tile edge, draw
         # a manhattan connection through the interior of the tile.
@@ -2230,8 +2227,12 @@ class Tile:
         (x1,y1) = connectionpoint(outport)
         (x2,y2) = connectionpoint(inport)
 
+        self.highlights = ("out_s1t1")
+        highlight = (outport in self.highlights) or (inport in self.highlights)
+
         # Only draw non-ghost ports if connections exist.
-        drawport(cr, outport, options='reg');    drawport(cr, inport)
+        drawport(cr, outport, highlight, options='reg');
+        drawport(cr, inport, highlight)
 
         # drawdot(cr,x1,y1,'red'); drawdot(cr,x2,y2,'red')
 
