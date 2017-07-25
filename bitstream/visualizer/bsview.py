@@ -1224,11 +1224,12 @@ def pe_out_connect(cr, outport, highlight=False):
     # Draw wire connecting pe to output port
     # FIX<E/TODO should be shared w/other connect routines!
     if (1):
-        if highlight: color = 'red'
-        else:         color = 'blue'
+        (linewidth,color) = (0.5,'blue');
+        if highlight: (linewidth,color) = (1.0,'red')
+
         cr.save()
         setcolor(cr,color)
-        cr.set_line_width(.5)
+        cr.set_line_width(linewidth)
         drawdot(cr,x2,y2,color)
         cr.move_to(x1,y1)
         cr.line_to(x2,y2)
@@ -1995,8 +1996,6 @@ def find_tile_clicked(x,y):
     # Find tile number indicated by (row,col)
     tileno = rc2tileno(row,col)
     if DBG: print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
-    portname = find_port_clicked(x,y) # FIXME/tmp
-    if DBG: print "I think you clicked near port '%s'" % portname
     return tileno
 
 def find_port_clicked(x,y):
@@ -2141,10 +2140,20 @@ def button_press_handler(widget, event):
 
     if single_click:
         # print "Where is the nearest wire to me?"
-        find_tile_clicked(event.x, event.y)
+        tileno = find_tile_clicked(event.x, event.y)
+        portname = find_port_clicked(event.x, event.y)
 
+        DBG = 1
+        if DBG: print "I think you clicked near port '%s'" % portname
 
-
+        global TILE_LIST
+        hlist = TILE_LIST[tileno].highlights
+        if (portname in hlist):
+            print "FOO remove '%s' from highlight-list for tile %d" % (portname,tileno)
+            hlist.remove(portname)
+        else:
+            print "FOO add '%s' to highlight-list for tile %d" % (portname,tileno)
+            hlist.append(portname)
 
     # ZOOM TO TILE (ugh FIXME should be a separate routine)
     # Double click should ALWAYS be zoom-to-tile maybe
@@ -2185,12 +2194,13 @@ class Tile:
     # (row,col) = (-1,-1)
     # self.connectionlist = []
 
-    # List of ports (wires) currently being highlighted e.g.
-    # if ('out_s1t1' in highlights): setcolor(cr, red)
-    highlights = []
-    
-
     def __init__(self, tileno):
+
+        # List of ports (wires) currently being highlighted e.g.
+        # if ('out_s1t1' in highlights): setcolor(cr, red)
+        self.highlights = []
+        self.highlights.append("in_s2t0") # To test it/them FIXME
+
         self.label  = "" # E.g. "ADD", "MUL", "I/O"
         self.tileno = tileno
         # self.row = int(tileno % GRID_HEIGHT)
@@ -2221,14 +2231,15 @@ class Tile:
         # a manhattan connection through the interior of the tile.
         # Put a dot at the corner when the wire turns (you'll thank me later)
 
-    #     x1 = xy1[0]; y1 = xy1[1]
-    #     x2 = xy2[0]; y2 = xy2[1]
-
         (x1,y1) = connectionpoint(outport)
         (x2,y2) = connectionpoint(inport)
 
-        self.highlights = ("out_s1t1")
+        DBG = 0
         highlight = (outport in self.highlights) or (inport in self.highlights)
+        if DBG:
+            if highlight: print "FOO HIGHLIGHT"
+            print "tileno=%d inport='%s' outport='%s' highlight=%s" \
+                  % (self.tileno, inport, outport, highlight)
 
         # Only draw non-ghost ports if connections exist.
         drawport(cr, outport, highlight, options='reg');
@@ -2306,13 +2317,15 @@ class Tile:
             (interior_x,interior_y) = (x1,y1)
             # print ""
 
-        # Okay now connect the dots!  With a blue line.
-        # Put a blue dot at the corner.  You'll thank me later.
+        # Okay now connect the dots!  With a blue line.  Unless highlighting.
         # TODO if (isbus): linewidth = 1 etc.
         if (1):
+            (linewidth,color) = (0.5,'blue');
+            if highlight: (linewidth,color) = (1.0,'red')
+
             cr.save()
-            setcolor(cr,'blue')
-            cr.set_line_width(.5)
+            setcolor(cr,color)
+            cr.set_line_width(linewidth)
             # drawdot(cr,interior[0],interior[1],'blue')
             cr.move_to(x1,y1)
             cr.line_to(interior_x,interior_y)
