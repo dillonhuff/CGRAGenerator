@@ -44,7 +44,7 @@ def get_default_cgra_info_filename():
 # from lib import sb_decode_cgra
 
 # sys.path.insert(0, "../../../SMT-PNR/src")
-# # from config.annotations import Annotations
+# from config.annotations import Annotations
 from lib.annotations import Annotations
 
 # print Annotations.op_config('op', 'output')
@@ -773,8 +773,8 @@ for line in inputstream:
             # HACK HACK FIXME
             # For now, only list connections where wireno != 0
 
-            # if (1):
-            if (wireno):
+            if (1):
+            # if (wireno):
                 # FIXME print "HACK1 only printing connections with wireno != 0"
                 # FIXME print "HACK2 row/col swap in each tile address!"
                 if SWAP: (r,c) = (c,r)
