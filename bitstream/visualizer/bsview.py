@@ -409,6 +409,7 @@ def side(wirename): return parse_wirename(wirename)['side']
 def track(wirename): return parse_wirename(wirename)['track']
 ##############################################################################
 
+# Called from: drawport, ...?
 # This could be an extension of cr's class I suppose
 def draw_arrow(cr, al, ahl,ahw,fill):
     # Draw an arrow of total length al and line_width aw
@@ -687,16 +688,20 @@ def connectionpoint(wirename):
 
 # TODO/FIXME need at least one more pass on drawport() below!
 
+# Called from: pe_out_connect, ...?
 # E.g. 'drawport(cr, "out_s1t0")' or 'drawport(cr, wirename, options="ghost")'
-def drawport(cr, wirename, **keywords):
+def drawport(cr, wirename, highlight=False, **keywords):
     DBG = 0
 
     # Draw the port for the indicated wire in the context of the current canvas
     # Ports are labeled arrows; input ports point in to the tile and
     # output ports point out.
     # connectionpoint() will tell where to start (for outputs) or end (for inputs)
-    # [Optionally] attach a register to the port inside the tile.
-    # [Optionally] leave off the label
+    # [Optionally] options='reg' => attach a register to the port inside the tile.
+    # [Optionally] options='leave off the label
+    # options='ghost' => draw lightly
+    # highlight True => draw arrows (and label?) in a different color
+
 
     if DBG: print "Drawing port for wire '%s'..." % (wirename)
 
@@ -739,6 +744,9 @@ def drawport(cr, wirename, **keywords):
             cr.save()
             setcolor(cr, 'blue') # Blue arrows (unless ghost)
             if ('ghost' in optionlist): cr.set_source_rgb(.8,.8,1) # slightly darker ghost
+            if highlight:
+                # print "FOO arrow should be RED"
+                setcolor(cr, 'red')
 
             # Thick and thin arrows for buses vs. tracks
             # For demonstration purposes,
@@ -1177,7 +1185,7 @@ def drawmemtile(cr):
     cr.restore()
 
 # E.g. ab_connect(cr, "in_s3t0", "wireA")
-def ab_connect(cr, inport, PE_input):
+def ab_connect(cr, inport, PE_input, highlight=False):
     DBG=0;
     if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
 
@@ -1201,18 +1209,27 @@ def ab_connect(cr, inport, PE_input):
         cr.stroke()
         cr.restore()
 
-def pe_out_connect(cr, outport):
+# Called from connectwires, ...?
+def pe_out_connect(cr, outport, highlight=False):
     (x1,y1) = (PE_OUTX,PE_OUTY)
     (x2,y2) = connectionpoint(outport)
 
-    drawport(cr, outport, options='reg');
+    DBG = 0
+    if DBG: print "FOO FOO highlight is " + str(highlight)
+    if (highlight): setcolor(cr,'red')
 
+    # Draw a non-ghost output port
+    drawport(cr, outport, highlight, options='reg');
+
+    # Draw wire connecting pe to output port
     # FIX<E/TODO should be shared w/other connect routines!
     if (1):
+        if highlight: color = 'red'
+        else:         color = 'blue'
         cr.save()
-        setcolor(cr,'blue')
+        setcolor(cr,color)
         cr.set_line_width(.5)
-        drawdot(cr,x2,y2,'blue')
+        drawdot(cr,x2,y2,color)
         cr.move_to(x1,y1)
         cr.line_to(x2,y2)
         cr.stroke()
@@ -1366,107 +1383,6 @@ def get_connection_type(c):
     DBG=0
     if DBG: print "GCT connection '%s' = type '%s'" % (c, type)
     return type
-
-
-def connectwires(cr, connection):
-
-    # Draw a manhattan blue line connecting the two indicated ports inside a tile
-    # I've given a lot of leeway as to how connections are specified.
-    # E.g. these should all work for connection parm:
-    #     "in_s3t0 => out_s2t3"
-    #     "in_s3t0 out_s2t3"
-    #     "in_s3t0 connects to out_s2t3"
-    #     "  in_s3t0 connects to out_s2t3  "
-    #     "wireA <= in_s3t0"
-    #     "pe_out <= MUL(wireA,wireB)"
-    #     "pe_out <= ADD(0x0002,0x0000)"
-
-
-    DBG = 0;
-
-    # Find the names of the two wires to connect.
-    # parse = re.search( "([A-z_0-9]+).*[^A-z_0-9]([A-z_0-9]+)[^A-z_0-9]*$", connection)
-
-    # A better way?
-    connection = connection.strip() # Eliminate leading/trailing space
-
-    # parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
-    parse = re.search("^([^ ]*) .* ([^ ]*)$", connection)
-    pto = parse.group(1); pfrom = parse.group(2)
-
-    # Some quick rewrites for the new mem tiles
-    # E.g. 'out_0_BUS16_3_0 should I THINK be same as out_s3t0
-    pto   = quickfix(pto)
-    pfrom = quickfix(pfrom)
-
-    # connection type will be one of "port" "pe_in" "pe_out" "const" (more?)
-
-    to_type   = get_connection_type(pto)
-    from_type = get_connection_type(pfrom)
-        
-    if DBG: print "CONNECT to '%s' from '%s'" % (pto,pfrom)
-
-#     if (pfrom == 'mem_out'):
-#         print "FOO okay found FROM 'mem_out' type '%s' in tile %d" % (from_type,CUR_TILENO)
-#         print "FOO connects TO '%s' type '%s'" % (pto, to_type)
-
-    DBG=0
-    if (DBG>1): print "FOO1 %s - %s" % (to_type, from_type)
-    # For connections of the form "out_s0t0 <= in_s1t0"
-    if (to_type == "port" and from_type == "port"):
-        w1 = pto; w2 = pfrom
-        if DBG:
-            print "CW connection = " + connection
-            print "CW connecting wires '%s' and '%s'\n" % (w1,w2)
-
-        # Draw a blue rectilinear line connecting w1 and w2 ports
-        manhattan_connect(cr, pto, pfrom)
-        return True;
-
-    if (DBG>1): print "FOO2 %s - %s" % (to_type, from_type)
-    # For connections of the form "wireA <= in_s3t0"
-    if (to_type == "pe_in" and from_type == "port"):
-        DBG=0
-        if DBG: print "CW found valid connection %s" % connection
-        if DBG: print "CW connecting port '%s' to pe_in '%s'" % (pfrom,pto)
-        ab_connect(cr, pfrom, pto)
-        return True;
-
-    if (DBG>1): print "FOO3 %s - %s" % (to_type, from_type)
-    # For connections of the form "out_s1t0 <= pe_out"
-    if (to_type == "port" and from_type == "pe_out"):
-        DBG = 0;
-        if DBG: print "CW/pe_out found valid connection %s" % connection
-        pe_out_connect(cr, pto)
-        return True;
-
-    if (DBG>1): print "FOO4 %s - %s" % (to_type, from_type)
-    # For connections of the form "pe_out <= MUL(wireA,regB)" or "pe_out <= MUL(wireA,0x0002)"
-    # parse = re.search("^(pe_out) .* (.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
-    if (from_type == "pe"):
-        DBG = 0;
-        if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
-        if DBG: print "CW/pe found valid connection %s" % connection
-        parse = re.search("^(.*)[(](wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)[)]", pfrom)
-        pe_name = parse.group(1)
-        pe_a    = parse.group(2)
-        pe_b    = parse.group(3)
-        if DBG: print "Found PE '%s' w/ inputs a='%s' b='%s'" % (pe_name,pe_a,pe_b)
-
-        if (pe_name == "INPUT"): pe_name = "IN"
-        if (pe_name == "OUTPUT"): pe_name = "OUT"
-
-        draw_pe(cr, pe_name, pe_a, pe_b)
-        return True
-
-        # TODO: draw_pe(pe_name) etc.
-#             if (self.col==0): draw_pe(cr, "ADD", regA=2, regB=0)
-
-    else:
-        # print "ERROR Do not understand connection %s (yet)" % connection
-        return False
-
-
 
 # FIXME/TODO Not used presently I think.  Do we keep it?
 def drawgrid(cr):
@@ -2381,6 +2297,11 @@ class Tile:
     # (row,col) = (-1,-1)
     # self.connectionlist = []
 
+    # E.g. wirecolors["out_s1t0"] = "blue"
+    # This can be a very sparse array if we only populate it when
+    # color is changed to non-default.
+    wirecolors = []
+
     def __init__(self, tileno):
         self.label  = "" # E.g. "ADD", "MUL", "I/O"
         self.tileno = tileno
@@ -2396,6 +2317,113 @@ class Tile:
         print "Tile %d (r%d,c%d)" % (self.tileno, self.row, self.col)
         indent = "                "
         print indent + ("\n"+indent).join(self.connectionlist)
+
+    # Called from Tile.draw() ONLY
+    def connectwires(self, cr, connection):
+
+        # Draw a manhattan blue line connecting the two indicated ports inside a tile
+        # I've given a lot of leeway as to how connections are specified.
+        # E.g. these should all work for connection parm:
+        #     "in_s3t0 => out_s2t3"
+        #     "in_s3t0 out_s2t3"
+        #     "in_s3t0 connects to out_s2t3"
+        #     "  in_s3t0 connects to out_s2t3  "
+        #     "wireA <= in_s3t0"
+        #     "pe_out <= MUL(wireA,wireB)"
+        #     "pe_out <= ADD(0x0002,0x0000)"
+
+
+        DBG = 0;
+
+        # Find the names of the two wires to connect.
+        # parse = re.search( "([A-z_0-9]+).*[^A-z_0-9]([A-z_0-9]+)[^A-z_0-9]*$", connection)
+
+        # A better way?
+        connection = connection.strip() # Eliminate leading/trailing space
+
+        # parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
+        parse = re.search("^([^ ]*) .* ([^ ]*)$", connection)
+        pto = parse.group(1); pfrom = parse.group(2)
+
+        # Some quick rewrites for the new mem tiles
+        # E.g. 'out_0_BUS16_3_0 should I THINK be same as out_s3t0
+        pto   = quickfix(pto)
+        pfrom = quickfix(pfrom)
+
+        # connection type will be one of "port" "pe_in" "pe_out" "const" (more?)
+
+        to_type   = get_connection_type(pto)
+        from_type = get_connection_type(pfrom)
+
+        if DBG: print "CONNECT to '%s' from '%s'" % (pto,pfrom)
+
+    #     if (pfrom == 'mem_out'):
+    #         print "FOO okay found FROM 'mem_out' type '%s' in tile %d" % (from_type,CUR_TILENO)
+    #         print "FOO connects TO '%s' type '%s'" % (pto, to_type)
+
+        DBG=0
+        if (DBG>1): print "FOO1 %s - %s" % (to_type, from_type)
+        # For connections of the form "out_s0t0 <= in_s1t0"
+        if (to_type == "port" and from_type == "port"):
+            w1 = pto; w2 = pfrom
+            if DBG:
+                print "CW connection = " + connection
+                print "CW connecting wires '%s' and '%s'\n" % (w1,w2)
+
+            # Draw a blue rectilinear line connecting w1 and w2 ports
+            manhattan_connect(cr, pto, pfrom)
+            return True;
+
+        if (DBG>1): print "FOO2 %s - %s" % (to_type, from_type)
+        # For connections of the form "wireA <= in_s3t0"
+        if (to_type == "pe_in" and from_type == "port"):
+            DBG=0
+            if DBG: print "CW found valid connection %s" % connection
+            if DBG: print "CW connecting port '%s' to pe_in '%s'" % (pfrom,pto)
+            ab_connect(cr, pfrom, pto)
+            return True;
+
+        # still in connectwires()
+
+        if (DBG>1): print "FOO3 %s - %s" % (to_type, from_type)
+        # For connections of the form "out_s1t0 <= pe_out"
+        if (to_type == "port" and from_type == "pe_out"):
+            DBG = 0;
+            if DBG: print "CW/pe_out found valid connection %s" % connection
+            pe_out_connect(cr, pto, True)
+            return True;
+
+        if (DBG>1): print "FOO4 %s - %s" % (to_type, from_type)
+        # For connections of the form "pe_out <= MUL(wireA,regB)" or "pe_out <= MUL(wireA,0x0002)"
+        # parse = re.search("^(pe_out) .* (.*).(wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)", connection)
+        if (from_type == "pe"):
+            DBG = 0;
+            if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
+            if DBG: print "CW/pe found valid connection %s" % connection
+            parse = re.search("^(.*)[(](wire.|reg.|[0-9].*),(wire.|reg.|[0-9].*)[)]", pfrom)
+            pe_name = parse.group(1)
+            pe_a    = parse.group(2)
+            pe_b    = parse.group(3)
+            if DBG: print "Found PE '%s' w/ inputs a='%s' b='%s'" % (pe_name,pe_a,pe_b)
+
+            if (pe_name == "INPUT"): pe_name = "IN"
+            if (pe_name == "OUTPUT"): pe_name = "OUT"
+
+            draw_pe(cr, pe_name, pe_a, pe_b)
+            return True
+
+            # TODO: draw_pe(pe_name) etc.
+    #             if (self.col==0): draw_pe(cr, "ADD", regA=2, regB=0)
+
+        else:
+            # print "ERROR Do not understand connection %s (yet)" % connection
+            return False
+
+
+
+
+
+
 
     # Todo: maybe two separate routines,
     # one for draw-in-grid and one for draw-standalone etc
@@ -2431,7 +2459,7 @@ class Tile:
 
         draw_all_ports(cr)
         for c in self.connectionlist:
-            if (not connectwires(cr, c) and self.tileno == 0):
+            if (not self.connectwires(cr, c) and self.tileno == 0):
                 print "ERROR Do not understand connection %s in tile %d (yet);" % (c, self.tileno)
                 print "ERROR Removing '%s' from Tile %d connection list" % (c, self.tileno)
                 # print "BEFORE: %s" % str(self.connectionlist)
