@@ -1638,8 +1638,8 @@ class CGRAWin(gtk.Window):
     def button_exit_action(widget, event):
         Gtk.main_quit()
 
-def adjust_scrollbar(adj, amt):
-    DBG=0
+def adjust_scrollbar(adj, amt, DBG):
+    # DBG=1
     # ps = adj.page_size
 
 #     pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (0.5))
@@ -1685,10 +1685,10 @@ def recenter(x,y):
     SW.hide();
     if (1):
         print "HADJUST   :",
-        adjust_scrollbar(SW.get_hadjustment(), x)
+        adjust_scrollbar(SW.get_hadjustment(), x, 0)
 
         print "VADJUST   :",
-        adjust_scrollbar(SW.get_vadjustment(), y)
+        adjust_scrollbar(SW.get_vadjustment(), y, 0)
 
     SW.show()
     return
@@ -1714,15 +1714,20 @@ def zoom(sf):
     # global ZU1; ZU1 = SW.get_hadjustment().upper; print "pre-zoom hupper = " + str(ZU1)
 
     if DBG: print "ZOOM %sx :" % str(sf), # Usually sf is 0.8 or 1.2
+    if DBG: print "Scale factor now %f" % CUR_SCALE_FACTOR
     if DBG: print "Drawing area size (%d,%d) " % (h,w),
 
-    # FIXME UL margin next to tile 0 is a bit screwed up on zoom-in
-    global NTILES
-    h = int(NTILES*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + int(UL_MARGIN*CUR_SCALE_FACTOR)
-    w = int(NTILES*CANVAS_WIDTH *CUR_SCALE_FACTOR) + int(UL_MARGIN*CUR_SCALE_FACTOR)
+#     # FIXME UL margin next to tile 0 is a bit screwed up on zoom-in
+#     global NTILES
+#     h = int(NTILES*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + int(UL_MARGIN*CUR_SCALE_FACTOR)
+#     w = int(NTILES*CANVAS_WIDTH *CUR_SCALE_FACTOR) + int(UL_MARGIN*CUR_SCALE_FACTOR)
+
+    h = int(sf * h)
+    w = int(sf * w)
 
     CUR_DRAW_WIDGET.set_size_request(h, w)
     print "=> (%d,%d)" % (h,w)
+    # print "\n\n"
 
     # These don't seem to be necessary?  Also, Each one causes a draw event I think.
     # SW.get_hadjustment().value_changed()
