@@ -1214,10 +1214,6 @@ def pe_out_connect(cr, outport, highlight=False):
     (x1,y1) = (PE_OUTX,PE_OUTY)
     (x2,y2) = connectionpoint(outport)
 
-    DBG = 0
-    if DBG: print "FOO FOO highlight is " + str(highlight)
-    if (highlight): setcolor(cr,'red')
-
     # Draw a non-ghost output port
     drawport(cr, outport, highlight, options='reg');
 
@@ -2158,15 +2154,16 @@ def button_press_handler(widget, event):
         global TILE_LIST
         hlist = TILE_LIST[tileno].highlights
         if (portname in hlist):
-            print "FOO remove '%s' from highlight-list for tile %d" % (portname,tileno)
             hlist.remove(portname)
             refresh()
+            print "FOO removed '%s' from highlight-list for tile %d" % (portname,tileno)
+            print "FOO Now hlist = %s" % str(hlist)
 
         else:
-            print "FOO add '%s' to highlight-list for tile %d" % (portname,tileno)
             hlist.append(portname)
-            print "FOO Now hlist = %s" % str(hlist)
             refresh()
+            print "FOO added '%s' to highlight-list for tile %d" % (portname,tileno)
+            print "FOO Now hlist = %s" % str(hlist)
 
 
     # ZOOM TO TILE (ugh FIXME should be a separate routine)
@@ -2176,9 +2173,7 @@ def button_press_handler(widget, event):
     if double_click and (CUR_CURSOR == 'arrow'):
         print "zoom to tile"
         zoom_to_tile1(event)
-
-        # Redraw after zoom
-        CUR_DRAW_WIDGET.queue_draw()
+        refresh() # Redraw after zoom
 
     # print "CC='%s'" % CUR_CURSOR
     elif (CUR_CURSOR == 'magplus'):
@@ -2409,6 +2404,7 @@ class Tile:
         # For connections of the form "wireA <= in_s3t0"
         if (to_type == "pe_in" and from_type == "port"):
             DBG=0
+            # if (self.tileno == 0): DBG=1
             if DBG: print "CW found valid connection %s" % connection
             if DBG: print "CW connecting port '%s' to pe_in '%s'" % (pfrom,pto)
             ab_connect(cr, pfrom, pto)
