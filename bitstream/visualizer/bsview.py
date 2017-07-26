@@ -1385,6 +1385,15 @@ def zoom_to_tile2(tileno):
         print "AFTER AFTER AFTER: [%4d|-> %4d   <-| %-4d]\n" % (int(l), int(v), int(u))
 
 
+def refresh():
+    '''Redraw the entire canvas'''
+    # https://stackoverflow.com/questions/14514374/force-pygtk-main-to-redraw
+    da = CUR_DRAW_WIDGET
+    da.queue_draw() # redraw
+    rect = da.get_allocation()        
+    da.window.invalidate_rect(rect, False) # refresh
+    while gtk.events_pending(): gtk.main_iteration(False) # enforce
+
 # Invaluable cairo drawing reference:
 # http://pygtk.org/articles/cairo-pygtk-widgets/cairo-pygtk-widgets.htm
 # Looks good but did not use: http://zetcode.com/gui/pygtk/
@@ -2151,9 +2160,14 @@ def button_press_handler(widget, event):
         if (portname in hlist):
             print "FOO remove '%s' from highlight-list for tile %d" % (portname,tileno)
             hlist.remove(portname)
+            refresh()
+
         else:
             print "FOO add '%s' to highlight-list for tile %d" % (portname,tileno)
             hlist.append(portname)
+            print "FOO Now hlist = %s" % str(hlist)
+            refresh()
+
 
     # ZOOM TO TILE (ugh FIXME should be a separate routine)
     # Double click should ALWAYS be zoom-to-tile maybe
