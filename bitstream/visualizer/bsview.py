@@ -1095,51 +1095,40 @@ def drawgrid(cr):
 
     cr.restore()
 
+def find_tile_center(tileno):
+    '''
+    Return (x,y) = dead center of tile 'tileno'
+    '''
+    DBG=0
+    scaled_array_pad     = UL_MARGIN     * CUR_SCALE_FACTOR
+    scaled_canvas_width  = CANVAS_WIDTH  * CUR_SCALE_FACTOR
+    scaled_canvas_height = CANVAS_HEIGHT * CUR_SCALE_FACTOR
+    if DBG: print "Calculated win width is...%d...?" % \
+          (4 * scaled_array_pad + 8 * scaled_canvas_width)
+    if DBG: print "Original win width was...%d...?" % \
+          (4 * UL_MARGIN + 8 * CANVAS_WIDTH)
+
+    pad = scaled_array_pad
+    col = TILE_LIST[tileno].col
+    row = TILE_LIST[tileno].row
+
+    x = pad + col * scaled_canvas_width  + scaled_canvas_width/2
+    y = pad + row * scaled_canvas_height + scaled_canvas_height/2
+
+    if DBG: print "x is %d" % x; print "pad is %d" % pad
+
+    return (x,y)
+
 # def zoom_to_tile2(tileno):
 #     '''
 #     Button-press event calls zoom_to_tile1() to queue up the zoom.
-#     Later, draw event calls zoom_to_tile2(), which does final
-#     scroll-adjust for the zoom.
+#     Later, draw event calls zoom_to_tile2(), which does final scroll-adjust for the zoom.
 # 
 #     '''
 #     print "Zoom in to tile %s!" % str(tileno)
 # 
-#     #         x = TILE_LIST[tileno].col*CANVAS_WIDTH    # + CANVAS_WIDTH/2
-#     #         y = TILE_LIST[tileno].row*CANVAS_HEIGHT   # + CANVAS_HEIGHT/2
-#     #         
-#     #         DBG = 0;
-#     #         if DBG:
-#     #             (ww,wh) = (WIN_WIDTH, min(WIN_HEIGHT,600)) 
-#     #             print ""
-#     #             print "recenter to w=%d/%d" % (x,ww)
-#     #             print "except now it's ?/%d maybe" % u
-#     #             print "%d/%d is %.2f" % (u,ww,u/ww)
-#     #             print "CUR_SF is %.2f" % CUR_SCALE_FACTOR
-#     #             print "INIT_SF is %.2f" % (INIT_SCALE_FACTOR/2.0)
-#     #             print "? is maybe %d" % (x * u/ww)
-#     # 
-#     #         x = ((0.5) * x * hadj.upper/ww)
-#     #         print "recenter tooo w=%d/%d" % (x,hadj.upper)
-#     #         y = (y * vadj.upper/wh)
-# 
-#     DBG=0
-#     scaled_array_pad     = UL_MARGIN     * CUR_SCALE_FACTOR
-#     scaled_canvas_width  = CANVAS_WIDTH  * CUR_SCALE_FACTOR
-#     scaled_canvas_height = CANVAS_HEIGHT * CUR_SCALE_FACTOR
-#     if DBG: print "Calculated win width is...%d...?" % \
-#           (4 * scaled_array_pad + 8 * scaled_canvas_width)
-#     if DBG: print "Original win width was...%d...?" % \
-#           (4 * UL_MARGIN + 8 * CANVAS_WIDTH)
-# 
-#     pad = scaled_array_pad
-#     col = TILE_LIST[tileno].col
-#     row = TILE_LIST[tileno].row
-# 
-#     x = pad + col * scaled_canvas_width
-#     y = pad + row * scaled_canvas_height
-# 
-#     if DBG: print "x is %d" % x; print "pad is %d" % pad
-# 
+#     (x,y) = find_tile_center(tileno)
+
 #     (hadj,vadj) = (SW.get_hadjustment(),SW.get_vadjustment())
 #     if DBG: print "Window width now = %d" % hadj.upper
 # 
@@ -1459,9 +1448,7 @@ class CGRAWin(gtk.Window):
 
             self.resize(desired_width, desired_height)
 
-
-
-        title = "Tilesy" # haha LOL
+        title = "Tilesy" # haha LOL haha
         gtk.Window.__init__(self)
         self.props.title = title
 
@@ -1639,9 +1626,6 @@ class CGRAWin(gtk.Window):
         Gtk.main_quit()
 
 def adjust_scrollbar(adj, amt, DBG):
-    # NOTE Remember to call recenter with post-zoom amount e.g.
-    #   zoom(1.2)
-    #   recenter(1.2*x,1.2*y)
     DBG = 0
     if DBG:
         ps = adj.page_size
@@ -1678,6 +1662,12 @@ def adjust_scrollbar(adj, amt, DBG):
     print "\n\n"
 
 def recenter(x,y):
+    '''
+    Recenter on the given (x,y) coords.
+    If calling after zoom, remember to use post-zoom amount e.g.
+       zoom(1.2)
+       recenter(1.2*x,1.2*y)
+    '''
     # print "RECENTER  :",
 
     # Hide and show, otherwise jumps around disturbingly
@@ -1859,20 +1849,52 @@ def zoom_to_tile1(event):
         if DBG: print "Zoom in to tile %s!" % str(tileno)
         ZOOMTILE = tileno;
 
-        # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
-        # Sets draw widget size to WIN_HEIGHT * CUR_SCALE_FACTOR / (0.5)
-        # or WIN_HEIGHT * 4.0 / 0.5, or 8 * WIN_HEIGHT
+        # OLD Zooms relative to CUR_SCALE_FACTOR, which was just changed above
+        # OLD Sets draw widget size to WIN_HEIGHT * CUR_SCALE_FACTOR / (0.5)
+        # OLD or WIN_HEIGHT * 4.0 / 0.5, or 8 * WIN_HEIGHT
 
-        # "4/CUR_SCALE_FACTOR" means "undo scale-factor, then zoom 4x"
         # => FIXME/TODO instead of 4x, should calculate correct factor
         # => such that tile fits in current window size
-        sf = 4/CUR_SCALE_FACTOR
+        after_scale_zoom = 4.0
+
+        # Don't use this; includes scrollbar size etc.
+        # (sh,sw) = SW.window.get_size()
+
+        sw_w = SW.get_hadjustment().page_size
+        sw_h = SW.get_vadjustment().page_size
+
+        # At no zoom for 8x8 grid, typical start value is
+        # sw=557, CANVAS_WIDTH=164, sw/cw ~ 4.0
+        after_scale_zoom = float(min(sw_h,sw_w))/float(CANVAS_WIDTH)
+
+        DBG=0
+        if DBG:
+            # sw value does not change with zoom in/out
+            # dw gets larger when you zoom in
+            (sh,sw) = SW.window.get_size()
+            dw = CUR_DRAW_WIDGET.window.get_size()
+
+            print ""
+            print "------------------------------------------------------------------------"
+            print "FOO screenwidth =? ",; print sw
+            print "FOO screenwidth =? ",; print sw_w
+            print "FOO screenheith =? ",; print sw_h
+            print "FOO tilewidth   =? ",; print CANVAS_WIDTH
+            print "FOO DAwidth     =? ",; print dw
+            print ""
+            print "FOO after_scale_zoom = ",; print after_scale_zoom
+            print "------------------------------------------------------------------------"
+            print ""
+
+        # "4/CUR_SCALE_FACTOR" means "undo scale-factor, then zoom 4x"
+        sf = after_scale_zoom/CUR_SCALE_FACTOR
         zoom(sf)
 
-        # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
+        # FIXME Is this first refresh necessary?  Try it with/without maybe.
         refresh()
-        print "FOO recenter"
-        recenter(sf*event.x, sf*event.y)
+
+        (x,y) = find_tile_center(ZOOMTILE)
+        recenter(x,y)
         refresh()
         print "how's that?"; sys.stdout.flush(); time.sleep(2)
 
