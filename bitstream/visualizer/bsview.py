@@ -1645,6 +1645,29 @@ def adjust_scrollbar(adj, amt, DBG):
 #     pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR / (0.5))
     pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR)
 
+    if DBG:
+        print ""
+        print "  clicked x is ", ; print amt
+        print "  page size is ", ; print adj.page_size
+        print "  x is %d\% of the way acrost" % 100 * int(amt/adj.page_size)
+        print ""
+        print "  hupper is ", ; print adj.upper
+        print "  should adjust to x=%d" % int(adj.upper * amt / adj.page_size)
+        print "  riggghhhht?"
+        print "\n\n"
+# 
+#     # Scale 
+#     scaled_amt = adj.upper * (amt / adj.page_size)
+# 
+#     # Center it in the window
+#     centered_scaled_amt = scaled_amt - adj.page_size/2
+# 
+#     final = centered_scaled_amt
+#     # print "about to adjust..."; sys.stdout.flush(); time.sleep(2)
+#     if DBG: print "Adjusting to %d" % final
+#     adj.set_value(final)
+
+
     # sf = 1.2 # I have a better idea!
     hupper = adj.upper
     sf = pagewidth/hupper
@@ -1677,6 +1700,7 @@ def adjust_scrollbar(adj, amt, DBG):
     # print "AFTER  lvu = (%4d-> %4d    <-%-4d)" % (int(l), int(v), int(u))
     if DBG: print "[%4d|-> %4d   <-| %-4d]" % (int(l), int(v), int(u))
     # print "PAGESIZE %d" % ps
+    print "\n\n"
     
 def recenter(x,y):
     # print "RECENTER  :",
@@ -1685,7 +1709,7 @@ def recenter(x,y):
     SW.hide();
     if (1):
         print "HADJUST   :",
-        adjust_scrollbar(SW.get_hadjustment(), x, 0)
+        adjust_scrollbar(SW.get_hadjustment(), x, 1)
 
         print "VADJUST   :",
         adjust_scrollbar(SW.get_vadjustment(), y, 0)
