@@ -716,6 +716,7 @@ def drawreg(cr, w,h):
 # def draw_pe(cr, opname, **keywords):
 def draw_pe(cr, opname, A, B):
     DBG=1
+    # if (opname != "setup_only"): print "FOO DRAW PE opname=%s A=%s B=%s" % (opname, A, B)
 
     # Use cases I want to support:
     # draw_pe(cr, "ADD") => basic PE including input and output arrows
@@ -2232,11 +2233,8 @@ class Tile:
         (x2,y2) = connectionpoint(inport)
 
         DBG = 0
-        highlight = (outport in self.highlights) or (inport in self.highlights)
-        if DBG:
-            if highlight: print "FOO HIGHLIGHT"
-            print "tileno=%d inport='%s' outport='%s' highlight=%s" \
-                  % (self.tileno, inport, outport, highlight)
+        if DBG: print "tileno=%d inport='%s' outport='%s'" \
+           % (self.tileno, inport, outport)
 
         # Only draw non-ghost ports if connections exist.
         self.drawport(cr, outport, options='reg');
@@ -2317,6 +2315,7 @@ class Tile:
         # Okay now connect the dots!  With a blue line.  Unless highlighting.
         # TODO if (isbus): linewidth = 1 etc.
         if (1):
+            highlight = (outport in self.highlights) or (inport in self.highlights)
             (linewidth,color) = (0.5,'blue');
             if highlight: (linewidth,color) = (1.0,'red')
 
@@ -2347,10 +2346,17 @@ class Tile:
         # FIXME/TODO:
         # Parms (blue, .5 etc.) should be global and shared w/ manhattan_connect etc. below
         if (1):
+            highlight = (inport in self.highlights)
+            (linewidth,color) = (0.5,'blue');
+            if highlight: (linewidth,color) = (1.0,'red')
+
             cr.save()
-            setcolor(cr,'blue')
-            cr.set_line_width(.5)
-            drawdot(cr,x2,y2,'blue')
+            # setcolor(cr,'blue')
+            # cr.set_line_width(.5)
+            # drawdot(cr,x2,y2,'blue')
+            setcolor(cr,color)
+            cr.set_line_width(linewidth)
+            drawdot(cr,x2,y2,color)
             cr.move_to(x1,y1)
             cr.line_to(x2,y2)
             cr.stroke()
@@ -2379,12 +2385,6 @@ class Tile:
             cr.line_to(x2,y2)
             cr.stroke()
             cr.restore()
-
-
-
-
-
-
 
     # Called from Tile.draw() ONLY
     def connectwires(self, cr, connection):
@@ -2785,6 +2785,24 @@ def initialize_tile_list(w, h):
 #             else:
 #                 break;
 
+def build_connections(tileno, connection_list):
+    while True:
+        # Want to find all connections of the form "out_s0t0 <= in_s1t0"
+        # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
+        # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
+        
+        # NO list all connections and let GOD sort 'em out...
+        parse = re.search("([^ ]* *<= *[^ ]*)(.*)", connection_list)
+        
+        # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", connection_list)
+        if (parse):
+            connection = parse.group(1).strip()
+            print "Tile %2d found connection '%s'" % (tileno,connection)
+            connection_list = parse.group(2).strip()
+            TILE_LIST[tileno].connect(connection)
+        else:
+            break;
+
 def process_decoded_bitstream(bs):
 
     DBG=0
@@ -2808,7 +2826,9 @@ def process_decoded_bitstream(bs):
 
     operand = {} # operand['a'], operand['b']
 
+    DBG=0
     if DBG: print ""
+    opname = False
     for line in bs:
         if (DBG>1): print line.rstrip()
         line = line.strip() # why not
@@ -2821,6 +2841,15 @@ def process_decoded_bitstream(bs):
         # Last four hex digits of 8-digit ADDR is tile number
         parse = re.search('^[0-9A-Fa-f]...(....)', line)
         if (parse):
+            # If op_info exists, build the op
+            if (opname):
+                if (operand['A'] == 'wire'): reg['A'] = 'wireA' # Confusing enough?
+                if (operand['B'] == 'wire'): reg['B'] = 'wireB'
+                line2 = 'pe_out <= %s(%s,%s)' % (opname, reg['A'], reg['B'])
+                (reg['A'], reg['B']) = ("regA", "regB") # defaults
+                opname = False;
+                build_connections(tileno, line2)
+
             tileno = int(parse.group(1), 16)
             if DBG: print "%s => tile number %d" % (line, tileno)
             continue
@@ -2866,8 +2895,13 @@ def process_decoded_bitstream(bs):
         # Transformations
         # < "# data[(15, 0)] : load `b` reg with const: 1
         # > "regB <= 0x0001"
+        #
+
         parse = re.search('.*load `(.)` reg with const: (\S+)', line)
-        parse = re.search('.*load `(.)` reg with const: (\S+)', line)
+        if parse: print "WARNING deprecated format"
+        # Oops it changed; now it looks like:
+        #    "# data[(15, 0)] : init `b` reg with const `7`"
+        if not parse: parse = re.search('.*init `(.)` reg with const `(\S+)`', line)
         if (parse):
             AB = (parse.group(1)).upper()
             k = "0x%04x" % int(parse.group(2))
@@ -2884,7 +2918,6 @@ def process_decoded_bitstream(bs):
             AB = parse.group(1).upper()
             line = "reg%s <= wire%s" % (AB,AB)
 
-
         # Transformations
         # < "# data[15] : read from reg `a`"
         # < "# data[13] : read from reg `b`"
@@ -2900,27 +2933,46 @@ def process_decoded_bitstream(bs):
         # > "wireB <= in_s2t0"
         # > "pe_out <= ADD(wireA,wireB)"
 
-# Tile 10
-# GOT:    'pe_out <= ADD(regA,0x0000)'
-# WANTED: 'pe_out <= ADD(wireA,0x0000)'
-
-
         parse = re.search("read from (reg|wire) `(.)`", line)
         if (parse):
             AB = parse.group(2).upper()
             operand[AB] = parse.group(1)
 
+        # Below line rewrite assumes that op-loads will be listed before the
+        # op declaration itself e.g.
+        #
+        #    FF00000A 0000A000
+        #    # data[(13, 13)] : read from wire `b`
+        #    # data[(15, 15)] : read from wire `a`
+        #    # data[(4, 0)] : op = add
+        #
+        # But this is not always the case!  Sometimes op is first e.g.
+        #
+        #    FF00000A 0000A000
+        #    # data[(4, 0)] : op = add
+        #    # data[(13, 13)] : read from wire `b`
+        #    # data[(15, 15)] : read from wire `a`
+        #
+        # Now what!??
+        # Solution: load up op info before-hand; if op-info exists next time we
+        # see a non-annotated line, dump it out.
+        # 
         parse = re.search(" op = (\S+)", line)
         if (parse):
             opname = parse.group(1).upper()
-            if (operand['A'] == 'wire'): reg['A'] = 'wireA' # Confusing enough?
-            if (operand['B'] == 'wire'): reg['B'] = 'wireB'
-            line = 'pe_out <= %s(%s,%s)' % (opname, reg['A'], reg['B'])
+            # Defer the rest (see above)
 
-            (reg['A'], reg['B']) = ("regA", "regB") # defaults
+#             if (operand['A'] == 'wire'): reg['A'] = 'wireA' # Confusing enough?
+#             if (operand['B'] == 'wire'): reg['B'] = 'wireB'
+#             line = 'pe_out <= %s(%s,%s)' % (opname, reg['A'], reg['B'])
+# 
+#             (reg['A'], reg['B']) = ("regA", "regB") # defaults
 
 
         if DBG: print "AFTER:  " + line
+        build_connections(tileno, line)
+
+
 #         continue
 
 #         # Search each line for connections
@@ -2940,23 +2992,23 @@ def process_decoded_bitstream(bs):
 #             if (DBG>1): print "*** Found tile %d" % tileno
 #             continue
 
-        teststring = line
-        while True:
-            # Want to find all connections of the form "out_s0t0 <= in_s1t0"
-            # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
-            # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
-
-            # NO list all connections and let GOD sort 'em out...
-            x = re.search("([^ ]* *<= *[^ ]*)(.*)", teststring)
-
-            # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", teststring)
-            if (x):
-                connection = x.group(1).strip()
-                print "Tile %2d found connection '%s'" % (tileno,connection)
-                teststring = x.group(2).strip()
-                tile[tileno].connect(connection)
-            else:
-                break;
+#         teststring = line
+#         while True:
+#             # Want to find all connections of the form "out_s0t0 <= in_s1t0"
+#             # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
+#             # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
+# 
+#             # NO list all connections and let GOD sort 'em out...
+#             x = re.search("([^ ]* *<= *[^ ]*)(.*)", teststring)
+# 
+#             # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", teststring)
+#             if (x):
+#                 connection = x.group(1).strip()
+#                 print "Tile %2d found connection '%s'" % (tileno,connection)
+#                 teststring = x.group(2).strip()
+#                 tile[tileno].connect(connection)
+#             else:
+#                 break;
 
 
 ##############################################################################
