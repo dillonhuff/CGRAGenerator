@@ -2880,7 +2880,6 @@ def process_decoded_bitstream(bs):
         line = re.sub("to a", "to wireA", line)
         line = re.sub("to b", "to wireB", line)
 
-
         # 'out_BUS16_S0_T0' => 'out_s0t0'
         line = re.sub(r'(in|out)_BUS16_S(\S+)_T(\S+)', r"\1_s\2t\3", line)
         # print "AFTER:  " + line
@@ -2892,11 +2891,10 @@ def process_decoded_bitstream(bs):
             r'\2 <= \1',
             line)
 
-        # Transformations
-        # < "# data[(15, 0)] : load `b` reg with const: 1
-        # > "regB <= 0x0001"
-        #
+        # Yes.  Sometimes this gets called more than once unnecessarily.
+        build_connections(tileno,line)
 
+        # Process constants
         parse = re.search('.*load `(.)` reg with const: (\S+)', line)
         if parse: print "WARNING deprecated format"
         # Oops it changed; now it looks like:
@@ -2905,110 +2903,38 @@ def process_decoded_bitstream(bs):
         if (parse):
             AB = (parse.group(1)).upper()
             k = "0x%04x" % int(parse.group(2))
-            line = "reg%s <= %s" % (AB,k)
             reg[AB] = k
             if DBG: print "reg['%s'] = %s" % (AB, reg[AB])
+            line = "reg%s <= %s" % (AB,k)
+            build_connections(tileno,line)
+            continue
 
-        # Transformations
-        # < "# data[14] : load `a` reg with wire"
-        # > regA <= wireA
-
+        # "# data[14] : load `a` reg with wire"
+        # => regA <= wireA
         parse = re.search("load `(.)` reg with wire", line)
         if (parse):
             AB = parse.group(1).upper()
             line = "reg%s <= wire%s" % (AB,AB)
+            build_connections(tileno,line)
+            continue
 
-        # Transformations
-        # < "# data[15] : read from reg `a`"
-        # < "# data[13] : read from reg `b`"
-        # < "# data[(4, 0)] : op = mul"
-        #
-        # > pe_out <= MUL(regA,0x0001)
-
-        # < "# data[15] : read from wire `a`"
-        # < "# data[13] : read from wire `b`"
-        # < "# data[(4, 0)] : op = add"
-        #
-        # > "wireA <= in_s1t0"
-        # > "wireB <= in_s2t0"
-        # > "pe_out <= ADD(wireA,wireB)"
-
+        # Gather op info for later emission (see above)
+        # E.g. if input line is "# data[15] : read from wire `a`"
+        # then operand["A"] = "wire"
         parse = re.search("read from (reg|wire) `(.)`", line)
         if (parse):
             AB = parse.group(2).upper()
             operand[AB] = parse.group(1)
+            continue
 
-        # Below line rewrite assumes that op-loads will be listed before the
-        # op declaration itself e.g.
-        #
-        #    FF00000A 0000A000
-        #    # data[(13, 13)] : read from wire `b`
-        #    # data[(15, 15)] : read from wire `a`
-        #    # data[(4, 0)] : op = add
-        #
-        # But this is not always the case!  Sometimes op is first e.g.
-        #
-        #    FF00000A 0000A000
-        #    # data[(4, 0)] : op = add
-        #    # data[(13, 13)] : read from wire `b`
-        #    # data[(15, 15)] : read from wire `a`
-        #
-        # Now what!??
-        # Solution: load up op info before-hand; if op-info exists next time we
-        # see a non-annotated line, dump it out.
-        # 
+        # Gather op info for later emission (see above)
+        # E.g. if input line is "# data[(4, 0)] : op = mul"
+        # Then opname = "MUL"
         parse = re.search(" op = (\S+)", line)
         if (parse):
             opname = parse.group(1).upper()
             # Defer the rest (see above)
-
-#             if (operand['A'] == 'wire'): reg['A'] = 'wireA' # Confusing enough?
-#             if (operand['B'] == 'wire'): reg['B'] = 'wireB'
-#             line = 'pe_out <= %s(%s,%s)' % (opname, reg['A'], reg['B'])
-# 
-#             (reg['A'], reg['B']) = ("regA", "regB") # defaults
-
-
-        if DBG: print "AFTER:  " + line
-        build_connections(tileno, line)
-
-
-#         continue
-
-#         # Search each line for connections
-# 
-#         if (re.search("CGRA OUTPUT", line)):
-#             tile[tileno].label = "OUT"
-#             continue
-#         elif (re.search("CGRA INPUT", line)):
-#             tile[tileno].label = "IN"
-#             continue
-# 
-#         # foundtileno = re.search("^TILE *([0-9]*)", line)
-#         # I guess python uses '\A' instead of '^' :(
-#         foundtileno = re.search("^\s*TILE\s*([0-9]+)", line)
-#         if (foundtileno):
-#             tileno = int(foundtileno.group(1))
-#             if (DBG>1): print "*** Found tile %d" % tileno
-#             continue
-
-#         teststring = line
-#         while True:
-#             # Want to find all connections of the form "out_s0t0 <= in_s1t0"
-#             # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
-#             # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
-# 
-#             # NO list all connections and let GOD sort 'em out...
-#             x = re.search("([^ ]* *<= *[^ ]*)(.*)", teststring)
-# 
-#             # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", teststring)
-#             if (x):
-#                 connection = x.group(1).strip()
-#                 print "Tile %2d found connection '%s'" % (tileno,connection)
-#                 teststring = x.group(2).strip()
-#                 tile[tileno].connect(connection)
-#             else:
-#                 break;
+            continue
 
 
 ##############################################################################
