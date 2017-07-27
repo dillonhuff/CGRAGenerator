@@ -1913,6 +1913,48 @@ def zoom_to_tile1(event):
         # Don't forget to recenter!
         recenter(PREZOOMx, PREZOOMy)
         
+def trace_wire(tileno, portname, action):
+    '''
+    If 'action'=="highlight" and indicated wire 'portname'
+    is already highlighted, do nothing.  Otherwise
+      * highlight the wire
+      * find connecting ports in same and neighboring tiles
+      * recursively call highlight_wire on each.
+    '''
+    highlight = (action == "highlight")
+    hlist = TILE_LIST[tileno].highlights
+
+    # If already in desired state, do nothing (return)
+    if   (highlight)     and (portname     in hlist): return
+    elif (not highlight) and (portname not in hlist): return
+
+    DBG=0
+    if (highlight):
+        hlist.append(portname)
+        if DBG: print "FOO added '%s' to highlight-list for tile %d" % (portname,tileno)
+    else:
+        hlist.remove(portname)
+        if DBG: print "FOO removed '%s' from highlight-list for tile %d" % (portname,tileno)
+
+    if DBG: print "FOO Now hlist = %s" % str(hlist)
+
+    # Highlight/unhighlight connected port in same tile
+    cport = TILE_LIST[tileno].find_connected_port(portname)
+    if (cport): trace_wire(tileno, cport, action)
+
+    # Highlight/unhighlight connected port in neighboring tile
+    (adj_tileno,adj_wire) = find_matching_wire(tileno, portname)
+    if (adj_tileno): trace_wire(adj_tileno,adj_wire, action)
+
+def toggle_highlight(tileno,portname):
+    global TILE_LIST
+    hlist = TILE_LIST[tileno].highlights
+    if (portname in hlist):
+        trace_wire(tileno,portname, "unhighlight")
+    else:
+        trace_wire(tileno,portname,   "highlight")
+    refresh()
+
 def button_press_handler(widget, event):
     double_click = (event.type == gtk.gdk._2BUTTON_PRESS)
     single_click = (event.type == gtk.gdk.BUTTON_PRESS)
@@ -1928,20 +1970,7 @@ def button_press_handler(widget, event):
         DBG = 1
         if DBG: print "I think you clicked near port '%s'" % portname
 
-        global TILE_LIST
-        hlist = TILE_LIST[tileno].highlights
-        if (portname in hlist):
-            hlist.remove(portname)
-            refresh()
-            print "FOO removed '%s' from highlight-list for tile %d" % (portname,tileno)
-            print "FOO Now hlist = %s" % str(hlist)
-
-        else:
-            hlist.append(portname)
-            refresh()
-            print "FOO added '%s' to highlight-list for tile %d" % (portname,tileno)
-            print "FOO Now hlist = %s" % str(hlist)
-
+        toggle_highlight(tileno,portname)
 
     # ZOOM TO TILE (ugh FIXME should be a separate routine)
     # Double click should ALWAYS be zoom-to-tile maybe
@@ -1989,7 +2018,7 @@ class Tile:
         # List of ports (wires) currently being highlighted e.g.
         # if ('out_s1t1' in highlights): setcolor(cr, red)
         self.highlights = []
-        self.highlights.append("in_s2t0") # To test it/them FIXME
+        # self.highlights.append("in_s2t0") # To test it/them FIXME
 
         self.label  = "" # E.g. "ADD", "MUL", "I/O"
         self.tileno = tileno
@@ -2001,6 +2030,15 @@ class Tile:
     def connect(self,connection):
         self.connectionlist.append(connection)
 
+    def find_connected_port(self,portname):
+        '''Find the other end of the wire connected to "portname"'''
+        for c in self.connectionlist:
+            parse = re.search("^([^ ]*) .* ([^ ]*)$", c)
+            pto = parse.group(1); pfrom = parse.group(2)
+            if   (pto   == portname): return pfrom
+            elif (pfrom == portname): return pto
+        return False
+
     def printprops(self):
         print "Tile %d (r%d,c%d)" % (self.tileno, self.row, self.col)
         indent = "                "
@@ -2010,7 +2048,7 @@ class Tile:
 
     # Called from: pe_out_connect, ...?
     # E.g. 'drawport(cr, "out_s1t0")' or 'drawport(cr, wirename, options="ghost")'
-    def drawport(self, cr, wirename, highlight=False, **keywords):
+    def drawport(self, cr, wirename, **keywords):
         DBG = 0
 
         # Draw the port for the indicated wire in the context of the current canvas
@@ -2020,8 +2058,6 @@ class Tile:
         # [Optionally] options='reg' => attach a register to the port inside the tile.
         # [Optionally] options='leave off the label
         # options='ghost' => draw lightly
-        # highlight True => draw arrows (and label?) in a different color
-
 
         if DBG: print "Drawing port for wire '%s'..." % (wirename)
 
@@ -2064,6 +2100,7 @@ class Tile:
                 cr.save()
                 setcolor(cr, 'blue') # Blue arrows (unless ghost)
                 if ('ghost' in optionlist): cr.set_source_rgb(.8,.8,1) # slightly darker ghost
+                highlight = (wirename in self.highlights)
                 if highlight:
                     # print "FOO arrow should be RED"
                     setcolor(cr, 'red')
@@ -2202,8 +2239,8 @@ class Tile:
                   % (self.tileno, inport, outport, highlight)
 
         # Only draw non-ghost ports if connections exist.
-        self.drawport(cr, outport, highlight, options='reg');
-        self.drawport(cr, inport, highlight)
+        self.drawport(cr, outport, options='reg');
+        self.drawport(cr, inport)
 
         # drawdot(cr,x1,y1,'red'); drawdot(cr,x2,y2,'red')
 
@@ -2320,16 +2357,17 @@ class Tile:
             cr.restore()
 
     # called from Tile.connectwires() ONLY
-    def pe_out_connect(self, cr, outport, highlight=False):
+    def pe_out_connect(self, cr, outport):
         (x1,y1) = (PE_OUTX,PE_OUTY)
         (x2,y2) = connectionpoint(outport)
 
         # Draw a non-ghost output port
-        self.drawport(cr, outport, highlight, options='reg');
+        self.drawport(cr, outport, options='reg');
 
         # Draw wire connecting pe to output port
         # FIX<E/TODO should be shared w/other connect routines!
         if (1):
+            highlight = (outport in self.highlights)
             (linewidth,color) = (0.5,'blue');
             if highlight: (linewidth,color) = (1.0,'red')
 
@@ -2423,7 +2461,7 @@ class Tile:
         if (to_type == "port" and from_type == "pe_out"):
             DBG = 0;
             if DBG: print "CW/pe_out found valid connection %s" % connection
-            self.pe_out_connect(cr, pto, True)
+            self.pe_out_connect(cr, pto)
             return True;
 
         if (DBG>1): print "FOO4 %s - %s" % (to_type, from_type)
@@ -3140,34 +3178,34 @@ def main():
     return
 
 
-# def find_matching_wire(tileno, w):
-#     DBG=1
-#     # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
-#     parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
-#     if (parse == None):
-#         print "Invalid wire name '%s'" % w
-#         return
-#     in_or_out = parse.group(1)
-#     side      = int(parse.group(2))
-#     track     = int(parse.group(3))
-# 
-#     if (in_or_out=="out"): in_or_out="in"
-#     else:            in_or_out="out"
-# 
-#     (r,c) = tileno2rc(tileno)
-#     #   print (r,c,side)
-# 
-#     if   (side==0): (r,c,side) = (r,c+1,side+2)
-#     elif (side==1): (r,c,side) = (r+1,c,side+2)
-#     elif (side==2): (r,c,side) = (r,c-1,side-2)
-#     elif (side==3): (r,c,side) = (r-1,c,side-2)
-# 
-#     #   print (r,c,side)
-# 
-#     adj_tileno = rc2tileno(r,c)
-#     adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
-#     if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
-#     return (adj_tileno, adj_wire)
+def find_matching_wire(tileno, w):
+    DBG=1
+    # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
+    parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
+    if (parse == None):
+        print "Invalid wire name '%s'" % w
+        return (False,False)
+    in_or_out = parse.group(1)
+    side      = int(parse.group(2))
+    track     = int(parse.group(3))
+
+    if (in_or_out=="out"): in_or_out="in"
+    else:            in_or_out="out"
+
+    (r,c) = tileno2rc(tileno)
+    #   print (r,c,side)
+
+    if   (side==0): (r,c,side) = (r,c+1,side+2)
+    elif (side==1): (r,c,side) = (r+1,c,side+2)
+    elif (side==2): (r,c,side) = (r,c-1,side-2)
+    elif (side==3): (r,c,side) = (r-1,c,side-2)
+
+    #   print (r,c,side)
+
+    adj_tileno = rc2tileno(r,c)
+    adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
+    if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
+    return (adj_tileno, adj_wire)
 
 main()
 
