@@ -677,7 +677,7 @@ def connectionpoint(wirename):
     # print "yfudge is (still) %d" % yfudge
     return (x, y + yfudge);
 
-def drawreg(cr, w,h):
+def drawreg(cr, w,h, color='white'):
     # Draw a register with UL at (0,0), height h and width w
     cr.save()
 
@@ -688,8 +688,9 @@ def drawreg(cr, w,h):
     cr.stroke()
     if (1):
         cr.save()
-        # TODO fund and use background color instead of white!
-        setcolor(cr, 'white')
+        # TODO find and use background color instead of white!
+        # setcolor(cr, 'white')
+        setcolor(cr, color)
         cr.rectangle(0,0,  w, h) # ULx, ULy, width, height
         cr.fill()
         cr.stroke()
@@ -2030,6 +2031,9 @@ class Tile:
         (self.row,self.col) = tileno2rc(tileno)
         self.connectionlist = []
 
+        # List of output wires that should be latched
+        self.outreglist     = []
+
     def connect(self,connection):
         self.connectionlist.append(connection)
 
@@ -2054,13 +2058,20 @@ class Tile:
     def drawport(self, cr, wirename, **keywords):
         DBG = 0
 
+#         if wirename in self.outreglist:
+#             print "HO! I see a wire that should be registered"
+#             print "    Tile %d wire '%s'" % (self.tileno, wirename)
+#             print ""
+
         # Draw the port for the indicated wire in the context of the current canvas
         # Ports are labeled arrows; input ports point in to the tile and
         # output ports point out.
         # connectionpoint() will tell where to start (for outputs) or end (for inputs)
-        # [Optionally] options='reg' => attach a register to the port inside the tile.
         # [Optionally] options='leave off the label
         # options='ghost' => draw lightly
+
+        # NEVER USED (right?)
+        # [Optionally] options='reg' => attach a register to the port inside the tile.
 
         if DBG: print "Drawing port for wire '%s'..." % (wirename)
 
@@ -2135,35 +2146,39 @@ class Tile:
                 cr.restore()
 
 
-    #         if (1):
-            if ('reg' in optionlist):
+            # if (1):
+            # if ('reg' in optionlist):
+            if wirename in self.outreglist:
                 ########################################################################
                 # Register
 
-    #             cr.save()
-    #             cr.set_line_width(.2)
-    #             setcolor(cr, 'red')
-    # 
-    #             # From side 0 (unrotated) POV,
-    #             # reg corner is rh IN and rw/2 UP from connection point.
-    #             # Sides 1, 2, 3 rotate appropriately.
-    #             (ULx,ULy) = (-REG_HEIGHT, -REG_WIDTH/2)
-    # 
-    #             # Draw the register
-    #             cr.rectangle(ULx,ULy,  REG_HEIGHT, REG_WIDTH) # ULx, ULy, width, height
-    # 
-    #             # Draw the little triangle for the clock
-    #             cr.move_to(ULx,ULy);
-    #             cr.line_to(ULx+REG_HEIGHT/2,ULy+1);
-    #             cr.line_to(ULx+REG_HEIGHT,ULy)
-    #             cr.stroke()
-    # 
-    #             cr.restore()
-    # 
                 cr.save()
-                setcolor(cr, "red")
-                cr.set_line_width(.2)
-                (ULx,ULy) = (0, -REG_WIDTH/2)
+                # setcolor(cr, "red")
+                setcolor(cr, "black")
+                # cr.set_line_width(.2)
+                cr.set_line_width(1.0)
+                # cr.set_line_width(.5)
+
+                # rh = REG_HEIGHT  # I know, I know
+                # rw = REG_WIDTH
+
+                rh = 2*REG_HEIGHT  # I know, I know
+                rw = 2*REG_WIDTH
+
+                # Copied from draw_pe
+                (pe_w,pe_h) = (PE_WIDTH,PE_HEIGHT)
+                headwidth   = 3    # see how it looks
+                headlength  = 2 #reg_height/3
+                reg_width  = 0.4*pe_w
+                reg_height = 6 # for now, say
+                reg_sep    = headlength+1 # Gap b/w reg and PE
+
+                rh = reg_height; rw = reg_width
+
+                # (ULx,ULy) = (0, -REG_WIDTH/2)
+                # (ULx,ULy) = (0, -rw/2)
+                (ULx,ULy) = (-reg_sep, -rw/2)
+
                 cr.translate(ULx,ULy)
                 # cr.translate(ULx,ULy)
 
@@ -2171,9 +2186,13 @@ class Tile:
                 # but this routine's default is oriented to side 0 (90d cw)
                 cr.rotate(PI/2)
 
-                h = REG_HEIGHT  # I know, I know
-                w = REG_WIDTH
-                drawreg(cr, w,h)
+                # h = 2*REG_HEIGHT  # I know, I know
+                # w = 2*REG_WIDTH
+
+                # drawreg(cr, rw,rh, 'blue')
+                # drawreg(cr, rw,rh, 'red')
+                drawreg(cr, rw,rh, 'red')
+
                 cr.stroke()
                 cr.restore()
 
@@ -2239,7 +2258,8 @@ class Tile:
            % (self.tileno, inport, outport)
 
         # Only draw non-ghost ports if connections exist.
-        self.drawport(cr, outport, options='reg');
+        # self.drawport(cr, outport, options='reg');
+        self.drawport(cr, outport);
         self.drawport(cr, inport)
 
         # drawdot(cr,x1,y1,'red'); drawdot(cr,x2,y2,'red')
@@ -2370,7 +2390,8 @@ class Tile:
         (x2,y2) = connectionpoint(outport)
 
         # Draw a non-ghost output port
-        self.drawport(cr, outport, options='reg');
+        # self.drawport(cr, outport, options='reg');
+        self.drawport(cr, outport);
 
         # Draw wire connecting pe to output port
         # FIX<E/TODO should be shared w/other connect routines!
@@ -2798,8 +2819,9 @@ def build_connections(tileno, connection_list):
         
         # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", connection_list)
         if (parse):
+            DBG = 0
             connection = parse.group(1).strip()
-            print "Tile %2d found connection '%s'" % (tileno,connection)
+            if DBG: print "Tile %2d found connection '%s'" % (tileno,connection)
             connection_list = parse.group(2).strip()
             TILE_LIST[tileno].connect(connection)
         else:
@@ -2937,6 +2959,16 @@ def process_decoded_bitstream(bs):
             opname = parse.group(1).upper()
             # Defer the rest (see above)
             continue
+
+        # data[(23, 23)] : @ tile (2, 4) latch output wire out_BUS16_S3_T0
+        # data[(15, 15)] : @ tile (0, 2) latch output wire out_BUS16_S1_T2
+        parse = re.search("latch output wire (\S+)", line)
+        if (parse):
+            wirename = parse.group(1)
+            print "FOO found latch for wire '%s'" % (wirename)
+            rlist = TILE_LIST[tileno].outreglist
+            rlist.append(wirename)
+            print "FOO tile %d outreg list now: %s" % (tileno,str(rlist))
 
 
 ##############################################################################
