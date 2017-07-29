@@ -202,19 +202,12 @@ def tileno2rc_8x8(tileno):
     search_string = "tile_addr='%s'.*row='(\d+)'.*col='(\d+)'" % str(tileno)
     parse = re.search(search_string, cgra_tile_info)
     if (not parse):
-        global PRINTED_CONFIG
-        if (DBG and not PRINTED_CONFIG):
-            print 'WARNING: Using search string "%s"\n' % search_string
-            print "WARNING: Could not find tile number %s in this lookup table: %s" \
-                % (str(tileno), cgra_tile_info)
-            PRINTED_CONFIG = True;
-        elif (DBG):
-            print "WARNING: Could not find tile number '%s' in the lookup table." % str(tileno)
+        print "ERROR: Could not find tile number '%s' in the lookup table." % str(tileno)
         return False
         
     row = int(parse.group(1))
     col = int(parse.group(2))
-    if (DBG): print "Found tile number '%d' => row '%d' col '%d'" % (tileno, row, col)
+    if (DBG): print "Found tile number '%s' => row '%d' col '%d'" % (str(tileno), row, col)
     return (row,col)
 
 def test_tileno2rc_8x8():
@@ -227,19 +220,14 @@ def rc2tileno_8x8(row,col):
     DBG = 0
     search_string = "tile_addr='(\d+)'.*row='%d'.*col='%d'" % (row,col)
     parse = re.search(search_string, cgra_tile_info)
-    # if (not parse):
-    #     msg = 'Using search string "%s"\n' % search_string
-    #     msg = msg + \
-    #           "ERROR: Could not find tile (r%s,c%s) in this data structure: %s" \
-    #           % (str(row), str(col), cgra_tile_info)
-    #     errmsg(msg)
-    if (DBG and not parse):
-        msg = 'WARNING: Using search string "%s"\n' % search_string
-        msg = msg + \
-              "WARNING: Could not find tile (r%s,c%s) in this data structure: %s" \
-              % (str(row), str(col), cgra_tile_info[:-1])  # -1 chops off trailing '\n'
-        print msg
-        return False
+    if (not parse):
+        # Might not work if clicked on lower half of two-high mem tile.
+        # => If row number is odd, try again with row-1
+        if (row%2):
+            return rc2tileno_8x8(row-1,col)
+        else:
+            print "WARNING: Could not find tile at (r'%s',c'%s')" % (str(row), str(col))
+            return False
         
     tileno = int(parse.group(1))
     if (DBG): print "Found tile (r%dc%d) => tileno '%d'" % (row, col, tileno)
@@ -249,8 +237,8 @@ def test_rc2tileno_8x8():
     for r in range(0, 7):
         for c in range (0, 7):
             t = rc2tileno_8x8(r,c)
-# test_rc2tileno_8x8(); sys.exit(0);
 
+# test_rc2tileno_8x8(); sys.exit(0);
 
 # Could/should derive these from "BUS:5" etc.
 NTRACKS_PE_BUS_H = 5;
@@ -330,10 +318,12 @@ WIN_HEIGHT = 4*CANVAS_HEIGHT+ UL_MARGIN
 # A really dumb way (using a global) to keep track of current scale
 # factor, for button-press events FIXME do something better maybe
 CUR_SCALE_FACTOR = 1;
+INIT_SCALE_FACTOR = 1;
 
 def set_initial_scale_factor():
     global WIN_WIDTH; global WIN_HEIGHT; global UL_MARGIN
     global CUR_SCALE_FACTOR;
+    global INIT_SCALE_FACTOR;
 
     if (GRID_WIDTH <= 2):
         CUR_SCALE_FACTOR = 2.0 # Why squint?
@@ -345,6 +335,7 @@ def set_initial_scale_factor():
         WIN_WIDTH  = int(8*CANVAS_WIDTH *CUR_SCALE_FACTOR) + UL_MARGIN
         WIN_HEIGHT = int(8*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + UL_MARGIN
        
+    INIT_SCALE_FACTOR = CUR_SCALE_FACTOR
 
 
 ##############################################################################
@@ -1627,7 +1618,6 @@ class CGRAWin(gtk.Window):
         Gtk.main_quit()
 
 def adjust_scrollbar(adj, amt, DBG):
-    DBG = 0
     if DBG:
         ps = adj.page_size
         pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR)
@@ -1674,11 +1664,14 @@ def recenter(x,y):
     # Hide and show, otherwise jumps around disturbingly
     SW.hide();
     if (1):
-        print "HADJUST   :",
-        adjust_scrollbar(SW.get_hadjustment(), x, 1)
+        DBG=1
+        if DBG: print "HADJUST   :",
+        adjust_scrollbar(SW.get_hadjustment(), x, DBG)
+        print "\nDRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
 
-        print "VADJUST   :",
-        adjust_scrollbar(SW.get_vadjustment(), y, 0)
+        DBG=0
+        if DBG: print "VADJUST   :",
+        adjust_scrollbar(SW.get_vadjustment(), y, DBG)
 
     SW.show()
     return
@@ -1686,7 +1679,6 @@ def recenter(x,y):
     # print "ALLOCX", ; print SW.get_allocation().x
     # print "ALLOCX_DA", ; print CUR_DRAW_WIDGET.get_allocation().x
 
-# def zoom(in_or_out):
 def zoom(sf):
     DBG=0
     global CUR_SCALE_FACTOR
@@ -1707,17 +1699,11 @@ def zoom(sf):
     if DBG: print "Scale factor now %f" % CUR_SCALE_FACTOR
     if DBG: print "Drawing area size (%d,%d) " % (h,w),
 
-#     # FIXME UL margin next to tile 0 is a bit screwed up on zoom-in
-#     global NTILES
-#     h = int(NTILES*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + int(UL_MARGIN*CUR_SCALE_FACTOR)
-#     w = int(NTILES*CANVAS_WIDTH *CUR_SCALE_FACTOR) + int(UL_MARGIN*CUR_SCALE_FACTOR)
-
     h = int(sf * h)
     w = int(sf * w)
 
     CUR_DRAW_WIDGET.set_size_request(h, w)
-    print "=> (%d,%d)" % (h,w)
-    # print "\n\n"
+    if DBG: print "=> (%d,%d)\n" % (h,w)
 
     # These don't seem to be necessary?  Also, Each one causes a draw event I think.
     # SW.get_hadjustment().value_changed()
@@ -1762,9 +1748,10 @@ def find_tile_clicked(x,y):
     '''
     Find closest tile to the given (x,y) coordinates
     '''
-    DBG=1
+    DBG=0
     if DBG>1: print "clicked on %d %d" % (x,y)
     (row,col) = find_rc_clicked(x,y)
+    if DBG: print "I think you clicked the tile at (r%d,c%d)" % (row,col)
     # Find tile number indicated by (row,col)
     tileno = rc2tileno(row,col)
     if DBG: print "I think this is tile %d (r%d,c%d)" % (tileno, row,col)
@@ -1854,10 +1841,6 @@ def zoom_to_tile1(event):
         # OLD Sets draw widget size to WIN_HEIGHT * CUR_SCALE_FACTOR / (0.5)
         # OLD or WIN_HEIGHT * 4.0 / 0.5, or 8 * WIN_HEIGHT
 
-        # => FIXME/TODO instead of 4x, should calculate correct factor
-        # => such that tile fits in current window size
-        after_scale_zoom = 4.0
-
         # Don't use this; includes scrollbar size etc.
         # (sh,sw) = SW.window.get_size()
 
@@ -1904,11 +1887,29 @@ def zoom_to_tile1(event):
         if DBG: print "Zoom out!"
         ZOOMTILE = -1;
 
-        # Restore scale factor
-        CUR_SCALE_FACTOR = SAVE_SCALE_FACTOR
+#         print "What to zoom, what to zoom..."
+#         print "    NOT 1!!!"
+#         print "  CUR_SCALE_FACTOR = %.2f" % CUR_SCALE_FACTOR
+#         print "  CUR_SCALE_FACTOR/.5 = %.2f" % (float(CUR_SCALE_FACTOR)/float(0.5))
+#         print ""
+#         print "  SAVE_SCALE_FACTOR = %.2f" % SAVE_SCALE_FACTOR
+#         print "  CUR/SAVE = %.2f" % (float(CUR_SCALE_FACTOR)/float(SAVE_SCALE_FACTOR))
+#         print ""
+#         print "  INIT_SCALE_FACTOR = %.2f" % INIT_SCALE_FACTOR
+#         print "  CUR/INIT = %.2f" % (CUR_SCALE_FACTOR/INIT_SCALE_FACTOR)
+#         print ""
+# 
+# #         # Restore scale factor
+# #         CUR_SCALE_FACTOR = SAVE_SCALE_FACTOR
+
+        # Zoom back to initial size
+        # sf = INIT_SCALE_FACTOR/CUR_SCALE_FACTOR
 
         # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
-        zoom(1)
+        sf = SAVE_SCALE_FACTOR/CUR_SCALE_FACTOR
+        print "  gonna zoom %sx\n" % str(sf)
+        zoom(sf)
+
         # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
 
         # Don't forget to recenter!
@@ -1979,8 +1980,10 @@ def button_press_handler(widget, event):
     # 
     if double_click and (CUR_CURSOR == 'arrow'):
         print "zoom to tile"
+        print "\n Z1 DRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
         zoom_to_tile1(event)
         refresh() # Redraw after zoom
+        print "\n Z2 DRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
 
     # print "CC='%s'" % CUR_CURSOR
     elif (CUR_CURSOR == 'magplus'):
@@ -3178,9 +3181,14 @@ def find_matching_wire(tileno, w):
     elif (side==2): (r,c,side) = (r,c-1,side-2)
     elif (side==3): (r,c,side) = (r-1,c,side-2)
 
+    if (r < 0): return (False,False)
+    if (c < 0): return (False,False)
+
     #   print (r,c,side)
 
     adj_tileno = rc2tileno(r,c)
+    # Note should return 'False' if (r,c) invalid
+
     adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
     if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
     return (adj_tileno, adj_wire)
