@@ -1650,7 +1650,7 @@ def adjust_scrollbar(adj, amt, DBG):
     # print "AFTER  lvu = (%4d-> %4d    <-%-4d)" % (int(l), int(v), int(u))
     if DBG: print "[%4d|-> %4d   <-| %-4d]" % (int(l), int(v), int(u))
     # print "PAGESIZE %d" % ps
-    print "\n\n"
+    if DBG: print ""
 
 def recenter(x,y):
     '''
@@ -1664,10 +1664,10 @@ def recenter(x,y):
     # Hide and show, otherwise jumps around disturbingly
     SW.hide();
     if (1):
-        DBG=1
+        DBG=0
         if DBG: print "HADJUST   :",
         adjust_scrollbar(SW.get_hadjustment(), x, DBG)
-        print "\nDRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
+        # print "\nDRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
 
         DBG=0
         if DBG: print "VADJUST   :",
@@ -1964,7 +1964,17 @@ def button_press_handler(widget, event):
     if double_click: print "\ndouble click (%d,%d)" % (event.x,event.y)
     if single_click: print "\nsingle click (%d,%d)" % (event.x,event.y)
 
-    if single_click:
+    # ZOOM TO TILE (ugh FIXME should be a separate routine)
+    # Double click should ALWAYS be zoom-to-tile maybe
+    # Nope that's just a mess
+    # 
+    if double_click and (CUR_CURSOR == 'arrow'):
+        print "zoom to tile"
+        zoom_to_tile1(event)
+        refresh() # Redraw after zoom
+        # print "\n Z2 DRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
+
+    elif single_click and (CUR_CURSOR == 'arrow'):
         # print "Where is the nearest wire to me?"
         tileno = find_tile_clicked(event.x, event.y)
         portname = find_port_clicked(event.x, event.y)
@@ -1974,19 +1984,8 @@ def button_press_handler(widget, event):
 
         toggle_highlight(tileno,portname)
 
-    # ZOOM TO TILE (ugh FIXME should be a separate routine)
-    # Double click should ALWAYS be zoom-to-tile maybe
-    # Nope that's just a mess
-    # 
-    if double_click and (CUR_CURSOR == 'arrow'):
-        print "zoom to tile"
-        print "\n Z1 DRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
-        zoom_to_tile1(event)
-        refresh() # Redraw after zoom
-        print "\n Z2 DRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
-
     # print "CC='%s'" % CUR_CURSOR
-    elif (CUR_CURSOR == 'magplus'):
+    elif single_click and (CUR_CURSOR == 'magplus'):
         DBG = 1
         if DBG: print "  clicked x = ", ; print event.x
         scale = 1.2
@@ -1995,7 +1994,7 @@ def button_press_handler(widget, event):
         # recenter(100,0)
         # recenter(event.x, event.y)
 
-    elif (CUR_CURSOR == 'magminus'):
+    elif single_click and (CUR_CURSOR == 'magminus'):
         scale = 0.8
         zoom(scale)
         recenter(scale * event.x, scale * event.y)
@@ -3160,7 +3159,7 @@ def main():
 
 
 def find_matching_wire(tileno, w):
-    DBG=1
+    DBG=0
     # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
     parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
     if (parse == None):
