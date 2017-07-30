@@ -341,43 +341,12 @@ def set_initial_scale_factor():
 ##############################################################################
 # These could all be part of a Wire class if we wanted to...
 
-def quickfix(wirename):
-    DBG=0
-    # Some quick rewrites for the new mem tiles
-    # E.g. 'out_0_BUS16_3_0 should I THINK be same as out_s3t0
-    # FIXME is this the right place to do this?
-    # FIXME is this the right *way* to do this?
-
-    # if DBG: print "Rewriting wire '%s'" % wirename
-
-    # 'out_0_BUS16_3_0 should I THINK be same as out_s3t0
-    decode = re.search('(in|out)_0_BUS16_(.*)_(.*)', wirename);
-    if (decode):
-        wnew = "%s_s%st%s" % (decode.group(1), decode.group(2), decode.group(3))
-        if DBG: print "quickfix() rewrote '%s' => '%s'" % (wirename, wnew)
-        wirename = wnew
-    return wirename
-
-
 # E.g. given "out_s1t3", rval['inout'] = "out", rval['side'] = 1 and rval['track'] = 3
 def parse_wirename(wirename):
     rval = {}
 
-    # FIXME This probably gonna bite me in the a55...
-    # fix for: "WARNING PW does not understand ... 'out_1_BUS16_2_0'..."
-    # pretends like e.g. 'out_1_BUS16_2_0' same as "out_s2t0"
-
-    decode = re.search('(in|out)_1_BUS16_(.*)_(.*)', wirename);
-    if (decode):
-        DBG=0
-        rval['inout'] = decode.group(1)
-        rval['side']  = int(decode.group(2))
-        rval['track'] = int(decode.group(3))
-        if DBG: print "PW interprets '%-15s' => '%s_s%dt%d'" % \
-           (wirename, rval['inout'], rval['side'], rval['track'])
-        return rval
-
-    decode = re.search('(in|out)_s(.*)t(.*)', wirename);
+    # decode = re.search('(in|out)_s(.*)t(.*)', wirename);
+    decode = re.search('(in|out)[01]*_s(.*)t(.*)', wirename);
     if (decode):
         rval['inout'] = str(decode.group(1))
         rval['side']  = int(decode.group(2))
@@ -400,7 +369,7 @@ def side(wirename): return parse_wirename(wirename)['side']
 def track(wirename): return parse_wirename(wirename)['track']
 ##############################################################################
 
-# Called from: drawport, ...?
+# Called from: drawport and ...?
 # This could be an extension of cr's class I suppose
 def draw_arrow(cr, al, ahl,ahw,fill):
     # Draw an arrow of total length al and line_width aw
@@ -578,68 +547,77 @@ def connectionpoint(wirename):
             print "WARNING Do not yet understand memtile cb's"
             print "WARNING Will use '%s' instead" % hackwire
 
-    # WARNING CP does not understand wirename 'out_1_BUS16_2_0' (yet)
-    # FIXME hack: out_1_BUS16_2_0 is just out0_s2t0 minus tilecanvas_height.  Right?
-    # Okay it might be more nuanced than this.
-    # First, note that sb_wires are always side 3
-    # out_1_ only shift down by pad amount;
-    #  in_1_ maybe don't shift at all...?
-    #
-    # wire             xfudge       yfudge
-    # in_0_*           0            0
-    # in_1_BUS16_0     0            CH
-    # in_1_BUS16_1     0            CH
-    # in_1_BUS16_2     0            CH
-    # in_1_BUS16_3     0            CH
-    #
-    # out_0_* => same as "in" maybe
+    decode = re.search('(in[01]*_s.*|out[01]*_s.*)t(.*)', wirename);
 
-    # wire             xfudge       yfudge
-    # sb_wire_in_1     0            CH
-    # sb_wire_out_1    0            CH
-
-    # Problems: in_1_BUS16_2_0 did not move...?
-    # Problems: 'no options parameter, sorry'
-
-    yfudge = 0  # FIXME fudge factors for e.g. out_0_ etc.
-    decode = re.search('(in|out)_1_BUS16_(.*)_(.*)', wirename);
     if (decode):
-        DBG=0
-        inout = decode.group(1)
-        side  = decode.group(2)
-        track = decode.group(3)
-        wnew = "%s_s%st%s" % (inout, side, track)
-        if DBG: print "CP adding fudge to '%s'" % wirename
-        if DBG: print "CP rewrote '%-15s' => '%s'" % (wirename, wnew)
-        wirename = wnew
-#         if (inout == "in"): yfudge = PORT_HEIGHT
-#         else:               yfudge = CANVAS_HEIGHT
-        yfudge = CANVAS_HEIGHT
-
-
-    # Problem: in_1_BUS16_2_0 connects to wrong place (should go to sb_wire_out_1_BUS16_3_0
-    # data[(31, 30)] : @ tile (3, 0) connect wire 2 (in_1_BUS16_2_0) to sb_wire_out_1_BUS16_3_0
-
-    # Need block id and track number of the target wire
-    decode = re.search('(in_s.*|out_s.*)t(.*)', wirename);
-    if (decode):
-        b = decode.group(1);      # blockno e.g. "in_s1"
+        b = decode.group(1);      # blockno e.g. "in_s1" or "in1_s1"
         t = int(decode.group(2)); # trackno e.g. "3"
     else:
         print "WARNING CP does not understand wirename '%s' (yet)" % wirename
         print "WARNING (Arbitrarily) connecting unknown wire to 'outs3t4' instead"
         (b,t) = ("out_s3",4)
 
-    # ALSO need to fudge side-1 (bottom) wires on mem tiles.
+
+    ########################################################################
+    # TODO/FIXME maybe this should be a separate add_fudge() function
+    # 
+    # Need to fudge side s1 (bottom) wires on mem tiles.
+    # 
+    # Earlier, we rewrote wire names and now e.g.
+    #   'out_0_BUS16_2_0' is called 'out0_s2t0'
+    # 
+    # Mem tile bottom-half wires e.g. east-west wires
+    # - bottom-half east-west wires 'out1_s0t3' or 'in1_s2t2'
+    # - bottom-half switchbox wires e.g. 'sb_wire_in1.*'
+    # - any side s1 (south) wire) e.g. 'in_s1t0' or 'out_s1t1'
+    # must be moved down one before drawing.
+    # For this we add "yfudge"
+    # 
+    # memtile wire     xfudge       yfudge
+    # in_s3.*          0            0
+    # in0.*            0            0
+    # sb_wire_in0.*    0            0
+    # 
+    # memtile wire     xfudge       yfudge
+    # in_s1.*          0            CH
+    # in1.*            0            CH
+    # sb_wire_in1.*    0            CH
+
+    # E.g. "in_s1t1" is in a normal 1x1 block;
+    # in1_s1t1" is in bottom half of a 1x2 block (memtile)
+
     # FIXME globals are evil.  Also this evil memtile hack
+    yfudge = 0  # FIXME fudge factors for e.g. out_0_ etc.
     global CUR_TILENO # Didn't we do this somewhere already
     if (tiletype(CUR_TILENO) == "memory_tile"):
         DBG=0
-        if DBG: print "CP found memory tile %d, wirename '%s'" % (CUR_TILENO, wirename)
+        if DBG:
+            print "CP found memory tile %d, wirename '%s', block '%s'"\
+                  % (CUR_TILENO, wirename, b)
+
+        # All the "normal" side1 (south) ports in a mem tile must move DOWN one
         if (b == "out_s1") or (b ==  "in_s1"):
-            if DBG: print "CP adding fudge b/c side 1 (bottom)"
+            if DBG: print "CP adding downward fudge b/c memtile side 1 (bottom)"
             yfudge = CANVAS_HEIGHT
         
+        # In addition (maybe) all the out1/in1 switchbox etc. ports have to move down
+        if re.search("(in|out)1", b):
+            if DBG: print "CP adding downward fudge b/c memtile bottom half"
+            yfudge = CANVAS_HEIGHT
+    ########################################################################
+
+    ########################################################################
+    # FIXME this is a hacky hack i guess
+    # Rewrites e.g. "in1_s2" => "in_s2"
+    decode = re.search('(in|out)[01]_(s.*)', b)
+    if decode:
+        # print "FOO rewriting block '%s'" % b,
+        inout = decode.group(1)
+        side  = decode.group(2)
+        b = "%s_%s" % (inout,side)
+        # print "=> '%s'" % b
+
+
     # Canvas consists of a single tile padded on each side by space equal to "PORT_LENGTH"
     
     # A tile's edge is PORT_LENGTH away from the canvas edge
@@ -1777,7 +1755,8 @@ def find_port_clicked(x,y):
     
     # Maybe existing connectionpoint() routine can do the heavy lifting...?
     for side in (1,2,0,3):
-        for dir in ("in","out"):
+        # for dir in ("in","out"):
+        for dir in ("in","out","in0","out0","in1","out1"):
             for track in range (NTRACKS_PE_BUS_V):
                 wirename = "%s_s%dt%d" % (dir,side,track)
                 (x,y) = connectionpoint(wirename)
@@ -1932,8 +1911,13 @@ def trace_wire(tileno, portname, action):
     elif (not highlight) and (portname not in hlist): return
 
     DBG=0
+    # wfoo = "in_1_s0t0"; if (portname == wfoo): DBG=1; print "Tracing port '%s'" % wfoo
+
     if (highlight):
         hlist.append(portname)
+        # if portname == 'in_1_s0t0':
+        #     sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+
         if DBG: print "FOO added '%s' to highlight-list for tile %d" % (portname,tileno)
     else:
         hlist.remove(portname)
@@ -1982,7 +1966,6 @@ def button_press_handler(widget, event):
 
         DBG = 1
         if DBG: print "I think you clicked near port '%s'" % portname
-
         toggle_highlight(tileno,portname)
 
     # print "CC='%s'" % CUR_CURSOR
@@ -2053,10 +2036,13 @@ class Tile:
 
     # TODO/FIXME need at least one more pass on drawport() below!
 
-    # Called from: pe_out_connect, ...?
+    # Called from: pe_out_connect and ...?
     # E.g. 'drawport(cr, "out_s1t0")' or 'drawport(cr, wirename, options="ghost")'
     def drawport(self, cr, wirename, **keywords):
         DBG = 0
+
+        # if (self.tileno == 3) and (wirename == "in0_s0t4"):
+        #     DBG=1; print "FOO HERE IT IS.  Highlights = " + str(self.highlights)
 
 #         if wirename in self.outreglist:
 #             print "HO! I see a wire that should be registered"
@@ -2323,12 +2309,22 @@ class Tile:
             # print "inport '%s' => outport '%s' in tile %d" % (inport, outport, CUR_TILENO)
 
             (y1_prev,y2_prev) = (y1,y2)
+
+
+            # YOU'RE ON PROBATION BUSTER!
             if re.search("^sb_wire_in_1_", outport):
+                print "ERROR did not rewrite '%s'" % wirename
+                sys.exit(-1)
                 y1 -= PORT_HEIGHT
                 # print "subtracting from y1 was %d now %d" % (y1_prev,y1)
             elif re.search("^sb_wire_out_1_", inport):
+                print "ERROR did not rewrite '%s'" % wirename
+                sys.exit(-1)
                 y2 -= PORT_HEIGHT
                 # print "subtracting from y2 was %d now %d" % (y2_prev,y2)
+
+
+
 
             # FIXME this could be better
             (interior_x,interior_y) = (x1,y1)
@@ -2435,11 +2431,6 @@ class Tile:
         # parse = re.search("^(o[^ ]*) .* (i[^ ]*)$", connection)
         parse = re.search("^([^ ]*) .* ([^ ]*)$", connection)
         pto = parse.group(1); pfrom = parse.group(2)
-
-        # Some quick rewrites for the new mem tiles
-        # E.g. 'out_0_BUS16_3_0 should I THINK be same as out_s3t0
-        pto   = quickfix(pto)
-        pfrom = quickfix(pfrom)
 
         # connection type will be one of "port" "pe_in" "pe_out" "const" (more?)
 
@@ -2908,6 +2899,14 @@ def process_decoded_bitstream(bs):
         line = re.sub(r'(in|out)_BUS16_S(\S+)_T(\S+)', r"\1_s\2t\3", line)
         # print "AFTER:  " + line
 
+        # Rewrite crazy memtile wire names
+        # 'out_1_BUS16_0_0'        => 'out1_s0t0'
+        # 'sb_wire_in_1_BUS16_3_2' => 'sb_wire_in1_s3t2'
+        line2 = re.sub(r'(in|out)_([01])_BUS16_(\S+)_(\S+)', r"\1\2_s\3t\4", line)
+        if DBG and (line != line2):
+            print "Rewrote line\n   '%s' =>\n   '%s'" % (line,line2)
+        line = line2
+
         # 'data[(1, 0)] : connect wire 3 (X) to Y'
         # => 'Y <= X'
         line = re.sub(
@@ -2965,11 +2964,10 @@ def process_decoded_bitstream(bs):
         parse = re.search("latch output wire (\S+)", line)
         if (parse):
             wirename = parse.group(1)
-            print "FOO found latch for wire '%s'" % (wirename)
             rlist = TILE_LIST[tileno].outreglist
             rlist.append(wirename)
-            print "FOO tile %d outreg list now: %s" % (tileno,str(rlist))
-
+            # print "FOO found latch for wire '%s'" % (wirename)
+            # print "FOO tile %d outreg list now: %s" % (tileno,str(rlist))
 
 ##############################################################################
 # Actual runcode starts here!  (FINALLY)
@@ -3192,14 +3190,25 @@ def main():
 
 def find_matching_wire(tileno, w):
     DBG=0
+    # if (tileno == 11) and (w == "out_s2t0"):
+    #     DBG=1; print "Want match for tile 11 wire 'out_s2t0'"
+
     # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
-    parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
-    if (parse == None):
+    # parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
+    # -> But oops mem tiles have wire names that look like
+    # -> out_1_s2t0 ("1" means bottom half of tile, "0" means top)
+    parse = re.search("(in|out)(_[01])*_s([0-9]+)t([0-9]+)", w)
+
+    if not parse:
         print "Invalid wire name '%s'" % w
+        sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+        print "\n\n\n"
         return (False,False)
+
     in_or_out = parse.group(1)
-    side      = int(parse.group(2))
-    track     = int(parse.group(3))
+    top_or_bottom = parse.group(2)  # 'None", '_0' or '_1'
+    side      = int(parse.group(3))
+    track     = int(parse.group(4))
 
     if (in_or_out=="out"): in_or_out="in"
     else:            in_or_out="out"
@@ -3219,8 +3228,18 @@ def find_matching_wire(tileno, w):
 
     adj_tileno = rc2tileno(r,c)
     # Note should return 'False' if (r,c) invalid
+    if DBG: print "Found adjacent tile number '%s'" % str(adj_tileno)
 
-    adj_wire = "%s_s%dt%d" % (in_or_out, side, track)
+    top_or_bottom = ''
+    if (tiletype(adj_tileno) == "memory_tile"):
+        if DBG: print "HO found memory tile.  is it a top or a bottom :)"
+        # '0' means top, '1' means bottom
+        top_or_bottom = str(r % 2)
+        if DBG:
+            if (top_or_bottom): print " It's a bottom"
+            else              : print " You're the top!"
+
+    adj_wire = "%s%s_s%dt%d" % (in_or_out, top_or_bottom, side, track)
     if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
     return (adj_tileno, adj_wire)
 
