@@ -151,7 +151,7 @@ def mem_decode(e,DDDDDDDD):
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : fifo_depth = %d" % (bith, bitl, val)
 
-def cb_decode(cb,tileno,DDDDDDDD,SWAP):
+def cb_decode(cb,tileno,DDDDDDDD):
     # IN:
     # 00040011 00000005
     # <cb feature_address='4' bus='BUS1'>
@@ -194,10 +194,10 @@ def cb_decode(cb,tileno,DDDDDDDD,SWAP):
             if (data == sel):
                 inwire = src.text
                 [r,c] = tileno2rc(tileno); rc = "(%d, %d)" % (r,c);
-                if SWAP: (r,c) = (c,r)
+#                 if SWAP: (r,c) = (c,r)
                 print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
                       % (configh,configl,r,c,wireno,inwire,outwire)
-                if SWAP: (r,c) = (c,r)
+#                 if SWAP: (r,c) = (c,r)
                 return inwire
                 # break;
                 

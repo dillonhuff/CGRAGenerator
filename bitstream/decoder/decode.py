@@ -3,12 +3,13 @@ import sys;
 import re;
 
 HACK1 = True
-SWAP = False
-if 1:     print "------------------------------------------------------------------------"
-if 1:     print 'HACK ALERT - search source code for "HACK"'
-if HACK1: print "HACK1 only printing connections with wireno != 0"
-if SWAP:  print "HACK2 row/col swap in each tile address!"
-if 1:     print "------------------------------------------------------------------------"
+# SWAP = False
+if (0):
+    if 1:     print "------------------------------------------------------------------------"
+    if 1:     print 'HACK ALERT - search source code for "HACK"'
+    if HACK1: print "HACK1 only printing connections with wireno != 0"
+    # if SWAP:  print "HACK2 row/col swap in each tile address!"
+    if 1:     print "------------------------------------------------------------------------"
 
 # import os;
 # print os.path.dirname(__file__)
@@ -746,7 +747,8 @@ for line in inputstream:
     elif (e.tag == "cb"):
         # 00040011 00000005
         # # data[(3, 0)] : @ tile (3, 2) connect wire 5 (in_0_BUS16_2_0) to din
-        inwire = cgra_info.cb_decode(e,thistile,DDDDDDDD,SWAP)
+#         inwire = cgra_info.cb_decode(e,thistile,DDDDDDDD,SWAP)
+        inwire = cgra_info.cb_decode(e,thistile,DDDDDDDD)
         iohack_cb_out[thistile] = inwire
         continue
 
@@ -777,15 +779,26 @@ for line in inputstream:
             if (printwire):
             # if (wireno):
                 # FIXME print "HACK1 only printing connections with wireno != 0"
-                # FIXME print "HACK2 row/col swap in each tile address!"
-                if SWAP: (r,c) = (c,r)
+#                 # FIXME print "HACK2 row/col swap in each tile address!"
+#                 if SWAP: (r,c) = (c,r)
 
                 # Adjust bits so they fit in their 32-bit register!
                 (configh,configl) = (configh%32,configl%32)
 
+                # If the wires being connected are in lower half of a mem tile,
+                # must increment row by 1
+                # 
+                # WRONG: @ tile (0, 3) connect wire 1 (in_1_BUS16_1_3) to sb_wire_out_1_BUS16_3_3
+                # RIGHT: @ tile (1, 3) connect wire 1 (in_1_BUS16_1_3) to sb_wire_out_1_BUS16_3_3
+                r2 = r
+                if re.search("_1_", inwire+outwire):
+                    # print "ROW WAS: %d" % r
+                    r2 = r + 1
+                    # print "ROW NOW: %d" % r2
+
                 print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
-                      % (configh,configl,r,c,wireno,inwire,outwire)
-                if SWAP: (r,c) = (c,r)
+                      % (configh,configl,r2,c,wireno,inwire,outwire)
+#                 if SWAP: (r,c) = (c,r)
 
             if (inwire == "pe_out_res"):
                 DBG=0
@@ -801,16 +814,22 @@ for line in inputstream:
         for reg in regs:
             if DBG: print "OOP found reg %s" % str(reg)
             (outwire,bitno) = reg
-            wireno = 999
-            inwire = "UNKNOWN"
 
             # print "# data[(%d, %d)] : @ tile (%d, %d) latch wire %d (%s) before connecting to %s"\
 
-            # FIXME print "HACK2 row/col swap in each tile address!"
-            if SWAP: (r,c) = (c,r)
-            print "# data[(%d, %d)] : @ tile (%d, %d) latch %s connected to input wire %d (%s)"\
-                  % (bitno,bitno,r,c,outwire,wireno,inwire)
-            if SWAP: (r,c) = (c,r)
+#             # FIXME print "HACK2 row/col swap in each tile address!"
+#             if SWAP: (r,c) = (c,r)
+
+#             wireno = 999
+#             inwire = "UNKNOWN"
+#             print "# data[(%d, %d)] : @ tile (%d, %d) latch %s connected to input wire %d (%s)"\
+#                   % (bitno,bitno,r,c,outwire,wireno,inwire)
+
+            # Simplified
+            print "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
+                  % (bitno,bitno,r,c,outwire)
+
+#             if SWAP: (r,c) = (c,r)
         continue
 
     else:
@@ -844,10 +863,10 @@ for line in inputstream:
 
         t = int(TTTT,16)
         [r,c] = cgra_info.tileno2rc(t); rc = "(%d, %d)" % (r,c);
-        if SWAP: (r,c) = (c,r)
+#         if SWAP: (r,c) = (c,r)
         cb_connection = cb_decode(EE,DDDDDDDD,r,c);  # E.g. "wireA <= in_s1t0"
         print "%s" % (cb_connection);
-        if SWAP: (r,c) = (c,r)
+#         if SWAP: (r,c) = (c,r)
 
         # cb_connection = '...connect wire 3 (in_BUS16_S1_T1) to a'
         parse = re.search("((in|out)_BUS16_.*)\)", cb_connection)
