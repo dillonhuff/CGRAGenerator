@@ -653,10 +653,10 @@ def pe_decode(RR, DDDDDDDD):
         # print "# data[2] : read from "  + dsrc
 
         # Got to get the order correct!  Now don't we.
-        if breg == "wireB": print "# data[12] : load `b` reg with wire"
-        if (1):             print "# data[13] : read from " + bsrc
-        if areg == "wireA": print "# data[14] : load `a` reg with wire"
-        if (1):             print "# data[15] : read from " + asrc
+        if breg == "wireB": print "# data[(12, 12)] : load `b` reg with wire"
+        if (1):             print "# data[(13, 13)] : read from " + bsrc
+        if areg == "wireA": print "# data[(14, 14)] : load `a` reg with wire"
+        if (1):             print "# data[(15, 15)] : read from " + asrc
 
         if dreg == "wireD": print "BOOOOOOOOOOOOOOOOO " + DDDD + "  " + str(dddd);
 
@@ -779,6 +779,10 @@ for line in inputstream:
                 # FIXME print "HACK1 only printing connections with wireno != 0"
                 # FIXME print "HACK2 row/col swap in each tile address!"
                 if SWAP: (r,c) = (c,r)
+
+                # Adjust bits so they fit in their 32-bit register!
+                (configh,configl) = (configh%32,configl%32)
+
                 print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
                       % (configh,configl,r,c,wireno,inwire,outwire)
                 if SWAP: (r,c) = (c,r)
