@@ -53,7 +53,7 @@ def print_once(s):
 # FIXME should have a CGRA class for globals...?
 
 # Want to list all the random globals here
-global CUR_TILENO
+# global CUR_TILENO
 global CUR_CURSOR # Currently includes 'magplus', 'magminus', 'arrow'
 CUR_CURSOR = 'arrow'
 
@@ -522,7 +522,7 @@ def drawdot(cr, x, y, color):
     # and then return the path for later use e.g. "cr.append_path(path); cr.stroke()"
     
 
-def connectionpoint(wirename):
+def connectionpoint(tileno, wirename):
 
     # Given wirename e.g. "out_s0t0", return x,y coords of its connection
     # point on the edge of the tile, relative to edge of canvas.
@@ -537,15 +537,15 @@ def connectionpoint(wirename):
     # 2. Sometimes wirename = "out_s9t9"  This is bsview.py propagating the
     # "in_s9t9" problem...maybe this will mollify it i dunno
     
-    hackwire = False
-    if (wirename == "in_s9t9" ): hackwire = "in_s0t0"
-    if (wirename == "out_s9t9"): hackwire = "out_s0t0"
-    if (hackwire):
-        wirename = hackwire
-        if (not TILES_DRAWN_AT_LEAST_ONCE):
-            print "WARNING Found wire %s indicating memtile cb" % wirename
-            print "WARNING Do not yet understand memtile cb's"
-            print "WARNING Will use '%s' instead" % hackwire
+#     hackwire = False
+#     if (wirename == "in_s9t9" ): hackwire = "in_s0t0"
+#     if (wirename == "out_s9t9"): hackwire = "out_s0t0"
+#     if (hackwire):
+#         wirename = hackwire
+#         if (not TILES_DRAWN_AT_LEAST_ONCE):
+#             print "WARNING Found wire %s indicating memtile cb" % wirename
+#             print "WARNING Do not yet understand memtile cb's"
+#             print "WARNING Will use '%s' instead" % hackwire
 
     decode = re.search('(in[01]*_s.*|out[01]*_s.*)t(.*)', wirename);
 
@@ -557,6 +557,13 @@ def connectionpoint(wirename):
         print "WARNING (Arbitrarily) connecting unknown wire to 'outs3t4' instead"
         (b,t) = ("out_s3",4)
 
+    # tileno = CUR_TILENO # global CUR_TILENO
+    if (tiletype(tileno) == "memory_tile"):
+        if not re.search("(in|out)[01]", b):
+            print "ERROR Invalid wire name '%s' in memtile %d" % (wirename,tileno)
+            print "ERROR Should have this format: 'out1_s2t3'"
+            sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+            sys.exit(-1)
 
     ########################################################################
     # TODO/FIXME maybe this should be a separate add_fudge() function
@@ -588,12 +595,11 @@ def connectionpoint(wirename):
 
     # FIXME globals are evil.  Also this evil memtile hack
     yfudge = 0  # FIXME fudge factors for e.g. out_0_ etc.
-    global CUR_TILENO # Didn't we do this somewhere already
-    if (tiletype(CUR_TILENO) == "memory_tile"):
+    if (tiletype(tileno) == "memory_tile"):
         DBG=0
         if DBG:
             print "CP found memory tile %d, wirename '%s', block '%s'"\
-                  % (CUR_TILENO, wirename, b)
+                  % (tileno, wirename, b)
 
         # All the "normal" side1 (south) ports in a mem tile must move DOWN one
         if (b == "out_s1") or (b ==  "in_s1"):
@@ -1750,27 +1756,39 @@ def find_port_clicked(x,y):
     (ux,uy) = (ux-TLx,uy-TLy)
     if DBG>1: print "So this is like (%d,%d) in tile %d" % (ux,uy,tileno)
 
+    # If clicked in lower half of memtile, must add one tileheight to y
+    ismem = (tiletype(tileno) == "memory_tile")
+    if (ismem and (row%2)):
+        uy = uy + CANVAS_HEIGHT
+        if DBG: print "But it's a memory tile so...(%d,%d)" % (ux,uy)
+
     mindist = CANVAS_WIDTH
     minport = "UNKNOWN"
     
-    # Maybe existing connectionpoint() routine can do the heavy lifting...?
-    for side in (1,2,0,3):
-        # for dir in ("in","out"):
-        for dir in ("in","out","in0","out0","in1","out1"):
-            for track in range (NTRACKS_PE_BUS_V):
+    # for dir in ("in","out"): # Nope what about memtiles
+    dirlist = ("in", "out")
+    if ismem: dirlist = ("in0", "in1", "out0", "out1")
+    for dir in dirlist:
+
+        for side in (0,1,2,3):
+            for track in range (NTRACKS_PE_BUS_V): # FIXME what about BUS_H??
                 wirename = "%s_s%dt%d" % (dir,side,track)
-                (x,y) = connectionpoint(wirename)
-                if DBG>1: print "FOO %8s = (%4d,%4d)" % (wirename,x,y),
-                if DBG>1: print "me = (%4d,%4d)" % (ux,uy),
+
+                # DBG = (tileno == 3) and (re.search("out[01]_s2t0", wirename))
+                (x,y) = connectionpoint(tileno, wirename)
+
                 # Come on you know this
                 (xd,yd) = (x-ux, y-uy)
                 dist = math.sqrt(xd*xd+yd*yd)
-                if DBG>1: print "dist = (%.1f)" % dist
+                if DBG:
+                    print "wire %8s = (%4d,%4d)" % (wirename,x,y),
+                    print       "me = (%4d,%4d)" % (ux,uy),
+                    print     "dist = (%.1f)" % dist
                 if (dist < mindist):
                     mindist = dist
                     minwire = wirename
-                    if DBG>1: print "=> %s is closest port so far\n" % (wirename)
-    if DBG: print "Closest port is maybe '%s'in tile %d?" % (minwire,tileno)
+                    if DBG>1: print "=> %s is closest port so far" % (wirename)
+    if DBG: print "Closest port is maybe '%s'in tile %d?\n" % (minwire,tileno)
     return minwire
 
 def zoom_to_tile1(event):
@@ -2078,7 +2096,7 @@ class Tile:
         if (1):
             # Translate and rotate the world...
             # if DBG: print "Translate to %d,%d" % (x,y),
-            (x,y) = connectionpoint(wirename)
+            (x,y) = connectionpoint(self.tileno, wirename)
             cr.translate(x,y)
             drawdot(cr, 0, 0, "black") # Mark the connection point with a black dot
 
@@ -2236,8 +2254,8 @@ class Tile:
         # a manhattan connection through the interior of the tile.
         # Put a dot at the corner when the wire turns (you'll thank me later)
 
-        (x1,y1) = connectionpoint(outport)
-        (x2,y2) = connectionpoint(inport)
+        (x1,y1) = connectionpoint(self.tileno, outport)
+        (x2,y2) = connectionpoint(self.tileno, inport)
 
         DBG = 0
         if DBG: print "tileno=%d inport='%s' outport='%s'" \
@@ -2354,7 +2372,7 @@ class Tile:
         if (TILES_DRAWN_AT_LEAST_ONCE): DBG=0
 
         if DBG: print "AB connecting wire '%s' to pe_in wire '%s'" % (inport, PE_input)
-        (x1,y1) = connectionpoint(inport)
+        (x1,y1) = connectionpoint(self.tileno, inport)
 
         if (PE_input == "wireA"): (x2,y2) = (PE_AX,PE_AY)
         else:                     (x2,y2) = (PE_BX,PE_BY)
@@ -2383,7 +2401,7 @@ class Tile:
     # called from Tile.connectwires() ONLY
     def pe_out_connect(self, cr, outport):
         (x1,y1) = (PE_OUTX,PE_OUTY)
-        (x2,y2) = connectionpoint(outport)
+        (x2,y2) = connectionpoint(self.tileno, outport)
 
         # Draw a non-ghost output port
         # self.drawport(cr, outport, options='reg');
@@ -2505,17 +2523,15 @@ class Tile:
             return False
 
 
-
-
-
-
-
     # Todo: maybe two separate routines,
     # one for draw-in-grid and one for draw-standalone etc
 
     def draw_all_ports(self,cr):
+        ismem = (tiletype(self.tileno) == "memory_tile")
+        dirlist = ("in", "out")
+        if ismem: dirlist = ("in0", "in1", "out0", "out1")
         for side in (0,1,2,3):
-            for dir in ("out", "in"):
+            for dir in dirlist:
                 if (side%2 == 0): ntracks = NTRACKS_PE_BUS_H + NTRACKS_PE_WIRE_H; # EW
                 if (side%2 == 1): ntracks = NTRACKS_PE_BUS_V + NTRACKS_PE_WIRE_V; # NS
                 for track in range(0,ntracks):
@@ -2548,8 +2564,8 @@ class Tile:
         #     if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
 
         # FIXME globals are evil?
-        global CUR_TILENO # Didn't we do this somewhere already
-        CUR_TILENO = self.tileno
+#         global CUR_TILENO # Didn't we do this somewhere already
+#         CUR_TILENO = self.tileno
 
         self.draw_all_ports(cr)
         for c in self.connectionlist:
@@ -3194,10 +3210,14 @@ def find_matching_wire(tileno, w):
     #     DBG=1; print "Want match for tile 11 wire 'out_s2t0'"
 
     # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
+    # 
     # parse = re.search("(in|out)_s([0-9]+)t([0-9]+)", w)
     # -> But oops mem tiles have wire names that look like
     # -> out_1_s2t0 ("1" means bottom half of tile, "0" means top)
-    parse = re.search("(in|out)(_[01])*_s([0-9]+)t([0-9]+)", w)
+    #
+    # parse = re.search("(in|out)(_[01])*_s([0-9]+)t([0-9]+)", w)
+    # -> But oops rewrote wire names; now they look like 'out0_s1t1' not 'out_0_s1t1'
+    parse = re.search("(in|out)([01])*_s([0-9]+)t([0-9]+)", w)
 
     if not parse:
         print "Invalid wire name '%s'" % w
@@ -3206,7 +3226,7 @@ def find_matching_wire(tileno, w):
         return (False,False)
 
     in_or_out = parse.group(1)
-    top_or_bottom = parse.group(2)  # 'None", '_0' or '_1'
+    top_or_bottom = parse.group(2)  # 'None', '0' or '1'
     side      = int(parse.group(3))
     track     = int(parse.group(4))
 
