@@ -774,14 +774,11 @@ for line in inputstream:
             # if HACK1 => only list connections where wireno != 0
 
             printwire = True
-            if HACK1: printwire = (wireno != 0)
+            if HACK1:
+                # FIXME print "HACK1 only printing connections with wireno != 0"
+                printwire = (wireno != 0)
 
             if (printwire):
-            # if (wireno):
-                # FIXME print "HACK1 only printing connections with wireno != 0"
-#                 # FIXME print "HACK2 row/col swap in each tile address!"
-#                 if SWAP: (r,c) = (c,r)
-
                 # Adjust bits so they fit in their 32-bit register!
                 (configh,configl) = (configh%32,configl%32)
 
@@ -790,15 +787,23 @@ for line in inputstream:
                 # 
                 # WRONG: @ tile (0, 3) connect wire 1 (in_1_BUS16_1_3) to sb_wire_out_1_BUS16_3_3
                 # RIGHT: @ tile (1, 3) connect wire 1 (in_1_BUS16_1_3) to sb_wire_out_1_BUS16_3_3
+                #
+                # Here's a table that should help
+                # 
+                # wire     side  half     example
+                # -------- ----  -------  -------
+                # in0/out0  023  top      in_0_BUS16_2_2
+                # in0/out0    1  ?        in_0_BUS16_1_2
+                #
+                # in1/out1  012  bottom   out_1_BUS16_2_2
+                # in1/out1    3  ?        sb_wire_in_1_BUS16_3_4
+
                 r2 = r
-                if re.search("_1_", inwire+outwire):
-                    # print "ROW WAS: %d" % r
+                if re.search('(in|out)_1_BUS16_[012]', inwire+outwire):
                     r2 = r + 1
-                    # print "ROW NOW: %d" % r2
 
                 print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
                       % (configh,configl,r2,c,wireno,inwire,outwire)
-#                 if SWAP: (r,c) = (c,r)
 
             if (inwire == "pe_out_res"):
                 DBG=0
