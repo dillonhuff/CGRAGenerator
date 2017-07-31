@@ -53,7 +53,6 @@ def print_once(s):
 # FIXME should have a CGRA class for globals...?
 
 # Want to list all the random globals here
-# global CUR_TILENO
 global CUR_CURSOR # Currently includes 'magplus', 'magminus', 'arrow'
 CUR_CURSOR = 'arrow'
 
@@ -557,7 +556,6 @@ def connectionpoint(tileno, wirename):
         print "WARNING (Arbitrarily) connecting unknown wire to 'outs3t4' instead"
         (b,t) = ("out_s3",4)
 
-    # tileno = CUR_TILENO # global CUR_TILENO
     if (tiletype(tileno) == "memory_tile"):
         if not re.search("(in|out)[01]", b):
             print "ERROR Invalid wire name '%s' in memtile %d" % (wirename,tileno)
@@ -2326,7 +2324,7 @@ class Tile:
         interior_x = interior[0]; interior_y = interior[1]
         if (interior_y == 0):
             # print "interor y = zero means a mem-sb1 connection"
-            # print "inport '%s' => outport '%s' in tile %d" % (inport, outport, CUR_TILENO)
+            # print "inport '%s' => outport '%s' in tile %d" % (inport, outport, self.tileno)
 
             (y1_prev,y2_prev) = (y1,y2)
 
@@ -2460,7 +2458,7 @@ class Tile:
         if DBG: print "CONNECT to '%s' from '%s'" % (pto,pfrom)
 
     #     if (pfrom == 'mem_out'):
-    #         print "FOO okay found FROM 'mem_out' type '%s' in tile %d" % (from_type,CUR_TILENO)
+    #         print "FOO okay found FROM 'mem_out' type '%s' in tile %d" % (from_type,self.tileno)
     #         print "FOO connects TO '%s' type '%s'" % (pto, to_type)
 
         DBG=0
@@ -2564,10 +2562,6 @@ class Tile:
         #     # if (self.col==1): draw_pe(cr, "ADD", "0x00002", "wireB")
         #     if (self.col==2): draw_pe(cr, "ADDYO DADDY", "wireA", "wireB")
         #     if (self.col==3): draw_pe(cr, "FOO", "wireA", "regB")
-
-        # FIXME globals are evil?
-#         global CUR_TILENO # Didn't we do this somewhere already
-#         CUR_TILENO = self.tileno
 
         self.draw_all_ports(cr)
         for c in self.connectionlist:
