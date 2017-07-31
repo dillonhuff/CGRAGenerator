@@ -811,7 +811,7 @@ for line in inputstream:
                 if (DBG): print "pe connects to %s in tile %d" % (outwire,thistile)
                 iohack_pe_out[thistile] = outwire;
 
-        # LIST RESGISTERS like so
+        # LIST REGISTERS like so
         # data[(13, 13)] : @ tile (0, 2) latch wire 0 (in_BUS16_S0_T0)
         # before connecting to out_BUS16_S1_T0
 
