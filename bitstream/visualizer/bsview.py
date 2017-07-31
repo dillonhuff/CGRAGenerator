@@ -1929,7 +1929,9 @@ def trace_wire(tileno, portname, action):
     elif (not highlight) and (portname not in hlist): return
 
     DBG=0
-    # wfoo = "in_1_s0t0"; if (portname == wfoo): DBG=1; print "Tracing port '%s'" % wfoo
+    # (tilefoo,wfoo) = (2, "in_s0t0")
+    # if (tileno == tilefoo) and (portname == wfoo):
+    #     DBG=1; print "Tracing port '%s' in tile %d" % (wfoo,tilefoo)
 
     if (highlight):
         hlist.append(portname)
@@ -3203,11 +3205,11 @@ def main():
         args = args[1:]
     return
 
-
 def find_matching_wire(tileno, w):
     DBG=0
-    # if (tileno == 11) and (w == "out_s2t0"):
-    #     DBG=1; print "Want match for tile 11 wire 'out_s2t0'"
+    (tilefoo,wfoo) = (3, "out1_s2t0")
+    # if (tileno == tilefoo) and (w == wfoo):
+    #     DBG=1; print "\nWant match for tile %d wire '%s'" % (tilefoo,wfoo)
 
     # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
     # 
@@ -3234,7 +3236,9 @@ def find_matching_wire(tileno, w):
     else:            in_or_out="out"
 
     (r,c) = tileno2rc(tileno)
-    #   print (r,c,side)
+
+    # Adjust for wire in bottom of a memtile
+    if (top_or_bottom == '1'): r = r + 1
 
     if   (side==0): (r,c,side) = (r,c+1,side+2)
     elif (side==1): (r,c,side) = (r+1,c,side+2)
@@ -3260,7 +3264,7 @@ def find_matching_wire(tileno, w):
             else              : print " You're the top!"
 
     adj_wire = "%s%s_s%dt%d" % (in_or_out, top_or_bottom, side, track)
-    if DBG: print "\n%s on tile %d matches %s on tile %d" % (w, tileno, adj_wire, adj_tileno)
+    if DBG: print "%s on tile %d matches %s on tile %d\n" % (w, tileno, adj_wire, adj_tileno)
     return (adj_tileno, adj_wire)
 
 main()
