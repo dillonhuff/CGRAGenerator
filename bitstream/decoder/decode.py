@@ -647,22 +647,23 @@ def pe_decode(RR, DDDDDDDD):
     # PRINT:
     # "pe_out <= MUL(wireA,wireB) ; regA <= wireA (always) ; regB <= wireB (always)"
 
-    if (not iohack):
-        opstr = "pe_out <= " + opstr
-
-        print "# data[15] : read from " + asrc
-        print "# data[13] : read from " + bsrc
-        print "# data[2] : read from "  + dsrc
-
-        if areg == "wireA": print "# data[14] : load `a` reg with wire"
-        if breg == "wireB": print "# data[12] : load `b` reg with wire"
-        if dreg == "wireD": print "BOOOOOOOOOOOOOOOOO " + DDDD + "  " + str(dddd);
-
     print "# data[(4, 0)] : op = %s" % opp
+    if (not iohack):
+        # FIXME when/if have an op that uses d, will want to activate this...
+        # print "# data[2] : read from "  + dsrc
+
+        # Got to get the order correct!  Now don't we.
+        if breg == "wireB": print "# data[12] : load `b` reg with wire"
+        if (1):             print "# data[13] : read from " + bsrc
+        if areg == "wireA": print "# data[14] : load `a` reg with wire"
+        if (1):             print "# data[15] : read from " + asrc
+
+        if dreg == "wireD": print "BOOOOOOOOOOOOOOOOO " + DDDD + "  " + str(dddd);
 
     if verbose:
         reg = ""
         indent = " ; "
+        opstr = "pe_out <= " + opstr
         if (areg == "wireA"): reg = indent + "regA <= wireA (always)"
         if (breg == "wireB"): reg = indent + "regB <= wireB (always)"
         if (creg == "wireC"): reg = indent + "regC <= wireC (always)"
