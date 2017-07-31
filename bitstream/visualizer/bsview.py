@@ -531,21 +531,6 @@ def connectionpoint(tileno, wirename):
     # outs2/ins0 blocks start in SW/SE and go up   (neg y direction)
     # outs3/ins1 blocks start in NW/NE and go right (pos x direction)
 
-    # FIXME
-    # 1. Sometimes wirename = "in_s9t9"  This indicates a memtile cb that we don't understand yet
-    # 2. Sometimes wirename = "out_s9t9"  This is bsview.py propagating the
-    # "in_s9t9" problem...maybe this will mollify it i dunno
-    
-#     hackwire = False
-#     if (wirename == "in_s9t9" ): hackwire = "in_s0t0"
-#     if (wirename == "out_s9t9"): hackwire = "out_s0t0"
-#     if (hackwire):
-#         wirename = hackwire
-#         if (not TILES_DRAWN_AT_LEAST_ONCE):
-#             print "WARNING Found wire %s indicating memtile cb" % wirename
-#             print "WARNING Do not yet understand memtile cb's"
-#             print "WARNING Will use '%s' instead" % hackwire
-
     decode = re.search('(in[01]*_s.*|out[01]*_s.*)t(.*)', wirename);
 
     if (decode):
