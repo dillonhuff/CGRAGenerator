@@ -72,8 +72,10 @@ global PE_HEIGHT; PE_HEIGHT = 12
 
 GRID_WIDTH  = 2;
 GRID_HEIGHT = 2;
-NTILES = GRID_WIDTH*GRID_HEIGHT
-TILE_LIST = range(0, NTILES)
+
+# NTILES = GRID_WIDTH*GRID_HEIGHT
+# TILE_LIST = range(0, NTILES)
+TILE_LIST = []
 
 # Old regime default: SWAP = False
 # New regime default: SWAP = True
@@ -105,11 +107,18 @@ def tileno2rc(tileno):
     if (GRID_WIDTH >= 8):
         return tileno2rc_8x8(tileno)
 
-    row =     tileno % GRID_HEIGHT
-    col = int(tileno / GRID_WIDTH)
-    
-    if (not SWAP): return [row, col];
-    else:          return [col, row];
+    else:
+        row =     tileno % GRID_HEIGHT
+        col = int(tileno / GRID_WIDTH)
+
+        max = GRID_HEIGHT * GRID_WIDTH
+        if tileno >= max:
+            print "WARNING GRID_HEIGHT=%d GRID_WIDTH=%d" % (GRID_HEIGHT, GRID_WIDTH)
+            print "WARNING tileno %d exceeds max tileno %d" % (tileno,max)
+            return False
+
+        if (not SWAP): return [row, col];
+        else:          return [col, row];
 
 def rc2tileno(row,col):
 
@@ -194,14 +203,13 @@ def tiletype(tileno):
         type = parse.group(1)
         # print "Tile %d has type '%s'" % (tileno,type)
         return type
-    
 
 def tileno2rc_8x8(tileno):
     DBG = 0
     search_string = "tile_addr='%s'.*row='(\d+)'.*col='(\d+)'" % str(tileno)
     parse = re.search(search_string, cgra_tile_info)
     if (not parse):
-        print "ERROR: Could not find tile number '%s' in the lookup table." % str(tileno)
+        if DBG: print "WARNING Could not find tile number '%s' in the lookup table." % str(tileno)
         return False
         
     row = int(parse.group(1))
@@ -2004,18 +2012,16 @@ class Tile:
     # (row,col) = (-1,-1)
     # self.connectionlist = []
 
-    def __init__(self, tileno):
+    def __init__(self, tileno, rc):
 
         # List of ports (wires) currently being highlighted e.g.
         # if ('out_s1t1' in highlights): setcolor(cr, red)
         self.highlights = []
         # self.highlights.append("in_s2t0") # To test it/them FIXME
 
-        self.label  = "" # E.g. "ADD", "MUL", "I/O"
-        self.tileno = tileno
-        # self.row = int(tileno % GRID_HEIGHT)
-        # self.col = int(tileno / GRID_WIDTH)
-        (self.row,self.col) = tileno2rc(tileno)
+        self.label          = ""     # E.g. "ADD", "MUL", "I/O"
+        self.tileno         = tileno
+        (self.row,self.col) = rc
         self.connectionlist = []
 
         # List of output wires that should be latched
@@ -2720,29 +2726,37 @@ def initialize_tile_list(w, h):
 
     global GRID_WIDTH
     global GRID_HEIGHT
-    global NTILES     
-    global TILE_LIST  
 
+    # This will be needed elsewhere!
     GRID_WIDTH  = w
     GRID_HEIGHT = h
-    NTILES      = w * h
-    TILE_LIST   = range(0, NTILES)
     
     set_initial_scale_factor()
 
-    DBG=1
-    # for i in TILE_LIST: TILE_LIST[i] = Tile(i)
-    if (DBG): print "Initializing tiles"
-    for i in TILE_LIST:
-        rc = tileno2rc(i)
-        if (not rc):
-            TILE_LIST[i] = False
-        else:
-            if (DBG): print "%2s" % i,
-            if (DBG and (i%16 == 15)): print ""
-            TILE_LIST[i] = Tile(i)
-    if (DBG): print ""
+#     # for i in TILE_LIST: TILE_LIST[i] = Tile(i)
+#     if (DBG): print "Initializing tiles"
+#     for i in TILE_LIST:
+#         rc = tileno2rc(i)
+#         if (not rc):
+#             TILE_LIST[i] = False
+#         else:
+#             if (DBG): print "%2s" % i,
+#             if (DBG and (i%16 == 15)): print ""
+#             TILE_LIST[i] = Tile(i)
+#     if (DBG): print ""
 
+    DBG=0
+    i = 0
+    global TILE_LIST  
+    if (DBG): print "Initializing tiles"
+    while (i < 10000):
+        rc = tileno2rc(i)
+        if not rc: break
+
+        TILE_LIST.append(Tile(i,rc))
+        if (DBG): print "%2s" % i,
+        if (DBG and (i%16 == 15)): print ""
+        i = i + 1
 
 
 # NO LONGER USED reads old format from my decoder
@@ -3052,6 +3066,7 @@ def demo_sb_8x8():
 def func_name():
     import traceback
     return traceback.extract_stack(None, 2)[0][2]
+    # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
 
 def demo_cd_jimmied():
     DBG=0
