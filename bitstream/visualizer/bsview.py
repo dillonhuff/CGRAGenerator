@@ -1929,8 +1929,9 @@ def trace_wire(tileno, portname, action):
     if DBG: print "FOO Now hlist = %s" % str(hlist)
 
     # Highlight/unhighlight connected port in same tile
-    cport = TILE_LIST[tileno].find_connected_port(portname)
-    if (cport): trace_wire(tileno, cport, action)
+    cport = TILE_LIST[tileno].find_connected_ports(portname)
+    for c in cport: trace_wire(tileno, c, action)
+
 
     # Highlight/unhighlight connected port in neighboring tile
     (adj_tileno,adj_wire) = find_matching_wire(tileno, portname)
@@ -2023,19 +2024,37 @@ class Tile:
     def connect(self,connection):
         self.connectionlist.append(connection)
 
-    def find_connected_port(self,portname):
+    def find_connected_ports(self,portname):
         '''Find the other end of the wire connected to "portname"'''
+        DBG=0
+        if (0): # GREAT for debugging
+            (tileno,w) = (self.tileno,portname)
+            (tilefoo,wfoo) = (3, ("sb_wire_in1_s3t2", "out0_s1t2", "in0_s0t2"))
+            if (tileno == tilefoo) and (portname in wfoo):
+                DBG=1; print "\nWho's connected to tile %d wire '%s'?" % (tileno,w)
+                self.printprops();
+
+        rval = []
         for c in self.connectionlist:
             parse = re.search("^([^ ]*) .* ([^ ]*)$", c)
             pto = parse.group(1); pfrom = parse.group(2)
-            if   (pto   == portname): return pfrom
-            elif (pfrom == portname): return pto
-        return False
+
+            # Note a wire can connect to TWO other wires e.g.
+            #              sb_wire_in1_s3t2 <= in0_s0t2
+            # out1_s0t2 <= sb_wire_in1_s3t2
+            if   (pto   == portname): rval.append(pfrom)
+            elif (pfrom == portname): rval.append(pto)
+
+        if DBG:
+            if rval: print "\n'%s' is connected to %s" % (portname,rval)
+            else   : print "\n'%s' is connected to NOHBODY" % (portname)
+
+        return rval
 
     def printprops(self):
         print "Tile %d (r%d,c%d)" % (self.tileno, self.row, self.col)
-        indent = "                "
-        print indent + ("\n"+indent).join(self.connectionlist)
+        indent = "  "
+        print indent + ("\n"+indent).join(sorted(self.connectionlist))
 
     # TODO/FIXME need at least one more pass on drawport() below!
 
@@ -2644,7 +2663,7 @@ def build_and_launch_main_window(title):
 
     win = CGRAWin();
     win.props.title = title
-    if DBG: win.move(0,0) # put window at top left corner of screen
+    # if DBG: win.move(0,0) # put window at top left corner of screen
     if (DBG>=2): print dir(win.props)
     win.show_all()
     Gtk.main()
@@ -3184,11 +3203,13 @@ def main():
         args = args[1:]
     return
 
+# called from trace_wire() ONLY
 def find_matching_wire(tileno, w):
     DBG=0
-    (tilefoo,wfoo) = (3, "out1_s2t0")
-    # if (tileno == tilefoo) and (w == wfoo):
-    #     DBG=1; print "\nWant match for tile %d wire '%s'" % (tilefoo,wfoo)
+    if (0):
+        (tilefoo,wfoo) = (3, ("sb_wire_in1_s3t2", "out0_s1t2"))
+        if (tileno == tilefoo) and (w in wfoo):
+            DBG=1; print "\nWant match for tile %d wire '%s'" % (tileno,w)
 
     # find_matching_wire(4,"in_s1t1") => (5, "out_s3t1")
     # 
@@ -3201,9 +3222,10 @@ def find_matching_wire(tileno, w):
     parse = re.search("(in|out)([01])*_s([0-9]+)t([0-9]+)", w)
 
     if not parse:
-        print "Invalid wire name '%s'" % w
-        sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
-        print "\n\n\n"
+        # It's okay if wirename not valid e.g. 'wireA' has no match
+        if DBG: print "Wire '%s' is not a port but that's okay" % w
+        # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+        # print "\n\n\n"
         return (False,False)
 
     in_or_out = parse.group(1)
