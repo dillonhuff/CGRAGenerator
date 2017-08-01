@@ -762,6 +762,9 @@ for line in inputstream:
             print regs
             print "----------------------------------------"
 
+        # Hm.  They have to be printed in a certain order according to bit number
+        comments = [None]*32
+
         # Want:
         # "data[(1, 0)] : @ tile (0, 1) connect wire 3 (pe_out_res) to out_BUS16_S0_T0"
         t = thistile
@@ -808,7 +811,9 @@ for line in inputstream:
                 if re.search('mem_out.*sb_wire_out_1_BUS16_3', inwire+outwire):
                     r2 = r + 1
 
-                print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
+                # print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
+                #       % (configh,configl,r2,c,wireno,inwire,outwire)
+                comments[configh] = "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
                       % (configh,configl,r2,c,wireno,inwire,outwire)
 
             if (inwire == "pe_out_res"):
@@ -837,16 +842,18 @@ for line in inputstream:
 #                   % (bitno,bitno,r,c,outwire,wireno,inwire)
 
             # Simplified
-            print "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
+            # print "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
+            #       % (bitno,bitno,r,c,outwire)
+            comments[bitno] = "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
                   % (bitno,bitno,r,c,outwire)
 
 #             if SWAP: (r,c) = (c,r)
+        for c in comments:
+            if c: print c
         continue
 
     else:
         if 0: print "Could not find tag %s" %  e.tag
-
-
 
     # Processing element
     if (EE == "00"):
