@@ -802,6 +802,12 @@ for line in inputstream:
                 if re.search('(in|out)_1_BUS16_[012]', inwire+outwire):
                     r2 = r + 1
 
+                # OOPS want this special case to be in bottom half:
+                # data[(1, 0)] : @ tile (2, 3) connect wire 3 (mem_out) to sb_wire_out_1_BUS16_3_1
+                # if (inwire == "mem_out") and re.search('sb_wire_out_1_BUS16_3', outwire):
+                if re.search('mem_out.*sb_wire_out_1_BUS16_3', inwire+outwire):
+                    r2 = r + 1
+
                 print "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
                       % (configh,configl,r2,c,wireno,inwire,outwire)
 
