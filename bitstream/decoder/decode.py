@@ -1,31 +1,18 @@
 #!/usr/bin/python
+
+# Example:
+#   decode.py convbw.bs -cgra examples/cgra_info_8x8.txt
+
 import sys;
 import re;
+from lib import cgra_info
 
 HACK1 = True
-# SWAP = False
 if (0):
     if 1:     print "------------------------------------------------------------------------"
     if 1:     print 'HACK ALERT - search source code for "HACK"'
     if HACK1: print "HACK1 only printing connections with wireno != 0"
-    # if SWAP:  print "HACK2 row/col swap in each tile address!"
     if 1:     print "------------------------------------------------------------------------"
-
-# import os;
-# print os.path.dirname(__file__)
-# print os.path.join(os.path.dirname(__file__), ".")
-# # 
-# # 
-# # # sys.path.append(os.path.join(os.path.dirname(__file__), "."))
-# sys.path.append(os.path.dirname(__file__))
-# print "\n".join(sys.path)
-
-# To use: decoder.py < examples/bitstream.ankita
-
-# deprecated, will go away soon i hope
-from lib.sb_decode_5tracks import *
-
-from lib import cgra_info
 
 global verbose
 verbose = False
@@ -38,8 +25,6 @@ def get_default_cgra_info_filename():
     if verbose: print("I think I am here:\n  %s" % mydir)
     if verbose: print("Default cgra_info file is\n  %s" % cgra_filename)
     return cgra_filename
-
-# from lib import sb_decode_cgra
 
 # sys.path.insert(0, "../../../SMT-PNR/src")
 # from config.annotations import Annotations
@@ -744,7 +729,6 @@ for line in inputstream:
     elif (e.tag == "cb"):
         # 00040011 00000005
         # # data[(3, 0)] : @ tile (3, 2) connect wire 5 (in_0_BUS16_2_0) to din
-#         inwire = cgra_info.cb_decode(e,thistile,DDDDDDDD,SWAP)
         inwire = cgra_info.cb_decode(e,thistile,DDDDDDDD)
         iohack_cb_out[thistile] = inwire
         continue
@@ -869,10 +853,8 @@ for line in inputstream:
 
         t = int(TTTT,16)
         [r,c] = cgra_info.tileno2rc(t); rc = "(%d, %d)" % (r,c);
-#         if SWAP: (r,c) = (c,r)
         cb_connection = cb_decode(EE,DDDDDDDD,r,c);  # E.g. "wireA <= in_s1t0"
         print "%s" % (cb_connection);
-#         if SWAP: (r,c) = (c,r)
 
         # cb_connection = '...connect wire 3 (in_BUS16_S1_T1) to a'
         parse = re.search("((in|out)_BUS16_.*)\)", cb_connection)
