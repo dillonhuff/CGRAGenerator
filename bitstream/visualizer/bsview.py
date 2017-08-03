@@ -1446,6 +1446,7 @@ class CGRAWin(gtk.Window):
 
         # BUTTON: zoom-in magnifying glass
         # button_magplus = gtk.Button("+")
+        tooltip = "magplus tool: Use to zoom in and recenter"
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_ZOOM_IN, gtk.ICON_SIZE_SMALL_TOOLBAR)
         image.show()
@@ -1453,10 +1454,12 @@ class CGRAWin(gtk.Window):
         button_magplus = gtk.Button()
         button_magplus.add(image)
         button_magplus.connect("clicked", self.button_magplus_action)
+        button_magplus.set_tooltip_text(tooltip)
         button_magplus.show()
         
         # BUTTON: zoom-out magnifying glass
         # button_magminus= gtk.Button("-")
+        tooltip = "magminus tool: Use to zoom out and recenter"
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_ZOOM_OUT, gtk.ICON_SIZE_SMALL_TOOLBAR)
         image.show()
@@ -1464,15 +1467,25 @@ class CGRAWin(gtk.Window):
         button_magminus= gtk.Button()
         button_magminus.add(image)
         button_magminus.connect("clicked", self.button_magminus_action)
+        button_magminus.set_tooltip_text(tooltip)
         button_magminus.show()
 
         # BUTTON: arrow
         # button_arrow   = gtk.Button("no zoom")
+        tooltip = "arrow tool:\n"
+        tooltip = tooltip + "  single-click to select/deselect a wire\n"
+        tooltip = tooltip + "  double-click for single-tile zoom in/out "
         button_arrow   = gtk.Button()
         image = get_icon_arrow()
         button_arrow.add(image)
         button_arrow.connect("clicked", self.button_arrow_action)
+        button_arrow.set_tooltip_text(tooltip)
+
         button_arrow.show()
+
+        # GtkButton* button = gtk_button_new_with_label("button");   
+        # gtk_widget_set_tooltip_text(button, "tooltip text");
+
 
         # BUTTON: grabby hand
         button_hand    = gtk.Button("grabby hand")
@@ -1819,7 +1832,7 @@ def zoom_to_tile1(event):
 
         global PREV_HUPPER
         PREV_HUPPER = SW.get_hadjustment().upper
-        print "HUPPERS 1 %d" % (PREV_HUPPER)
+        # print "HUPPERS 1 %d" % (PREV_HUPPER)
 
         # x,y coordinates of button-press
         x = event.x; y = event.y
@@ -1872,7 +1885,7 @@ def zoom_to_tile1(event):
         (x,y) = find_tile_center(ZOOMTILE)
         recenter(x,y)
         refresh()
-        print "how's that?"; sys.stdout.flush(); time.sleep(2)
+        # print "how's that?"; sys.stdout.flush(); time.sleep(2)
 
 
     else:
@@ -1899,7 +1912,7 @@ def zoom_to_tile1(event):
 
         # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
         sf = SAVE_SCALE_FACTOR/CUR_SCALE_FACTOR
-        print "  gonna zoom %sx\n" % str(sf)
+        if DBG: print "  gonna zoom %sx\n" % str(sf)
         zoom(sf)
 
         # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
@@ -1970,7 +1983,7 @@ def button_press_handler(widget, event):
     # Nope that's just a mess
     # 
     if double_click and (CUR_CURSOR == 'arrow'):
-        print "zoom to tile"
+        if DBG: print "zoom to tile"
         zoom_to_tile1(event)
         refresh() # Redraw after zoom
         # print "\n Z2 DRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
