@@ -16,7 +16,7 @@ ifeq ($(SILENT), TRUE)
 else
        QUIET :=
 endif
-$(warning OUTPUT = "$(OUTPUT)")
+# $(warning OUTPUT = "$(OUTPUT)")
 
 TEMPDIR := $(shell mktemp -d)
 
