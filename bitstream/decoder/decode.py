@@ -671,7 +671,24 @@ def pe_decode(RR, DDDDDDDD):
         if (dreg == "wireD"): reg = indent + "regD <= wireD (always)"
         print opstr + reg
 
+def found_new_tile(prevtile, thistile):
+        # Sources for PE inputs (defaults from verilog test_pe.v and test_opt_reg.v)
 
+        # print "# TILE %d %s" % (thistile, rc)
+        # print "####################### TILE %d %s" % (thistile, rc)
+        if (verbose):
+            [r,c] = cgra_info.tileno2rc(thistile); rc = "(%d,%d)" % (r,c)
+            print ""
+            print "                        TILE %d %s" % (thistile, rc)
+
+        # valid values for e.g. asrc: "wire `a`" or "reg `a`" or (deprecated) "0x[0-9]+"
+        global asrc, bsrc, csrc, dsrc
+        (asrc, bsrc, csrc, dsrc) = ("reg `a`", "reg `b`", "reg `c`", "reg `d`")
+
+        # Contents of PE input regs
+        # valid values for e.g. areg: "0x[0-9]+" or 'wireA' or 'unset'
+        global areg, breg, creg, dreg
+        (areg, breg, creg, dreg) = ("unset", "unset", "unset", "unset")
 
 ##############################################################################
 # MAIN
@@ -694,32 +711,12 @@ for line in inputstream:
     TTTT = f.group(3);     # tile
     DDDDDDDD = f.group(4); # data
 
-
     thistile = int(TTTT,16)
     if (thistile != prevtile):
 
-        # Sources for PE inputs (defaults from verilog test_pe.v and test_opt_reg.v)
-        global asrc, bsrc, csrc, dsrc
-        asrc = "reg `a`" # valid values: "wire `a`" or "reg `b`" or (deprecated) "0x[0-9]+"
-        bsrc = "reg `b`"
-        csrc = "reg `c`"
-        dsrc = "reg `d`"
-
-        # Contents of PE input regs
-        global areg, breg, creg, dreg
-        areg = "unset"   # valid values: "0x[0-9]+" or 'wireA' or 'unset'
-        breg = "unset"   # valid values: "0x[0-9]+" or 'wireB' or 'unset'
-        creg = "unset"   # valid values: "0x[0-9]+" or 'wireC' or 'unset'
-        dreg = "unset"   # valid values: "0x[0-9]+" or 'wireD' or 'unset'
-
+        # found_new_tile() initializes globals asrc, areg, [bcd]{src,reg}
+        found_new_tile(prevtile, thistile)
         prevtile = thistile
-        [r,c] = cgra_info.tileno2rc(thistile); rc = "(%d,%d)" % (r,c)
-
-        # print "# TILE %d %s" % (thistile, rc)
-        # print "####################### TILE %d %s" % (thistile, rc)
-        if (verbose):
-            print ""
-            print "                        TILE %d %s" % (thistile, rc)
 
     # print line,
     # # print "[ r%02X e%02X %-5s ]  " % \
@@ -833,21 +830,12 @@ for line in inputstream:
 
             # print "# data[(%d, %d)] : @ tile (%d, %d) latch wire %d (%s) before connecting to %s"\
 
-#             # FIXME print "HACK2 row/col swap in each tile address!"
-#             if SWAP: (r,c) = (c,r)
-
-#             wireno = 999
-#             inwire = "UNKNOWN"
-#             print "# data[(%d, %d)] : @ tile (%d, %d) latch %s connected to input wire %d (%s)"\
-#                   % (bitno,bitno,r,c,outwire,wireno,inwire)
-
             # Simplified
             # print "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
             #       % (bitno,bitno,r,c,outwire)
             comments[bitno] = "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
                   % (bitno,bitno,r,c,outwire)
 
-#             if SWAP: (r,c) = (c,r)
         for c in comments:
             if c: print c
         continue
