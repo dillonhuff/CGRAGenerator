@@ -77,24 +77,14 @@ GRID_HEIGHT = 2;
 # TILE_LIST = range(0, NTILES)
 TILE_LIST = []
 
-# Old regime default: SWAP = False
-# New regime default: SWAP = True
-SWAP = True
-
 PRINTED_CONFIG = False
 
 # tileno-to-RC conversion
 def tileno2rc(tileno):
-    # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown above.
+    '''
     # Given tile number tileno return the (row,column) equivalent
-    #
-    #    tileno                    r,c
-    #  0  4   8  12      (0,0) (0,1) (0,2) (0,3)
-    #  1  5   9  13      (1,0) (1,1) (1,2) (1,3)
-    #  2  6  10  14      (2,0) (2,1) (2,2) (2,3)
-    #  3  7  11  15      (3,0) (3,1) (3,2) (3,3)
-    #
-    # Unless SWAP = True, in which case...just the opposite (ugh!)
+    '''
+    # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown below.
     #
     #      tileno                    r,c
     #   0   1   2   3      (0,0) (0,1) (0,2) (0,3)
@@ -117,8 +107,7 @@ def tileno2rc(tileno):
             print "WARNING tileno %d exceeds max tileno %d" % (tileno,max)
             return False
 
-        if (not SWAP): return [row, col];
-        else:          return [col, row];
+        return [col, row];
 
 def rc2tileno(row,col):
 
@@ -126,8 +115,7 @@ def rc2tileno(row,col):
     if (GRID_WIDTH >= 8):
         return rc2tileno_8x8(row,col)
 
-    if (not SWAP): return GRID_HEIGHT*col + row
-    else:          return GRID_WIDTH *row + col
+    return GRID_WIDTH *row + col
 
 
 
@@ -3146,6 +3134,12 @@ FF00000C 00000000 [pe ] pe_out <= ADD(regA,regB)
     build_and_launch_main_window(title)
 
 def do_demos():
+
+    # FIXME FIXME FIXME
+    print "ERROR Demos no longer work because NOT-SWAP not supported."
+    print "ERROR *Somebody* needs to rewrite the demos."
+    print "ERROR NOT-SWAP is no longer supported!"; sys.exit(-1)
+
     # return
     global SWAP
     global REQUESTED_SIZE
@@ -3178,41 +3172,31 @@ def do_demos():
     demo_sb_8x8()
     return
 
-
 def main():
     '''
     Usage:
-        bsview.py <b1.bs-decoded> <b2.bs-decoded> ...   # Displays decoded bitstreams b1, b2, ...
-        bsview.py -swaprc <b1.bsv1-decoded> ...         # Swap RC on indicated bitstream
-        bsview.py -newmem <b1.bsv1-decoded> ...         # Do the right thing for newmem regime
-        bsview.py -oldmem <b1.bsv1-decoded> ...         # Do the right thing for oldmem regime
-        bsview.py -demo                                 # Runs through a couple built-in demos
-        bsview.py --help                                # Displays this help message
+        bsview.py <b1.bsa> <b2.bsa>...  # Displays decoded bitstreams b1, b2...
+        bsview.py -demo                 # Runs through a couple built-in demos
+        bsview.py --help                # Displays this help message
     ''' 
     print sys.argv
     args = sys.argv[1:]  # argv[0] is command name
 
     # FIXME yes this is bad
     global REQUESTED_SIZE
-    global SWAP
 
     # Defaults for old regime
     # REQUESTED_SIZE = (4,4) # default
-    # SWAP           = False
 
     # Defaults for new regime
     REQUESTED_SIZE = (8,8) # default
-    SWAP           = True
 
     if    (len(args) == 0): do_demos() # no args
     # if    (len(args) == 0): demo_sb_8x8() # no args
     while (len(args)  > 0):            # args
-        print "arg0 = %s, SWAP=%s" % (args[0], SWAP)
+        # print "arg0 = %s" % (args[0])
         if   (args[0] ==  "-demo"):  do_demos()
         elif (args[0] == "--help"):  print main.__doc__
-        elif (args[0] == '-swaprc'): SWAP = True
-        elif (args[0] == '-newmem'): SWAP = True
-        elif (args[0] == '-oldmem'): SWAP = False
         elif (args[0] == '-8x8'): REQUESTED_SIZE = (8,8)
         else:      display_decoded_bitstream_file(args[0])
         args = args[1:]
