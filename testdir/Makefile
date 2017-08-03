@@ -52,7 +52,7 @@ test_all:
 hackdiff_test:
 	cd ../bitstream; \
 	decoder/hackdiff.csh \
-	  examples/convbw.{bs,bsa} \
+	  examples/convbw.bs examples/convbw.bsa \
 	  -cgra examples/cgra_configs/cgra_info_8x8.txt
 
 # TODO can combine all these down to one
