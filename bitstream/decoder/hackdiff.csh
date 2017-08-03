@@ -4,10 +4,10 @@ if ($#argv < 2) goto USAGE
 goto MAIN
 
 USAGE:
-  echo "Usage: $0 -bs foo.bs -bsa foo.bsa -cgra cgra_info.txt"
-  echo ""
-  echo "-> decodes bitstream foo.bs and compares"
-  echo "-> result to annotated bitstream foo.bsa"
+  echo    "Usage:"
+  echo    "  $0:t foo.bs foo.bsa -cgra cgra_info.txt"
+  echo -n "  # Decodes bitstream foo.bs and compares "
+  echo    "result to annotated bitstream foo.bsa"
   exit
 
 MAIN:
@@ -20,12 +20,11 @@ set cgra = 'None'
 while ($#argv)
   # echo "Found switch '$1'"
   switch ("$1")
-    case '-bs':
-      set bs = "$2"; shift; breaksw
-    case '-bsa':
-      set bsa = "$2"; shift; breaksw
     case '-cgra':
       set cgra = "$2"; shift; breaksw
+    default:
+      expr "$1" : '-' > /dev/null && goto USAGE
+      grep '#' "$1"   > /dev/null && set bsa="$1" || set bs="$1"
   endsw
   shift;
 end
