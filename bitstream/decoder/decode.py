@@ -26,9 +26,13 @@ def get_default_cgra_info_filename():
     if verbose: print("Default cgra_info file is\n  %s" % cgra_filename)
     return cgra_filename
 
-# sys.path.insert(0, "../../../SMT-PNR/src")
-# from config.annotations import Annotations
-from lib.annotations import Annotations
+try:
+  sys.path.insert(0, "../../../SMT-PNR/src")
+  from config.annotations import Annotations
+except:
+  sys.stderr.write("WARNING decode.py could not load 'official' Annotations.py library")
+  from lib.annotations import Annotations
+
 
 # print Annotations.op_config('op', 'output')
 # sys.exit(-1)
