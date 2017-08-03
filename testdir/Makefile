@@ -1,27 +1,6 @@
-# Consider:
-# 
-# script:
-#   - cd testdir; make testall
-
 ################################################################################
 # Makefile Definitions
 ################################################################################
-
-# # Check environment variables
-# 
-# # - export CGRA_GEN_USE_MEM=1
-# # - export CGRA_GEN_ALL_REG=1
-# 
-# ifndef CGRA_GEN_USE_MEM
-#   CGRA_GEN_USE_MEM := 0
-# endif
-# 
-# ifndef CGRA_GEN_ALL_REG
-#   CGRA_GEN_ALL_REG := 0
-# endif
-# 
-# $(warning WARNING: CGRA_GEN_USE_MEM = $(CGRA_GEN_USE_MEM))
-# $(warning WARNING: CGRA_GEN_ALL_REG = $(CGRA_GEN_ALL_REG))
 
 # ifndef SMASH
 #   $(error ERROR: Chip Gen path is not set. Use "setenv SMASH <path_to_chipgen>")
@@ -39,46 +18,42 @@ else
 endif
 $(warning OUTPUT = "$(OUTPUT)")
 
-# foo: ../bitstream/examples/cd387-good.bs $(VERILATOR_TOP)/top_tb.cpp $(VERILATOR_TOP)/io/gray_small.png
-# 	@echo $?
-# 	@echo $(?:.bs=.foo)
-# 	echo $(filter %.cpp,$?)
-# 	bitstream=$(filter %.bs,$?); echo $$bitstream
-# 	input=$(filter %.png,$?); echo $$input
-# 
-# %.baz : ; echo foo
-# 	echo bar
-# 	echo $?
-# 	$(A=b)
-# 	echo $(A)
-# 
-# bar.baz: ../bitstream/examples/cd387-good.bs
+TEMPDIR := $(shell mktemp -d)
 
 test_all:
-	make test_4x4_gray_small 2>&1 | tee /tmp/test_4x4_gray_small.log
-	tail -n 1 /tmp/test_4x4_gray_small.log \
+	make hackdiff_test | tee $(TEMPDIR)/hackdiff_test.log
+
+	make test_4x4_gray_small 2>&1 | tee $(TEMPDIR)/test_4x4_gray_small.log
+	tail -n 1 $(TEMPDIR)/test_4x4_gray_small.log \
 		| grep 'FAIL' && exit 9 || exit 0
 
-	make test_8x8_gray_small 2>&1 | tee /tmp/test_8x8_gray_small.log
-	tail -n 1 /tmp/test_8x8_gray_small.log \
+	make test_8x8_gray_small 2>&1 | tee $(TEMPDIR)/test_8x8_gray_small.log
+	tail -n 1 $(TEMPDIR)/test_8x8_gray_small.log \
 		| grep 'FAIL' && exit 9 || exit 0
 
-	make test_4x4_gray       2>&1 | tee /tmp/test_4x4_gray.log
-	tail -n 1 /tmp/test_4x4_gray.log \
+	make test_4x4_gray       2>&1 | tee $(TEMPDIR)/test_4x4_gray.log
+	tail -n 1 $(TEMPDIR)/test_4x4_gray.log \
 		| grep 'FAIL' && exit 9 || exit 0
 
-	make test_8x8_gray       2>&1 | tee /tmp/test_8x8_gray.log
-	tail -n 1 //tmp/test_8x8_gray.log \
+	make test_8x8_gray       2>&1 | tee $(TEMPDIR)/test_8x8_gray.log
+	tail -n 1 /$(TEMPDIR)/test_8x8_gray.log \
 		| grep 'FAIL' && exit 9 || exit 0
 
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
 	@echo ==================================================
 	@egrep '^00014'                \
-	  /tmp/test_4x4_gray_small.log \
-	  /tmp/test_8x8_gray_small.log \
-	  /tmp/test_4x4_gray.log       \
-	  /tmp/test_8x8_gray.log
+	  $(TEMPDIR)/hackdiff_test.log \
+	  $(TEMPDIR)/test_4x4_gray_small.log \
+	  $(TEMPDIR)/test_8x8_gray_small.log \
+	  $(TEMPDIR)/test_4x4_gray.log       \
+	  $(TEMPDIR)/test_8x8_gray.log
+
+hackdiff_test:
+	cd ../bitstream; \
+	decoder/hackdiff.csh \
+	  examples/convbw.{bs,bsa} \
+	  -cgra examples/cgra_configs/cgra_info_8x8.txt
 
 # TODO can combine all these down to one
 # TODO make it look more like other makefile (cgraflow)
@@ -93,9 +68,9 @@ test_4x4_gray_small:
 	./run.csh $(QUIET) -gen top_tb.cpp -oldmem -4x4       \
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
-	   -output /tmp/$${image}_out.raw   \
+	   -output $(TEMPDIR)/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        cmp io/$${image}_out.raw /tmp/$${image}_out.raw || echo FAIL
+        cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw || echo FAIL
 
 test_4x4_gray:
 	bitstream=../../bitstream/examples/cd387-good.bs; \
@@ -104,9 +79,9 @@ test_4x4_gray:
 	./run.csh $(QUIET) -gen top_tb.cpp -oldmem -4x4        \
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
-	   -output /tmp/$${image}_out.raw   \
+	   -output $(TEMPDIR)/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        cmp io/$${image}_out.raw /tmp/$${image}_out.raw || echo FAIL
+        cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw || echo FAIL
 
 test_8x8_gray_small:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
@@ -115,9 +90,9 @@ test_8x8_gray_small:
 	./run.csh $(QUIET) -gen top_tb.cpp -usemem -8x8\
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
-	   -output /tmp/$${image}_out.raw   \
+	   -output $(TEMPDIR)/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        cmp io/$${image}_out.raw /tmp/$${image}_out.raw || echo FAIL
+        cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw || echo FAIL
 
 test_8x8_gray:
 	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
@@ -126,6 +101,6 @@ test_8x8_gray:
 	./run.csh $(QUIET) -gen top_tb.cpp -usemem -8x8\
 	   -config $${bitstream}          \
 	   -input  io/$${image}.png        \
-	   -output /tmp/$${image}_out.raw   \
+	   -output $(TEMPDIR)/$${image}_out.raw   \
 	   -nclocks 5M;                     \
-        cmp io/$${image}_out.raw /tmp/$${image}_out.raw || echo FAIL
+        cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw || echo FAIL

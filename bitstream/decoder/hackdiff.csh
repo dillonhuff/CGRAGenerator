@@ -6,6 +6,7 @@ goto MAIN
 USAGE:
   echo    "Usage:"
   echo    "  $0:t foo.bs foo.bsa -cgra cgra_info.txt"
+  echo    "Description:"
   echo -n "  # Decodes bitstream foo.bs and compares "
   echo    "result to annotated bitstream foo.bsa"
   exit
@@ -23,13 +24,21 @@ while ($#argv)
     case '-cgra':
       set cgra = "$2"; shift; breaksw
     default:
-      expr "$1" : '-' > /dev/null && goto USAGE
+      unset found_daesh
+      expr "$1" : '-' > /dev/null && set found_daesh
       grep '#' "$1"   > /dev/null && set bsa="$1" || set bs="$1"
+      if ($?found_daesh) then
+        echo ""
+        echo "ERROR Bad command-line arg '$1'"
+        goto USAGE
+      endif
   endsw
   shift;
 end
 
 foreach f ($bs $bsa $cgra)
+  test -f $f || echo ""
+  test -f $f || echo "ERROR Cannot find file '$f'"
   test -f $f || goto USAGE
 end
 
