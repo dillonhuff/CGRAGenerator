@@ -991,6 +991,8 @@ def get_connection_type(c):
     elif re.search("^0x",c):        type = "const"
 
     # FIXME/hack map din == pe_in for now, but it be UUUUGLYYYY etc.
+    # Why it's bad: din is the one-bit input (not currently drawing one-bits!)
+    # Eventually need separate pe_in_bus and pe_in_bit or something
     elif (c == "din"):
         type = "pe_in"
         print_once( "\nWARNING MEMHACK modeling '%s' as '%s'" % (c, type) )
@@ -999,7 +1001,6 @@ def get_connection_type(c):
         print_once( "\nWARNING MEMHACK modeling '%s' as '%s'" % (c, type) )
     else:
         print "ERROR Unknown type for connection '%s'" % c
-        # I'll probably regret this...
         sys.exit(-1)
 
     DBG=0
@@ -1007,6 +1008,7 @@ def get_connection_type(c):
     return type
 
 # FIXME/TODO Not used presently I think.  Do we keep it?
+# At this point, it probably wouldn't work even if it did get turned on...
 def drawgrid(cr):
 
     cr.save()
@@ -1722,6 +1724,10 @@ def find_tile_clicked(x,y):
     return tileno
 
 def find_port_clicked(x,y):
+    '''
+    Find connected port nearest to given (x,y) coords.
+    Return None if tile contains no valid (connected) ports.
+    '''
     DBG=0
     (row,col) = find_rc_clicked(x,y)
     (TLx,TLy) = (col*CANVAS_WIDTH,row*CANVAS_HEIGHT)
@@ -1744,29 +1750,38 @@ def find_port_clicked(x,y):
     mindist = CANVAS_WIDTH
     minport = "UNKNOWN"
     
-    # for dir in ("in","out"): # Nope what about memtiles
+    DBG=0
+    minwire = None
     dirlist = ("in", "out")
     if ismem: dirlist = ("in0", "in1", "out0", "out1")
     for dir in dirlist:
-
         for side in (0,1,2,3):
             for track in range (NTRACKS_PE_BUS_V): # FIXME what about BUS_H??
-                wirename = "%s_s%dt%d" % (dir,side,track)
+                portname = "%s_s%dt%d" % (dir,side,track)
 
-                # DBG = (tileno == 3) and (re.search("out[01]_s2t0", wirename))
-                (x,y) = connectionpoint(tileno, wirename)
+                # BUT! Is portname valid?
+                valid = TILE_LIST[tileno].is_connected(portname)
+                vstr =           "..... NOT VALID"
+                if valid: vstr = "VALID ........."
+                if DBG>1: print "I think port '%8s' is %s" % (portname, vstr)
+                if not valid: continue
+
+                # DBG = (tileno == 3) and (re.search("out[01]_s2t0", portname))
+                (x,y) = connectionpoint(tileno, portname)
 
                 # Come on you know this
                 (xd,yd) = (x-ux, y-uy)
                 dist = math.sqrt(xd*xd+yd*yd)
                 if DBG:
-                    print "wire %8s = (%4d,%4d)" % (wirename,x,y),
+                    print "wire %8s = (%4d,%4d)" % (portname,x,y),
                     print       "me = (%4d,%4d)" % (ux,uy),
                     print     "dist = (%.1f)" % dist
                 if (dist < mindist):
                     mindist = dist
-                    minwire = wirename
-                    if DBG>1: print "=> %s is closest port so far" % (wirename)
+                    minwire = portname
+                    if DBG>1: print "=> %s is closest port so far" % (portname)
+
+    # Note returns None if no valid ports found in tile
     if DBG: print "Closest port is maybe '%s'in tile %d?\n" % (minwire,tileno)
     return minwire
 
@@ -1963,10 +1978,12 @@ def button_press_handler(widget, event):
         # print "Where is the nearest wire to me?"
         tileno = find_tile_clicked(event.x, event.y)
         portname = find_port_clicked(event.x, event.y)
-
         DBG = 1
-        if DBG: print "I think you clicked near port '%s'" % portname
-        toggle_highlight(tileno,portname)
+        if (portname):
+            if DBG: print "I think you clicked near port '%s' in tile %d" % (portname,tileno)
+            toggle_highlight(tileno,portname)
+        else:
+            if DBG: print "Found no valid ports in tile %d" % tileno
 
     # print "CC='%s'" % CUR_CURSOR
     elif single_click and (CUR_CURSOR == 'magplus'):
@@ -1996,9 +2013,6 @@ def button_press_handler(widget, event):
 #     CUR_DRAW_WIDGET.queue_draw()
 
 class Tile:
-    # id = -1;
-    # (row,col) = (-1,-1)
-    # self.connectionlist = []
 
     def __init__(self, tileno, rc):
 
@@ -2017,6 +2031,14 @@ class Tile:
 
     def connect(self,connection):
         self.connectionlist.append(connection)
+
+    def is_connected(self,portname):
+        '''Return True is porname is connected to an active wire'''
+        for c in self.connectionlist:
+            parse = re.search("^([^ ]*) .* ([^ ]*)$", c)
+            pto = parse.group(1); pfrom = parse.group(2)
+            if portname in (pfrom,pto): return True
+        return False
 
     def find_connected_ports(self,portname):
         '''Find the other end of the wire connected to "portname"'''
@@ -2991,9 +3013,10 @@ def process_decoded_bitstream(bs):
 # Actual runcode starts here!  (FINALLY)
 
 def display_decoded_bitstream_file(filename):
-    DBG=1
+    DBG=0
     # call(["ls", "-l", "examples"]) # exec/run/shell
 
+    if DBG: print ""
     if DBG: print "Using", filename, "as input";
 
     # Let's make the title a bit more attractive
@@ -3179,7 +3202,7 @@ def main():
         bsview.py -demo                 # Runs through a couple built-in demos
         bsview.py --help                # Displays this help message
     ''' 
-    print sys.argv
+    if (0): print "ARGS=%s" % str(sys.argv)
     args = sys.argv[1:]  # argv[0] is command name
 
     # FIXME yes this is bad
