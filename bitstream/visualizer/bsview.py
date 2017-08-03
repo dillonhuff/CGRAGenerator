@@ -1918,14 +1918,15 @@ def trace_wire(tileno, portname, action):
     highlight = (action == "highlight")
     hlist = TILE_LIST[tileno].highlights
 
+    DBG=0
+    if (0):
+        (tilefoo,wfoo) = (0, "out_s0t4")
+        if (tileno == tilefoo) and (portname == wfoo):
+            DBG=1; print "Tracing port '%s' in tile %d" % (wfoo,tilefoo)
+
     # If already in desired state, do nothing (return)
     if   (highlight)     and (portname     in hlist): return
     elif (not highlight) and (portname not in hlist): return
-
-    DBG=0
-    # (tilefoo,wfoo) = (2, "in_s0t0")
-    # if (tileno == tilefoo) and (portname == wfoo):
-    #     DBG=1; print "Tracing port '%s' in tile %d" % (wfoo,tilefoo)
 
     if (highlight):
         hlist.append(portname)
@@ -1943,10 +1944,9 @@ def trace_wire(tileno, portname, action):
     cport = TILE_LIST[tileno].find_connected_ports(portname)
     for c in cport: trace_wire(tileno, c, action)
 
-
     # Highlight/unhighlight connected port in neighboring tile
     (adj_tileno,adj_wire) = find_matching_wire(tileno, portname)
-    if (adj_tileno): trace_wire(adj_tileno,adj_wire, action)
+    if (adj_wire): trace_wire(adj_tileno,adj_wire, action)
 
 def toggle_highlight(tileno,portname):
     global TILE_LIST
@@ -1961,8 +1961,9 @@ def button_press_handler(widget, event):
     double_click = (event.type == gtk.gdk._2BUTTON_PRESS)
     single_click = (event.type == gtk.gdk.BUTTON_PRESS)
     
-    if double_click: print "\ndouble click (%d,%d)" % (event.x,event.y)
-    if single_click: print "\nsingle click (%d,%d)" % (event.x,event.y)
+    DBG=0
+    if DBG and double_click: print "\ndouble click (%d,%d)" % (event.x,event.y)
+    if DBG and single_click: print "\nsingle click (%d,%d)" % (event.x,event.y)
 
     # ZOOM TO TILE (ugh FIXME should be a separate routine)
     # Double click should ALWAYS be zoom-to-tile maybe
@@ -1978,7 +1979,6 @@ def button_press_handler(widget, event):
         # print "Where is the nearest wire to me?"
         tileno = find_tile_clicked(event.x, event.y)
         portname = find_port_clicked(event.x, event.y)
-        DBG = 1
         if (portname):
             if DBG: print "I think you clicked near port '%s' in tile %d" % (portname,tileno)
             toggle_highlight(tileno,portname)
@@ -3230,6 +3230,7 @@ def find_matching_wire(tileno, w):
     DBG=0
     if (0):
         (tilefoo,wfoo) = (3, ("sb_wire_in1_s3t2", "out0_s1t2"))
+        (tilefoo,wfoo) = (1, ("in_s2t4"))
         if (tileno == tilefoo) and (w in wfoo):
             DBG=1; print "\nWant match for tile %d wire '%s'" % (tileno,w)
 
@@ -3267,6 +3268,7 @@ def find_matching_wire(tileno, w):
     elif (side==1): (r,c,side) = (r+1,c,side+2)
     elif (side==2): (r,c,side) = (r,c-1,side-2)
     elif (side==3): (r,c,side) = (r-1,c,side-2)
+
 
     if (r < 0): return (False,False)
     if (c < 0): return (False,False)
