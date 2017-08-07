@@ -33,6 +33,7 @@ def get_default_cgra_info_filename():
 try:
   sys.path.insert(0, "../../../SMT-PNR/src")
   from config.annotations import Annotations
+  sys.stderr.write("HOORAY decoder loaded 'official' Annotations.py from PNR repository\n\n")
 except:
   sys.stderr.write("WARNING decode.py could not load 'official' Annotations.py library\n\n")
   from lib.annotations import Annotations
