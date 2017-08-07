@@ -30,7 +30,6 @@ use the data structure like this sorta
 import re
 import sys
 
-
 # def sb_decode_cgra(bitstream_line):
 #     '''
 #     # Given a bitstream line e.g. "00050008 00000003",

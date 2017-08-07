@@ -18,10 +18,14 @@ global verbose
 verbose = False
 
 def get_default_cgra_info_filename():
+    '''
+    Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
+    '''
     import os
     mydir = os.path.dirname(os.path.realpath(__file__))
     cgra_filename = mydir + "/examples/cgra_info.txt"
 
+    # global verbose #(implied because use before def)
     if verbose: print("I think I am here:\n  %s" % mydir)
     if verbose: print("Default cgra_info file is\n  %s" % cgra_filename)
     return cgra_filename
@@ -30,7 +34,7 @@ try:
   sys.path.insert(0, "../../../SMT-PNR/src")
   from config.annotations import Annotations
 except:
-  sys.stderr.write("WARNING decode.py could not load 'official' Annotations.py library")
+  sys.stderr.write("WARNING decode.py could not load 'official' Annotations.py library\n\n")
   from lib.annotations import Annotations
 
 
