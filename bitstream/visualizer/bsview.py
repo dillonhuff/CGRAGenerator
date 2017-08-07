@@ -1372,6 +1372,61 @@ def get_cursor_magminus():
     CUR_CURSOR = 'magminus'
     return magminus
 
+def get_image_chiplevelzoom_in():
+    xpm_data = [
+        "15 15 3 1",
+        "       c None",
+        ".      c #000000000000",
+        "X      c #FFFFFFFFFFFF",
+        "               ",
+        " .           . ",
+        "  .  .   .  .  ",
+        "   . .   . .   ",
+        "    ..   ..    ",
+        "  ....   ....  ",
+        "               ",
+        "               ",
+        "               ",
+        "  ....   ....  ",
+        "    ..   ..    ",
+        "   . .   . .   ",
+        "  .  .   .  .  ",
+        " .           . ",
+        "               "
+        ]
+    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
+    image = gtk.image_new_from_pixbuf(pixbuf)
+    image.set_name("zoom_in")
+    return image
+    
+def get_image_chiplevelzoom_out():
+    xpm_data = [
+        "15 15 3 1",
+        "       c None",
+        ".      c #000000000000",
+        "X      c #FFFFFFFFFFFF",
+        "               ",
+        " .....   ..... ",
+        " ..         .. ",
+        " . .       . . ",
+        " .  .     .  . ",
+        " .   .   .   . ",
+        "      . .      ",
+        "               ",
+        "      . .      ",
+        " .   .   .   . ",
+        " .  .     .  . ",
+        " . .       . . ",
+        " ..         .. ",
+        " .....   ..... ",
+        "               "
+        ]
+    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
+    image = gtk.image_new_from_pixbuf(pixbuf)
+    image.set_name("zoom_out")
+    return image
+    
+
 # TODO someday maybe
 # A GdkWindow is a rectangular region on the screen. It's a low-level
 #  object, used to implement high-level objects such as
@@ -1444,11 +1499,28 @@ class CGRAWin(gtk.Window):
         # How to add icon images to buttons
         # https://stackoverflow.com/questions/2188659/stock-icons-not-shown-on-buttons
 
+        # BUTTON: arrow
+        # button_arrow   = gtk.Button("no zoom")
+        tooltip =   "arrow tool:\n" \
+                  + "  single-click to select/deselect a wire\n" \
+                  + "  double-click for single-tile zoom in/out "
+        button_arrow   = gtk.Button()
+        image = get_icon_arrow()
+        button_arrow.add(image)
+        button_arrow.connect("clicked", self.button_arrow_action)
+        button_arrow.set_tooltip_text(tooltip)
+        button_arrow.show()
+
+
         # BUTTON: zoom-in magnifying glass
         # button_magplus = gtk.Button("+")
-        tooltip = "magplus tool: Use to zoom in and recenter"
+        tooltip = "magplus tool: zoom in and recenter"
+        #
         image = gtk.Image()
-        image.set_from_stock(gtk.STOCK_ZOOM_IN, gtk.ICON_SIZE_SMALL_TOOLBAR)
+        # image.set_from_stock(gtk.STOCK_ZOOM_IN, gtk.ICON_SIZE_SMALL_TOOLBAR)
+        # gtk_image_set_from_stock() deprecated since version 3.10.
+        # Use gtk_image_set_from_icon_name() instead.
+        image.set_from_icon_name("zoom-in", gtk.ICON_SIZE_SMALL_TOOLBAR)
         image.show()
         #
         button_magplus = gtk.Button()
@@ -1457,11 +1529,16 @@ class CGRAWin(gtk.Window):
         button_magplus.set_tooltip_text(tooltip)
         button_magplus.show()
         
+
         # BUTTON: zoom-out magnifying glass
         # button_magminus= gtk.Button("-")
-        tooltip = "magminus tool: Use to zoom out and recenter"
+        tooltip = "magminus tool: zoom out and recenter"
+        #
         image = gtk.Image()
-        image.set_from_stock(gtk.STOCK_ZOOM_OUT, gtk.ICON_SIZE_SMALL_TOOLBAR)
+        # image.set_from_stock(gtk.STOCK_ZOOM_OUT, gtk.ICON_SIZE_SMALL_TOOLBAR)
+        # gtk_image_set_from_stock() deprecated since version 3.10.
+        # Use gtk_image_set_from_icon_name() instead.
+        image.set_from_icon_name("zoom-out", gtk.ICON_SIZE_SMALL_TOOLBAR)
         image.show()
         #
         button_magminus= gtk.Button()
@@ -1470,18 +1547,18 @@ class CGRAWin(gtk.Window):
         button_magminus.set_tooltip_text(tooltip)
         button_magminus.show()
 
-        # BUTTON: arrow
-        # button_arrow   = gtk.Button("no zoom")
-        tooltip = "arrow tool:\n"
-        tooltip = tooltip + "  single-click to select/deselect a wire\n"
-        tooltip = tooltip + "  double-click for single-tile zoom in/out "
-        button_arrow   = gtk.Button()
-        image = get_icon_arrow()
-        button_arrow.add(image)
-        button_arrow.connect("clicked", self.button_arrow_action)
-        button_arrow.set_tooltip_text(tooltip)
 
-        button_arrow.show()
+        # BUTTON: zoom-to-chip
+        tooltip = "chiplevel zoom and back (TBD)"
+        image = get_image_chiplevelzoom_out()
+        image.show()
+        #
+        button_mag100= gtk.Button()
+        button_mag100.set_name("mag100")
+        button_mag100.add(image)
+        button_mag100.connect("clicked", self.button_mag100_action)
+        button_mag100.set_tooltip_text(tooltip)
+        button_mag100.show()
 
         # GtkButton* button = gtk_button_new_with_label("button");   
         # gtk_widget_set_tooltip_text(button, "tooltip text");
@@ -1503,6 +1580,7 @@ class CGRAWin(gtk.Window):
         top_toolbar.pack_start(button_arrow,    expand, fill)
         top_toolbar.pack_start(button_magplus,  expand, fill)
         top_toolbar.pack_start(button_magminus, expand, fill)
+        top_toolbar.pack_start(button_mag100,   expand, fill)
         # top_toolbar.pack_start(button_hand,   expand, fill)
         top_toolbar.pack_start(button_exit,     expand, fill)
         # print dir(top_toolbar.props)
@@ -1592,6 +1670,26 @@ class CGRAWin(gtk.Window):
         # OLD: zoom('out')
         c = get_cursor_magminus()
         widget.window.set_cursor(c)
+
+    def button_mag100_action(widget, event):
+        # OLD: zoom('out')
+        # c = get_cursor_mag100()
+        # widget.window.set_cursor(c)
+        vbox = widget.get_children()[0]
+        top_toolbar = vbox.get_children()[0]
+        for c in top_toolbar.get_children():
+            if (c.get_name() == "mag100"):
+                image_name = c.get_children()[0].get_name()
+                if (image_name == "zoom_in"):
+                    image = get_image_chiplevelzoom_out()
+                else:
+                    image = get_image_chiplevelzoom_in()
+
+                image.show()
+                c.remove(c.get_children()[0])
+                c.add(image)
+                c.show()
+                return
 
     def button_exit_action(widget, event):
         Gtk.main_quit()
