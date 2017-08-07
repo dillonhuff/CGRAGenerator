@@ -56,3 +56,6 @@ $scripthome/decode.py $bs -cgra $cgra \
 
 set echo
 diff /tmp/tmp$$.{bsa,bsd}
+
+# CLEAN UP!!!
+/bin/rm /tmp/tmp$$.{bsa,bsd}
