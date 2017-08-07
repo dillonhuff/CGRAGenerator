@@ -820,11 +820,11 @@ for line in inputstream:
             if DBG: print "OOP found reg %s" % str(reg)
             (outwire,bitno) = reg
 
-            # print "# data[(%d, %d)] : @ tile (%d, %d) latch wire %d (%s) before connecting to %s"\
+            # Some wires are in the lower half of a memtile
+            # FIXME Elsewhere we used side 3 as part of criteria e.g.
+            # if re.search('sb_wire_out_1_BUS16_3', wire): r = r+1
+            if re.search('sb_wire_out_1_', outwire): r = r + 1
 
-            # Simplified
-            # print "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
-            #       % (bitno,bitno,r,c,outwire)
             comments[bitno] = "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
                   % (bitno,bitno,r,c,outwire)
 
