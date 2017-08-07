@@ -79,6 +79,27 @@ TILE_LIST = []
 
 PRINTED_CONFIG = False
 
+
+
+# Hey let's try a thing
+# use existing library from decoder to read cgra info
+# /nobackup/steveri/github/CGRAGenerator/bitstream/decoder/lib/cgra_info.py
+try:
+    sys.path.insert(0, "../decoder")
+    from lib import cgra_info
+    sys.stderr.write("HOORAY bsview loaded cgra_info module from decoder library\n\n")
+except:
+    sys.stderr.write("WARNING bsview could not load cgra_info module from decoder library\n\n")
+
+cgra_filename = '../../hardware/generator_z/top/cgra_info.txt'
+
+# FIXME move this try/except into the cgra_read function
+try:
+    cgra_info.read_cgra_info(cgra_filename)
+    print "Successfully loaded cgra_info file '%s'" % cgra_filename
+except:
+    print "WARNING Could not open cgra_info file '%s'" % cgra_filename
+
 # tileno-to-RC conversion
 def tileno2rc(tileno):
     '''
@@ -92,22 +113,35 @@ def tileno2rc(tileno):
     #   8   9  10  11      (2,0) (2,1) (2,2) (2,3)
     #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
     #
-
+    
     # Is this smart? Ans: NO   # FIXME/TODO
     if (GRID_WIDTH >= 8):
-        return tileno2rc_8x8(tileno)
+        return cgra_info.tileno2rc(tileno)
+        # return tileno2rc_8x8(tileno)
+
+#         (r,c) = cgra_info.tileno2rc(tileno)
+#         (row, col) = tileno2rc_8x8(tileno)
+#         if (c != col) or (r != row):
+#             print tileno
+#             print (r,c)
+#             print (row,col)
+#             sys.stderr.write("oops bad tileno2rc\n")
+#             sys.exit(-1)
+#         else:
+#             print "hooray looks good i guess"
+#             return (row, col)
 
     else:
-        row =     tileno % GRID_HEIGHT
-        col = int(tileno / GRID_WIDTH)
+        row = int(tileno / GRID_WIDTH)
+        col =     tileno % GRID_HEIGHT
 
         max = GRID_HEIGHT * GRID_WIDTH
         if tileno >= max:
             print "WARNING GRID_HEIGHT=%d GRID_WIDTH=%d" % (GRID_HEIGHT, GRID_WIDTH)
             print "WARNING tileno %d exceeds max tileno %d" % (tileno,max)
-            return False
+            return (-1,-1)
 
-        return [col, row];
+        return (row, col);
 
 def rc2tileno(row,col):
 
@@ -198,7 +232,7 @@ def tileno2rc_8x8(tileno):
     parse = re.search(search_string, cgra_tile_info)
     if (not parse):
         if DBG: print "WARNING Could not find tile number '%s' in the lookup table." % str(tileno)
-        return False
+        return (-1,-1)
         
     row = int(parse.group(1))
     col = int(parse.group(2))
@@ -2872,7 +2906,8 @@ def initialize_tile_list(w, h):
     if (DBG): print "Initializing tiles"
     while (i < 10000):
         rc = tileno2rc(i)
-        if not rc: break
+        if rc == (-1,-1): break
+        # print rc
 
         TILE_LIST.append(Tile(i,rc))
         if (DBG): print "%2s" % i,
@@ -3065,6 +3100,7 @@ def process_decoded_bitstream(bs):
             r'\2 <= \1',
             line)
 
+        # print "tileno = %s" % str(tileno)
         # Yes.  Sometimes this gets called more than once unnecessarily.
         build_connections(tileno,line)
 

@@ -322,8 +322,10 @@ def tileno2rc(tileno):
         t = int(tile.attrib['tile_addr'])
         r = int(tile.attrib['row'])
         c = int(tile.attrib['col'])
-        if t == tileno: return (r,c)
-    print "ERROR Cannot find tile %d in cgra_info" % tileno
+        if t == int(tileno): return (r,c)
+    print "WARNING Cannot find tile '%s' in cgra_info" % str(tileno)
+    return (-1,-1)
+
 
 def rc2tileno(row,col):
     '''
