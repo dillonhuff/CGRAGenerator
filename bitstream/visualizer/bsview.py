@@ -79,11 +79,11 @@ TILE_LIST = []
 
 PRINTED_CONFIG = False
 
-
-
-# Hey let's try a thing
-# use existing library from decoder to read cgra info
-# /nobackup/steveri/github/CGRAGenerator/bitstream/decoder/lib/cgra_info.py
+########################################################################
+# Config-file (cgra_info.txt) reader
+# Use existing library from decoder to read cgra info:
+#   CGRAGenerator/bitstream/decoder/lib/cgra_info.py
+# This gives us e.g. tileno2rc, rc2tileno...
 try:
     sys.path.insert(0, "../decoder")
     from lib import cgra_info
@@ -91,67 +91,66 @@ try:
 except:
     sys.stderr.write("WARNING bsview could not load cgra_info module from decoder library\n\n")
 
-cgra_filename = '../../hardware/generator_z/top/cgra_info.txt'
 
-# FIXME move this try/except into the cgra_read function
-try:
-    cgra_info.read_cgra_info(cgra_filename)
-    print "Successfully loaded cgra_info file '%s'" % cgra_filename
-except:
-    print "WARNING Could not open cgra_info file '%s'" % cgra_filename
-
-# tileno-to-RC conversion
+# tileno-to-RC conversion: use library instead
 def tileno2rc(tileno):
-    '''
-    # Given tile number tileno return the (row,column) equivalent
-    '''
-    # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown below.
-    #
-    #      tileno                    r,c
-    #   0   1   2   3      (0,0) (0,1) (0,2) (0,3)
-    #   4   5   6   7      (1,0) (1,1) (1,2) (1,3)
-    #   8   9  10  11      (2,0) (2,1) (2,2) (2,3)
-    #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
-    #
-    
-    # Is this smart? Ans: NO   # FIXME/TODO
-    if (GRID_WIDTH >= 8):
-        return cgra_info.tileno2rc(tileno)
-        # return tileno2rc_8x8(tileno)
+    return cgra_info.tileno2rc(tileno)
 
-#         (r,c) = cgra_info.tileno2rc(tileno)
-#         (row, col) = tileno2rc_8x8(tileno)
-#         if (c != col) or (r != row):
-#             print tileno
-#             print (r,c)
-#             print (row,col)
-#             sys.stderr.write("oops bad tileno2rc\n")
-#             sys.exit(-1)
-#         else:
-#             print "hooray looks good i guess"
-#             return (row, col)
+# tileno-to-RC conversion: use library instead
+# def tileno2rc(tileno):
+#     '''
+#     # Given tile number tileno return the (row,column) equivalent
+#     '''
+#     # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown below.
+#     #
+#     #      tileno                    r,c
+#     #   0   1   2   3      (0,0) (0,1) (0,2) (0,3)
+#     #   4   5   6   7      (1,0) (1,1) (1,2) (1,3)
+#     #   8   9  10  11      (2,0) (2,1) (2,2) (2,3)
+#     #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
+#     #
+#     
+#     # Is this smart? Ans: NO   # FIXME/TODO
+#     if (GRID_WIDTH >= 8):
+#         return cgra_info.tileno2rc(tileno)
+#         # return tileno2rc_8x8(tileno)
+# 
+# #         (r,c) = cgra_info.tileno2rc(tileno)
+# #         (row, col) = tileno2rc_8x8(tileno)
+# #         if (c != col) or (r != row):
+# #             print tileno
+# #             print (r,c)
+# #             print (row,col)
+# #             sys.stderr.write("oops bad tileno2rc\n")
+# #             sys.exit(-1)
+# #         else:
+# #             print "hooray looks good i guess"
+# #             return (row, col)
+# 
+#     else:
+#         row = int(tileno / GRID_WIDTH)
+#         col =     tileno % GRID_HEIGHT
+# 
+#         max = GRID_HEIGHT * GRID_WIDTH
+#         if tileno >= max:
+#             print "WARNING GRID_HEIGHT=%d GRID_WIDTH=%d" % (GRID_HEIGHT, GRID_WIDTH)
+#             print "WARNING tileno %d exceeds max tileno %d" % (tileno,max)
+#             return (-1,-1)
+# 
+#         return (row, col);
 
-    else:
-        row = int(tileno / GRID_WIDTH)
-        col =     tileno % GRID_HEIGHT
+# Use library instead
+# def rc2tileno(row,col):
+# 
+#     # Is this smart? Ans: NO   # FIXME/TODO
+#     if (GRID_WIDTH >= 8):
+#         return rc2tileno_8x8(row,col)
+# 
+#     return GRID_WIDTH *row + col
 
-        max = GRID_HEIGHT * GRID_WIDTH
-        if tileno >= max:
-            print "WARNING GRID_HEIGHT=%d GRID_WIDTH=%d" % (GRID_HEIGHT, GRID_WIDTH)
-            print "WARNING tileno %d exceeds max tileno %d" % (tileno,max)
-            return (-1,-1)
-
-        return (row, col);
-
+# Use library instead
 def rc2tileno(row,col):
-
-    # Is this smart? Ans: NO   # FIXME/TODO
-    if (GRID_WIDTH >= 8):
-        return rc2tileno_8x8(row,col)
-
-    return GRID_WIDTH *row + col
-
-
+    return int(cgra_info.rc2tileno(row,col))
 
 # Oh no
 cgra_tile_info = '''
@@ -3345,32 +3344,45 @@ def do_demos():
 def main():
     '''
     Usage:
-        bsview.py <b1.bsa> <b2.bsa>...  # Displays decoded bitstreams b1, b2...
-        bsview.py -demo                 # Runs through a couple built-in demos
-        bsview.py --help                # Displays this help message
+        bsview.py -cgra_info <cgra_info.txt> <b1.bsa> <b2.bsa> ...
+        # Displays decoded bitstreams b1, b2...
+
+        bsview.py -dem o   # Runs through a couple built-in demos
+        bsview.py --help   # Displays this help message
     ''' 
     if (0): print "ARGS=%s" % str(sys.argv)
     args = sys.argv[1:]  # argv[0] is command name
 
-    # FIXME yes this is bad
-    global REQUESTED_SIZE
+    # Default grid size is 8x8
+    global REQUESTED_SIZE    # FIXME yes this is bad
+    REQUESTED_SIZE = (8,8)   # default
 
-    # Defaults for old regime
-    # REQUESTED_SIZE = (4,4) # default
-
-    # Defaults for new regime
-    REQUESTED_SIZE = (8,8) # default
-
+    bsfiles = []
+    cgra_filename = ''
     if    (len(args) == 0): do_demos() # no args
     # if    (len(args) == 0): demo_sb_8x8() # no args
     while (len(args)  > 0):            # args
         # print "arg0 = %s" % (args[0])
-        if   (args[0] ==  "-demo"):  do_demos()
-        elif (args[0] == "--help"):  print main.__doc__
-        elif (args[0] == '-8x8'): REQUESTED_SIZE = (8,8)
-        else:      display_decoded_bitstream_file(args[0])
+        if   (args[0] == "-demo"):  do_demos()
+        elif (args[0] == "--help"): print main.__doc__
+        elif (args[0] == '-8x8'):   REQUESTED_SIZE = (8,8)
+        elif (args[0] == "-cgra_info"):
+            args = args[1:]
+            cgra_filename = args[0]
+        else:
+            bsfiles.append(args[0])
         args = args[1:]
-    return
+
+    # Load cgra_info
+    if REQUESTED_SIZE == (4,4):
+        cgra_info.read_cgra_info(cgra_filename, '4x4')
+    else:
+        cgra_info.read_cgra_info(cgra_filename, '8x8')
+
+    # Run through each bsa file requested on command line
+    for bsa in bsfiles:
+        display_decoded_bitstream_file(bsa)
+
 
 # called from trace_wire() ONLY
 def find_matching_wire(tileno, w):

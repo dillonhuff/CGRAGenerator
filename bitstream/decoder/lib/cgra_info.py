@@ -297,26 +297,48 @@ def sb_decode(sb,RR,DDDDDDDD):
     return (regs, connections)
 
 
-
-# global CGRA
 global CGRA
 CGRA = False
-def read_cgra_info(filename):
+
+def read_cgra_info(filename, grid='8x8'):
     # https://docs.python.org/3/library/xml.etree.elementtree.html
-    import xml.etree.ElementTree
 
+    # Default config file is e.g. 'cgra_info_8x8.txt' in this directory
+    import os
+    mydir = os.path.dirname(os.path.realpath(__file__))
+    default_filename = mydir + "/cgra_info_" + grid + ".txt"
+    if (filename == ''):
+        filename = default_filename
+        sys.stderr.write("WARNING using default cgra_info file\n  '%s'\n\n" % filename)
+
+    # If cannot open indicated config file (or if config file is blank), try default file
     global CGRA
-    CGRA = xml.etree.ElementTree.parse(filename).getroot()
-    # print root
-    # CGRA = root
-    # return root
-
+    import xml.etree.ElementTree
+    try:
+        sys.stderr.write("Using config file '%s'\n\n" % filename)
+        CGRA = xml.etree.ElementTree.parse(filename).getroot()
+        return
+    except:
+        sys.stderr.write("WARNING could not open cgra_info file '%s'\n" % filename)
+        filename = default_filename
+        sys.stderr.write("WARNING will try using default '%s'\n" % filename)
+        CGRA = xml.etree.ElementTree.parse(filename).getroot()
+        sys.stderr.write("WARNING loaded default '%s'\n\n" % filename)
 
 def tileno2rc(tileno):
     '''
     Search CGRA xml data structure with tile info e.g.
     <tile type='pe_tile_new' tile_addr='0' row='0' col='0' tracks='BUS1:5 BUS16:5 '>
     and return (row,col) corresponding to the given tile number.
+
+    E.g. a 4x4 grid of tiles is numbered 0-15, laid out as shown:
+
+                   tileno                    r,c
+                0   1   2   3      (0,0) (0,1) (0,2) (0,3)
+                4   5   6   7      (1,0) (1,1) (1,2) (1,3)
+                8   9  10  11      (2,0) (2,1) (2,2) (2,3)
+               12  13  14  15      (3,0) (3,1) (3,2) (3,3)
+
     '''
     for tile in CGRA.iter('tile'):
         t = int(tile.attrib['tile_addr'])
@@ -333,11 +355,21 @@ def rc2tileno(row,col):
     <tile type='pe_tile_new' tile_addr='0' row='0' col='0' tracks='BUS1:5 BUS16:5 '>
     and return tile number corresponding to given (row,col)
     '''
+    DBG = 0
+    # DBG = (row==1 and col==3)
     for tile in CGRA.iter('tile'):
         t = int(tile.attrib['tile_addr'])
         r = int(tile.attrib['row'])
         c = int(tile.attrib['col'])
-        if (r,c) == (row,col): return t
+        if DBG: print (r,c,row/2,col)
+        if (r,c) == (row,col):
+            return t
+
+        # r might be bottom half of a memtile
+        elif tile.attrib['type'] == 'memory_tile' and (r,c) == (row-row%2, col):
+            if DBG: print "WARNING Specified r,c is bottom half of a memory tile"
+            return t
+
     print "ERROR Cannot find tile corresponding to row %d col %d in cgra_info" \
           % (row,col)
 
