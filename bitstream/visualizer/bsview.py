@@ -159,49 +159,6 @@ cgra_tile_info = '''
 def tiletype(tileno):
     return TILE_LIST[tileno].type
 
-def tileno2rc_8x8(tileno):
-    DBG = 0
-    search_string = "tile_addr='%s'.*row='(\d+)'.*col='(\d+)'" % str(tileno)
-    parse = re.search(search_string, cgra_tile_info)
-    if (not parse):
-        if DBG: print "WARNING Could not find tile number '%s' in the lookup table." % str(tileno)
-        return (-1,-1)
-        
-    row = int(parse.group(1))
-    col = int(parse.group(2))
-    if (DBG): print "Found tile number '%s' => row '%d' col '%d'" % (str(tileno), row, col)
-    return (row,col)
-
-def test_tileno2rc_8x8():
-    for i in range(0, 55):
-        tileno2rc_8x8(i)
-# test_tileno2rc_8x8(); sys.exit(0)
-
-
-def rc2tileno_8x8(row,col):
-    DBG = 0
-    search_string = "tile_addr='(\d+)'.*row='%d'.*col='%d'" % (row,col)
-    parse = re.search(search_string, cgra_tile_info)
-    if (not parse):
-        # Might not work if clicked on lower half of two-high mem tile.
-        # => If row number is odd, try again with row-1
-        if (row%2):
-            return rc2tileno_8x8(row-1,col)
-        else:
-            print "WARNING: Could not find tile at (r'%s',c'%s')" % (str(row), str(col))
-            return False
-        
-    tileno = int(parse.group(1))
-    if (DBG): print "Found tile (r%dc%d) => tileno '%d'" % (row, col, tileno)
-    return tileno
-
-def test_rc2tileno_8x8():
-    for r in range(0, 7):
-        for c in range (0, 7):
-            t = rc2tileno_8x8(r,c)
-
-# test_rc2tileno_8x8(); sys.exit(0);
-
 # Could/should derive these from "BUS:5" etc.
 NTRACKS_PE_BUS_H = 5;
 NTRACKS_PE_BUS_V = 5;
