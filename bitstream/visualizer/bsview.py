@@ -84,71 +84,15 @@ PRINTED_CONFIG = False
 # Use existing library from decoder to read cgra info:
 #   CGRAGenerator/bitstream/decoder/lib/cgra_info.py
 # This gives us e.g. tileno2rc, rc2tileno...
-try:
-    sys.path.insert(0, "../decoder")
-    from lib import cgra_info
-    sys.stderr.write("HOORAY bsview loaded cgra_info module from decoder library\n\n")
-except:
-    sys.stderr.write("WARNING bsview could not load cgra_info module from decoder library\n\n")
 
+sys.path.insert(0, "../decoder")
+from lib import cgra_info
 
-# tileno-to-RC conversion: use library instead
+# tileno-to-RC conversion: use cgra_info library
 def tileno2rc(tileno):
     return cgra_info.tileno2rc(tileno)
 
-# tileno-to-RC conversion: use library instead
-# def tileno2rc(tileno):
-#     '''
-#     # Given tile number tileno return the (row,column) equivalent
-#     '''
-#     # Assumes a 4x4 grid of tiles numbered 0-15, laid out as shown below.
-#     #
-#     #      tileno                    r,c
-#     #   0   1   2   3      (0,0) (0,1) (0,2) (0,3)
-#     #   4   5   6   7      (1,0) (1,1) (1,2) (1,3)
-#     #   8   9  10  11      (2,0) (2,1) (2,2) (2,3)
-#     #  12  13  14  15      (3,0) (3,1) (3,2) (3,3)
-#     #
-#     
-#     # Is this smart? Ans: NO   # FIXME/TODO
-#     if (GRID_WIDTH >= 8):
-#         return cgra_info.tileno2rc(tileno)
-#         # return tileno2rc_8x8(tileno)
-# 
-# #         (r,c) = cgra_info.tileno2rc(tileno)
-# #         (row, col) = tileno2rc_8x8(tileno)
-# #         if (c != col) or (r != row):
-# #             print tileno
-# #             print (r,c)
-# #             print (row,col)
-# #             sys.stderr.write("oops bad tileno2rc\n")
-# #             sys.exit(-1)
-# #         else:
-# #             print "hooray looks good i guess"
-# #             return (row, col)
-# 
-#     else:
-#         row = int(tileno / GRID_WIDTH)
-#         col =     tileno % GRID_HEIGHT
-# 
-#         max = GRID_HEIGHT * GRID_WIDTH
-#         if tileno >= max:
-#             print "WARNING GRID_HEIGHT=%d GRID_WIDTH=%d" % (GRID_HEIGHT, GRID_WIDTH)
-#             print "WARNING tileno %d exceeds max tileno %d" % (tileno,max)
-#             return (-1,-1)
-# 
-#         return (row, col);
-
-# Use library instead
-# def rc2tileno(row,col):
-# 
-#     # Is this smart? Ans: NO   # FIXME/TODO
-#     if (GRID_WIDTH >= 8):
-#         return rc2tileno_8x8(row,col)
-# 
-#     return GRID_WIDTH *row + col
-
-# Use library instead
+# Use cgra_info library
 def rc2tileno(row,col):
     return int(cgra_info.rc2tileno(row,col))
 
@@ -213,19 +157,7 @@ cgra_tile_info = '''
 '''
 
 def tiletype(tileno):
-    #     # FIXME again, search string should probably be compiled globally, outside all loops
-    #     
-    #     search_pattern = "type='(\S+)'.*tile_addr='%s'" % str(tileno)
-    #     parse = re.search(search_pattern, cgra_tile_info)
-    #     if (not parse):
-    #         print "ERROR could not find type for tile %d" % tileno
-    #         sys.exit(-1)
-    #     else:
-    #         type = parse.group(1)
-    #         # print "Tile %d has type '%s'" % (tileno,type)
-    #         return type
-    return cgra_info.tiletype(tileno)
-
+    return TILE_LIST[tileno].type
 
 def tileno2rc_8x8(tileno):
     DBG = 0
@@ -2169,7 +2101,9 @@ class Tile:
 
         self.label          = ""     # E.g. "ADD", "MUL", "I/O"
         self.tileno         = tileno
+        self.type           = cgra_info.tiletype(tileno)
         (self.row,self.col) = rc
+        # TODO could check to see that rc = cgra_info.tileno2rc(tileno)
         self.connectionlist = []
 
         # List of output wires that should be latched
@@ -2693,7 +2627,8 @@ class Tile:
     # one for draw-in-grid and one for draw-standalone etc
 
     def draw_all_ports(self,cr):
-        ismem = (tiletype(self.tileno) == "memory_tile")
+        # ismem = (tiletype(self.tileno) == "memory_tile")
+        ismem = (self.type == "memory_tile")
         dirlist = ("in", "out")
         if ismem: dirlist = ("in0", "in1", "out0", "out1")
         for side in (0,1,2,3):
@@ -2738,7 +2673,8 @@ class Tile:
                 self.connectionlist.remove(c)
                 # print "AFTER: %s\n\n\n" % str(self.connectionlist)
 
-        if (tiletype(self.tileno) == "memory_tile"):
+        # if (tiletype(self.tileno) == "memory_tile"):
+        if (self.type == "memory_tile"):
             drawmemtile(cr)
         else: drawtile(cr)
 
@@ -3349,7 +3285,7 @@ def main():
         bsview.py -cgra_info <cgra_info.txt> <b1.bsa> <b2.bsa> ...
         # Displays decoded bitstreams b1, b2...
 
-        bsview.py -dem o   # Runs through a couple built-in demos
+        bsview.py -demo    # Runs through a couple built-in demos
         bsview.py --help   # Displays this help message
     ''' 
     if (0): print "ARGS=%s" % str(sys.argv)

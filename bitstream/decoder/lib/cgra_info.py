@@ -171,6 +171,7 @@ def cb_decode(cb,tileno,DDDDDDDD):
     DBG=0
     if DBG: print "Found %s %s" % (cb.tag, str(cb.attrib))
 
+    # FIXME every 'iter' should instead probably be a 'findall'!
     for sw in cb.iter('sel_width'):
 
         # HACK/WRONG/FIXME?
@@ -178,6 +179,7 @@ def cb_decode(cb,tileno,DDDDDDDD):
         sel_width = int(sw.text)
         configh = sel_width - 1
 
+    # FIXME every 'iter' should instead probably be a 'findall'!
     for mux in cb.iter('mux'):
         outwire = mux.attrib['snk']
 
@@ -216,6 +218,7 @@ def sb_decode(sb,RR,DDDDDDDD):
     connections = {}
 
     if DBG: print "Found %s %s" % (sb.tag, str(sb.attrib))
+    # FIXME every 'iter' should instead probably be a 'findall'!
     for mux in sb.iter('mux'):
         if DBG: print "  Found %s %s" % (mux.tag, str(mux.attrib))
 
@@ -340,7 +343,7 @@ def tileno2rc(tileno):
                12  13  14  15      (3,0) (3,1) (3,2) (3,3)
 
     '''
-    for tile in CGRA.iter('tile'):
+    for tile in CGRA.findall('tile'):
         t = int(tile.attrib['tile_addr'])
         r = int(tile.attrib['row'])
         c = int(tile.attrib['col'])
@@ -357,7 +360,7 @@ def rc2tileno(row,col):
     '''
     DBG = 0
     # DBG = (row==1 and col==3)
-    for tile in CGRA.iter('tile'):
+    for tile in CGRA.findall('tile'):
         t = int(tile.attrib['tile_addr'])
         r = int(tile.attrib['row'])
         c = int(tile.attrib['col'])
@@ -374,27 +377,15 @@ def rc2tileno(row,col):
           % (row,col)
 
 def tiletype(tileno):
-    for tile in CGRA.iter('tile'):
+    # print "Looking for type of tile %d" % tileno
+    for tile in CGRA.findall('tile'):
         t = int(tile.attrib['tile_addr'])
-        if (t == tileno): return tile.attrib['type'])
+        if (t == tileno):
+            return tile.attrib['type']
 
     print "ERROR Cannot find tile %d in cgra_info" % tileno
     print "ERROR Could not find type for tile %d" % tileno
     sys.exit(-1)
-
-
-#     search_pattern = "type='(\S+)'.*tile_addr='%s'" % str(tileno)
-#     parse = re.search(search_pattern, cgra_tile_info)
-#     if (not parse):
-#         print "ERROR could not find type for tile %d" % tileno
-#         sys.exit(-1)
-#     else:
-#         type = parse.group(1)
-#         # print "Tile %d has type '%s'" % (tileno,type)
-#         return type
-
-
-
 
 
 
@@ -419,7 +410,7 @@ def get_element(EE, TTTT):
     tileno = int(TTTT,16)
     elemno = int(  EE,16)
     if DBG: print "Looking up tile %d element %d" % (tileno, elemno)
-    for tile in CGRA.iter('tile'):
+    for tile in CGRA.findall('tile'):
         t = int(tile.attrib['tile_addr'])
         r = int(tile.attrib['row'])
         c = int(tile.attrib['col'])
@@ -454,7 +445,7 @@ def get_element(EE, TTTT):
 #     tileno = int(TTTT,16)
 #     elemno = int(  EE,16)
 #     print "FOO looking up tile %d element %d" % (tileno, elemno)
-#     for tile in CGRA.iter('tile'):
+#     for tile in CGRA.findall('tile'):
 #         t = int(tile.attrib['tile_addr'])
 #         r = int(tile.attrib['row'])
 #         c = int(tile.attrib['col'])
