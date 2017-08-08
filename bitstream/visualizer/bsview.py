@@ -1763,9 +1763,9 @@ def find_port_clicked(x,y):
     if DBG: print "Closest port is maybe '%s'in tile %d?\n" % (minwire,tileno)
     return minwire
 
-def zoom_to_tile1(event):
+def zoom_to_tile(event):
     '''
-    Button-press event calls zoom_to_tile1() to queue up the zoom.
+    Button-press event calls zoom_to_tile() to queue up the zoom.
     '''
     # NOPE Later, draw event calls zoom_to_tile2(), which does final
     # NOPE scroll-adjust for the zoom.
@@ -1949,7 +1949,7 @@ def button_press_handler(widget, event):
     # 
     if double_click and (CUR_CURSOR == 'arrow'):
         if DBG: print "zoom to tile"
-        zoom_to_tile1(event)
+        zoom_to_tile(event)
         refresh() # Redraw after zoom
         # print "\n Z2 DRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
 
