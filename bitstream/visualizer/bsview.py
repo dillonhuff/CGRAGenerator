@@ -213,17 +213,19 @@ cgra_tile_info = '''
 '''
 
 def tiletype(tileno):
-    # FIXME again, search string should probably be compiled globally, outside all loops
-    
-    search_pattern = "type='(\S+)'.*tile_addr='%s'" % str(tileno)
-    parse = re.search(search_pattern, cgra_tile_info)
-    if (not parse):
-        print "ERROR could not find type for tile %d" % tileno
-        sys.exit(-1)
-    else:
-        type = parse.group(1)
-        # print "Tile %d has type '%s'" % (tileno,type)
-        return type
+    #     # FIXME again, search string should probably be compiled globally, outside all loops
+    #     
+    #     search_pattern = "type='(\S+)'.*tile_addr='%s'" % str(tileno)
+    #     parse = re.search(search_pattern, cgra_tile_info)
+    #     if (not parse):
+    #         print "ERROR could not find type for tile %d" % tileno
+    #         sys.exit(-1)
+    #     else:
+    #         type = parse.group(1)
+    #         # print "Tile %d has type '%s'" % (tileno,type)
+    #         return type
+    return cgra_info.tiletype(tileno)
+
 
 def tileno2rc_8x8(tileno):
     DBG = 0

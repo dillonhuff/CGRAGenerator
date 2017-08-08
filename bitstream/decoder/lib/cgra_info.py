@@ -373,6 +373,31 @@ def rc2tileno(row,col):
     print "ERROR Cannot find tile corresponding to row %d col %d in cgra_info" \
           % (row,col)
 
+def tiletype(tileno):
+    for tile in CGRA.iter('tile'):
+        t = int(tile.attrib['tile_addr'])
+        if (t == tileno): return tile.attrib['type'])
+
+    print "ERROR Cannot find tile %d in cgra_info" % tileno
+    print "ERROR Could not find type for tile %d" % tileno
+    sys.exit(-1)
+
+
+#     search_pattern = "type='(\S+)'.*tile_addr='%s'" % str(tileno)
+#     parse = re.search(search_pattern, cgra_tile_info)
+#     if (not parse):
+#         print "ERROR could not find type for tile %d" % tileno
+#         sys.exit(-1)
+#     else:
+#         type = parse.group(1)
+#         # print "Tile %d has type '%s'" % (tileno,type)
+#         return type
+
+
+
+
+
+
 def get_element(EE, TTTT):
     '''
     Retrieve the feature associated with element EE in tile TTTT.
