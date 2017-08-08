@@ -388,6 +388,13 @@ def tiletype(tileno):
     sys.exit(-1)
 
 
+def tile_exists(tileno):
+    for tile in CGRA.findall('tile'):
+        t = int(tile.attrib['tile_addr'])
+        if (t == tileno):
+            return True
+    return False
+
 
 def get_element(EE, TTTT):
     '''

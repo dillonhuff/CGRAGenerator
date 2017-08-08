@@ -88,73 +88,11 @@ PRINTED_CONFIG = False
 sys.path.insert(0, "../decoder")
 from lib import cgra_info
 
-# tileno-to-RC conversion: use cgra_info library
 def tileno2rc(tileno):
     return cgra_info.tileno2rc(tileno)
 
-# Use cgra_info library
 def rc2tileno(row,col):
     return int(cgra_info.rc2tileno(row,col))
-
-# Oh no
-cgra_tile_info = '''
-  <tile type='pe_tile_new' tile_addr='0' row='0' col='0' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='1' row='0' col='1' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='2' row='0' col='2' tracks='BUS1:5 BUS16:5 '>
-  <tile type='memory_tile' tile_addr='3' row='0' col='3' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='4' row='0' col='4' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='5' row='0' col='5' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='6' row='0' col='6' tracks='BUS1:5 BUS16:5 '>
-  <tile type='memory_tile' tile_addr='7' row='0' col='7' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='8' row='1' col='0' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='9' row='1' col='1' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='10' row='1' col='2' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='11' row='1' col='4' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='12' row='1' col='5' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='13' row='1' col='6' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='14' row='2' col='0' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='15' row='2' col='1' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='16' row='2' col='2' tracks='BUS1:5 BUS16:5 '>
-  <tile type='memory_tile' tile_addr='17' row='2' col='3' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='18' row='2' col='4' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='19' row='2' col='5' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='20' row='2' col='6' tracks='BUS1:5 BUS16:5 '>
-  <tile type='memory_tile' tile_addr='21' row='2' col='7' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='22' row='3' col='0' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='23' row='3' col='1' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='24' row='3' col='2' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='25' row='3' col='4' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='26' row='3' col='5' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='27' row='3' col='6' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='28' row='4' col='0' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='29' row='4' col='1' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='30' row='4' col='2' tracks='BUS1:5 BUS16:5 '>
-  <tile type='memory_tile' tile_addr='31' row='4' col='3' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='32' row='4' col='4' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='33' row='4' col='5' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='34' row='4' col='6' tracks='BUS1:5 BUS16:5 '>
-  <tile type='memory_tile' tile_addr='35' row='4' col='7' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='36' row='5' col='0' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='37' row='5' col='1' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='38' row='5' col='2' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='39' row='5' col='4' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='40' row='5' col='5' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='41' row='5' col='6' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='42' row='6' col='0' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='43' row='6' col='1' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='44' row='6' col='2' tracks='BUS1:5 BUS16:5 '>
-  <tile type='memory_tile' tile_addr='45' row='6' col='3' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='46' row='6' col='4' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='47' row='6' col='5' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='48' row='6' col='6' tracks='BUS1:5 BUS16:5 '>
-  <tile type='memory_tile' tile_addr='49' row='6' col='7' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='50' row='7' col='0' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='51' row='7' col='1' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='52' row='7' col='2' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='53' row='7' col='4' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='54' row='7' col='5' tracks='BUS1:5 BUS16:5 '>
-  <tile type='pe_tile_new' tile_addr='55' row='7' col='6' tracks='BUS1:5 BUS16:5 '>
-'''
 
 def tiletype(tileno):
     return TILE_LIST[tileno].type
@@ -239,10 +177,14 @@ WIN_HEIGHT = 4*CANVAS_HEIGHT+ UL_MARGIN
 CUR_SCALE_FACTOR = 1;
 INIT_SCALE_FACTOR = 1;
 
-def set_initial_scale_factor():
+def set_initial_scale_factor(w,h):
     global WIN_WIDTH; global WIN_HEIGHT; global UL_MARGIN
     global CUR_SCALE_FACTOR;
     global INIT_SCALE_FACTOR;
+
+    # FIXME i think this is the only place where GRID_WIDTH and HEIGHT are used...
+    global GRID_WIDTH; global GRID_HEIGHT
+    GRID_WIDTH  = w;   GRID_HEIGHT = h
 
     if (GRID_WIDTH <= 2):
         CUR_SCALE_FACTOR = 2.0 # Why squint?
@@ -1389,7 +1331,8 @@ class CGRAWin(gtk.Window):
         gtk.Window.__init__(self)
         self.props.title = title
 
-        set_initial_scale_factor()
+        # set_initial_scale_factor()
+        # already done by initialize_tile_list...
         set_initial_window_size()
 
         # FIXME minimum width (above) should be based on screen height,
@@ -2049,7 +1992,8 @@ def button_press_handler(widget, event):
 
 class Tile:
 
-    def __init__(self, tileno, rc):
+    # def __init__(self, tileno, rc):
+    def __init__(self, tileno):
 
         # List of ports (wires) currently being highlighted e.g.
         # if ('out_s1t1' in highlights): setcolor(cr, red)
@@ -2059,7 +2003,10 @@ class Tile:
         self.label          = ""     # E.g. "ADD", "MUL", "I/O"
         self.tileno         = tileno
         self.type           = cgra_info.tiletype(tileno)
-        (self.row,self.col) = rc
+
+        # (self.row,self.col) = rc
+        (self.row,self.col) = cgra_info.tileno2rc(tileno)
+
         # TODO could check to see that rc = cgra_info.tileno2rc(tileno)
         self.connectionlist = []
 
@@ -2773,111 +2720,25 @@ def demo_connections_4x4():
 
 def initialize_tile_list(w, h):
 
-    global GRID_WIDTH
-    global GRID_HEIGHT
-
-    # This will be needed elsewhere!
-    GRID_WIDTH  = w
-    GRID_HEIGHT = h
+    # Let set_inital_scale_factor() do this...
+    # global GRID_WIDTH; global GRID_HEIGHT
+    # # This will be needed elsewhere!
+    # GRID_WIDTH  = w;   GRID_HEIGHT = h
     
-    set_initial_scale_factor()
-
-#     # for i in TILE_LIST: TILE_LIST[i] = Tile(i)
-#     if (DBG): print "Initializing tiles"
-#     for i in TILE_LIST:
-#         rc = tileno2rc(i)
-#         if (not rc):
-#             TILE_LIST[i] = False
-#         else:
-#             if (DBG): print "%2s" % i,
-#             if (DBG and (i%16 == 15)): print ""
-#             TILE_LIST[i] = Tile(i)
-#     if (DBG): print ""
+    set_initial_scale_factor(w,h)
 
     DBG=0
     i = 0
     global TILE_LIST  
     if (DBG): print "Initializing tiles"
-    while (i < 10000):
-        rc = tileno2rc(i)
-        if rc == (-1,-1): break
-        # print rc
 
-        TILE_LIST.append(Tile(i,rc))
+    while cgra_info.tile_exists(i):
+        # rc = tileno2rc(i)
+        # TILE_LIST.append(Tile(i,rc))
+        TILE_LIST.append(Tile(i))
         if (DBG): print "%2s" % i,
         if (DBG and (i%16 == 15)): print ""
         i = i + 1
-
-
-# NO LONGER USED reads old format from my decoder
-# def process_decoded_bitstream_old(bs):
-#     DBG=1
-#     # initialize_tile_list(4,4)
-#     global REQUESTED_SIZE
-#     (nrows,ncols) = REQUESTED_SIZE
-#     initialize_tile_list(nrows, ncols)
-#     tile = TILE_LIST; # A convenient handle
-# 
-# #     (r,c) = (6,1)
-# #     t = rc2tileno(r,c)
-# #     print "Row %d col %d = tileno %s" % (r, c, t)
-# #     print 
-# #     sys.exit(0)
-# 
-# 
-#     tileno = 43;
-#     (r,c) = tileno2rc(tileno)
-#     print "Tile %d = row %d col %d" % (tileno, r, c)
-#     print "Row %d col %d = tileno %d" % (r, c, rc2tileno(r,c))
-#     print ""
-# 
-#     tileno = 51;
-#     (r,c) = tileno2rc(tileno)
-#     print "Tile %d = row %d col %d" % (tileno, r, c)
-#     print "Row %d col %d = tileno %d" % (r, c, rc2tileno(r,c))
-#     print ""
-# 
-# #     tileno = 57;
-# #     (r,c) = tileno2rc(tileno)
-# #     print "Tile %d = row %d col %d" % (tileno, r, c)
-# #     sys.exit(0)
-# 
-#     for line in bs:
-#         if (DBG>1): print line.rstrip()
-#         # Search each line for connections
-# 
-#         if (re.search("CGRA OUTPUT", line)):
-#             tile[tileno].label = "OUT"
-#             continue
-#         elif (re.search("CGRA INPUT", line)):
-#             tile[tileno].label = "IN"
-#             continue
-# 
-#         # foundtileno = re.search("^TILE *([0-9]*)", line)
-#         # I guess python uses '\A' instead of '^' :(
-#         foundtileno = re.search("^\s*TILE\s*([0-9]+)", line)
-#         if (foundtileno):
-#             tileno = int(foundtileno.group(1))
-#             if (DBG>1): print "*** Found tile %d" % tileno
-#             continue
-# 
-#         teststring = line
-#         while True:
-#             # Want to find all connections of the form "out_s0t0 <= in_s1t0"
-#             # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
-#             # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
-# 
-#             # NO list all connections and let GOD sort 'em out...
-#             x = re.search("([^ ]* *<= *[^ ]*)(.*)", teststring)
-# 
-#             # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", teststring)
-#             if (x):
-#                 connection = x.group(1).strip()
-#                 print "Tile %d found connection '%s'" % (tileno,connection)
-#                 teststring = x.group(2).strip()
-#                 tile[tileno].connect(connection)
-#             else:
-#                 break;
 
 def build_connections(tileno, connection_list):
     while True:
