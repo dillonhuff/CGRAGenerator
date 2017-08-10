@@ -12,7 +12,7 @@ that, given (x,y) coords, tells
 - am i inside or outside of the tile?
 '''
 
-
+# FIXME dude you gotta pay attention to lists [] vs. tuples ()
 
 # # gi a.k.a. pygobjects, pygtk
 # import gi
@@ -1797,131 +1797,51 @@ def how_many_tiles_are_visible_now():
 
         return ntiles_visible
 
-
-
-# # NEW STUFF IN PROGRESS
-# Class Zoom:
-#     x = 0
-#     y = 0
-#     scale_factor = 0
-#     def __init__(self, x, y, sf):
-#         self.x = x
-#         self.y = y
-#         self.scale_factor = sf
-# 
-# 
-# 
-# # What if...?
-# def zoom_to_tile1(event):
-#     global ZTT
-#     if (ZTT == None): ZTT = Zoom()
-#     if ZTT.is_unzoomed():
-#         ZTT.save_state(CUR_SCALE_FACTOR, event.x, event.y)
-# 
-#         ZOOMTILE = find_tile_clicked(event.x, event.y)
-#         if DBG: print "Zoom in to tile %s!" % str(ZOOMTILE)
-#         sf = how_many_tiles_are_visible_now()
-#         (x,y) = find_tile_center(ZOOMTILE)
-#         ZTT.zoom(x,y)
-#     else:
-#         ZTT.unzoom()
-# 
-#     if not already_zoomed:
-#         save_zoom_state("ZTT")
-#         ZOOMTILE = find_tile_clicked(event.x, event.y)
-#         if DBG: print "Zoom in to tile %s!" % str(ZOOMTILE)
-#         sf = how_many_tiles_are_visible_now()
-#         zoom(sf)
-#         refresh()
-#         (x,y) = find_tile_center(ZOOMTILE)
-#         recenter(x,y)
-#         refresh()
-#     else:
-#         unzoom_and_recenter_using_state("ZTT")
-
-
-
-
-global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 def zoom_to_tile(event):
     '''
     If not yet zoomed in, save current coords for later zoom-out and
     zoom in to clicked tile at event.(x,y)
     If already zoomed in, zoom out to saved coords and scale factor.
     '''
-    global ZOOMTILE;
-    global CUR_SCALE_FACTOR
-    global SAVE_SCALE_FACTOR
-
-    # Need to know current scale factor so we keep track of it in a global
     DBG = 0
-    if DBG: print ""
-    if DBG: print "CUR_SCALE_FACTOR %s" % CUR_SCALE_FACTOR
-    if DBG: print ""
 
-    # Can't get scale factor from context matrix, it's always (1,0,0,1,0,0) why?
-    # if (0): print "matrix = " + str(DRAW_HANDLER_CR.get_matrix())
+    global ZTT_PREV
 
-    # If already zoomed out (ZOOMTILE = -1), zoom in to tile indicated.
-    # If already zoomed in (ZOOMTILE=tileno), zoom out.
-    global PREZOOMx; global PREZOOMy
-    if (ZOOMTILE == -1):
-        if DBG: print "Zoom in!"
+    # Initialize if not yet set
+    try: ZTT_PREV
+    except: ZTT_PREV = (0,0, 1.0, 'unzoomed') # (x, y, sf, zoomed)
 
-        # Save prezoom x,y coords and scale factor
-        # (Is this terrible?  this is probably terrible.)
-        (PREZOOMx,PREZOOMy) = (event.x, event.y)
-        SAVE_SCALE_FACTOR = CUR_SCALE_FACTOR
+    (x,y,sf,z) = ZTT_PREV
 
-        # global ZOOMTILE tells draw routines what to do later
+    # FIXME would this be better, yes?  Yes I think so.
+    # ZTT_PREV = {'x', 0, 'y', 0, 'sf', 1.0, 'zoomed', True}
+
+    # DBG = 0
+    # if DBG: print ""
+    # if DBG: print "CUR_SCALE_FACTOR %s" % CUR_SCALE_FACTOR
+    # if DBG: print ""
+
+    if (z == 'unzoomed'):
+        # Save current view for later unzooming
+        ZTT_PREV = (event.x, event.y, CUR_SCALE_FACTOR, 'zoomed')
         ZOOMTILE = find_tile_clicked(event.x, event.y)
         if DBG: print "Zoom in to tile %s!" % str(ZOOMTILE)
 
-        # Before: displaying sf tiles.  After: display 1 tile.  Zoom factor: sf
         sf = how_many_tiles_are_visible_now()
         zoom(sf)
 
-        # FIXME Is this first refresh necessary?  Try it with/without maybe.
+        # MUST refresh before recenter.
         refresh()
-
         (x,y) = find_tile_center(ZOOMTILE)
         recenter(x,y)
-        refresh()
-        # print "how's that?"; sys.stdout.flush(); time.sleep(2)
-
+        # refresh()
 
     else:
-        if DBG: print "Zoom out!"
-        ZOOMTILE = -1;
+        # Restore to pre-zoom view
+        zoom(sf/CUR_SCALE_FACTOR)
+        recenter(x,y)
+        ZTT_PREV = (0,0, 1.0, 'unzoomed') # (x, y, sf, zoomed)
 
-#         print "What to zoom, what to zoom..."
-#         print "    NOT 1!!!"
-#         print "  CUR_SCALE_FACTOR = %.2f" % CUR_SCALE_FACTOR
-#         print "  CUR_SCALE_FACTOR/.5 = %.2f" % (float(CUR_SCALE_FACTOR)/float(0.5))
-#         print ""
-#         print "  SAVE_SCALE_FACTOR = %.2f" % SAVE_SCALE_FACTOR
-#         print "  CUR/SAVE = %.2f" % (float(CUR_SCALE_FACTOR)/float(SAVE_SCALE_FACTOR))
-#         print ""
-#         print "  INIT_SCALE_FACTOR = %.2f" % INIT_SCALE_FACTOR
-#         print "  CUR/INIT = %.2f" % (CUR_SCALE_FACTOR/INIT_SCALE_FACTOR)
-#         print ""
-# 
-# #         # Restore scale factor
-# #         CUR_SCALE_FACTOR = SAVE_SCALE_FACTOR
-
-        # Zoom back to initial size
-        # sf = INIT_SCALE_FACTOR/CUR_SCALE_FACTOR
-
-        # Zooms relative to CUR_SCALE_FACTOR, which was just changed above
-        sf = SAVE_SCALE_FACTOR/CUR_SCALE_FACTOR
-        if DBG: print "  gonna zoom %sx\n" % str(sf)
-        zoom(sf)
-
-        # CUR_DRAW_WIDGET.queue_draw() # Redraw after zoom
-
-        # Don't forget to recenter!
-        recenter(PREZOOMx, PREZOOMy)
-        
 def trace_wire(tileno, portname, action):
     '''
     If 'action'=="highlight" and indicated wire 'portname'
