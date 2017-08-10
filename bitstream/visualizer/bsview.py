@@ -1763,6 +1763,85 @@ def print_scrolledwindow_info(SW):
     print "------------------------------------------------------------------------"
     print ""
 
+def how_many_tiles_are_visible_now():
+
+        # Currently the window fits n tiles across/down where
+        #   n = mindim / tilewidth, and
+        #       mindim = min(sw_w,sw_h)
+        #       tilewidth = CANVAS_WIDTH * CUR_SCALE_FACTOR
+        #
+        # E.g. typical startup values for an 8x8 grid are
+        #   mindim = 557, CW = 164 and CSF = 0.5 (for 8x8)
+        #   so as to fit 8 tiles across and down in a 600x600 ish window
+        #
+        # Want the window to show exactly ONE tile so need to scale by sf = n
+
+        global SW # wtf? FIXME?
+        sw_w = SW.get_hadjustment().page_size
+        sw_h = SW.get_vadjustment().page_size
+
+        mindim = min(sw_h,sw_w)
+        tile_width = float(CANVAS_WIDTH) * CUR_SCALE_FACTOR
+        ntiles_visible = mindim/tile_width
+        sf_new = mindim/tile_width
+
+        DBG=0
+        if DBG:
+            print_scrolledwindow_info(SW)
+            print "FOO sf=%0.2f sfnew=%0.2f" % (sf,sf_new)
+            CSF = CUR_SCALE_FACTOR; sw1 = min(sw_h,sw_w); CW = CANVAS_WIDTH; TW = tile_width
+            # ntiles_visible_prezoom = CSF * sw1 / CW = sw1/TW
+            ntiles_visible_prezoom = sw1/TW
+            print "FOO tilewidth = %.2f, sw = %.2f" % (TW, sw1)
+            print "FOO prezoom shows %.2f tiles in the window" % ntiles_visible_prezoom
+
+        return ntiles_visible
+
+
+
+# # NEW STUFF IN PROGRESS
+# Class Zoom:
+#     x = 0
+#     y = 0
+#     scale_factor = 0
+#     def __init__(self, x, y, sf):
+#         self.x = x
+#         self.y = y
+#         self.scale_factor = sf
+# 
+# 
+# 
+# # What if...?
+# def zoom_to_tile1(event):
+#     global ZTT
+#     if (ZTT == None): ZTT = Zoom()
+#     if ZTT.is_unzoomed():
+#         ZTT.save_state(CUR_SCALE_FACTOR, event.x, event.y)
+# 
+#         ZOOMTILE = find_tile_clicked(event.x, event.y)
+#         if DBG: print "Zoom in to tile %s!" % str(ZOOMTILE)
+#         sf = how_many_tiles_are_visible_now()
+#         (x,y) = find_tile_center(ZOOMTILE)
+#         ZTT.zoom(x,y)
+#     else:
+#         ZTT.unzoom()
+# 
+#     if not already_zoomed:
+#         save_zoom_state("ZTT")
+#         ZOOMTILE = find_tile_clicked(event.x, event.y)
+#         if DBG: print "Zoom in to tile %s!" % str(ZOOMTILE)
+#         sf = how_many_tiles_are_visible_now()
+#         zoom(sf)
+#         refresh()
+#         (x,y) = find_tile_center(ZOOMTILE)
+#         recenter(x,y)
+#         refresh()
+#     else:
+#         unzoom_and_recenter_using_state("ZTT")
+
+
+
+
 global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 def zoom_to_tile(event):
     '''
@@ -1789,40 +1868,17 @@ def zoom_to_tile(event):
     if (ZOOMTILE == -1):
         if DBG: print "Zoom in!"
 
-        # Save x,y coords (Is this terrible?  this is probably terrible.)
+        # Save prezoom x,y coords and scale factor
+        # (Is this terrible?  this is probably terrible.)
         (PREZOOMx,PREZOOMy) = (event.x, event.y)
-
-        # Save prev adjusts, scale factor
         SAVE_SCALE_FACTOR = CUR_SCALE_FACTOR
-
-        # Not used AFAICT
-        # global PREV_HUPPER
-        # PREV_HUPPER = SW.get_hadjustment().upper
-        # # print "HUPPERS 1 %d" % (PREV_HUPPER)
-        # 
-        # Not used AFAICT
-        # # x,y coordinates of button-press
-        # x = event.x; y = event.y
 
         # global ZOOMTILE tells draw routines what to do later
         ZOOMTILE = find_tile_clicked(event.x, event.y)
         if DBG: print "Zoom in to tile %s!" % str(ZOOMTILE)
 
-        # Don't use this; includes scrollbar size etc.
-        # (sh,sw) = SW.window.get_size()
-
-        sw_w = SW.get_hadjustment().page_size
-        sw_h = SW.get_vadjustment().page_size
-
-        # At no zoom for 8x8 grid, typical start value is
-        # sw=557, CANVAS_WIDTH=164, sw/cw ~ 4.0
-        after_scale_zoom = float(min(sw_h,sw_w))/float(CANVAS_WIDTH)
-
-        DBG=0
-        if DBG: print_scrolledwindow_info(SW)
-
-        # "4/CUR_SCALE_FACTOR" means "undo scale-factor, then zoom 4x"
-        sf = after_scale_zoom/CUR_SCALE_FACTOR
+        # Before: displaying sf tiles.  After: display 1 tile.  Zoom factor: sf
+        sf = how_many_tiles_are_visible_now()
         zoom(sf)
 
         # FIXME Is this first refresh necessary?  Try it with/without maybe.
