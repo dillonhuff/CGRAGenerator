@@ -107,8 +107,9 @@ NTRACKS_PE_WIRE_V = 0;
 # ARROWHEAD_LENGTH = 2; ARROWHEAD_WIDTH = 4; # meh
 ARROWHEAD_LENGTH = 3; ARROWHEAD_WIDTH = 2; # this is nice
 
-# Here's a dumb way to pass information from the button-press handler to the draw-event handler
-ZOOMTILE = -1;
+# AFAICT only used in zoom_to_tile()
+# # Here's a dumb way to pass information from the button-press handler to the draw-event handler
+# ZOOMTILE = -1;
 
 # Diagram below shows dimensions for PORT_WIDTH (PW) 
 # PORT_HEIGHT (PH) (aka PORT_LENGTH),
@@ -980,7 +981,9 @@ def refresh():
 # Looks good but did not use: http://zetcode.com/gui/pygtk/
 # Ditto for: http://pygtk.org/pygtk2tutorial/ch-DrawingArea.html
 
-global PREV_HUPPER; PREV_HUPPER = -1
+# Not used AFAICT
+# global PREV_HUPPER; PREV_HUPPER = -1
+
 def draw_handler(widget, cr):
     global CUR_DRAW_WIDGET; CUR_DRAW_WIDGET = widget;
 
@@ -988,27 +991,7 @@ def draw_handler(widget, cr):
     context = widget.window.cairo_create()
     cr = context
 
-    # First redraw after zoom-to-tile (ZOOMTILE != -1)
-    # is a bogus redraw centered at (0,0) after which
-    # there will be another redraw recentered in the right place.
-    # W'e optimally like to suppress the first redraw but
-    # I'm not going to fix that now.  FIXME later
-    # if (ZOOMTILE != -1): print "predrawall"; sys.stdout.flush(); time.sleep(2)
     draw_all_tiles(cr);
-    # if (ZOOMTILE != -1): print "postdrawall"; sys.stdout.flush(); time.sleep(2)
-
-    # ON EACH REDRAW
-    # Must check to see if tile_zoom_in has taken effect yet
-    # - before zoom, set PREV_HUPPER
-    # - if upper != PREV_HUPPER then recenter and set PREV_UPPER = upper.  right?
-
-    #     global ZOOMTILE; 
-    #     if (ZOOMTILE != -1):
-    #         global PREV_HUPPER; 
-    #         hupper = SW.get_hadjustment().upper
-    #         if (PREV_HUPPER != hupper):
-    #             zoom_to_tile2(ZOOMTILE)
-    #             PREV_HUPPER = hupper
 
 # def set_zoom_scale_factor():
 # 
@@ -1026,9 +1009,6 @@ def draw_handler(widget, cr):
 # 
 # 
 #     return;
-
-
-
 
 #     # OLD: Draw at 4x requested size; CUR_SCALE_FACTOR = 4
 #     # NEW:
@@ -1339,7 +1319,8 @@ class CGRAWin(gtk.Window):
         # not just an arbitrary 600.
         # FIXME2 currently cannot resize window below requested w,h...why?
 
-        global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
+        # AFAICT only used in zoom_to_tile()
+        # global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 
         da = Gtk.DrawingArea()
         da.props.width_request = WIN_WIDTH
@@ -1763,13 +1744,32 @@ def find_port_clicked(x,y):
     if DBG: print "Closest port is maybe '%s'in tile %d?\n" % (minwire,tileno)
     return minwire
 
+def print_scrolledwindow_info(SW):
+    # sw value does not change with zoom in/out
+    # dw gets larger when you zoom in
+    (sh,sw) = SW.window.get_size()
+    dw = CUR_DRAW_WIDGET.window.get_size()
+
+    # PREV_HUPPER = SW.get_hadjustment().upper
+    print ""
+    print "------------------------------------------------------------------------"
+    print "FOO screenwidth =? ",; print sw
+    print "FOO screenwidth =? ",; print sw_w
+    print "FOO screenheith =? ",; print sw_h
+    print "FOO tilewidth   =? ",; print CANVAS_WIDTH
+    print "FOO DAwidth     =? ",; print dw
+    print ""
+    print "FOO after_scale_zoom = ",; print after_scale_zoom
+    print "------------------------------------------------------------------------"
+    print ""
+
+global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 def zoom_to_tile(event):
     '''
-    Button-press event calls zoom_to_tile() to queue up the zoom.
+    If not yet zoomed in, save current coords for later zoom-out and
+    zoom in to clicked tile at event.(x,y)
+    If already zoomed in, zoom out to saved coords and scale factor.
     '''
-    # NOPE Later, draw event calls zoom_to_tile2(), which does final
-    # NOPE scroll-adjust for the zoom.
-
     global ZOOMTILE;
     global CUR_SCALE_FACTOR
     global SAVE_SCALE_FACTOR
@@ -1795,21 +1795,18 @@ def zoom_to_tile(event):
         # Save prev adjusts, scale factor
         SAVE_SCALE_FACTOR = CUR_SCALE_FACTOR
 
-        global PREV_HUPPER
-        PREV_HUPPER = SW.get_hadjustment().upper
-        # print "HUPPERS 1 %d" % (PREV_HUPPER)
+        # Not used AFAICT
+        # global PREV_HUPPER
+        # PREV_HUPPER = SW.get_hadjustment().upper
+        # # print "HUPPERS 1 %d" % (PREV_HUPPER)
+        # 
+        # Not used AFAICT
+        # # x,y coordinates of button-press
+        # x = event.x; y = event.y
 
-        # x,y coordinates of button-press
-        x = event.x; y = event.y
-
-        tileno = find_tile_clicked(event.x, event.y)
-
-        if DBG: print "Zoom in to tile %s!" % str(tileno)
-        ZOOMTILE = tileno;
-
-        # OLD Zooms relative to CUR_SCALE_FACTOR, which was just changed above
-        # OLD Sets draw widget size to WIN_HEIGHT * CUR_SCALE_FACTOR / (0.5)
-        # OLD or WIN_HEIGHT * 4.0 / 0.5, or 8 * WIN_HEIGHT
+        # global ZOOMTILE tells draw routines what to do later
+        ZOOMTILE = find_tile_clicked(event.x, event.y)
+        if DBG: print "Zoom in to tile %s!" % str(ZOOMTILE)
 
         # Don't use this; includes scrollbar size etc.
         # (sh,sw) = SW.window.get_size()
@@ -1822,23 +1819,7 @@ def zoom_to_tile(event):
         after_scale_zoom = float(min(sw_h,sw_w))/float(CANVAS_WIDTH)
 
         DBG=0
-        if DBG:
-            # sw value does not change with zoom in/out
-            # dw gets larger when you zoom in
-            (sh,sw) = SW.window.get_size()
-            dw = CUR_DRAW_WIDGET.window.get_size()
-
-            print ""
-            print "------------------------------------------------------------------------"
-            print "FOO screenwidth =? ",; print sw
-            print "FOO screenwidth =? ",; print sw_w
-            print "FOO screenheith =? ",; print sw_h
-            print "FOO tilewidth   =? ",; print CANVAS_WIDTH
-            print "FOO DAwidth     =? ",; print dw
-            print ""
-            print "FOO after_scale_zoom = ",; print after_scale_zoom
-            print "------------------------------------------------------------------------"
-            print ""
+        if DBG: print_scrolledwindow_info(SW)
 
         # "4/CUR_SCALE_FACTOR" means "undo scale-factor, then zoom 4x"
         sf = after_scale_zoom/CUR_SCALE_FACTOR
