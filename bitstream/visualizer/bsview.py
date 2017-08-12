@@ -1797,50 +1797,39 @@ def how_many_tiles_are_visible_now():
 
         return ntiles_visible
 
-def zoom_to_tile(event):
+def zoom_to_tile(x,y):
+    DBG = 0
+    tileno = find_tile_clicked(x, y)
+    if DBG: print "Zoom in to tile %s!" % str(tileno)
+    sf = how_many_tiles_are_visible_now()
+    zoom(sf)
+    # MUST refresh before recenter.
+    refresh()
+    (x,y) = find_tile_center(tileno)
+    recenter(x,y)
+    # refresh() # Don't need to refresh after recenter I guess
+
+ZTT_PREV = [0,0, 1.0, 'unzoomed']
+def toggle_zoom_to_tile(event):
     '''
     If not yet zoomed in, save current coords for later zoom-out and
     zoom in to clicked tile at event.(x,y)
     If already zoomed in, zoom out to saved coords and scale factor.
     '''
     DBG = 0
-
     global ZTT_PREV
-
-    # Initialize if not yet set
-    try: ZTT_PREV
-    except: ZTT_PREV = (0,0, 1.0, 'unzoomed') # (x, y, sf, zoomed)
-
-    (x,y,sf,z) = ZTT_PREV
-
-    # FIXME would this be better, yes?  Yes I think so.
-    # ZTT_PREV = {'x', 0, 'y', 0, 'sf', 1.0, 'zoomed', True}
-
-    # DBG = 0
-    # if DBG: print ""
-    # if DBG: print "CUR_SCALE_FACTOR %s" % CUR_SCALE_FACTOR
-    # if DBG: print ""
-
-    if (z == 'unzoomed'):
+    if ZTT_PREV[3] == 'unzoomed':
         # Save current view for later unzooming
-        ZTT_PREV = (event.x, event.y, CUR_SCALE_FACTOR, 'zoomed')
-        ZOOMTILE = find_tile_clicked(event.x, event.y)
-        if DBG: print "Zoom in to tile %s!" % str(ZOOMTILE)
-
-        sf = how_many_tiles_are_visible_now()
-        zoom(sf)
-
-        # MUST refresh before recenter.
-        refresh()
-        (x,y) = find_tile_center(ZOOMTILE)
-        recenter(x,y)
-        # refresh()
+        ZTT_PREV = [event.x, event.y, CUR_SCALE_FACTOR, 'zoomed']
+        zoom_to_tile(event.x, event.y)
 
     else:
         # Restore to pre-zoom view
+        [x,y,sf,z] = ZTT_PREV
         zoom(sf/CUR_SCALE_FACTOR)
         recenter(x,y)
-        ZTT_PREV = (0,0, 1.0, 'unzoomed') # (x, y, sf, zoomed)
+        ZTT_PREV = [0,0, 1.0, 'unzoomed']
+
 
 def trace_wire(tileno, portname, action):
     '''
@@ -1906,7 +1895,7 @@ def button_press_handler(widget, event):
     # 
     if double_click and (CUR_CURSOR == 'arrow'):
         if DBG: print "zoom to tile"
-        zoom_to_tile(event)
+        toggle_zoom_to_tile(event)
         refresh() # Redraw after zoom
         # print "\n Z2 DRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
 
