@@ -1534,11 +1534,11 @@ class CGRAWin(gtk.Window):
                 c.remove(c.get_children()[0])
                 # print "FOO image name: "+image_name
                 if (image_name == "zoom_to_chip"):
-                    zoom_to_chip()
                     set_button_image(c, 'zoom_from_chip')
+                    zoom_to_chip()
                 else:
-                    zoom_from_chip()
                     set_button_image(c, 'zoom_to_chip')
+                    zoom_from_chip()
                 return
 
     def button_exit_action(widget, event):
@@ -1839,8 +1839,10 @@ def get_scrollbars():
     return [hamt,vamt]
 
 def set_scrollbars(h,v):
+    SW.hide()
     SW.get_hadjustment().set_value(h); SW.get_hadjustment().value_changed()
     SW.get_vadjustment().set_value(v); SW.get_vadjustment().value_changed()
+    SW.show()
 
 def zoom_to_chip():
     '''
