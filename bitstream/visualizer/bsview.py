@@ -1830,6 +1830,29 @@ def toggle_zoom_to_tile(event):
         recenter(x,y)
         ZTT_PREV = [0,0, 1.0, 'unzoomed']
 
+# Okay this works, now just need to hook it up.
+ZTC_PREV = [0,0, 1.0, 'zoomed']
+def toggle_zoom_to_chip(event):
+    '''
+    If not yet zoomed out, save current coords for later zoom-in and
+    zoom out so that entire chip is visible.
+    If already zoomed out, zoom in to previously saved settings.
+    '''
+    DBG = 0
+    global ZTC_PREV
+    if ZTC_PREV[3] == 'zoomed':
+        # Save current view for later unzooming
+        ZTC_PREV = [event.x, event.y, CUR_SCALE_FACTOR, 'unzoomed']
+        zoom(INIT_SCALE_FACTOR/CUR_SCALE_FACTOR) # right?
+        # Shouldn't need recenter because everything fits...right...?
+        # recenter(x,y)
+
+    else:
+        # Restore to pre-zoom view
+        [x,y,sf,z] = ZTC_PREV
+        zoom(sf/CUR_SCALE_FACTOR)
+        recenter(x,y)
+        ZTC_PREV = [0,0, 1.0, 'zoomed']
 
 def trace_wire(tileno, portname, action):
     '''
