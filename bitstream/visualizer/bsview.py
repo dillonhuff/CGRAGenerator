@@ -1218,7 +1218,7 @@ def get_cursor_magminus():
     CUR_CURSOR = 'magminus'
     return magminus
 
-def get_image_chiplevelzoom_in():
+def get_image_zoom_from_chip():
     xpm_data = [
         "15 15 3 1",
         "       c None",
@@ -1242,10 +1242,10 @@ def get_image_chiplevelzoom_in():
         ]
     pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
     image = gtk.image_new_from_pixbuf(pixbuf)
-    image.set_name("zoom_in")
+    image.set_name("unzoom")
     return image
     
-def get_image_chiplevelzoom_out():
+def get_image_zoom_to_chip():
     xpm_data = [
         "15 15 3 1",
         "       c None",
@@ -1269,9 +1269,20 @@ def get_image_chiplevelzoom_out():
         ]
     pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
     image = gtk.image_new_from_pixbuf(pixbuf)
-    image.set_name("zoom_out")
+    image.set_name("zoom_to_chip")
     return image
     
+def set_button_image(button, image_name):
+    if image_name == 'zoom_to_chip':
+        tooltip = "zoom out/reset"
+        image = get_image_zoom_to_chip()
+    elif image_name == 'zoom_from_chip':
+        tooltip = "zoom back in"
+        image = get_image_zoom_from_chip()
+    image.show()
+    button.add(image)
+    button.set_tooltip_text(tooltip)
+
 
 # TODO someday maybe
 # A GdkWindow is a rectangular region on the screen. It's a low-level
@@ -1397,15 +1408,10 @@ class CGRAWin(gtk.Window):
 
 
         # BUTTON: zoom-to-chip
-        tooltip = "chiplevel zoom and back (TBD)"
-        image = get_image_chiplevelzoom_out()
-        image.show()
-        #
         button_mag100= gtk.Button()
+        set_button_image(button_mag100, 'zoom_to_chip')
         button_mag100.set_name("mag100")
-        button_mag100.add(image)
         button_mag100.connect("clicked", self.button_mag100_action)
-        button_mag100.set_tooltip_text(tooltip)
         button_mag100.show()
 
         # GtkButton* button = gtk_button_new_with_label("button");   
@@ -1520,29 +1526,25 @@ class CGRAWin(gtk.Window):
         widget.window.set_cursor(c)
 
     def button_mag100_action(widget, event):
-        # OLD: zoom('out')
-        # c = get_cursor_mag100()
-        # widget.window.set_cursor(c)
         vbox = widget.get_children()[0]
         top_toolbar = vbox.get_children()[0]
         for c in top_toolbar.get_children():
             if (c.get_name() == "mag100"):
                 image_name = c.get_children()[0].get_name()
-                if (image_name == "zoom_in"):
-                    image = get_image_chiplevelzoom_out()
-                else:
-                    image = get_image_chiplevelzoom_in()
-
-                image.show()
                 c.remove(c.get_children()[0])
-                c.add(image)
-                c.show()
+                # print "FOO image name: "+image_name
+                if (image_name == "zoom_to_chip"):
+                    zoom_to_chip()
+                    set_button_image(c, 'zoom_from_chip')
+                else:
+                    zoom_from_chip()
+                    set_button_image(c, 'zoom_to_chip')
                 return
 
     def button_exit_action(widget, event):
         Gtk.main_quit()
 
-def adjust_scrollbar(adj, amt, DBG):
+def adjust_scrollbar(adj, amt, centered, DBG):
     if DBG:
         ps = adj.page_size
         pagewidth = int(WIN_WIDTH  * CUR_SCALE_FACTOR)
@@ -1551,6 +1553,7 @@ def adjust_scrollbar(adj, amt, DBG):
         scaled_amt = sf * amt
         amt_prime = (scaled_amt-10) - adj.page_size/2
         print "  clicked x is ", ; print amt
+        print "  value is    ", ; print adj.get_value()
         print "  hupper is    ", ; print hupper
         print "  pagewidth is ", ; print pagewidth
         print "  page_size is ", ; print ps
@@ -1561,7 +1564,7 @@ def adjust_scrollbar(adj, amt, DBG):
 
     # Comment-out the centering (below) to debug maybe
     # Center it in the window
-    amt = amt - adj.page_size/2
+    if (centered == 'centered'): amt = amt - adj.page_size/2
 
     # print "about to adjust..."; sys.stdout.flush(); time.sleep(2)
 
@@ -1591,12 +1594,12 @@ def recenter(x,y):
     if (1):
         DBG=0
         if DBG: print "HADJUST   :",
-        adjust_scrollbar(SW.get_hadjustment(), x, DBG)
+        adjust_scrollbar(SW.get_hadjustment(), x, 'centered', DBG)
         # print "\nDRAWING AREA NOW (%d,%d)\n" % CUR_DRAW_WIDGET.get_size_request()
 
         DBG=0
         if DBG: print "VADJUST   :",
-        adjust_scrollbar(SW.get_vadjustment(), y, DBG)
+        adjust_scrollbar(SW.get_vadjustment(), y, 'centered', DBG)
 
     SW.show()
     return
@@ -1830,29 +1833,38 @@ def toggle_zoom_to_tile(event):
         recenter(x,y)
         ZTT_PREV = [0,0, 1.0, 'unzoomed']
 
-# Okay this works, now just need to hook it up.
-ZTC_PREV = [0,0, 1.0, 'zoomed']
-def toggle_zoom_to_chip(event):
-    '''
-    If not yet zoomed out, save current coords for later zoom-in and
-    zoom out so that entire chip is visible.
-    If already zoomed out, zoom in to previously saved settings.
-    '''
-    DBG = 0
-    global ZTC_PREV
-    if ZTC_PREV[3] == 'zoomed':
-        # Save current view for later unzooming
-        ZTC_PREV = [event.x, event.y, CUR_SCALE_FACTOR, 'unzoomed']
-        zoom(INIT_SCALE_FACTOR/CUR_SCALE_FACTOR) # right?
-        # Shouldn't need recenter because everything fits...right...?
-        # recenter(x,y)
+def get_scrollbars():
+    hamt = SW.get_hadjustment().get_value()
+    vamt = SW.get_vadjustment().get_value()
+    return [hamt,vamt]
 
-    else:
-        # Restore to pre-zoom view
-        [x,y,sf,z] = ZTC_PREV
-        zoom(sf/CUR_SCALE_FACTOR)
-        recenter(x,y)
-        ZTC_PREV = [0,0, 1.0, 'zoomed']
+def set_scrollbars(h,v):
+    SW.get_hadjustment().set_value(h); SW.get_hadjustment().value_changed()
+    SW.get_vadjustment().set_value(v); SW.get_vadjustment().value_changed()
+
+def zoom_to_chip():
+    '''
+    Save current coords for later zoom-back, then
+    zoom out so that entire chip is visible.
+    '''
+    global ZTC_PREV
+    # Save current view for later unzooming
+    [hamt,vamt] = get_scrollbars()
+    ZTC_PREV = [CUR_SCALE_FACTOR, hamt, vamt]
+    # print "FOO saved    sf %f and hv values %f,%f" % (CUR_SCALE_FACTOR, hamt, vamt)
+    # Zoom all the way out
+    zoom(INIT_SCALE_FACTOR/CUR_SCALE_FACTOR) # right?
+    refresh() # Redraw after zoom! (optional probably)
+    set_scrollbars(0,0)
+
+def zoom_from_chip():
+    '''Restore to pre-zoom view.'''
+    # Retrieve and zoom to previously-saved coords
+    [sf, hamt, vamt] = ZTC_PREV
+    # print "FOO restored sf %f and hv values %f,%f" % (sf, hamt,vamt)
+    zoom(sf/CUR_SCALE_FACTOR)
+    refresh() # Redraw after zoom!
+    set_scrollbars(hamt,vamt)
 
 def trace_wire(tileno, portname, action):
     '''
