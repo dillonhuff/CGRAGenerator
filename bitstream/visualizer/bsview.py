@@ -1427,11 +1427,10 @@ class CGRAWin(gtk.Window):
         button_mag100.show()
 
 
-        # BOOKMARK
-#         # BUTTON: reset to default view
-#         button_reset= gtk.Button('RST')
-#         button_reset.connect("clicked", self.button_reset_action)
-#         button_reset.show()
+        # BUTTON: reset to default view
+        button_reset= gtk.Button('         RESET')
+        button_reset.connect("clicked", self.button_reset_action)
+        button_reset.show()
 
 
         # BUTTON: grabby hand
@@ -1451,6 +1450,7 @@ class CGRAWin(gtk.Window):
         top_toolbar.pack_start(button_magplus,  expand, fill)
         top_toolbar.pack_start(button_magminus, expand, fill)
         top_toolbar.pack_start(button_mag100,   expand, fill)
+        top_toolbar.pack_start(button_reset,    expand, fill)
         # top_toolbar.pack_start(button_hand,   expand, fill)
         top_toolbar.pack_start(button_exit,     expand, fill)
         # print dir(top_toolbar.props)
@@ -1549,17 +1549,20 @@ class CGRAWin(gtk.Window):
         # BOOKMARK FIXME is this the only place we call toggle?  should we inline it here??
         toggle_chipzoom(c, image_name)
 
-    # BOOKMARK
     def button_reset_action(widget, event):
+
+        # Reset scale-factor, mag100
+        button_mag100 = get_button(widget, 'mag100')
+        button_mag100.remove(button_mag100.get_children()[0])
         set_button_image_ztc(button_mag100)
         global CUR_SCALE_FACTOR
         CUR_SCALE_FACTOR = INIT_SCALE_FACTOR
         zoom_to_chip()
 
-#         c = get_button(widget, 'mag100')
-#         set_button_image(c, 'zoom_to_chip')
-#         zoom_from_chip()
-#         return
+        # Reset zoom_to_tile
+        global ZTT_PREV
+        ZTT_PREV = [0,0, 1.0, 'unzoomed']
+
 
     def button_exit_action(widget, event):
         Gtk.main_quit()
