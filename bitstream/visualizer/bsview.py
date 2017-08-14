@@ -49,8 +49,9 @@ def print_once(s):
 
 ####################################################
 # FIXME should have a CGRA class for globals...?
+# Want to list all the random globals here?
 
-# Want to list all the random globals here
+# Initialize to "arrow"
 global CUR_CURSOR # Currently includes 'magplus', 'magminus', 'arrow'
 CUR_CURSOR = 'arrow'
 
@@ -1950,6 +1951,7 @@ def button_press_handler(widget, event):
     # Double click should ALWAYS be zoom-to-tile maybe
     # Nope that's just a mess
     # 
+    global CUR_CURSOR
     if double_click and (CUR_CURSOR == 'arrow'):
         if DBG: print "zoom to tile"
         toggle_zoom_to_tile(event)
