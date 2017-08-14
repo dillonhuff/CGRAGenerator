@@ -1218,7 +1218,8 @@ def get_cursor_magminus():
     CUR_CURSOR = 'magminus'
     return magminus
 
-def get_image_zoom_from_chip():
+# FIXME These next two routines have a lot of overlap...
+def set_button_image_zfc(button):
     xpm_data = [
         "15 15 3 1",
         "       c None",
@@ -1240,49 +1241,60 @@ def get_image_zoom_from_chip():
         " .           . ",
         "               "
         ]
+    tooltip = "show prev view"
     pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
     image = gtk.image_new_from_pixbuf(pixbuf)
-    image.set_name("unzoom")
-    return image
-    
-def get_image_zoom_to_chip():
-    xpm_data = [
-        "15 15 3 1",
-        "       c None",
-        ".      c #000000000000",
-        "X      c #FFFFFFFFFFFF",
-        "               ",
-        " .....   ..... ",
-        " ..         .. ",
-        " . .       . . ",
-        " .  .     .  . ",
-        " .   .   .   . ",
-        "      . .      ",
-        "               ",
-        "      . .      ",
-        " .   .   .   . ",
-        " .  .     .  . ",
-        " . .       . . ",
-        " ..         .. ",
-        " .....   ..... ",
-        "               "
-        ]
-    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
-    image = gtk.image_new_from_pixbuf(pixbuf)
-    image.set_name("zoom_to_chip")
-    return image
-    
-def set_button_image(button, image_name):
-    if image_name == 'zoom_to_chip':
-        tooltip = "zoom out/reset"
-        image = get_image_zoom_to_chip()
-    elif image_name == 'zoom_from_chip':
-        tooltip = "zoom back in"
-        image = get_image_zoom_from_chip()
+    image.set_name("zoom_from_chip")
     image.show()
     button.add(image)
     button.set_tooltip_text(tooltip)
+    
+def set_button_image_ztc(button):
+    xpm_data = [
+        "15 15 3 1",
+        "       c None",
+        ".      c #000000000000",
+        "X      c #FFFFFFFFFFFF",
+        "               ",
+        " .....   ..... ",
+        " ..         .. ",
+        " . .       . . ",
+        " .  .     .  . ",
+        " .   .   .   . ",
+        "      . .      ",
+        "               ",
+        "      . .      ",
+        " .   .   .   . ",
+        " .  .     .  . ",
+        " . .       . . ",
+        " ..         .. ",
+        " .....   ..... ",
+        "               "
+        ]
+    tooltip = "show whole chip"
+    pixbuf = gtk.gdk.pixbuf_new_from_xpm_data(xpm_data)
+    image = gtk.image_new_from_pixbuf(pixbuf)
+    image.set_name("zoom_to_chip")
+    image.show()
+    button.add(image)
+    button.set_tooltip_text(tooltip)
+    
+# FIXME some of these are only called from class CGRAWin maybe
+def toggle_chipzoom(button, image_name):
+    if image_name == 'zoom_to_chip':
+        set_button_image_zfc(button)
+        zoom_to_chip()
 
+    elif image_name == 'zoom_from_chip':
+        set_button_image_ztc(button)
+        zoom_from_chip()
+
+# FIXME some of these are only called from class CGRAWin maybe
+def get_button(widget, bname):
+    vbox = widget.get_children()[0]
+    top_toolbar = vbox.get_children()[0]
+    for c in top_toolbar.get_children():
+        if (c.get_name() == "mag100"): return c
 
 # TODO someday maybe
 # A GdkWindow is a rectangular region on the screen. It's a low-level
@@ -1407,15 +1419,19 @@ class CGRAWin(gtk.Window):
         button_magminus.show()
 
 
-        # BUTTON: zoom-to-chip
+        # BUTTON: zoom_to_chip
         button_mag100= gtk.Button()
-        set_button_image(button_mag100, 'zoom_to_chip')
+        set_button_image_ztc(button_mag100)
         button_mag100.set_name("mag100")
         button_mag100.connect("clicked", self.button_mag100_action)
         button_mag100.show()
 
-        # GtkButton* button = gtk_button_new_with_label("button");   
-        # gtk_widget_set_tooltip_text(button, "tooltip text");
+
+        # BOOKMARK
+#         # BUTTON: reset to default view
+#         button_reset= gtk.Button('RST')
+#         button_reset.connect("clicked", self.button_reset_action)
+#         button_reset.show()
 
 
         # BUTTON: grabby hand
@@ -1526,20 +1542,24 @@ class CGRAWin(gtk.Window):
         widget.window.set_cursor(c)
 
     def button_mag100_action(widget, event):
-        vbox = widget.get_children()[0]
-        top_toolbar = vbox.get_children()[0]
-        for c in top_toolbar.get_children():
-            if (c.get_name() == "mag100"):
-                image_name = c.get_children()[0].get_name()
-                c.remove(c.get_children()[0])
-                # print "FOO image name: "+image_name
-                if (image_name == "zoom_to_chip"):
-                    set_button_image(c, 'zoom_from_chip')
-                    zoom_to_chip()
-                else:
-                    set_button_image(c, 'zoom_to_chip')
-                    zoom_from_chip()
-                return
+        c = get_button(widget, 'mag100')
+        image_name = c.get_children()[0].get_name()
+        c.remove(c.get_children()[0])
+        # print "FOO image name: "+image_name
+        # BOOKMARK FIXME is this the only place we call toggle?  should we inline it here??
+        toggle_chipzoom(c, image_name)
+
+    # BOOKMARK
+    def button_reset_action(widget, event):
+        set_button_image_ztc(button_mag100)
+        global CUR_SCALE_FACTOR
+        CUR_SCALE_FACTOR = INIT_SCALE_FACTOR
+        zoom_to_chip()
+
+#         c = get_button(widget, 'mag100')
+#         set_button_image(c, 'zoom_to_chip')
+#         zoom_from_chip()
+#         return
 
     def button_exit_action(widget, event):
         Gtk.main_quit()
