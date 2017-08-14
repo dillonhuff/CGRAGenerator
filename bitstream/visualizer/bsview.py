@@ -22,8 +22,6 @@ that, given (x,y) coords, tells
 import pygtk
 pygtk.require('2.0')
 import gtk
-# from gtk import Gtk,Gdk
-Gtk = gtk  # FIXME!
 
 import cairo
 from subprocess import call
@@ -1311,7 +1309,6 @@ def get_button(widget, bname):
 # sophisticated layouts, you can nest the container objects, i.e. have a
 # gtk.HBox inside a gtk.VBox.
 
-# class CGRAWin(Gtk.Window):
 class CGRAWin(gtk.Window):
     def __init__(self):
         '''
@@ -1345,7 +1342,7 @@ class CGRAWin(gtk.Window):
         # AFAICT only used in zoom_to_tile()
         # global ZOOMTILE; ZOOMTILE = -1 # Always start zoomed OUT
 
-        da = Gtk.DrawingArea()
+        da = gtk.DrawingArea()
         da.props.width_request = WIN_WIDTH
         da.props.height_request= WIN_HEIGHT
         # self.add(da)
@@ -1511,7 +1508,7 @@ class CGRAWin(gtk.Window):
         # da.set_events(gtk.gdk.EventMask.BUTTON_PRESS_MASK)
         da.set_events(gtk.gdk.BUTTON_PRESS_MASK)
 
-        self.connect("delete-event", Gtk.main_quit)
+        self.connect("delete-event", gtk.main_quit)
 
         # https://stackoverflow.com/questions/6718586/pygtk-hide-cursor
         # As stated in the PyGTK FAQ, you should set the cursor on the
@@ -1565,7 +1562,7 @@ class CGRAWin(gtk.Window):
 
 
     def button_exit_action(widget, event):
-        Gtk.main_quit()
+        gtk.main_quit()
 
 def adjust_scrollbar(adj, amt, centered, DBG):
     if DBG:
@@ -2674,7 +2671,7 @@ def build_and_launch_main_window(title):
     # if DBG: win.move(0,0) # put window at top left corner of screen
     if (DBG>=2): print dir(win.props)
     win.show_all()
-    Gtk.main()
+    gtk.main()
     print "------------------------------------------------------------------------"
 
 def demo_connections_2x2():
