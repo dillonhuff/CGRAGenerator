@@ -41,25 +41,23 @@ def errmsg(m):
     sys.exit(-1)
 
 global PRINTED
-PRINTED = [] # oh this is awful
+PRINTED = [] # use [list] not (tuple)
 def print_once(s):
+    '''Keep a list of what's been printed.  Don't print the same thing twice.'''
     global PRINTED
     if (s not in PRINTED):
         PRINTED.append(s); print s
 
 ####################################################
 # FIXME should have a CGRA class for globals...?
+# FIXME how to specify globals vs. constants?
 # Want to list all the random globals here?
 
 # Initialize to "arrow"
 global CUR_CURSOR # Currently includes 'magplus', 'magminus', 'arrow'
 CUR_CURSOR = 'arrow'
 
-# print dir(gtk.gdk.Window.props)
-# sys.exit(0)
-
-#TODO
-# Put PE in each tile and connections to/from PE
+# print dir(gtk.gdk.Window.props); sys.exit(0)
 
 from math import pi
 PI = pi
@@ -69,11 +67,6 @@ def deg2rad(rad): return rad*180/PI
 global PE_WIDTH;  PE_WIDTH = 30
 global PE_HEIGHT; PE_HEIGHT = 12
 
-GRID_WIDTH  = 2;
-GRID_HEIGHT = 2;
-
-# NTILES = GRID_WIDTH*GRID_HEIGHT
-# TILE_LIST = range(0, NTILES)
 TILE_LIST = []
 
 PRINTED_CONFIG = False
@@ -177,21 +170,17 @@ WIN_HEIGHT = 4*CANVAS_HEIGHT+ UL_MARGIN
 CUR_SCALE_FACTOR = 1;
 INIT_SCALE_FACTOR = 1;
 
-def set_initial_scale_factor(w,h):
+def set_initial_scale_factor(grid_width, grid_height):
     global WIN_WIDTH; global WIN_HEIGHT; global UL_MARGIN
     global CUR_SCALE_FACTOR;
     global INIT_SCALE_FACTOR;
 
-    # FIXME i think this is the only place where GRID_WIDTH and HEIGHT are used...
-    global GRID_WIDTH; global GRID_HEIGHT
-    GRID_WIDTH  = w;   GRID_HEIGHT = h
-
-    if (GRID_WIDTH <= 2):
+    if (grid_width <= 2):
         CUR_SCALE_FACTOR = 2.0 # Why squint?
         WIN_WIDTH  = int(4*CANVAS_WIDTH *CUR_SCALE_FACTOR) + UL_MARGIN
         WIN_HEIGHT = int(4*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + UL_MARGIN
 
-    if (GRID_WIDTH  > 4):
+    if (grid_width  > 4):
         CUR_SCALE_FACTOR = 0.5
         WIN_WIDTH  = int(8*CANVAS_WIDTH *CUR_SCALE_FACTOR) + UL_MARGIN
         WIN_HEIGHT = int(8*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + UL_MARGIN
@@ -2589,13 +2578,6 @@ class Tile:
 
         cr.restore()
 
-    # Not currently used I think
-    def info(self):
-        print "I am tile number %d;" % (self.tileno),
-        print "I live in a grid that is %s tiles high and %s tiles wide"\
-            % (GRID_WIDTH, GRID_HEIGHT)
-
-
 def build_default_connection(tileno, out_wire):
     '''
     Output wire "out_wire" in tile "tileno" has not been explicitly
@@ -2726,10 +2708,6 @@ def demo_connections_4x4():
 def initialize_tile_list(w, h):
 
     # Let set_inital_scale_factor() do this...
-    # global GRID_WIDTH; global GRID_HEIGHT
-    # # This will be needed elsewhere!
-    # GRID_WIDTH  = w;   GRID_HEIGHT = h
-    
     set_initial_scale_factor(w,h)
 
     DBG=0
