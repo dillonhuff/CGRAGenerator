@@ -121,6 +121,9 @@ ARROWHEAD_LENGTH = 3; ARROWHEAD_WIDTH = 2; # this is nice
 #
 #     <-RW->
 
+# TODO/FIXME maybe a Canvas class or a Dimensions class to handle/encapsulate
+# PORT_WIDTH, PORT_HEIGHT, CANVAS_WIDTH etc. etc.
+
 PORT_WIDTH  = 8;
 # PORT_WIDTH  = 6;
 
@@ -169,23 +172,32 @@ WIN_HEIGHT = 4*CANVAS_HEIGHT+ UL_MARGIN
 # factor, for button-press events FIXME do something better maybe
 CUR_SCALE_FACTOR = 1;
 INIT_SCALE_FACTOR = 1;
-
 def set_initial_scale_factor(grid_width, grid_height):
     global WIN_WIDTH; global WIN_HEIGHT; global UL_MARGIN
     global CUR_SCALE_FACTOR;
     global INIT_SCALE_FACTOR;
 
-    if (grid_width <= 2):
-        CUR_SCALE_FACTOR = 2.0 # Why squint?
-        WIN_WIDTH  = int(4*CANVAS_WIDTH *CUR_SCALE_FACTOR) + UL_MARGIN
-        WIN_HEIGHT = int(4*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + UL_MARGIN
+#     if (grid_width <= 2):
+#         INIT_SCALE_FACTOR = 2.0
+#         CUR_SCALE_FACTOR  = 2.0
+#         # Show four tiles across
+#         WIN_WIDTH  = int(4*CANVAS_WIDTH *CUR_SCALE_FACTOR) + UL_MARGIN
+#         WIN_HEIGHT = int(4*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + UL_MARGIN
+# 
+#     if (grid_width  > 4):
 
-    if (grid_width  > 4):
-        CUR_SCALE_FACTOR = 0.5
-        WIN_WIDTH  = int(8*CANVAS_WIDTH *CUR_SCALE_FACTOR) + UL_MARGIN
-        WIN_HEIGHT = int(8*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + UL_MARGIN
+    if (1):
+        global REQUESTED_SIZE    # E.g. REQUESTED_SIZE = [8,8]
+        ntiles = REQUESTED_SIZE[0]
+        # CANVAS_WIDTH is set such that a window fits four across.
+        # To fit eight across, then, we scale by 1/2
+        INIT_SCALE_FACTOR = 0.5 # Why squint?
+        CUR_SCALE_FACTOR  = 0.5
+        # Show eight tiles across
+        WIN_WIDTH  = int(ntiles*CANVAS_WIDTH *CUR_SCALE_FACTOR) + UL_MARGIN
+        WIN_HEIGHT = int(ntiles*CANVAS_HEIGHT*CUR_SCALE_FACTOR) + UL_MARGIN
+
        
-    INIT_SCALE_FACTOR = CUR_SCALE_FACTOR
 
 
 ##############################################################################
@@ -3052,11 +3064,11 @@ def do_demos():
     global SWAP
     global REQUESTED_SIZE
     if (1):
-        REQUESTED_SIZE = (8,8)
+        REQUESTED_SIZE = [8,8]
         # display_decoded_bitstream_file("../decoder/examples/cd387-newmem-8x8.bs-decoded")
         display_decoded_bitstream_file("../decoder/examples/cd387-newmem-8x8-nodefaults.bsd")
 
-    REQUESTED_SIZE = (4,4)
+    REQUESTED_SIZE = [4,4]
     SWAP = False # Demos were all written under old regime
     demo_cd_jimmied()
     demo_an2_jimmied()
@@ -3094,7 +3106,7 @@ def main():
 
     # Default grid size is 8x8
     global REQUESTED_SIZE    # FIXME yes this is bad
-    REQUESTED_SIZE = (8,8)   # default
+    REQUESTED_SIZE = [8,8]   # default
 
     bsfiles = []
     cgra_filename = ''
@@ -3104,7 +3116,7 @@ def main():
         # print "arg0 = %s" % (args[0])
         if   (args[0] == "-demo"):  do_demos()
         elif (args[0] == "--help"): print main.__doc__
-        elif (args[0] == '-8x8'):   REQUESTED_SIZE = (8,8)
+        elif (args[0] == '-8x8'):   REQUESTED_SIZE = [8,8]
         elif (args[0] == "-cgra_info"):
             args = args[1:]
             cgra_filename = args[0]
@@ -3113,7 +3125,7 @@ def main():
         args = args[1:]
 
     # Load cgra_info
-    if REQUESTED_SIZE == (4,4):
+    if REQUESTED_SIZE == [4,4]:
         cgra_info.read_cgra_info(cgra_filename, '4x4')
     else:
         cgra_info.read_cgra_info(cgra_filename, '8x8')
