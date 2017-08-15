@@ -10,7 +10,7 @@ Genesis2.pl -parse -generate -top top -input\
   ../pe_tile/pe_tile.vp top.vp \
   \
   ../pe_new/pe/rtl/test_pe.svp \
-  ../pe_new/pe/rtl/test_pe_comp.svp  \  
+  ../pe_new/pe/rtl/test_pe_comp.svp  \
   ../pe_new/pe/rtl/test_mult_add.svp \
   ../pe_new/pe/rtl/test_full_add.svp \
   ../pe_new/pe/rtl/test_lut.svp      \
