@@ -10,6 +10,7 @@ Genesis2.pl -parse -generate -top top -input\
   ../pe_tile/pe_tile.vp top.vp \
   \
   ../pe_new/pe/rtl/test_pe.svp \
+  ../pe_new/pe/rtl/test_pe_comp.svp  \  
   ../pe_new/pe/rtl/test_mult_add.svp \
   ../pe_new/pe/rtl/test_full_add.svp \
   ../pe_new/pe/rtl/test_lut.svp      \
@@ -19,3 +20,5 @@ Genesis2.pl -parse -generate -top top -input\
   ../memory_tile/memory_tile.vp \
   ../memory_core/memory_core.vp \
   ../memory_core/mem.vp
+
+
