@@ -4,17 +4,21 @@
 # @Caleb: For providing registers on all outputs of all SBs, do-
 # setenv CGRA_GEN_ALL_REG 1
 
-Genesis2.pl -parse -generate -top top -input\
+# Genesis2.pl --help
+# exit
+
+
+
+Genesis2.pl -parse -generate -top top \
+  -srcpath ../pe_new/pe/rtl \
+  -input\
   ../sb/sb.vp \
   ../cb/cb.vp \
+  \
+  ../pe_new/pe/rtl/*.svp \
+  \
   ../pe_tile/pe_tile.vp top.vp \
   \
-  ../pe_new/pe/rtl/test_pe.svp \
-  ../pe_new/pe/rtl/test_pe_comp.svp  \
-  ../pe_new/pe/rtl/test_mult_add.svp \
-  ../pe_new/pe/rtl/test_full_add.svp \
-  ../pe_new/pe/rtl/test_lut.svp      \
-  ../pe_new/pe/rtl/test_opt_reg.svp  \
   ../pe_tile_new/pe_tile_new.vp \
   \
   ../memory_tile/memory_tile.vp \
@@ -22,3 +26,9 @@ Genesis2.pl -parse -generate -top top -input\
   ../memory_core/mem.vp
 
 
+#   ../pe_new/pe/rtl/test_pe.svp \
+#   ../pe_new/pe/rtl/test_pe_comp.svp  \
+#   ../pe_new/pe/rtl/test_mult_add.svp \
+#   ../pe_new/pe/rtl/test_full_add.svp \
+#   ../pe_new/pe/rtl/test_lut.svp      \
+#   ../pe_new/pe/rtl/test_opt_reg.svp  \
