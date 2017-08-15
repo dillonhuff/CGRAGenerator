@@ -1,5 +1,6 @@
 //; my $use_mad = parameter(Name=>'use_mad', Val=>1, List=>[1, 0],
 //;                               Doc=>"Use MAD or simple MULT");
+
 module  `mname`  #(
   parameter DataWidth = 16
 ) (

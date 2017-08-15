@@ -1,0 +1,275 @@
+//; my $reg_inputs = parameter(Name=>'reg_inputs', val=> 1, List=>[1, 0], doc=>'Add register //;on the inputs');
+//; #my $reg_out    = parameter(Name=>'reg_out', val=> 1, List=>[1, 0], doc=>'Add register on //;the outputs');
+//; my $reg_out    = parameter(Name=>'reg_out', val=> 0, List=>[1, 0], doc=>'Add register on //;the outputs');
+//;
+//; my $reg_red_inp = 1;
+//; my $reg_red_out = 0;
+//;
+//; my $use_reduce = parameter(Name=>'use_reduce', val=> 1, List=>[1, 0], doc=>'0 - no reduce //;PE, 1 - add reduce PE');
+//; my $use_add   = parameter(Name=>'use_add', val=> 1, List=>[2, 1, 0], doc=>'0 - no adders, //;1 - simple ADDs, 2 - SAD');
+//; my $use_cntr  = parameter(Name=>'use_cntr', val=> 1, List=>[1, 0],  doc=>'0 - no counter //;mode, 1 - enable counter mode');
+//; my $use_bool  = parameter(Name=>'use_bool', Val=>1, List=>[1, 0], Doc=>"0 - no booleans, //;1 - simple gates");
+//; my $lut_inps  = parameter(Name=>'lut_inps',
+//;                               Val=>3, Min=>0, Step=>1, Max=>16,
+//;                               Doc=>"0 - no LUT, 1-16 - uses LUTs with that number of //;inputs");
+//; my $use_shift = parameter(Name=>'use_shift', val=> 1, List=>[1, 0], doc=>'Use shift //;operations');
+//; my $mult_mode = parameter(Name=>'mult_mode', val=> 1, List=>[2, 1, 0], doc=>'Use MAD(2) //;or MULT(1) or None(0)');
+//; my $use_div   = parameter(Name=>'use_div', val=> 0, List=>[1, 0],  doc=>'0 - no divide, 1 //;- enable iterrative divide');
+//; my $en_double = parameter(Name=>'en_double', val=> 0, List=>[1, 0], doc=>'1 - 32b //;supported, 0 - No 32b support');
+//;
+//; my $debug = $self->parameter(name=>'debug', val=> 0, List=>[1, 0],
+//;                             doc=>'Generate extra code for debug');
+//;
+//;
+//; my $use_sad  = $use_add > 1;
+//; my $use_lut  = ($lut_inps > 1);
+//;
+//; my $use_cntr = ($use_add > 1) ? 1 : 0;
+//;
+//; my $use_c_input = ($use_sad > 0 || $mult_mode > 1 || $lut_inps > 3);
+
+module   `mname`  #(
+  parameter DataWidth = 16
+) (
+  input                         clk,
+  input                         rst_n,
+  input                         en,
+
+  input         [DataWidth-1:0] cfg_d,
+  input         [10:0]          cfg_a,
+  input                         cfg_en,
+
+
+  input  [DataWidth-1:0]        op_a [3:0],
+  input  [DataWidth-1:0]        op_b [3:0],
+//; if($use_c_input) {
+  input  [DataWidth-1:0]        op_c [3:0],
+//;}
+
+
+  input                         op_d_p [3:0],
+  input                         op_e_p [3:0],
+  input                         op_f_p [3:0],
+
+
+  output logic [DataWidth-1:0]  res_out   [3:0],
+  output logic                  res_p_out [3:0]
+);
+
+logic [DataWidth-1:0]  res   [3:0];
+logic                  res_p [3:0];
+
+logic [DataWidth-1:0]        pe_a_in [3:0];
+logic [DataWidth-1:0]        pe_b_in [3:0];
+//; if($use_c_input) {
+logic [DataWidth-1:0]        pe_c_in [3:0];
+//;}
+
+
+logic [DataWidth-1:0]  pe_res   [3:0];
+//; if($mult_mode > 0) {
+logic [2*DataWidth-1:0] mult_res[3:0];
+//;}
+
+
+logic en_chain_inp;
+
+logic [15:0] op_code;
+always_ff @(posedge clk or negedge rst_n) begin
+  if(~rst_n) begin
+    op_code <= 'h0;
+  end else if(cfg_en && (&cfg_a)) begin
+    op_code <= cfg_d[15:0];
+  end
+end
+
+assign en_chain_inp = (op_code[8:7] == 2'b11);
+
+//; if($use_reduce) {
+logic reduce_en;
+logic en_mult32;
+logic en_conv16;
+
+assign en_mult32    = (op_code[8:7] == 2'b00);
+assign en_conv16    = (op_code[8:7] == 2'b01);
+
+assign reduce_en = |op_code[6:0];
+
+
+always_comb begin
+  pe_a_in = op_a;
+  pe_b_in = op_b;
+//; if($use_c_input) {
+  pe_c_in = op_c;
+//; }
+
+  if (en_mult32) begin
+    pe_a_in[1] = pe_a_in[0];
+    pe_b_in[2] = pe_b_in[0];
+    pe_a_in[3] = pe_a_in[2];
+    pe_b_in[3] = pe_b_in[1];
+  end else if (en_chain_inp) begin
+    pe_b_in[1] = pe_res[0];
+    pe_b_in[3] = pe_res[2];
+  end
+end
+
+
+//; } else {
+
+
+always_comb begin
+  pe_a_in = op_a;
+  pe_b_in = op_b;
+//; if($use_c_input) {
+  pe_c_in = op_c;
+//; }
+
+  if (en_chain_inp) begin
+    pe_b_in[1] = pe_res[0];
+    pe_b_in[3] = pe_res[2];
+  end
+end
+
+//;}
+
+logic [`$use_add -1`:0] carry_chain  [1:0];
+logic       cmpr_eq_chain[1:0];
+logic [DataWidth-1:0] div_msb[1:0];
+logic [DataWidth-1:0] div_lsb[1:0];
+
+//; my $chain_i = 0;
+//; for (my $i=0;$i<4; $i++) {
+//; my $is_msb = ($i)%2;
+//; my $PE = generate('test_pe', 'comp_pe'.$i, reg_inputs=>$reg_inputs, reg_out=>$reg_out,
+//;                      "use_bool"=>$use_bool, "use_add"=>$use_add,
+//;                         "use_cntr" => $use_cntr, "use_shift"=>$use_shift, "mult_mode"=>$mult_mode,
+//;                         "use_div" => $use_div, "is_msb"=>$is_msb, "en_double" => $en_double,
+//;                         "debug"=>$debug);
+`$PE->mname()` #(.DataWidth(DataWidth)) `$PE->iname()`
+(
+  .clk       (clk),
+  .rst_n     (rst_n),
+
+  .cfg_d     (cfg_d),
+  .cfg_a     (cfg_a[7:0]),
+  .cfg_en    (cfg_en & (cfg_a[10:8]==3'h`$i`)), //'
+
+  .op_a_in   (pe_a_in[`$i`]),
+//; if($en_double & $use_shift & !$is_msb) {
+  .op_a_shift (pe_a_in[`$i+1`]),
+//; } elsif($en_double & $use_shift & $is_msb) {
+  .op_a_shift (pe_a_in[`$i-1`]),
+//; }
+  .op_b_in   (pe_b_in[`$i`]),
+//;if($use_c_input > 2) {
+  .op_c_in   (pe_c_in[`$i`]),
+//;}
+
+//; if($en_double & ($use_add > 0) & !$is_msb) {
+  .res_p_msb   (res_p[`$i+1`]),
+  .carry_out   (carry_chain[`$chain_i`]),
+  .cmpr_eq_out (cmpr_eq_chain[`$chain_i`]),
+//; } elsif($en_double & ($use_add > 0) & $is_msb) {
+  .carry_in   (carry_chain[`$chain_i`]),
+  .cmpr_eq_in (cmpr_eq_chain[`$chain_i`]),
+//; }
+//; if($use_div > 0) {
+//;   if($is_msb) {
+  .div_low_msb (pe_a_in[`$i-1`][DataWidth-1:DataWidth-2]),
+//;   } elsif(!$en_double) {
+  .res_p_msb   (res_p[`$i+1`]),
+//;   }
+  .div_ci    (div_msb[`$chain_i`]),
+  .div_co    (div_lsb[`$chain_i`]),
+//;}
+
+  .op_d_p_in (op_d_p[`$i`]),
+  .op_e_p_in (op_e_p[`$i`]),
+  .op_f_p_in (op_f_p[`$i`]),
+
+  .res       (pe_res[`$i`]),
+//; if($en_double & $mult_mode > 0) {
+  .mult_res  (mult_res[`$i`]),
+//;}
+  .res_p     (res_p[`$i`])
+);
+
+//;   if(($i)%2 == 1) {
+//;     $chain_i=$chain_i+1;
+//;   }
+//; }
+
+//; if($use_reduce) {
+logic [2*DataWidth - 1:0] reduce_res;
+logic [2*DataWidth - 1:0] reduce_inp [3:0];
+genvar g_i;
+generate
+  for (g_i = 0; g_i < 4; g_i = g_i + 1) begin : GEN_RED_IN
+//; if ($reg_red_inp) {
+    always_ff @(posedge clk or negedge rst_n) begin
+      if(~rst_n) begin
+        reduce_inp[g_i] <= 'h0;
+      end else begin
+//; if($en_double & $mult_mode > 0) {
+        reduce_inp[g_i] <= en_mult32 ? mult_res[g_i] : { {DataWidth{1'b0}},pe_res[g_i]};
+//;} else {
+        reduce_inp[g_i] <= { {DataWidth{1'b0}},pe_res[g_i]};
+//;}
+      end
+    end
+//; } elsif($en_double & $mult_mode > 0) {
+      assign reduce_inp[g_i] = en_mult32 ? mult_res[g_i] : { {DataWidth{1'b0}},pe_res[g_i]};
+//;} else {
+      assign reduce_inp[g_i] = { {DataWidth{1'b0}},pe_res[g_i]};
+//;}
+  end
+endgenerate
+
+//; my $dut_red = generate_base('test_pe_red', 'dut_red',
+//;                            use_extra_inp => '0', use_abs => '1', debug => '1');
+
+`$dut_red->mname()` #(.DataWidth(2*DataWidth)) `$dut_red->iname()`
+(
+  .op_code (op_code[6:0]),
+
+  .op_a (reduce_inp[0]),
+  .op_b (reduce_inp[1]),
+  .op_c (reduce_inp[2]),
+  .op_d (reduce_inp[3]),
+
+  .res  (reduce_res)
+);
+
+
+assign res[0] = pe_res[0];
+assign res[2] = pe_res[2];
+
+assign res[1] = reduce_en ? reduce_res[DataWidth-1:0] : pe_res[1];
+assign res[3] = reduce_en ? reduce_res[2*DataWidth-1:DataWidth] : pe_res[3];
+//; } else {
+
+assign res = pe_res;
+//;}
+
+//; if($reg_red_out ) {
+  always_ff @(posedge clk or negedge rst_n) begin
+    if(~rst_n) begin
+      res_p_out[0] <= 'h0;
+      res_p_out[1] <= 'h0;
+      res_out[0]   <= 'h0;
+      res_out[1]   <= 'h0;
+    end else begin
+      res_p_out <= res_p;
+      res_out   <= res;
+    end
+  end
+
+//; } else {
+  assign res_p_out = res_p;
+  assign res_out   = res;
+//;}
+
+endmodule
+
+
