@@ -9,9 +9,7 @@
 
 
 
-Genesis2.pl -parse -generate -top top \
-  -srcpath ../pe_new/pe/rtl \
-  -input\
+Genesis2.pl -parse -generate -top top -input\
   ../sb/sb.vp \
   ../cb/cb.vp \
   \
