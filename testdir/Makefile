@@ -71,6 +71,7 @@ test_4x4_gray_small:
 	   -output $(TEMPDIR)/$${image}_out.raw   \
 	   -nclocks 5M;                     \
         cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw || echo FAIL
+        cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw
 
 test_4x4_gray:
 	bitstream=../../bitstream/examples/cd387-good.bs; \
