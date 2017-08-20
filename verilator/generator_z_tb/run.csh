@@ -254,25 +254,14 @@ else
   echo; echo "Bitstream appears to have embedded i/o information (as it should)."
 endif
 
-# set decoded = $tmpdir/{$config:t}.decoded
-# if (-e $decoded) rm $decoded
-# 
-# NOTE newmem is default now
-# # ../../bitstream/decoder/decode.py -newmem $config > $decoded
-# 
-# if ($?OLDMEM) then
-#   echo ../../bitstream/decoder/decode.py -oldmem $config
-#   ../../bitstream/decoder/decode.py $config -oldmem > $decoded
-# else
-#   echo ../../bitstream/decoder/decode.py -newmem -$gridsize $config
-#   ../../bitstream/decoder/decode.py -newmem -$gridsize $config > $decoded
-# endif
+
 
 
 
 
 set lno = 226
-echo -n "FOO-$ln0 "; head -1 $config
+set tmpf = $config
+echo "FOO-$lno"; head -1 $tmpf; echo
 
 
 
@@ -296,9 +285,13 @@ echo \
 
 
 
+echo
+egrep '^Ass' $decoded && echo "OOPS OOPS OOPS OOPS OOPS OOPS OOPS OOPS OOPS"
+echo
 
-set lno = 248
-echo -n "FOO-$ln0 "; head -1 $decoded
+set lno = decoded
+set tmpf = $decoded
+echo "FOO-$lno"; head -1 $tmpf; echo
 
 
 
@@ -322,14 +315,13 @@ cat $decoded \
   | egrep -v '^F100.... FFFFFFFF' \
   | egrep -v '^FF00.... 000000F0' \
   | egrep -v '^FF00.... 000000FF' \
-  | awk '/^[0-9A-F]/{print $1 " " $2}' \
+  | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
   > $newbs
 
 
-
-
-set lno = 302
-echo -n "FOO-$ln0 "; head -1 $newbs
+set lno = 321
+set tmpf = $newbs
+echo "FOO-$lno"; head -1 $tmpf; echo
 
 
 
@@ -345,7 +337,7 @@ set config = $newbs
 
 
 set lno = 308
-echo -n "FOO-$ln0 "; head -1 $config
+echo -n "FOO-$lno "; head -1 $config
 
 
 
@@ -397,7 +389,7 @@ echo "Use bitstream '$config'..."
 
 
 set lno = 390
-echo -n "FOO-$ln0 "; head -1 $config
+echo -n "FOO-$lno "; head -1 $config
 
 
 
@@ -455,6 +447,22 @@ if (! -e $vdir) then
   exit -1
 endif
 
+
+
+echo
+echo '------------------------------------------------------------------------'
+set ftmp = "$vdir/top.v"
+grep $inwires $ftmp
+grep $outwires $ftmp
+echo '------------------------------------------------------------------------'
+echo
+
+
+
+
+
+
+
 echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
     echo
     echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
@@ -465,6 +473,27 @@ echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
         -vtop "$vdir/top.v" > $tmpdir/wirehack.log
 
     if ($?VERBOSE) cat $tmpdir/wirehack.log
+
+
+
+
+
+
+echo
+echo '------------------------------------------------------------------------'
+set ftmp = "$vdir/top.v"
+grep $inwires $ftmp
+grep $outwires $ftmp
+echo '------------------------------------------------------------------------'
+echo
+
+
+
+
+
+
+
+
 
 echo END top.v manipulation
 
