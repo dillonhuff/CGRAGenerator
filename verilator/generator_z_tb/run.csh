@@ -436,6 +436,7 @@ echo "Building the verilator simulator executable..."
      ls -l $vdir/sram*
   endif
 
+  set echo
   # Temporary wen/ren hacks.  
   if ($?HACKMEM) then
     # In memory_core_unq1.v, change:
@@ -443,6 +444,7 @@ echo "Building the verilator simulator executable..."
     # To:
     #   assign wen = WENHACK
 
+    ls -l $vdir
     mv $vdir/memory_core_unq1.v $tmpdir/memory_core_unq1.v.orig
     cat $tmpdir/memory_core_unq1.v.orig \
       | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
@@ -465,6 +467,7 @@ echo "Building the verilator simulator executable..."
     echo
 
   endif
+  unset echo
 
   # Build the necessary switches
 
