@@ -35,7 +35,6 @@ endif
 # builds small parrot
 
 # DEFAULTS
-set gridsize = "4x4"
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
 # set config    = ../../bitstream/examples/calebscript.bs
@@ -63,7 +62,7 @@ if ($#argv == 1) then
   if ("$argv[1]" == '--help') then
     echo "Usage:"
     echo "    $0 <textbench.cpp> -q [-gen | -nogen]"
-    echo "        -usemem -allreg [ -4x4 | -8x8 ]"
+    echo "        -usemem -allreg"
     echo "        -config <config_filename.bs>"
     echo "        -input   <input_filename.png>"
     echo "        -output <output_filename.raw>"
@@ -74,7 +73,6 @@ if ($#argv == 1) then
     echo "Defaults:"
     echo "    $0 top_tb.cpp \"
     echo "       $GENERATE         \"
-    echo "       -$gridsize \"
     echo "       -config  $config \"
     echo "       -input   $input  \"
     echo "       -output  $output \"
@@ -114,13 +112,13 @@ while ($#argv)
     case '-q':
       unset VERBOSE; breaksw;
 
+    # DEPRECATED SWITCHES
     case '-4x4':
-      set gridsize = "4x4"; breaksw;
-
     case '-8x8':
+      echo WARNING Switch '$1' no longer valid"; breaksw
+
     case -usemem:
     case -newmem:
-      set gridsize = "8x8";
       setenv CGRA_GEN_USE_MEM 1;
       breaksw;
 
@@ -254,20 +252,24 @@ if (-e $decoded) rm $decoded
 # endif
 
 
+
+
+
 # echo \
 # ../../bitstream/decoder/decode.py -v -$gridsize $config
 # ../../bitstream/decoder/decode.py -v -$gridsize $config > $decoded
-
-
-# Nowadays decoder needs cgra_info to work correctly maybe
-set gztop = ../../hardware/generator_z/top/
-ls -l $gztop/cgra_info.txt
-set cgra_info = $gztop/cgra_info.txt
-
-
+# 
+# Nowadays decoder needs cgra_info to work correctly
+set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
+pwd
+ls -l $cgra_info
+# 
 echo \
 ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
 ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
+
+
+
 
 
 
@@ -446,9 +448,9 @@ echo "Building the verilator simulator executable..."
   if ($?CGRA_GEN_USE_MEM) then
      cp ./sram_stub.v $vdir/sram_512w_16b.v
      ls -l $vdir/sram*
-  else
-     echo "NOT USING MEMORY.  TURNING OFF HACKMEM.  It causes trouble."
-     unset HACKMEM
+#  else
+#     echo "NOT USING MEMORY.  TURNING OFF HACKMEM.  It causes trouble."
+#     unset HACKMEM
   endif
 
   set echo
