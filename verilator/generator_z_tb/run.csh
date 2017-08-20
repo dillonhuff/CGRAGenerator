@@ -254,8 +254,8 @@ if (-e $decoded) rm $decoded
 # endif
 
 echo \
-../../bitstream/decoder/decode.py -$gridsize $config
-../../bitstream/decoder/decode.py -$gridsize $config > $decoded
+../../bitstream/decoder/decode.py -v -$gridsize $config
+../../bitstream/decoder/decode.py -v -$gridsize $config > $decoded
 
 
 
@@ -434,6 +434,9 @@ echo "Building the verilator simulator executable..."
   if ($?CGRA_GEN_USE_MEM) then
      cp ./sram_stub.v $vdir/sram_512w_16b.v
      ls -l $vdir/sram*
+  else
+     echo "NOT USING MEMORY.  TURNING OFF HACKMEM.  It causes trouble."
+     unset HACKMEM
   endif
 
   set echo
