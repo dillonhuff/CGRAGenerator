@@ -93,6 +93,9 @@ foreach f (obj_dir counter.cvd tile_config.dat)
   if (-e $f) rm -rf $f
 end
 
+# I GUESS 4x4 vs. 8x8 is implied by presence or absence of CGRA_GEN_USE_MEM (!!???)
+#  I can't find anything else that does it :(
+
 unset HACKMEM
 
 while ($#argv)
@@ -115,7 +118,7 @@ while ($#argv)
     # DEPRECATED SWITCHES
     case '-4x4':
     case '-8x8':
-      echo WARNING Switch '$1' no longer valid"; breaksw
+      echo "WARNING Switch '$1' no longer valid"; breaksw
 
     case -usemem:
     case -newmem:
