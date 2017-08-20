@@ -290,6 +290,15 @@ echo "Will strip out IO hack from '$config'"
 echo "to create clean bitstream '$newbs'"
 echo
 
+
+
+
+set lno = 293
+echo -n "FOO-$ln0 "; head -1 $decoded
+
+
+
+
 # grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
 cat $decoded \
   | egrep -v '^F000.... FFFFFFFF' \
@@ -299,11 +308,32 @@ cat $decoded \
   | awk '/^[0-9A-F]/{print $1 " " $2}' \
   > $newbs
 
+
+
+
+set lno = 302
+echo -n "FOO-$ln0 "; head -1 $newbs
+
+
+
+
 if ($?VERBOSE) then
   diff $config $newbs | grep -v d
   echo
 endif
 set config = $newbs
+
+
+
+
+
+set lno = 308
+echo -n "FOO-$ln0 "; head -1 $config
+
+
+
+
+
 
 # Backslashes line up better when printed...
 echo "Running with the following switches:"
@@ -371,6 +401,15 @@ endif
 #   mv $config $tmpdir/prehack.bs
 #   bin/egregious_conv21_hack.csh $tmpdir/prehack.bs $config 
 # endif
+
+
+
+
+set lno = 390
+echo -n "FOO-$ln0 "; head -1 $config
+
+
+
 
 if ($?VERBOSE) then
   echo
