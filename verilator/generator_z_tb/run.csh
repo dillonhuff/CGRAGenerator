@@ -194,147 +194,6 @@ if (! -e "$testbench") then
   exit -1
 endif
 
-unset embedded_io
-grep "FFFFFFFF" $config > /dev/null && set embedded_io
-if (! $?embedded_io) then
-  echo "Bitstream appears NOT to have embedded I/O information."
-  echo "We don't support that no more."
-  exit -1
-endif
-
-# # Swizzle the bitstream to match new mem regime (unless bypassed)
-# 
-# set swizzled = $tmpdir/{$config:t}.swizzled
-# if (-e $swizzled) rm $swizzled
-# 
-# # if ($?OLDMEM) then
-# #     cp $config $swizzled
-# # else
-# #   echo "Unswizzling bitstream.  Before:"
-# #   cat $config
-# # 
-# #   ./swizzle.py < $config > $swizzled
-# # 
-# #   echo "After:"
-# #   cat $swizzled
-# # endif
-# 
-# cp $config $swizzled
-# 
-# echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
-# 
-# set decoded = $tmpdir/{$config:t}.decoded
-# if (-e $decoded) rm $decoded
-# # ../../bitstream/decoder/decode.py $config > $decoded
-# # New memtile regime swaps r,c tile addresses HA
-# 
-# # ../../bitstream/decoder/decode.py -newmem $config > $decoded
-# 
-# if ($?OLDMEM) then
-#   echo ../../bitstream/decoder/decode.py $swizzled
-#   ../../bitstream/decoder/decode.py $swizzled > $decoded
-# else
-#   echo ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled
-#   ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled > $decoded
-# endif
-
-echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
-
-set decoded = $tmpdir/{$config:t}.decoded
-if (-e $decoded) rm $decoded
-
-# NOTE newmem is default now
-# # ../../bitstream/decoder/decode.py -newmem $config > $decoded
-# 
-# if ($?OLDMEM) then
-#   echo ../../bitstream/decoder/decode.py -oldmem $config
-#   ../../bitstream/decoder/decode.py $config -oldmem > $decoded
-# else
-#   echo ../../bitstream/decoder/decode.py -newmem -$gridsize $config
-#   ../../bitstream/decoder/decode.py -newmem -$gridsize $config > $decoded
-# endif
-
-
-
-
-
-# echo \
-# ../../bitstream/decoder/decode.py -v -$gridsize $config
-# ../../bitstream/decoder/decode.py -v -$gridsize $config > $decoded
-# 
-# Nowadays decoder needs cgra_info to work correctly
-set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
-pwd
-ls -l $cgra_info
-# 
-echo \
-../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
-../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
-
-
-
-
-
-
-
-
-# Show IO info derived from bitstream
-echo; sed -n '/O Summary/,$p' $decoded; echo
-
-# Clean bitstream (strip out hacked-in IO info)
-# set newbs = $tmpdir/bs.txt
-set newbs = $decoded.bs
-
-if (-e $newbs) rm $newbs
-echo "Will strip out IO hack from '$config'"
-echo "to create clean bitstream '$newbs'"
-echo
-
-
-
-
-set lno = 293
-echo -n "FOO-$ln0 "; head -1 $decoded
-
-
-
-
-# grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
-cat $decoded \
-  | egrep -v '^F000.... FFFFFFFF' \
-  | egrep -v '^F100.... FFFFFFFF' \
-  | egrep -v '^FF00.... 000000F0' \
-  | egrep -v '^FF00.... 000000FF' \
-  | awk '/^[0-9A-F]/{print $1 " " $2}' \
-  > $newbs
-
-
-
-
-set lno = 302
-echo -n "FOO-$ln0 "; head -1 $newbs
-
-
-
-
-if ($?VERBOSE) then
-  diff $config $newbs | grep -v d
-  echo
-endif
-set config = $newbs
-
-
-
-
-
-set lno = 308
-echo -n "FOO-$ln0 "; head -1 $config
-
-
-
-
-
-
 # Backslashes line up better when printed...
 echo "Running with the following switches:"
 echo "$0 top_tb.cpp \"
@@ -378,17 +237,149 @@ else
   # ls -l $gztop/cgra_info.txt $gztop/examples/*.txt
 endif
 
-# If config files has an xml extension, use Ankita's perl script
-# to turn it into a .dat/.txt configuration bitstream
 
-echo ""
-if ("$config:e" == "xml") then
-  echo "Generating config bitstream 'tmpconfig.dat' from xml file '$config'..."
-  perl ../../bitstream/example3/gen_bitstream.pl $config tmpconfig
-  set config = tmpconfig.dat
+
+
+
+
+
+
+unset embedded_io
+grep "FFFFFFFF" $config > /dev/null && set embedded_io
+if (! $?embedded_io) then
+  echo "Bitstream appears NOT to have embedded I/O information."
+  echo "We don't support that no more."
+  exit -1
 else
-  echo "Use existing config bitstream '$config'..."
+  echo; echo "Bitstream appears to have embedded i/o information (as it should)."
 endif
+
+# set decoded = $tmpdir/{$config:t}.decoded
+# if (-e $decoded) rm $decoded
+# 
+# NOTE newmem is default now
+# # ../../bitstream/decoder/decode.py -newmem $config > $decoded
+# 
+# if ($?OLDMEM) then
+#   echo ../../bitstream/decoder/decode.py -oldmem $config
+#   ../../bitstream/decoder/decode.py $config -oldmem > $decoded
+# else
+#   echo ../../bitstream/decoder/decode.py -newmem -$gridsize $config
+#   ../../bitstream/decoder/decode.py -newmem -$gridsize $config > $decoded
+# endif
+
+
+
+
+set lno = 226
+echo -n "FOO-$ln0 "; head -1 $config
+
+
+
+
+
+set decoded = $tmpdir/{$config:t}.decoded
+if (-e $decoded) rm $decoded
+
+# echo \
+# ../../bitstream/decoder/decode.py -v -$gridsize $config
+# ../../bitstream/decoder/decode.py -v -$gridsize $config > $decoded
+# 
+# Nowadays decoder needs cgra_info to work correctly
+set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
+pwd
+ls -l $cgra_info
+# 
+echo \
+../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
+../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
+
+
+
+
+set lno = 248
+echo -n "FOO-$ln0 "; head -1 $decoded
+
+
+
+
+
+# Show IO info derived from bitstream
+echo; sed -n '/O Summary/,$p' $decoded; echo
+
+# Clean bitstream (strip out hacked-in IO info)
+# set newbs = $tmpdir/bs.txt
+set newbs = $decoded.bs
+
+if (-e $newbs) rm $newbs
+echo "Will strip out IO hack from '$config'"
+echo "to create clean bitstream '$newbs'"
+echo
+
+# grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
+cat $decoded \
+  | egrep -v '^F000.... FFFFFFFF' \
+  | egrep -v '^F100.... FFFFFFFF' \
+  | egrep -v '^FF00.... 000000F0' \
+  | egrep -v '^FF00.... 000000FF' \
+  | awk '/^[0-9A-F]/{print $1 " " $2}' \
+  > $newbs
+
+
+
+
+set lno = 302
+echo -n "FOO-$ln0 "; head -1 $newbs
+
+
+
+
+if ($?VERBOSE) then
+  diff $config $newbs | grep -v d
+  echo
+endif
+set config = $newbs
+
+
+
+
+
+set lno = 308
+echo -n "FOO-$ln0 "; head -1 $config
+
+
+
+
+
+
+
+
+
+# This ain't supported no more at all nohow
+# # If config files has an xml extension, use Ankita's perl script
+# # to turn it into a .dat/.txt configuration bitstream
+# echo ""
+# if ("$config:e" == "xml") then
+#   echo "Generating config bitstream 'tmpconfig.dat' from xml file '$config'..."
+#   perl ../../bitstream/example3/gen_bitstream.pl $config tmpconfig
+#   set config = tmpconfig.dat
+# else
+#   echo "Use existing config bitstream '$config'..."
+# endif
+
+echo "Use bitstream '$config'..."
+
+
+
+
+
+
+
+
+
+
+
+
 
 # if ($?EGREGIOUS_CONV21_HACK) then
 #   echo ------------------------------------
