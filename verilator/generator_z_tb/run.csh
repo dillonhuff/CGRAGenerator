@@ -253,9 +253,21 @@ if (-e $decoded) rm $decoded
 #   ../../bitstream/decoder/decode.py -newmem -$gridsize $config > $decoded
 # endif
 
+
+# echo \
+# ../../bitstream/decoder/decode.py -v -$gridsize $config
+# ../../bitstream/decoder/decode.py -v -$gridsize $config > $decoded
+
+
+# Nowadays decoder needs cgra_info to work correctly maybe
+set gztop = ../../hardware/generator_z/top/
+ls -l $gztop/cgra_info.txt
+set cgra_info = $gztop/cgra_info.txt
+
+
 echo \
-../../bitstream/decoder/decode.py -v -$gridsize $config
-../../bitstream/decoder/decode.py -v -$gridsize $config > $decoded
+../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
+../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
 
 
 
