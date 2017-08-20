@@ -81,8 +81,8 @@ if (args[0] == '--help'): print usage; sys.exit(0);
 while (len(args) > 0):
     # if   (args[0] == '-nodefaults'): sbdefaults = False
     if   (args[0] == '-v'):    verbose = True
-    elif (args[0] == '-4x4'): sys.stderr.write('WARNING switch "-4x4" not used\n')
-    elif (args[0] == '-8x8'): sys.stderr.write('WARNING switch "-8x8" not used\n')
+    elif (args[0] == '-4x4'): print 'WARNING switch "-4x4" not used'
+    elif (args[0] == '-8x8'): print 'WARNING switch "-8x8" not used'
     elif (args[0] == '-cgra'):
         cgra_filename = args[1]
         args = args[1:];

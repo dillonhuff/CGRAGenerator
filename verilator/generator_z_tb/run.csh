@@ -35,6 +35,7 @@ endif
 # builds small parrot
 
 # DEFAULTS
+set gridsize = "4x4"
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
 # set config    = ../../bitstream/examples/calebscript.bs
@@ -62,7 +63,7 @@ if ($#argv == 1) then
   if ("$argv[1]" == '--help') then
     echo "Usage:"
     echo "    $0 <textbench.cpp> -q [-gen | -nogen]"
-    echo "        -usemem -allreg"
+    echo "        -usemem -allreg [ -4x4 | -8x8 ]"
     echo "        -config <config_filename.bs>"
     echo "        -input   <input_filename.png>"
     echo "        -output <output_filename.raw>"
@@ -73,6 +74,7 @@ if ($#argv == 1) then
     echo "Defaults:"
     echo "    $0 top_tb.cpp \"
     echo "       $GENERATE         \"
+    echo "       -$gridsize \"
     echo "       -config  $config \"
     echo "       -input   $input  \"
     echo "       -output  $output \"
@@ -93,9 +95,6 @@ foreach f (obj_dir counter.cvd tile_config.dat)
   if (-e $f) rm -rf $f
 end
 
-# I GUESS 4x4 vs. 8x8 is implied by presence or absence of CGRA_GEN_USE_MEM (!!???)
-#  I can't find anything else that does it :(
-
 unset HACKMEM
 
 while ($#argv)
@@ -115,13 +114,13 @@ while ($#argv)
     case '-q':
       unset VERBOSE; breaksw;
 
-    # DEPRECATED SWITCHES
     case '-4x4':
-    case '-8x8':
-      echo "WARNING Switch '$1' no longer valid"; breaksw
+      set gridsize = "4x4"; breaksw;
 
+    case '-8x8':
     case -usemem:
     case -newmem:
+      set gridsize = "8x8";
       setenv CGRA_GEN_USE_MEM 1;
       breaksw;
 
@@ -194,6 +193,101 @@ if (! -e "$testbench") then
   exit -1
 endif
 
+unset embedded_io
+grep "FFFFFFFF" $config > /dev/null && set embedded_io
+if (! $?embedded_io) then
+  echo "Bitstream appears NOT to have embedded I/O information."
+  echo "We don't support that no more."
+  exit -1
+endif
+
+# # Swizzle the bitstream to match new mem regime (unless bypassed)
+# 
+# set swizzled = $tmpdir/{$config:t}.swizzled
+# if (-e $swizzled) rm $swizzled
+# 
+# # if ($?OLDMEM) then
+# #     cp $config $swizzled
+# # else
+# #   echo "Unswizzling bitstream.  Before:"
+# #   cat $config
+# # 
+# #   ./swizzle.py < $config > $swizzled
+# # 
+# #   echo "After:"
+# #   cat $swizzled
+# # endif
+# 
+# cp $config $swizzled
+# 
+# echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
+# 
+# set decoded = $tmpdir/{$config:t}.decoded
+# if (-e $decoded) rm $decoded
+# # ../../bitstream/decoder/decode.py $config > $decoded
+# # New memtile regime swaps r,c tile addresses HA
+# 
+# # ../../bitstream/decoder/decode.py -newmem $config > $decoded
+# 
+# if ($?OLDMEM) then
+#   echo ../../bitstream/decoder/decode.py $swizzled
+#   ../../bitstream/decoder/decode.py $swizzled > $decoded
+# else
+#   echo ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled
+#   ../../bitstream/decoder/decode.py -newmem -$gridsize $swizzled > $decoded
+# endif
+
+echo; echo "Bitstream appears to have embedded i/o information (as it should).  Decoded:"
+
+set decoded = $tmpdir/{$config:t}.decoded
+if (-e $decoded) rm $decoded
+
+# NOTE newmem is default now
+# # ../../bitstream/decoder/decode.py -newmem $config > $decoded
+# 
+# if ($?OLDMEM) then
+#   echo ../../bitstream/decoder/decode.py -oldmem $config
+#   ../../bitstream/decoder/decode.py $config -oldmem > $decoded
+# else
+#   echo ../../bitstream/decoder/decode.py -newmem -$gridsize $config
+#   ../../bitstream/decoder/decode.py -newmem -$gridsize $config > $decoded
+# endif
+
+echo \
+../../bitstream/decoder/decode.py -$gridsize $config
+../../bitstream/decoder/decode.py -$gridsize $config > $decoded
+
+
+
+
+
+# Show IO info derived from bitstream
+echo; sed -n '/O Summary/,$p' $decoded; echo
+
+# Clean bitstream (strip out hacked-in IO info)
+# set newbs = $tmpdir/bs.txt
+set newbs = $decoded.bs
+
+if (-e $newbs) rm $newbs
+echo "Will strip out IO hack from '$config'"
+echo "to create clean bitstream '$newbs'"
+echo
+
+# grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
+cat $decoded \
+  | egrep -v '^F000.... FFFFFFFF' \
+  | egrep -v '^F100.... FFFFFFFF' \
+  | egrep -v '^FF00.... 000000F0' \
+  | egrep -v '^FF00.... 000000FF' \
+  | awk '/^[0-9A-F]/{print $1 " " $2}' \
+  > $newbs
+
+if ($?VERBOSE) then
+  diff $config $newbs | grep -v d
+  echo
+endif
+set config = $newbs
+
 # Backslashes line up better when printed...
 echo "Running with the following switches:"
 echo "$0 top_tb.cpp \"
@@ -237,149 +331,17 @@ else
   # ls -l $gztop/cgra_info.txt $gztop/examples/*.txt
 endif
 
+# If config files has an xml extension, use Ankita's perl script
+# to turn it into a .dat/.txt configuration bitstream
 
-
-
-
-
-
-
-unset embedded_io
-grep "FFFFFFFF" $config > /dev/null && set embedded_io
-if (! $?embedded_io) then
-  echo "Bitstream appears NOT to have embedded I/O information."
-  echo "We don't support that no more."
-  exit -1
+echo ""
+if ("$config:e" == "xml") then
+  echo "Generating config bitstream 'tmpconfig.dat' from xml file '$config'..."
+  perl ../../bitstream/example3/gen_bitstream.pl $config tmpconfig
+  set config = tmpconfig.dat
 else
-  echo; echo "Bitstream appears to have embedded i/o information (as it should)."
+  echo "Use existing config bitstream '$config'..."
 endif
-
-# set decoded = $tmpdir/{$config:t}.decoded
-# if (-e $decoded) rm $decoded
-# 
-# NOTE newmem is default now
-# # ../../bitstream/decoder/decode.py -newmem $config > $decoded
-# 
-# if ($?OLDMEM) then
-#   echo ../../bitstream/decoder/decode.py -oldmem $config
-#   ../../bitstream/decoder/decode.py $config -oldmem > $decoded
-# else
-#   echo ../../bitstream/decoder/decode.py -newmem -$gridsize $config
-#   ../../bitstream/decoder/decode.py -newmem -$gridsize $config > $decoded
-# endif
-
-
-
-
-set lno = 226
-echo -n "FOO-$ln0 "; head -1 $config
-
-
-
-
-
-set decoded = $tmpdir/{$config:t}.decoded
-if (-e $decoded) rm $decoded
-
-# echo \
-# ../../bitstream/decoder/decode.py -v -$gridsize $config
-# ../../bitstream/decoder/decode.py -v -$gridsize $config > $decoded
-# 
-# Nowadays decoder needs cgra_info to work correctly
-set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
-pwd
-ls -l $cgra_info
-# 
-echo \
-../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
-../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
-
-
-
-
-set lno = 248
-echo -n "FOO-$ln0 "; head -1 $decoded
-
-
-
-
-
-# Show IO info derived from bitstream
-echo; sed -n '/O Summary/,$p' $decoded; echo
-
-# Clean bitstream (strip out hacked-in IO info)
-# set newbs = $tmpdir/bs.txt
-set newbs = $decoded.bs
-
-if (-e $newbs) rm $newbs
-echo "Will strip out IO hack from '$config'"
-echo "to create clean bitstream '$newbs'"
-echo
-
-# grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
-cat $decoded \
-  | egrep -v '^F000.... FFFFFFFF' \
-  | egrep -v '^F100.... FFFFFFFF' \
-  | egrep -v '^FF00.... 000000F0' \
-  | egrep -v '^FF00.... 000000FF' \
-  | awk '/^[0-9A-F]/{print $1 " " $2}' \
-  > $newbs
-
-
-
-
-set lno = 302
-echo -n "FOO-$ln0 "; head -1 $newbs
-
-
-
-
-if ($?VERBOSE) then
-  diff $config $newbs | grep -v d
-  echo
-endif
-set config = $newbs
-
-
-
-
-
-set lno = 308
-echo -n "FOO-$ln0 "; head -1 $config
-
-
-
-
-
-
-
-
-
-# This ain't supported no more at all nohow
-# # If config files has an xml extension, use Ankita's perl script
-# # to turn it into a .dat/.txt configuration bitstream
-# echo ""
-# if ("$config:e" == "xml") then
-#   echo "Generating config bitstream 'tmpconfig.dat' from xml file '$config'..."
-#   perl ../../bitstream/example3/gen_bitstream.pl $config tmpconfig
-#   set config = tmpconfig.dat
-# else
-#   echo "Use existing config bitstream '$config'..."
-# endif
-
-echo "Use bitstream '$config'..."
-
-
-
-
-
-
-
-
-
-
-
-
 
 # if ($?EGREGIOUS_CONV21_HACK) then
 #   echo ------------------------------------
@@ -392,15 +354,6 @@ echo "Use bitstream '$config'..."
 #   mv $config $tmpdir/prehack.bs
 #   bin/egregious_conv21_hack.csh $tmpdir/prehack.bs $config 
 # endif
-
-
-
-
-set lno = 390
-echo -n "FOO-$ln0 "; head -1 $config
-
-
-
 
 if ($?VERBOSE) then
   echo
@@ -481,12 +434,8 @@ echo "Building the verilator simulator executable..."
   if ($?CGRA_GEN_USE_MEM) then
      cp ./sram_stub.v $vdir/sram_512w_16b.v
      ls -l $vdir/sram*
-#  else
-#     echo "NOT USING MEMORY.  TURNING OFF HACKMEM.  It causes trouble."
-#     unset HACKMEM
   endif
 
-  set echo
   # Temporary wen/ren hacks.  
   if ($?HACKMEM) then
     # In memory_core_unq1.v, change:
@@ -494,7 +443,6 @@ echo "Building the verilator simulator executable..."
     # To:
     #   assign wen = WENHACK
 
-    ls -l $vdir
     mv $vdir/memory_core_unq1.v $tmpdir/memory_core_unq1.v.orig
     cat $tmpdir/memory_core_unq1.v.orig \
       | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
@@ -517,7 +465,6 @@ echo "Building the verilator simulator executable..."
     echo
 
   endif
-  unset echo
 
   # Build the necessary switches
 
