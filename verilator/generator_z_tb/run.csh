@@ -94,7 +94,7 @@ foreach f (obj_dir counter.cvd tile_config.dat)
 end
 
 # I GUESS 4x4 vs. 8x8 is implied by presence or absence of CGRA_GEN_USE_MEM (!!???)
-#  I can't find anything else that does it :(
+# I can't find anything else that does it :(
 
 unset HACKMEM
 
@@ -232,17 +232,13 @@ else
     ../../bin/generate.csh -q || exit -1
   endif
 
-  set gztop = ../../hardware/generator_z/top/
+  # set gztop = ../../hardware/generator_z/top/
   # echo DIFF
   # ls -l $gztop/cgra_info.txt $gztop/examples/*.txt
 endif
 
-
-
-
-
-
-
+########################################################################
+# Now process bitstream file $config
 
 unset embedded_io
 grep "FFFFFFFF" $config > /dev/null && set embedded_io
@@ -253,19 +249,6 @@ if (! $?embedded_io) then
 else
   echo; echo "Bitstream appears to have embedded i/o information (as it should)."
 endif
-
-
-
-
-
-
-set lno = 226
-set tmpf = $config
-echo "FOO-$lno"; head -1 $tmpf; echo
-
-
-
-
 
 set decoded = $tmpdir/{$config:t}.decoded
 if (-e $decoded) rm $decoded
@@ -283,19 +266,9 @@ echo \
 ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
 ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
 
-
-
 echo
 egrep '^Ass' $decoded && echo "OOPS OOPS OOPS OOPS OOPS OOPS OOPS OOPS OOPS"
 echo
-
-set lno = decoded
-set tmpf = $decoded
-echo "FOO-$lno"; head -1 $tmpf; echo
-
-
-
-
 
 # Show IO info derived from bitstream
 echo; sed -n '/O Summary/,$p' $decoded; echo
@@ -318,32 +291,15 @@ cat $decoded \
   | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
   > $newbs
 
-
-set lno = 321
-set tmpf = $newbs
-echo "FOO-$lno"; head -1 $tmpf; echo
-
-
-
+# set lno = 321
+# set tmpf = $newbs
+# echo "FOO-$lno"; head -1 $tmpf; echo
 
 if ($?VERBOSE) then
   diff $config $newbs | grep -v d
   echo
 endif
 set config = $newbs
-
-
-
-
-
-set lno = 308
-echo -n "FOO-$lno "; head -1 $config
-
-
-
-
-
-
 
 
 
@@ -359,40 +315,9 @@ echo -n "FOO-$lno "; head -1 $config
 #   echo "Use existing config bitstream '$config'..."
 # endif
 
-echo "Use bitstream '$config'..."
 
 
-
-
-
-
-
-
-
-
-
-
-
-# if ($?EGREGIOUS_CONV21_HACK) then
-#   echo ------------------------------------
-#   echo WARNING: USING EGREGIOUS_CONV21_HACK
-#   echo WARNING: USING EGREGIOUS_CONV21_HACK
-#   echo WARNING: USING EGREGIOUS_CONV21_HACK
-#   echo ******  DANGER WILL ROBINSON  ******
-#   echo ------------------------------------
-# 
-#   mv $config $tmpdir/prehack.bs
-#   bin/egregious_conv21_hack.csh $tmpdir/prehack.bs $config 
-# endif
-
-
-
-
-set lno = 390
-echo -n "FOO-$lno "; head -1 $config
-
-
-
+echo "Using bitstream '$config'..."
 
 if ($?VERBOSE) then
   echo
@@ -447,22 +372,6 @@ if (! -e $vdir) then
   exit -1
 endif
 
-
-
-echo
-echo '------------------------------------------------------------------------'
-set ftmp = "$vdir/top.v"
-grep $inwires $ftmp
-grep $outwires $ftmp
-echo '------------------------------------------------------------------------'
-echo
-
-
-
-
-
-
-
 echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
     echo
     echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
@@ -473,27 +382,6 @@ echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
         -vtop "$vdir/top.v" > $tmpdir/wirehack.log
 
     if ($?VERBOSE) cat $tmpdir/wirehack.log
-
-
-
-
-
-
-echo
-echo '------------------------------------------------------------------------'
-set ftmp = "$vdir/top.v"
-grep $inwires $ftmp
-grep $outwires $ftmp
-echo '------------------------------------------------------------------------'
-echo
-
-
-
-
-
-
-
-
 
 echo END top.v manipulation
 
@@ -515,7 +403,6 @@ echo "Building the verilator simulator executable..."
 #     unset HACKMEM
   endif
 
-  set echo
   # Temporary wen/ren hacks.  
   if ($?HACKMEM) then
     # In memory_core_unq1.v, change:
@@ -546,7 +433,6 @@ echo "Building the verilator simulator executable..."
     echo
 
   endif
-  unset echo
 
   # Build the necessary switches
 
