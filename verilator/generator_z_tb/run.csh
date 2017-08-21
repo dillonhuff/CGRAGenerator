@@ -295,11 +295,17 @@ cat $decoded \
 # set tmpf = $newbs
 # echo "FOO-$lno"; head -1 $tmpf; echo
 
-if ($?VERBOSE) then
+
+
+
+# if ($?VERBOSE) then
   diff $config $newbs | grep -v d
   echo
-endif
+# endif
 set config = $newbs
+
+
+
 
 
 
@@ -315,15 +321,6 @@ set config = $newbs
 #   echo "Use existing config bitstream '$config'..."
 # endif
 
-
-
-echo "Using bitstream '$config'..."
-
-if ($?VERBOSE) then
-  echo
-  echo "BITSTREAM:"
-  cat $config
-endif
 
 
 echo ""
@@ -575,6 +572,29 @@ echo '  First prepare input and output files...'
 
   set qf2 = (grep -v "^000[23456789].*Two times")
   if ($?VERBOSE) set qf2 = (cat)
+
+
+
+
+
+
+
+
+
+echo "Using bitstream '$config'..."
+
+if ($?VERBOSE) then
+  echo
+  echo "BITSTREAM:"
+  cat $config
+endif
+
+
+
+
+
+
+
 
   set echo
     obj_dir/V$top \
