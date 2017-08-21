@@ -250,6 +250,9 @@ else
   echo; echo "Bitstream appears to have embedded i/o information (as it should)."
 endif
 
+echo "Will strip out IO hack from '$config'"
+echo
+
 set decoded = $tmpdir/{$config:t}.decoded
 if (-e $decoded) rm $decoded
 
@@ -278,9 +281,6 @@ echo; sed -n '/O Summary/,$p' $decoded; echo
 set newbs = $decoded.bs
 
 if (-e $newbs) rm $newbs
-echo "Will strip out IO hack from '$config'"
-echo "to create clean bitstream '$newbs'"
-echo
 
 # grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
 cat $decoded \

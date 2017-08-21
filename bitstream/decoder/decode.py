@@ -705,6 +705,8 @@ for line in inputstream:
     TTTT = f.group(3);     # tile
     DDDDDDDD = f.group(4); # data
 
+    # tmpaddr = RR+EE+TTTT; if (tmpaddr == "00050009"): print "\nFOO %s" % line
+
     thistile = int(TTTT,16)
     if (thistile != prevtile):
 
@@ -745,6 +747,8 @@ for line in inputstream:
     # Switchbox (new)
     elif (e.tag == "sb"):
         DBG=0
+        # if (tmpaddr == "00050009"): DBG = 1
+
         (regs,connections) = cgra_info.sb_decode(e,RR,DDDDDDDD)
         if DBG:
             print "----------------------------------------"
@@ -829,8 +833,14 @@ for line in inputstream:
             comments[bitno] = "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
                   % (bitno,bitno,r,c,outwire)
 
+        # Sometimes there are no comments e.g. if only one wire got routed and
+        # it was wire 0 (see HACK1 above)
+        printed_something = False
         for c in comments:
             if c: print c
+            if c: printed_something = True
+        if not printed_something: print ""
+
         continue
 
     else:
