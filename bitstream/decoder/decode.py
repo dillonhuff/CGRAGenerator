@@ -95,18 +95,18 @@ cgra_info.read_cgra_info(cgra_filename)
 
 # # TBD this (below) could be a separate "print_intro()" function like
 # if (verbose):
-#     print "";
-#     print "-----------------------------------------------------------------------------"
-#     print "Assume 4x4 grid of tiles, all with 2-input PEs\n"+\
-#           "                                           \n"+\
-#           "     tileno                   r,c          \n"+\
-#           "  0   1   2   3     (0,0) (0,1) (0,2) (0,3)\n"+\
-#           "  4   5   6   7     (1,0) (1,1) (1,2) (1,3)\n"+\
-#           "  8   9  10  11     (2,0) (2,1) (2,2) (2,3)\n"+\
-#           " 12  13  14  15     (3,0) (3,1) (3,2) (3,3)\n"+\
-#           "";
-#     print "Note: 's1t3' means 'side 1 track 3' (sides [0123] map to [ESWN] respectively)"
-#     print "-----------------------------------------------------------------------------"
+#     print "# ";
+#     print "# -----------------------------------------------------------------------------"
+#     print "# Assume 4x4 grid of tiles, all with 2-input PEs\n"+\
+#           "#                                            \n"+\
+#           "#      tileno                   r,c          \n"+\
+#           "#   0   1   2   3     (0,0) (0,1) (0,2) (0,3)\n"+\
+#           "#   4   5   6   7     (1,0) (1,1) (1,2) (1,3)\n"+\
+#           "#   8   9  10  11     (2,0) (2,1) (2,2) (2,3)\n"+\
+#           "#  12  13  14  15     (3,0) (3,1) (3,2) (3,3)\n"+\
+#           "# ";
+#     print "# Note: 's1t3' means 'side 1 track 3' (sides [0123] map to [ESWN] respectively)"
+#     print "# -----------------------------------------------------------------------------"
 
 def find_source(row, col, wirename):
     # Given tile number (r,c) in a 4x4 grid as shown...

@@ -232,9 +232,6 @@ else
     ../../bin/generate.csh -q || exit -1
   endif
 
-  # set gztop = ../../hardware/generator_z/top/
-  # echo DIFF
-  # ls -l $gztop/cgra_info.txt $gztop/examples/*.txt
 endif
 
 ########################################################################
@@ -256,10 +253,6 @@ echo
 set decoded = $tmpdir/{$config:t}.decoded
 if (-e $decoded) rm $decoded
 
-# echo \
-# ../../bitstream/decoder/decode.py -v -$gridsize $config
-# ../../bitstream/decoder/decode.py -v -$gridsize $config > $decoded
-# 
 # Nowadays decoder needs cgra_info to work correctly
 set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
 pwd
@@ -269,17 +262,11 @@ echo \
 ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
 ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
 
-echo
-egrep '^Ass' $decoded && echo "OOPS OOPS OOPS OOPS OOPS OOPS OOPS OOPS OOPS"
-echo
-
 # Show IO info derived from bitstream
 echo; sed -n '/O Summary/,$p' $decoded; echo
 
-# Clean bitstream (strip out hacked-in IO info)
-# set newbs = $tmpdir/bs.txt
+# Clean bitstream (strip out comments and hacked-in IO info)
 set newbs = $decoded.bs
-
 if (-e $newbs) rm $newbs
 
 # grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
@@ -291,36 +278,14 @@ cat $decoded \
   | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
   > $newbs
 
-# set lno = 321
-# set tmpf = $newbs
-# echo "FOO-$lno"; head -1 $tmpf; echo
-
-
-
-
-# if ($?VERBOSE) then
+if ($?VERBOSE) then
   diff $config $newbs | grep -v d
   echo
-# endif
+endif
 set config = $newbs
 
 
-
-
-
-
-# This ain't supported no more at all nohow
-# # If config files has an xml extension, use Ankita's perl script
-# # to turn it into a .dat/.txt configuration bitstream
-# echo ""
-# if ("$config:e" == "xml") then
-#   echo "Generating config bitstream 'tmpconfig.dat' from xml file '$config'..."
-#   perl ../../bitstream/example3/gen_bitstream.pl $config tmpconfig
-#   set config = tmpconfig.dat
-# else
-#   echo "Use existing config bitstream '$config'..."
-# endif
-
+# set lno = 321; set tmpf = $newbs; echo "FOO-$lno"; head -1 $tmpf; echo
 
 
 echo ""
@@ -575,26 +540,13 @@ echo '  First prepare input and output files...'
 
 
 
+  echo "Using bitstream '$config'..."
 
-
-
-
-
-
-echo "Using bitstream '$config'..."
-
-# if ($?VERBOSE) then
-  echo
-  echo "BITSTREAM:"
-  cat $config
-# endif
-
-
-
-
-
-
-
+  if ($?VERBOSE) then
+    echo
+    echo "BITSTREAM:"
+    cat $config
+  endif
 
   set echo
     obj_dir/V$top \
