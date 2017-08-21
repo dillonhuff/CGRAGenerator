@@ -583,11 +583,11 @@ echo '  First prepare input and output files...'
 
 echo "Using bitstream '$config'..."
 
-if ($?VERBOSE) then
+# if ($?VERBOSE) then
   echo
   echo "BITSTREAM:"
   cat $config
-endif
+# endif
 
 
 
