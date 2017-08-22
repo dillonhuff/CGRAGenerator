@@ -250,17 +250,22 @@ endif
 echo "Will strip out IO hack from '$config'"
 echo
 
+# Nowadays decoder needs cgra_info to work correctly
+set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
+# pwd; ls -l $cgra_info
+
 set decoded = $tmpdir/{$config:t}.decoded
 if (-e $decoded) rm $decoded
 
-# Nowadays decoder needs cgra_info to work correctly
-set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
-pwd
-ls -l $cgra_info
+# echo \
+# ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
+# ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
 # 
+# NOTE -v is messy and should be avoided unless you're trying to debg things.
 echo \
-../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
-../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
+../../bitstream/decoder/decode.py -cgra $cgra_info $config
+../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded
+
 
 # Show IO info derived from bitstream
 echo; sed -n '/O Summary/,$p' $decoded; echo

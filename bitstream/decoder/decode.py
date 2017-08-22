@@ -833,13 +833,9 @@ for line in inputstream:
             comments[bitno] = "# data[(%d, %d)] : @ tile (%d, %d) latch output wire %s"\
                   % (bitno,bitno,r,c,outwire)
 
-        # Sometimes there are no comments e.g. if only one wire got routed and
-        # it was wire 0 (see HACK1 above)
-        printed_something = False
+        if verbose: print "" # This is CRUCIAL, mon.
         for c in comments:
             if c: print c
-            if c: printed_something = True
-        if not printed_something: print ""
 
         continue
 
