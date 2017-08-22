@@ -283,10 +283,20 @@ cat $decoded \
   | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
   > $newbs
 
-if ($?VERBOSE) then
+# This is small and SHOULD NOT BE OPTIONAL!
+# if ($?VERBOSE) then
   diff $config $newbs | grep -v d
   echo
+# endif
+
+
+# Another useful test
+set ndiff = `diff $config $newbs | grep -v d | wc -l`
+if ("$ndiff" != "5") then
+  echo ERROR Looks like we messed up the IO
+  exit -1
 endif
+
 set config = $newbs
 
 
