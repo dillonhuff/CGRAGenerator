@@ -257,13 +257,16 @@ set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
 set decoded = $tmpdir/{$config:t}.decoded
 if (-e $decoded) rm $decoded
 
+# Possible locations for pnr stuff
+ls ../../.. | grep -i smt
+
+
 # echo \
 # ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
 # ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
 # 
 # NOTE -v is messy and should be avoided unless you're trying to debg things.
-echo \
-../../bitstream/decoder/decode.py -cgra $cgra_info $config
+echo                    decode.py -cgra $cgra_info $config
 ../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded
 
 
@@ -285,14 +288,16 @@ cat $decoded \
 
 # This is small and SHOULD NOT BE OPTIONAL!
 # if ($?VERBOSE) then
+  echo diff $config $newbs
   diff $config $newbs | grep -v d
-  echo
 # endif
 
 
 # Another useful test
 set ndiff = `diff $config $newbs | grep -v d | wc -l`
-if ("$ndiff" != "5") then
+if ("$ndiff" == "5") then
+  echo "Five lines of diff.  That's good!"
+else
   echo ERROR Looks like we messed up the IO
   exit -1
 endif
