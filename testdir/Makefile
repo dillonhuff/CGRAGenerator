@@ -21,33 +21,44 @@ endif
 TEMPDIR := $(shell mktemp -d)
 
 test_all:
+	echo TEST SUMMARY > $(TEMPDIR)/test_summary.txt
+	echo BEGIN `date` >> $(TEMPDIR)/test_summary.txt
 	make hackdiff_test | tee $(TEMPDIR)/hackdiff_test.log
 
-	make test_4x4_gray_small 2>&1 | tee $(TEMPDIR)/test_4x4_gray_small.log
-	tail -n 1 $(TEMPDIR)/test_4x4_gray_small.log \
-		| grep 'FAIL' && exit 9 || exit 0
+#         # Note the '| tee' masks any errors that might have occurred :(
+# 	make TEMPDIR=$(TEMPDIR) test_4x4_gray_small
+# 	make TEMPDIR=$(TEMPDIR) test_8x8_gray_small
+# 	make TEMPDIR=$(TEMPDIR) test_4x4_gray
+# 	make TEMPDIR=$(TEMPDIR) test_8x8_gray
 
-	make test_8x8_gray_small 2>&1 | tee $(TEMPDIR)/test_8x8_gray_small.log
-	tail -n 1 $(TEMPDIR)/test_8x8_gray_small.log \
-		| grep 'FAIL' && exit 9 || exit 0
+        # gray_small 4x4
+	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
+	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
 
-	make test_4x4_gray       2>&1 | tee $(TEMPDIR)/test_4x4_gray.log
-	tail -n 1 $(TEMPDIR)/test_4x4_gray.log \
-		| grep 'FAIL' && exit 9 || exit 0
+        # gray 4x4
+	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
+	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
 
-	make test_8x8_gray       2>&1 | tee $(TEMPDIR)/test_8x8_gray.log
-	tail -n 1 /$(TEMPDIR)/test_8x8_gray.log \
-		| grep 'FAIL' && exit 9 || exit 0
+        # gray_small 8x8
+	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
+	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
+
+
+        # gray 8x8
+	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
+	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
 
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
 	@echo ==================================================
-	@egrep '^00014'                \
-	  $(TEMPDIR)/hackdiff_test.log \
-	  $(TEMPDIR)/test_4x4_gray_small.log \
-	  $(TEMPDIR)/test_8x8_gray_small.log \
-	  $(TEMPDIR)/test_4x4_gray.log       \
-	  $(TEMPDIR)/test_8x8_gray.log
+	cat $(TEMPDIR)/test_summary.txt
+
+# 	@egrep '^00014'                \
+# 	  $(TEMPDIR)/hackdiff_test.log \
+# 	  $(TEMPDIR)/test_4x4_gray_small.log \
+# 	  $(TEMPDIR)/test_8x8_gray_small.log \
+# 	  $(TEMPDIR)/test_4x4_gray.log       \
+# 	  $(TEMPDIR)/test_8x8_gray.log
 
 hackdiff_test:
 	cd ../bitstream; \
@@ -57,50 +68,26 @@ hackdiff_test:
 
 # TODO can combine all these down to one
 # TODO make it look more like other makefile (cgraflow)
-test_4x4_gray_small:
-# 	@echo ""
-# 	@echo TEST $@
-# 	@echo Making $@ because of $?
-# 	@echo ==================================================
-	bitstream=../../bitstream/examples/cd387-good.bs; \
-	image=gray_small;              \
-	cd $(VERILATOR_TOP);	        \
-	./run.csh $(QUIET) -gen top_tb.cpp -oldmem -4x4       \
-	   -config $${bitstream}          \
-	   -input  io/$${image}.png        \
-	   -output $(TEMPDIR)/$${image}_out.raw   \
-	   -nclocks 5M;                     \
-        cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw || echo FAIL
 
-test_4x4_gray:
-	bitstream=../../bitstream/examples/cd387-good.bs; \
-	image=gray;                    \
-	cd $(VERILATOR_TOP);	        \
-	./run.csh $(QUIET) -gen top_tb.cpp -oldmem -4x4        \
-	   -config $${bitstream}          \
-	   -input  io/$${image}.png        \
-	   -output $(TEMPDIR)/$${image}_out.raw   \
-	   -nclocks 5M;                     \
-        cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw || echo FAIL
 
-test_8x8_gray_small:
-	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
-	image=gray_small;              \
-	cd $(VERILATOR_TOP);	        \
-	./run.csh $(QUIET) -gen top_tb.cpp -usemem -8x8\
-	   -config $${bitstream}          \
-	   -input  io/$${image}.png        \
-	   -output $(TEMPDIR)/$${image}_out.raw   \
-	   -nclocks 5M;                     \
-        cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw || echo FAIL
+test:
+	@echo ""
+	@echo "------------------------------------------------------------------------"
+	@echo "BEGIN TEST"
+	@echo "------------------------------------------------------------------------"
 
-test_8x8_gray:
-	bitstream=../../bitstream/examples/cd387-newmem-8x8.bs; \
-	image=gray;                    \
-	cd $(VERILATOR_TOP);	        \
-	./run.csh $(QUIET) -gen top_tb.cpp -usemem -8x8\
-	   -config $${bitstream}          \
-	   -input  io/$${image}.png        \
-	   -output $(TEMPDIR)/$${image}_out.raw   \
-	   -nclocks 5M;                     \
-        cmp io/$${image}_out.raw $(TEMPDIR)/$${image}_out.raw || echo FAIL
+	cd $(VERILATOR_TOP);\
+	./run.csh $(QUIET) -gen top_tb.cpp  \
+	   $(CONFIG)                         \
+	   -input  io/$(IMAGE).png            \
+	   -output $(TEMPDIR)/$(IMAGE)_out.raw \
+	   -nclocks 5M || echo FAIL
+
+	cd $(VERILATOR_TOP);\
+	cmp io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw      \
+		&& echo $@ PASSED  >> $(TEMPDIR)/test_summary.txt \
+		|| echo $@ FAILED  >> $(TEMPDIR)/test_summary.txt;
+
+	cd $(VERILATOR_TOP);\
+	cmp io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw
+
