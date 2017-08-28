@@ -6,7 +6,10 @@
 
 set input = $1
 set output = $2
-set tmp = /tmp/tmp.pgm
+
+# You so stoopid
+set tmpdir = /tmp/myconvert.$$; mkdir tmpdir
+set tmp = $tmpdir/tmp.pgm
 
 convert $input -depth 8 pgm:$tmp
 # head -2 $tmp | tail -1
@@ -17,7 +20,7 @@ tail -c $nbytes $tmp > $output
 
 
 # To check the result
-(head -3 $tmp; cat $output) > /tmp/verify.pgm
+(head -3 $tmp; cat $output) > $tmpdir/verify.pgm
 
 echo "Converted $input to $output...to verify result, do:"
-echo "  gwenview /tmp/verify.pgm"
+echo "  gwenview $tmpdir/verify.pgm"
