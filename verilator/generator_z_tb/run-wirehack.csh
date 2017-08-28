@@ -32,7 +32,8 @@ if ($?already_done) then
   exit 0
 endif
 
-cp $vtop /tmp/top.v.orig
+set tmpdir = /tmp/wirehack$$; mkdir $tmpdir
+cp $vtop $tmpdir/top.v.orig
 
 set DBG
 echo difffff
@@ -51,9 +52,9 @@ foreach port ($inwires $outwires)
     # BUT NOT connection
     #    "      .in_BUS16_S3_T0(wire_m1_1_BUS16_S1_T0),"
     # 
-    sed "/${port}[^)]*"'$/d' $vtop > /tmp/tmp$$
-    mv /tmp/tmp$$ $vtop;
-    if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+    sed "/${port}[^)]*"'$/d' $vtop > $tmpdir/tmp$$
+    mv $tmpdir/tmp$$ $vtop;
+    if ($?DBG) diff $tmpdir/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
     if ($?DBG) echo "------------------------------------------------------"
 
 
@@ -64,11 +65,11 @@ end
 # Build ports for verilator input and output signals
 set i = 0; echo "  Adding ports for verilator inputs and outputs..."
 foreach port ($inwires $outwires)
-  sed "s|\(// VERILATOR_PORT$i\)|$port,               \1|" $vtop > /tmp/tmp$$
-  echo "    $port..."; mv /tmp/tmp$$ $vtop; @ i = $i + 1
+  sed "s|\(// VERILATOR_PORT$i\)|$port,               \1|" $vtop > $tmpdir/tmp$$
+  echo "    $port..."; mv $tmpdir/tmp$$ $vtop; @ i = $i + 1
 end
 echo
-if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+if ($?DBG) diff $tmpdir/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
 if ($?DBG) echo "------------------------------------------------------"
 #     < // VERILATOR_PORT0
 #     < // VERILATOR_PORT1
@@ -80,11 +81,11 @@ if ($?DBG) echo "------------------------------------------------------"
 # Declare verilator input signals...
 set i = 0; echo "  Adding verilator input declarations..."
 foreach wirename ($inwires)
-  sed "s|\(// VERILATOR_IN$i\)|input  [15:0] $wirename; \1|" $vtop > /tmp/tmp$$
-  echo "    $wirename..."; mv /tmp/tmp$$ $vtop; @ i = $i + 1
+  sed "s|\(// VERILATOR_IN$i\)|input  [15:0] $wirename; \1|" $vtop > $tmpdir/tmp$$
+  echo "    $wirename..."; mv $tmpdir/tmp$$ $vtop; @ i = $i + 1
 end
 echo
-if ($?DBG) diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+if ($?DBG) diff $tmpdir/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
 if ($?DBG) echo "------------------------------------------------------"
 
 
@@ -93,39 +94,39 @@ if ($?DBG) echo "------------------------------------------------------"
 # Declare verilator output signals...
 set i = 0; echo "  Adding verilator output declarations..."
 foreach wirename ($outwires)
-  sed "s|\(// VERILATOR_OUT$i\)|output [15:0]  $wirename; \1|" $vtop > /tmp/tmp$$
-  echo "    $wirename..."; mv /tmp/tmp$$ $vtop; @ i = $i + 1
+  sed "s|\(// VERILATOR_OUT$i\)|output [15:0]  $wirename; \1|" $vtop > $tmpdir/tmp$$
+  echo "    $wirename..."; mv $tmpdir/tmp$$ $vtop; @ i = $i + 1
 end
 echo
-# diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
+# diff $tmpdir/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /'
 
 # Disconnect "input" wires from internal net (and route to ports instead)
 echo "  Disconnecting input wires from internal net..."
 foreach inwire ($inwires)
   (egrep "out.*$inwire" $vtop > /dev/null)\
     || echo "    Wire not found in internal net of top.v"
-  sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > /tmp/tmp$$
-  # diff $vtop /tmp/tmp$$ | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
-  echo "    $inwire..."; mv /tmp/tmp$$ $vtop
+  sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > $tmpdir/tmp$$
+  # diff $vtop $tmpdir/tmp$$ | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
+  echo "    $inwire..."; mv $tmpdir/tmp$$ $vtop
 end
 echo
 
 # Show what we did
 echo Changes to top.v:  ; echo
-  diff /tmp/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /' > /tmp/tmp$$
+  diff $tmpdir/top.v.orig $vtop | sed 's/  */ /g' | sed 's/^/    /' > $tmpdir/tmp$$
 
-  cat /tmp/tmp$$ | egrep '^ *<' | egrep 'PORT'; echo "    ---"
-  cat /tmp/tmp$$ | egrep '^ *>' | egrep 'PORT'; echo; echo
+  cat $tmpdir/tmp$$ | egrep '^ *<' | egrep 'PORT'; echo "    ---"
+  cat $tmpdir/tmp$$ | egrep '^ *>' | egrep 'PORT'; echo; echo
 
-  cat /tmp/tmp$$ | egrep '^ *<' | egrep 'IN|OUT'; echo "    ---"
-  cat /tmp/tmp$$ | egrep '^ *>' | egrep 'IN|OUT'; echo; echo
+  cat $tmpdir/tmp$$ | egrep '^ *<' | egrep 'IN|OUT'; echo "    ---"
+  cat $tmpdir/tmp$$ | egrep '^ *>' | egrep 'IN|OUT'; echo; echo
 
-  cat /tmp/tmp$$ | egrep '^ *<' | egrep -v 'VERILATOR'; echo "    ---"
-  cat /tmp/tmp$$ | egrep '^ *>' | egrep -v 'VERILATOR'; echo; echo
+  cat $tmpdir/tmp$$ | egrep '^ *<' | egrep -v 'VERILATOR'; echo "    ---"
+  cat $tmpdir/tmp$$ | egrep '^ *>' | egrep -v 'VERILATOR'; echo; echo
 
 
 
 # Suggestion for how to see all changes in context...
 echo To see all changes in context, try:
-echo "  diff --side-by-side -W 100 /tmp/top.v.orig $vtop | less"
+echo "  diff --side-by-side -W 100 $tmpdir/top.v.orig $vtop | less"
 echo
