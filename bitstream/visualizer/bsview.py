@@ -2051,6 +2051,11 @@ class Tile:
             if   (pto   == portname): rval.append(pfrom)
             elif (pfrom == portname): rval.append(pto)
 
+        if False: # for debugging DOT print things
+            t = self.tileno
+            if rval: print "      T%s: '%s' is connected to %s" % (t, portname,rval)
+            else   : print "      T%s: '%s' is connected to NOHBODY" % (t, portname)
+
         if DBG:
             if rval: print "\n'%s' is connected to %s" % (portname,rval)
             else   : print "\n'%s' is connected to NOHBODY" % (portname)
@@ -2735,6 +2740,212 @@ def initialize_tile_list(w, h):
         if (DBG and (i%16 == 15)): print ""
         i = i + 1
 
+
+def DOT_print_connection(t1, w1, t2, w2):
+    print "  FOO T%s '%s' connects to T%s '%s'" % (t1, w1, t2, w2)
+
+def DOT_trace_wire(tileno, portname):
+    is_input = re.search('^in', portname)
+    is_output = re.search('^out', portname)
+
+    DBG=0
+    if is_output:
+        # print "  FOO its a output; find neighbor input"
+        (adj_tileno,adj_wire) = find_matching_wire(tileno, portname)
+        if (adj_wire):
+            if DBG: DOT_print_connection(tileno, portname, adj_tileno,adj_wire)
+            return DOT_trace_wire(adj_tileno,adj_wire)
+
+    elif is_input:
+        # print "  FOO its a input; find connected ports"
+        cport = TILE_LIST[tileno].find_connected_ports(portname)
+        for c in cport:
+            # print "  FOO found connected port 'T%s_%s'" % (tileno,c)
+            if DBG: DOT_print_connection(tileno, portname, tileno, c)
+            return DOT_trace_wire(tileno, c)
+    else:
+        return (tileno,portname)
+
+    sys.error.write("ERROR in DOT_trace_wire()")
+    sys.exit(-1)
+
+# def DOT_connect_input(tileno):
+#     t_input   = '"self.in"'
+#     t_output  = '"T%s_%s"' % (tileno, "pe_out")
+#     print '  DOT    %-15s->%-15s' % (t_input, t_output)
+# 
+# def DOT_connect_output(tileno):
+#     t_input   = '"T%s_%s"' % (tileno, "pe_out")
+#     t_output  = '"self.out"'
+#     print '  DOT    %-15s->%-15s' % (t_input, t_output)
+
+def DOT_connectem(input, output):
+    input  = '"%s"' % input
+    output  = '"%s";' % output
+    print '  DOT    %-15s->%-15s' % (input, output)
+
+def DOT_globalwire(t, w):
+    parse = re.search("^in", w)
+    if parse:
+        (gt,gw) = find_matching_wire(t,w)
+        if gw:
+            print "('%s' is really 'T%s_%s')" % (w, gt, gw)
+            (t,w) = (gt,gw)
+    return "T%s_%s" % (t,w)
+
+def DOT_build_graph():
+    DBG=1
+    print "  DOT  digraph Diagram {"
+    print "  DOT    node [shape=box];"
+    print ""
+    for t in TILE_LIST:
+        # print t.tileno; print t.connectionlist; print "-----"
+        for c in t.connectionlist:
+            if DBG: print "Tile %2d found connection '%s'" % (t.tileno,c)
+            DOT_build_dots(t.tileno,c)
+    print "  DOT  }"
+
+
+def DOT_build_dots(tileno, connection):
+
+    # This: Tile  4, 'pe_out <= INPUT(wireA,wireB)'
+    # Should turn into: "self.in"->"T4_pe_out"
+    parse = re.search("pe_out <= INPUT", connection)
+    if parse:
+        # DOT_connect_input(tileno)
+        DOT_connectem("self.in", "T%s_pe_out" % tileno)
+        return
+
+    # This: Tile  5, 'pe_out <= OUTPUT(wireA,wireB)'
+    # Should turn into: "T5_pe_out"->"self.out"
+    parse = re.search("pe_out <= OUTPUT", connection)
+    if parse:
+        # DOT_connect_output(tileno)
+        DOT_connectem("T%s_pe_out" % tileno, "self.out")
+        return
+
+    line = connection # foo
+
+    # Ignore (redundant) constants assigned to registers e.g.
+    # Tile  8 found connection 'regA <= 0x0000'
+    parse = re.search("reg. <= 0x", line)
+    if (parse): return
+
+
+    # This: "Tile  8 found connection 'pe_out <= ADD(0x0000,wireB)'"
+    # Should turn into:
+    #    "T8_0x0000"->"T8_ADD";
+    #    "T8_wireB"->"T8_ADD";
+    #    "T8_ADD"->"T8_pe_out";
+
+    parse = re.search("pe_out <= ([A-Z]+)\((.*),(.*)\)", line)
+    if (parse):
+        DBG=0
+        # tileno = parse.group(1)
+        opname = "T%s_%s" % (tileno, parse.group(1))
+        input1 = "T%s_%s" % (tileno, parse.group(2))
+        input2 = "T%s_%s" % (tileno, parse.group(3))
+
+        if DBG: print "  tileno=%s" % tileno
+        if DBG: print "  opname=%s" % opname
+        if DBG: print "  inputs=('%s','%s')" % (input1,input2)
+        if DBG: print ""
+
+        DOT_connectem(input1, opname)
+        DOT_connectem(input2, opname)
+        DOT_connectem(opname, "T%s_pe_out" % tileno)
+        print ""
+        return
+
+    # Tile  1 found connection 'out_s1t1 <= in_s0t1' (should be ignored)
+    # Tile  1 found connection 'wireA <= in_s1t1' (should be traced)
+
+    # DOT_before(tileno,line)
+    DOT_after(tileno,line)
+
+
+def DOT_before(tileno,line):
+    # parse = re.search("(/d+) found connection '", line)
+    parse = re.search("(.*) <= (.*)", line)
+    if (parse):
+        DBG=0
+        # tileno  = parse.group(1)
+        outwire = parse.group(1)
+        inwire  = parse.group(2)
+
+        # "mem_out" and "din" should just map to "mem"
+        if (inwire == "mem_out"):
+            print "FOO found a mem_out"
+            inwire = "mem"
+        if (outwire == "din"):
+            print "FOO found a din"
+            outwire = "mem"
+
+        if DBG: print "  tileno=%s" % tileno
+        if DBG: print "  inwire='%s'" % parse.group(3)
+        if DBG: print "  outwire='%s'" % parse.group(2)
+        if DBG: print ""
+
+        inwire  = DOT_globalwire(tileno,  inwire)
+        outwire = DOT_globalwire(tileno, outwire)
+
+        DOT_connectem(inwire, outwire)
+        print ""
+        return
+
+def DOT_after(tileno,line):
+    # parse = re.search("(/d+) found connection '", line)
+    parse = re.search("(.*) <= (.*)", line)
+    if (parse):
+        DBG=0
+        # tileno  = parse.group(1)
+        outwire = parse.group(1)
+        inwire  = parse.group(2)
+
+        if DBG: print "  FOO tracing T%s '%s'" % (tileno,inwire)
+        (t,w) = DOT_trace_wire(tileno, inwire)
+        if DBG: print "  FOO FINAL ANSWER: 'T%s_%s'" % (t,w)
+        inwire = w
+        intile = t
+
+        if DBG: print "  FOO ---------------------"
+
+        if DBG: print "  FOO tracing T%s '%s'" % (tileno,outwire)
+        (t,w) = DOT_trace_wire(tileno, outwire)
+        if DBG: print "  FOO FINAL ANSWER: 'T%s_%s'" % (t,w)
+        outwire = w
+        outtile = t
+
+        print ""
+
+
+        # "mem_out" and "din" should just map to "mem"
+        if (inwire == "mem_out"):
+            print "FOO found a mem_out"
+            inwire = "mem"
+        if (outwire == "din"):
+            print "FOO found a din"
+            outwire = "mem"
+
+        if DBG: print "  tileno=%s" % tileno
+        if DBG: print "  inwire='%s'" % parse.group(3)
+        if DBG: print "  outwire='%s'" % parse.group(2)
+        if DBG: print ""
+
+        # inwire  = DOT_globalwire(tileno,  inwire)
+        # outwire = DOT_globalwire(tileno, outwire)
+
+        inwire = 'T%s_%s' % (intile,inwire)
+        outwire = 'T%s_%s' % (outtile,outwire)
+
+        DOT_connectem(inwire, outwire)
+        print ""
+        return
+
+
+
+
+
 def build_connections(tileno, connection_list):
     while True:
         # Want to find all connections of the form "out_s0t0 <= in_s1t0"
@@ -2906,6 +3117,10 @@ def process_decoded_bitstream(bs):
             # print "FOO found latch for wire '%s'" % (wirename)
             # print "FOO tile %d outreg list now: %s" % (tileno,str(rlist))
 
+# END process_decoded_bitstream(bs):
+##############################################################################
+
+
 ##############################################################################
 # Actual runcode starts here!  (FINALLY)
 
@@ -2923,17 +3138,22 @@ def display_decoded_bitstream_file(filename):
 
     try:
         inputstream = open(filename);
-        # process_decoded_bitstream_old(inputstream)
-        process_decoded_bitstream(inputstream)
-        inputstream.close()
-        # build_and_launch_main_window(filename)
-        build_and_launch_main_window(title)
     except IOError:
         # TODO/FIXME yeah these were copies from somewhere else obviously
         print ""
         print "ERROR Cannot find processor bitstream file '%s'" % filename
         print main.__doc__
         sys.exit(-1);
+
+    process_decoded_bitstream(inputstream)
+    inputstream.close()
+    # build_and_launch_main_window(filename)
+    if PRINT_CONNECTIONS_AND_QUIT:
+        DOT_build_graph()
+        sys.exit(0)
+    else:
+        build_and_launch_main_window(title)
+
 
 def demo_sb_2x2():
     # Simple 2x2 array with a few switchbox connections
@@ -3110,13 +3330,15 @@ def main():
 
     bsfiles = []
     cgra_filename = ''
+    global PRINT_CONNECTIONS_AND_QUIT; PRINT_CONNECTIONS_AND_QUIT = False
     if    (len(args) == 0): do_demos() # no args
     # if    (len(args) == 0): demo_sb_8x8() # no args
     while (len(args)  > 0):            # args
         # print "arg0 = %s" % (args[0])
         if   (args[0] == "-demo"):  do_demos()
         elif (args[0] == "--help"): print main.__doc__
-        elif (args[0] == '-8x8'):   REQUESTED_SIZE = [8,8]
+        elif (args[0] ==   '-8x8'): REQUESTED_SIZE = [8,8]
+        elif (args[0] ==   '-dot'): PRINT_CONNECTIONS_AND_QUIT = True
         elif (args[0] == "-cgra_info"):
             args = args[1:]
             cgra_filename = args[0]
