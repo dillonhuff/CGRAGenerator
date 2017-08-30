@@ -2745,28 +2745,59 @@ def DOT_print_connection(t1, w1, t2, w2):
     print "  FOO T%s '%s' connects to T%s '%s'" % (t1, w1, t2, w2)
 
 def DOT_trace_wire(tileno, portname):
-    is_input = re.search('^in', portname)
-    is_output = re.search('^out', portname)
-
     DBG=0
-    if is_output:
-        # print "  FOO its a output; find neighbor input"
+
+    # Constant: we're done.
+    if re.search('^0x', portname): return(tileno, portname)
+
+    # pe_out: Find and return the FU connected to pe_out
+    if (portname == 'pe_out'):
+        if DBG: print "  FOO '%s' is a pe_out; find and return opname" % portname
+        # A typical connected-ports list would be ['out_s3t4', 'ADD(wireA,wireB)']
+        cport = TILE_LIST[tileno].find_connected_ports(portname)
+        if DBG: print "  FOO connected ports = " + str(cport)
+        for c in cport:
+            parse = re.search("([A-Z]+)\((.*),(.*)\)", c)
+            if parse:
+                # Change 'ADD(wireA,wireB)' to just 'ADD'
+                opname = parse.group(1)
+                return (tileno, opname)
+
+        sys.stdout.flush()
+        sys.stderr.write("ERROR No PE connects to 'pe_out'(?)\n")
+        sys.exit(-1)
+
+    # Note a wire can have multiple sinks but only ONE source
+    # Therefore must trace wire to SOURCE for common name.
+
+    is_input = re.search('^in', portname)
+    
+    # Treat "wireA" "wireB" and "pe_out" as outputs e.g. look for internal connections
+    is_output = re.search('^out', portname) or \
+             re.search('^wire', portname) or \
+             (portname == 'pe_out')
+
+    if is_input:
+        if DBG: print "  FOO '%s' is a input; find neighbor output" % portname
         (adj_tileno,adj_wire) = find_matching_wire(tileno, portname)
         if (adj_wire):
             if DBG: DOT_print_connection(tileno, portname, adj_tileno,adj_wire)
             return DOT_trace_wire(adj_tileno,adj_wire)
 
-    elif is_input:
-        # print "  FOO its a input; find connected ports"
+    elif is_output:
+        if DBG: print "  FOO '%s' is a output; find connected ports" % portname
         cport = TILE_LIST[tileno].find_connected_ports(portname)
+        found_input = False
+        if DBG: print "  FOO connected ports = " + str(cport)
         for c in cport:
-            # print "  FOO found connected port 'T%s_%s'" % (tileno,c)
+            if DBG: print "  FOO found connected port 'T%s_%s'" % (tileno,c)
             if DBG: DOT_print_connection(tileno, portname, tileno, c)
             return DOT_trace_wire(tileno, c)
+
     else:
         return (tileno,portname)
 
-    sys.error.write("ERROR in DOT_trace_wire()")
+    sys.stderr.write("ERROR in DOT_trace_wire()\n")
     sys.exit(-1)
 
 # def DOT_connect_input(tileno):
@@ -2779,42 +2810,80 @@ def DOT_trace_wire(tileno, portname):
 #     t_output  = '"self.out"'
 #     print '  DOT    %-15s->%-15s' % (t_input, t_output)
 
+def DOT_print(s):
+    DBG = 1
+    if DBG: print '  DOT  ' + s;
+    print>>DOT_STREAM, s
+
 def DOT_connectem(input, output):
+
+    # Here's a special case.  What would life be without special cases?
+    # Anything that traces back to INPUT gets rewritten to originate at 'self.in'
+    if re.search('T.*_INPUT', input): input = 'self.in'
+    if re.search('T.*_INPUT', output): return
+
+    # Rewrite e.g. T1_mem_out => T1_mem and T1_din => T1_mem
+    # input = re.sub(r'(in|out)_([01])_BUS16_(\S+)_(\S+)', r"\1\2_s\3t\4", line)
+    input = re.sub(r'(T.*)_(din|mem_out)', r"\1_mem", input)
+    output = re.sub(r'(T.*)_(din|mem_out)', r"\1_mem", output)
+    # if DBG: print "FOO found a din; changing it to a 'mem'"
+    # print "FOO found a mem_out"
+
+
+
     input  = '"%s"' % input
     output  = '"%s";' % output
-    print '  DOT    %-15s->%-15s' % (input, output)
+    DOT_print('    %-12s-> %-12s' % (input, output))
 
-def DOT_globalwire(t, w):
-    parse = re.search("^in", w)
-    if parse:
-        (gt,gw) = find_matching_wire(t,w)
-        if gw:
-            print "('%s' is really 'T%s_%s')" % (w, gt, gw)
-            (t,w) = (gt,gw)
-    return "T%s_%s" % (t,w)
+# def DOT_globalwire(t, w):
+#     parse = re.search("^in", w)
+#     if parse:
+#         (gt,gw) = find_matching_wire(t,w)
+#         if gw:
+#             print "('%s' is really 'T%s_%s')" % (w, gt, gw)
+#             (t,w) = (gt,gw)
+#     return "T%s_%s" % (t,w)
 
 def DOT_build_graph():
     DBG=1
-    print "  DOT  digraph Diagram {"
-    print "  DOT    node [shape=box];"
-    print ""
+
+    try:
+        global DOT_STREAM
+        DOT_STREAM = open(DOT_FILENAME, 'w')
+    except IOError:
+        print ""
+        print "ERROR Did you forget to specify a filename for '-dot'?"
+        sys.exit(-1);
+
+    # Header
+    DOT_print("digraph Diagram {"   )
+    DOT_print("  node [shape=box]; # Comment")
+    DOT_print("")
+    DOT_print("    # Comment")
+
+    # Body
     for t in TILE_LIST:
         # print t.tileno; print t.connectionlist; print "-----"
         for c in t.connectionlist:
             if DBG: print "Tile %2d found connection '%s'" % (t.tileno,c)
+            # DOT_print("")
+            # DOT_print("    # Tile %2d found connection '%s'" % (t.tileno,c))
             DOT_build_dots(t.tileno,c)
-    print "  DOT  }"
 
+    # Trailer
+    DOT_print("}")
+    DOT_STREAM.close()
 
 def DOT_build_dots(tileno, connection):
 
     # This: Tile  4, 'pe_out <= INPUT(wireA,wireB)'
     # Should turn into: "self.in"->"T4_pe_out"
     parse = re.search("pe_out <= INPUT", connection)
-    if parse:
+    # WHY does it fail without this line (below)?
+    if parse: return
         # DOT_connect_input(tileno)
-        DOT_connectem("self.in", "T%s_pe_out" % tileno)
-        return
+        # DOT_connectem("self.in", "T%s_pe_out" % tileno)
+        # return
 
     # This: Tile  5, 'pe_out <= OUTPUT(wireA,wireB)'
     # Should turn into: "T5_pe_out"->"self.out"
@@ -2843,8 +2912,13 @@ def DOT_build_dots(tileno, connection):
         DBG=0
         # tileno = parse.group(1)
         opname = "T%s_%s" % (tileno, parse.group(1))
-        input1 = "T%s_%s" % (tileno, parse.group(2))
-        input2 = "T%s_%s" % (tileno, parse.group(3))
+
+        # Hm gotta trace 'em now I guess
+        # input1 = "T%s_%s" % (tileno, parse.group(2))
+        # input2 = "T%s_%s" % (tileno, parse.group(3))
+
+        input1 = "T%s_%s" % DOT_trace_wire(tileno, parse.group(2))
+        input2 = "T%s_%s" % DOT_trace_wire(tileno, parse.group(3))
 
         if DBG: print "  tileno=%s" % tileno
         if DBG: print "  opname=%s" % opname
@@ -2853,18 +2927,20 @@ def DOT_build_dots(tileno, connection):
 
         DOT_connectem(input1, opname)
         DOT_connectem(input2, opname)
-        DOT_connectem(opname, "T%s_pe_out" % tileno)
+
+        # Don't need this no more I thinks
+        # DOT_connectem(opname, "T%s_pe_out" % tileno)
+
         print ""
         return
 
     # Tile  1 found connection 'out_s1t1 <= in_s0t1' (should be ignored)
     # Tile  1 found connection 'wireA <= in_s1t1' (should be traced)
 
-    # DOT_before(tileno,line)
-    DOT_after(tileno,line)
+    DOT_wire2wire(tileno,line)
 
 
-def DOT_before(tileno,line):
+def DOT_wire2wire(tileno,line):
     # parse = re.search("(/d+) found connection '", line)
     parse = re.search("(.*) <= (.*)", line)
     if (parse):
@@ -2873,63 +2949,33 @@ def DOT_before(tileno,line):
         outwire = parse.group(1)
         inwire  = parse.group(2)
 
-        # "mem_out" and "din" should just map to "mem"
-        if (inwire == "mem_out"):
-            print "FOO found a mem_out"
-            inwire = "mem"
-        if (outwire == "din"):
-            print "FOO found a din"
-            outwire = "mem"
+        if (re.search('^(in|out)', inwire)) and (re.search('^in|out', outwire)):
+            if DBG: print "    # Skipping through-wire '%s'" % line
+            return
 
-        if DBG: print "  tileno=%s" % tileno
-        if DBG: print "  inwire='%s'" % parse.group(3)
-        if DBG: print "  outwire='%s'" % parse.group(2)
-        if DBG: print ""
-
-        inwire  = DOT_globalwire(tileno,  inwire)
-        outwire = DOT_globalwire(tileno, outwire)
-
-        DOT_connectem(inwire, outwire)
-        print ""
-        return
-
-def DOT_after(tileno,line):
-    # parse = re.search("(/d+) found connection '", line)
-    parse = re.search("(.*) <= (.*)", line)
-    if (parse):
-        DBG=0
-        # tileno  = parse.group(1)
-        outwire = parse.group(1)
-        inwire  = parse.group(2)
+        if (inwire == "pe_out") or (inwire == "mem_out"):
+            if DBG: print "    # Skipping '%s' tautology" % inwire
+            return
 
         if DBG: print "  FOO tracing T%s '%s'" % (tileno,inwire)
         (t,w) = DOT_trace_wire(tileno, inwire)
         if DBG: print "  FOO FINAL ANSWER: 'T%s_%s'" % (t,w)
-        inwire = w
         intile = t
+        inwire = w
 
         if DBG: print "  FOO ---------------------"
 
         if DBG: print "  FOO tracing T%s '%s'" % (tileno,outwire)
         (t,w) = DOT_trace_wire(tileno, outwire)
         if DBG: print "  FOO FINAL ANSWER: 'T%s_%s'" % (t,w)
-        outwire = w
         outtile = t
+        outwire = w
 
         print ""
 
-
-        # "mem_out" and "din" should just map to "mem"
-        if (inwire == "mem_out"):
-            print "FOO found a mem_out"
-            inwire = "mem"
-        if (outwire == "din"):
-            print "FOO found a din"
-            outwire = "mem"
-
         if DBG: print "  tileno=%s" % tileno
-        if DBG: print "  inwire='%s'" % parse.group(3)
-        if DBG: print "  outwire='%s'" % parse.group(2)
+        if DBG: print "  inwire='%s'" % inwire
+        if DBG: print "  outwire='%s'" % outwire
         if DBG: print ""
 
         # inwire  = DOT_globalwire(tileno,  inwire)
@@ -2942,28 +2988,68 @@ def DOT_after(tileno,line):
         print ""
         return
 
+# Fool it's never a list
+# def build_connections(tileno, connection_list):
+#     print "FARRRK" + str(connection_list)
+#     while True:
+#         # Want to find all connections of the form "out_s0t0 <= in_s1t0"
+#         # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
+#         # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
+#         
+#         # NO list all connections and let GOD sort 'em out...
+#         parse = re.search("([^ ]* *<= *[^ ]*)(.*)", connection_list)
+#         
+#         # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", connection_list)
+#         if (parse):
+#             DBG = 1
+#             connection = parse.group(1).strip()
+#             if DBG: print "Tile %2d found connection '%s'" % (tileno,connection)
+#             connection_list = parse.group(2).strip()
+#             TILE_LIST[tileno].connect(connection)
+#         else:
+#             break;
+
+def build_connections(tileno, connection):
+    DBG = 0
+
+    # Weed out comments e.g.
+    # "# data[(14, 14)] : @ tile (0,..."
+    # FIXME I'm sure there's a MUCH better way to weed out the comments!
+    parse = re.search("([^ ]* *<= *[^ ]*)(.*)", connection)
+    if not parse: return
+
+    TILE_LIST[tileno].connect(connection)
+    if DBG: print "Tile %2d found connection '%s'" % (tileno,connection)
+    return
+
+#     print "FARRRK" + str(connection_list)
+#     while True:
+#         # Want to find all connections of the form "out_s0t0 <= in_s1t0"
+#         # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
+#         # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
+#         
+#         # NO list all connections and let GOD sort 'em out...
+#         parse = re.search("([^ ]* *<= *[^ ]*)(.*)", connection_list)
+#         
+#         # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", connection_list)
+#         if (parse):
+#             DBG = 1
+#             connection = parse.group(1).strip()
+#             if DBG: print "Tile %2d found connection '%s'" % (tileno,connection)
+#             connection_list = parse.group(2).strip()
+#             TILE_LIST[tileno].connect(connection)
+#         else:
+#             break;
 
 
+def process_opname(tileno, opname, operand, reg):
+    if (operand['A'] == 'wire'): reg['A'] = 'wireA' # Confusing enough?
+    if (operand['B'] == 'wire'): reg['B'] = 'wireB'
+    line2 = 'pe_out <= %s(%s,%s)' % (opname, reg['A'], reg['B'])
+    (reg['A'], reg['B']) = ("regA", "regB") # defaults
+    build_connections(tileno, line2)
+    return reg
 
-
-def build_connections(tileno, connection_list):
-    while True:
-        # Want to find all connections of the form "out_s0t0 <= in_s1t0"
-        # BUT NOT e.g. "regB <= 0x0000" 'out_s1t0 <= pe_out' 'out <= MUL(wireA,wireB)'
-        # x = re.search("(o[^ ]* *<= *i[^ ]*)(.*)", teststring)
-        
-        # NO list all connections and let GOD sort 'em out...
-        parse = re.search("([^ ]* *<= *[^ ]*)(.*)", connection_list)
-        
-        # OR: x = re.search("(\S*\s*<=\s*\S*)(.*)", connection_list)
-        if (parse):
-            DBG = 0
-            connection = parse.group(1).strip()
-            if DBG: print "Tile %2d found connection '%s'" % (tileno,connection)
-            connection_list = parse.group(2).strip()
-            TILE_LIST[tileno].connect(connection)
-        else:
-            break;
 
 def process_decoded_bitstream(bs):
 
@@ -3005,12 +3091,15 @@ def process_decoded_bitstream(bs):
         if (parse):
             # If op_info exists, build the op
             if (opname):
-                if (operand['A'] == 'wire'): reg['A'] = 'wireA' # Confusing enough?
-                if (operand['B'] == 'wire'): reg['B'] = 'wireB'
-                line2 = 'pe_out <= %s(%s,%s)' % (opname, reg['A'], reg['B'])
-                (reg['A'], reg['B']) = ("regA", "regB") # defaults
+                
+                # if (operand['A'] == 'wire'): reg['A'] = 'wireA' # Confusing enough?
+                # if (operand['B'] == 'wire'): reg['B'] = 'wireB'
+                # line2 = 'pe_out <= %s(%s,%s)' % (opname, reg['A'], reg['B'])
+                # (reg['A'], reg['B']) = ("regA", "regB") # defaults
+                # build_connections(tileno, line2)
+
+                reg = process_opname(tileno, opname, operand, reg)
                 opname = False;
-                build_connections(tileno, line2)
 
             tileno = int(parse.group(1), 16)
             if DBG: print "%s => tile number %d" % (line, tileno)
@@ -3117,6 +3206,11 @@ def process_decoded_bitstream(bs):
             # print "FOO found latch for wire '%s'" % (wirename)
             # print "FOO tile %d outreg list now: %s" % (tileno,str(rlist))
 
+    # One last thing
+    if (opname):
+        reg = process_opname(tileno, opname, operand, reg)
+        opname = False;
+
 # END process_decoded_bitstream(bs):
 ##############################################################################
 
@@ -3139,7 +3233,7 @@ def display_decoded_bitstream_file(filename):
     try:
         inputstream = open(filename);
     except IOError:
-        # TODO/FIXME yeah these were copies from somewhere else obviously
+        # TODO/FIXME yeah these were copied from somewhere else obviously
         print ""
         print "ERROR Cannot find processor bitstream file '%s'" % filename
         print main.__doc__
@@ -3338,7 +3432,11 @@ def main():
         if   (args[0] == "-demo"):  do_demos()
         elif (args[0] == "--help"): print main.__doc__
         elif (args[0] ==   '-8x8'): REQUESTED_SIZE = [8,8]
-        elif (args[0] ==   '-dot'): PRINT_CONNECTIONS_AND_QUIT = True
+        elif (args[0] ==   '-dot'):
+            PRINT_CONNECTIONS_AND_QUIT = True
+            args = args[1:]
+            global DOT_FILENAME
+            DOT_FILENAME = args[0]
         elif (args[0] == "-cgra_info"):
             args = args[1:]
             cgra_filename = args[0]
