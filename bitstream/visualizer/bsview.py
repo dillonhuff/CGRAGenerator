@@ -2747,6 +2747,13 @@ def DOT_print_connection(t1, w1, t2, w2):
 def DOT_trace_wire(tileno, portname):
     DBG=0
 
+    # Did we trace our way back to a latch??!
+    latchname = "T%s_%s" % (tileno, portname)
+    if (latchname in LATCHES):
+        if DBG: print "FOO Whoa found a latch"
+        outwire = portname + "_latch"
+        return (tileno, outwire)
+
     # Constant: we're done.
     if re.search('^0x', portname): return(tileno, portname)
 
@@ -2829,10 +2836,15 @@ def DOT_connectem(input, output):
     # if DBG: print "FOO found a din; changing it to a 'mem'"
     # print "FOO found a mem_out"
 
+    if (input == output):
+        print "WARNING Found tautology '%s-> %2s'" % (input, output)
+        input  = '"%s"'  % input
+        output = '"%s";' % output
+        DOT_print("  # %-12s-> %-12s# (tautology)" % (input, output))
+        return
 
-
-    input  = '"%s"' % input
-    output  = '"%s";' % output
+    input  = '"%s"'  % input
+    output = '"%s";' % output
     DOT_print('    %-12s-> %-12s' % (input, output))
 
 # def DOT_globalwire(t, w):
@@ -2860,6 +2872,9 @@ def DOT_build_graph():
     DOT_print("  node [shape=box]; # Comment")
     DOT_print("")
     DOT_print("    # Comment")
+
+    # Latch hack
+    # DOT_add_latches()
 
     # Body
     for t in TILE_LIST:
@@ -2889,8 +2904,11 @@ def DOT_build_dots(tileno, connection):
     # Should turn into: "T5_pe_out"->"self.out"
     parse = re.search("pe_out <= OUTPUT", connection)
     if parse:
-        # DOT_connect_output(tileno)
-        DOT_connectem("T%s_pe_out" % tileno, "self.out")
+        # # DOT_connect_output(tileno)
+        # DOT_connectem("T%s_pe_out" % tileno, "self.out")
+        outwire = 'self.out'
+        inwire  = "T%s_%s" % DOT_trace_wire(tileno, 'wireA')
+        DOT_connectem(inwire, outwire)
         return
 
     line = connection # foo
@@ -2949,9 +2967,12 @@ def DOT_wire2wire(tileno,line):
         outwire = parse.group(1)
         inwire  = parse.group(2)
 
-        if (re.search('^(in|out)', inwire)) and (re.search('^in|out', outwire)):
-            if DBG: print "    # Skipping through-wire '%s'" % line
-            return
+        # Some throuh-wires turn into latches...
+        # FIXME possible optimization: add condition for
+        #    if inwire not in LATCHES and outwire not in LATCHES
+        # if (re.search('^(in|out)', inwire)) and (re.search('^in|out', outwire)):
+        #     if DBG: print "    # Skipping through-wire '%s'" % line
+        #     return
 
         if (inwire == "pe_out") or (inwire == "mem_out"):
             if DBG: print "    # Skipping '%s' tautology" % inwire
@@ -3050,6 +3071,9 @@ def process_opname(tileno, opname, operand, reg):
     build_connections(tileno, line2)
     return reg
 
+
+global LATCHES
+LATCHES = []
 
 def process_decoded_bitstream(bs):
 
@@ -3200,11 +3224,19 @@ def process_decoded_bitstream(bs):
         # data[(15, 15)] : @ tile (0, 2) latch output wire out_BUS16_S1_T2
         parse = re.search("latch output wire (\S+)", line)
         if (parse):
+            DBG=0
             wirename = parse.group(1)
             rlist = TILE_LIST[tileno].outreglist
             rlist.append(wirename)
-            # print "FOO found latch for wire '%s'" % (wirename)
-            # print "FOO tile %d outreg list now: %s" % (tileno,str(rlist))
+
+            global LATCHES
+            w = "T%s_%s" % (tileno, wirename)
+            LATCHES.append(w)
+
+            if DBG: print "FOO found latch for wire '%s'" % (wirename)
+            if DBG: print "FOO tile %d outreg list now: %s" % (tileno,str(rlist))
+            if DBG: print "FOO LATCHES=%s" % str(LATCHES)
+            if DBG: print ""
 
     # One last thing
     if (opname):
