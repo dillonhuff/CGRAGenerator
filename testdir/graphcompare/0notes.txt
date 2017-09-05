@@ -1,0 +1,34 @@
+maybe try this:
+
+  set viz = /nobackup/steveri/github/CGRAGenerator/bitstream/visualizer
+  set f = tmp662-bad
+  set f = tmp663-good
+
+  $viz/bsview.py -cgra_info examples/cgra_info.txt \
+    examples/$f.bsa -dot /tmp/$f.dot
+
+  dot /tmp/$f.dot -Tpdf > /tmp/$f.pdf
+  xpdf /tmp/$f.pdf
+
+  # pdfjam --scale 0.8 --offset '-4.5cm 2.5cm' $f.pdf
+  pdfjam --scale 0.8 /tmp/$f.pdf -o /tmp/$f-pdfjam.pdf
+  xpdf /tmp/$f-pdfjam.pdf
+  lp -d gala -h gala /tmp/$f-pdfjam.pdf
+
+
+
+
+
+------------------------------------------------------------------------------
+NOTES
+
+  cd $viz
+  bsview.py -dot ~/tmpdir/tmp663-good.bsa\
+    -cgra_info $top/examples/cgra_info_v2_8x8+mem+reg.txt\
+    | & grep DOT\
+    | sed 's/DOT//'\
+    > ~/tmpdir/tmp.dot
+  echo '}' >> ~/tmpdir/tmp.dot
+  dot ~/tmpdir/tmp.dot -Tpdf > ~/tmpdir/tmp.pdf
+  xpdf ~/tmpdir/tmp.pdf
+

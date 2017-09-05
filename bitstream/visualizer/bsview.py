@@ -2786,10 +2786,17 @@ def DOT_trace_wire(tileno, portname):
 
     is_input = re.search('^in', portname)
     
+    # Problem: any mem-tile sb_wir e.g. 'T17_sb_wire_in1_s3t0' gets
+    # its own separate node but it shouldn't it's just a wire dude
+    # 
+    # Solution: It seems to work if we 1) treat all "sb_wire" ports as
+    # outputs and 2) only trace BACK from the sbwire, never forward
+
     # Treat "wireA" "wireB" and "pe_out" as outputs e.g. look for internal connections
-    is_output = re.search('^out', portname) or \
-             re.search('^wire', portname) or \
-             (portname == 'pe_out')
+    is_output = re.search('^out', portname) \
+                or re.search('^wire', portname) \
+                or re.search('sb_wire', portname) \
+                or (portname == 'pe_out')
 
     if is_input:
         if DBG: print "  FOO '%s' is a input; find neighbor output" % portname
@@ -2804,6 +2811,9 @@ def DOT_trace_wire(tileno, portname):
         found_input = False
         if DBG: print "  FOO connected ports = " + str(cport)
         for c in cport:
+            # FIXME weird hack: if port is an "sb_wire" only trace "in" connections
+            if re.search('sb_wire', portname) and re.search('^out', c): continue
+
             if DBG: print "  FOO found connected port 'T%s_%s'" % (tileno,c)
             if DBG: DOT_print_connection(tileno, portname, tileno, c)
             return DOT_trace_wire(tileno, c)
@@ -2811,7 +2821,9 @@ def DOT_trace_wire(tileno, portname):
     else:
         return (tileno,portname)
 
+    sys.stdout.flush()
     sys.stderr.write("ERROR in DOT_trace_wire()\n")
+    sys.stderr.write("ERROR cannot classify port '%s'\n" % portname)
     sys.exit(-1)
 
 # def DOT_connect_input(tileno):
