@@ -77,7 +77,14 @@ PRINTED_CONFIG = False
 #   CGRAGenerator/bitstream/decoder/lib/cgra_info.py
 # This gives us e.g. tileno2rc, rc2tileno...
 
-sys.path.insert(0, "../decoder")
+import os
+mypath = os.path.realpath(__file__)
+mydir  = os.path.dirname(mypath)
+
+decoder_path = mydir+"/../decoder"
+print decoder_path
+
+sys.path.insert(0, decoder_path)
 from lib import cgra_info
 
 def tileno2rc(tileno):
