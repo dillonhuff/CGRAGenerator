@@ -7,6 +7,18 @@ unset yakky
 set f1 = $1
 set f2 = $2
 
+if (! -e $f1) then
+  echo "No such file '$f1'"
+  exit
+endif
+
+if (! -e $f2) then
+  echo "No such file '$f2'"
+  exit
+endif
+
+
+
 set tmpdir = /tmp/tmp.bscompare.$$
 mkdir $tmpdir
 

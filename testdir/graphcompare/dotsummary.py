@@ -12,6 +12,7 @@ import re
 #    3 ADD(1,2)     # Found three ADD nodes each with 1 in_edge and 2 out_edges
 #    1 const16(0,1) # Found one 'const16' node with 1 out_edge
 
+DBG=0
 global node_dict
 node_dict = {} # Dictionary?  Is that what this is?
 for line in sys.stdin:
@@ -95,6 +96,7 @@ for line in sys.stdin:
 
 
 # Okay now we're done with phase 1
+DBG=0
 if DBG: print "phase 1 complete"
 if DBG: print sorted(node_dict)  # Same as sorted(node_dict.keys()) 
 
