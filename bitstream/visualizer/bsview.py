@@ -2786,7 +2786,7 @@ def DOT_trace_wire(tileno, portname):
 
     is_input = re.search('^in', portname)
     
-    # Problem: any mem-tile sb_wir e.g. 'T17_sb_wire_in1_s3t0' gets
+    # Problem: any mem-tile sb_wire e.g. 'T17_sb_wire_in1_s3t0' gets
     # its own separate node but it shouldn't it's just a wire dude
     # 
     # Solution: It seems to work if we 1) treat all "sb_wire" ports as
