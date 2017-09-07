@@ -12,6 +12,7 @@ USAGE:
   exit
 
 MAIN:
+# mydir myscript scriptdir
 set scripthome = $0:h
 if ("$scripthome" == "$0") set scripthome = .
 

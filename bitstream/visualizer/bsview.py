@@ -82,7 +82,7 @@ mypath = os.path.realpath(__file__)
 mydir  = os.path.dirname(mypath)
 
 decoder_path = mydir+"/../decoder"
-print decoder_path
+# print decoder_path
 
 sys.path.insert(0, decoder_path)
 from lib import cgra_info
@@ -2837,9 +2837,34 @@ def DOT_trace_wire(tileno, portname):
 #     print '  DOT    %-15s->%-15s' % (t_input, t_output)
 
 def DOT_print(s):
-    DBG = 1
+    DBG = 0
     if DBG: print '  DOT  ' + s;
     print>>DOT_STREAM, s
+
+def DOT_rewrite(node):
+    # Dec vs. hex:
+    # "T12_0x0013" => "T12_const19"
+
+    DBG=0
+    parse = re.search('T(\d+)_0x(.*)', node)
+    if parse:
+        tileno = parse.group(1)
+        k      = int(parse.group(2),16)
+        newnode= "T%s_const%d" % (tileno, k)
+        if DBG: print "FOO was '%s' now '%s'" % (node, newnode)
+        return newnode
+
+    # Simplified latch names:
+    # "T32_out_s3t1_latch" => "T32_latch_s3t1"
+    parse = re.search('T(\d+)_out_([^_]+)_latch', node)
+    if parse:
+        tileno    = parse.group(1)
+        sidetrack = parse.group(2)
+        newnode= "T%s_latch_%s" % (tileno, sidetrack)
+        if DBG: print "FOO was '%s' now '%s'" % (node, newnode)
+        return newnode
+
+    return node
 
 def DOT_connectem(input, output):
 
@@ -2856,14 +2881,14 @@ def DOT_connectem(input, output):
     # print "FOO found a mem_out"
 
     if (input == output):
-        print "WARNING Found tautology '%s-> %2s'" % (input, output)
+        if 0: print "WARNING Found tautology '%s-> %2s'" % (input, output)
         input  = '"%s"'  % input
         output = '"%s";' % output
         DOT_print("  # %-12s-> %-12s# (tautology)" % (input, output))
         return
 
-    input  = '"%s"'  % input
-    output = '"%s";' % output
+    input  = '"%s"'  % DOT_rewrite(input)
+    output = '"%s";' % DOT_rewrite(output)
     DOT_print('    %-12s-> %-12s' % (input, output))
 
 # def DOT_globalwire(t, w):
@@ -2876,7 +2901,7 @@ def DOT_connectem(input, output):
 #     return "T%s_%s" % (t,w)
 
 def DOT_build_graph():
-    DBG=1
+    DBG=0
 
     try:
         global DOT_STREAM
@@ -2968,7 +2993,7 @@ def DOT_build_dots(tileno, connection):
         # Don't need this no more I thinks
         # DOT_connectem(opname, "T%s_pe_out" % tileno)
 
-        print ""
+        if DBG: print ""
         return
 
     # Tile  1 found connection 'out_s1t1 <= in_s0t1' (should be ignored)
@@ -3011,7 +3036,7 @@ def DOT_wire2wire(tileno,line):
         outtile = t
         outwire = w
 
-        print ""
+        if DBG: print ""
 
         if DBG: print "  tileno=%s" % tileno
         if DBG: print "  inwire='%s'" % inwire
@@ -3025,7 +3050,7 @@ def DOT_wire2wire(tileno,line):
         outwire = 'T%s_%s' % (outtile,outwire)
 
         DOT_connectem(inwire, outwire)
-        print ""
+        if DBG: print ""
         return
 
 # Fool it's never a list
