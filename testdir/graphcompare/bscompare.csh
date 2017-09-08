@@ -76,11 +76,10 @@ unset FAIL
 diff $tmpdir/{$r1,$r2}.nodelist || set FAIL
 
 if ($?FAIL) then
-  echo ""
   echo "ERROR $f1:t and $f2:t differ: FAIL"
   exit -1
 else
-  echo "SUCCESS $r1 and $r2 are equal"
+  if ($?yakky) echo "SUCCESS $f1 and $f2 are equal"
 endif
 
 
