@@ -46,18 +46,19 @@ set r2 = $f2:t; set r2 = $r2:r
 ########################################################################
 
 # (For now?) ignore this warning(s):
-# /usr/lib/python2.7/dist-packages/gtk-2.0/gtk/__init__.py:57: GtkWarning: could not open display  warnings.warn(str(e), _gtk.Warning)
+# /usr/lib/python2.7/dist-packages/gtk-2.0/gtk/__init__.py:57: GtkWarning: could not open display
+# warnings.warn(str(e), _gtk.Warning)
 # Using config file 'CGRAGenerator/testdir/graphcompare/examples/cgra_info.txt'
 
 if ($?yakky) echo Building $tmpdir/$r1.dot...
 $viz/bsview.py -cgra_info $cgra_info $f1 -dot $tmpdir/$r1.dot\
-  |& grep -v 'could not open display'\
-  |& grep -v 'Using config'
+  |& grep . | grep -v GtkWarning | grep -v gtk.Warning\
+  | grep -v 'Using config'
 
 if ($?yakky) echo Building $tmpdir/$r2.dot...
 $viz/bsview.py -cgra_info $cgra_info $f2 -dot $tmpdir/$r2.dot\
-  |& grep -v 'could not open display'\
-  |& grep -v 'Using config'
+  |& grep . | grep -v GtkWarning | grep -v gtk.Warning\
+  | grep -v 'Using config'
 
 ########################################################################
 if ($?yakky) echo Building $tmpdir/$r1.nodelist...
