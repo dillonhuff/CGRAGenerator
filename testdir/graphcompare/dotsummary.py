@@ -25,24 +25,11 @@ for line in sys.stdin:
 
     # Only want lines containing "node" -> "node"
     parse = re.search('("\s*->\s*")', line)
-    # if parse: print " FOO %s" % parse.group(1)
     if not parse: continue
+    # else: print " FOO %s" % parse.group(1)
 
     DBG=0
     if DBG: print line
-
-    # What we want:
-    # > line comes in, looks something like
-    #       "T1_0x0000" -> "T1_ADD" -> "T10_out_s3t2_latch";
-    # > this should turn into
-    #       howmany["0x0000"] = (0,1)
-    #       howmany["ADD"]    = (1,1)
-    #       howmany["latch"]  = (1,0)
-    #
-    # Okay so here's the algowizzy:
-    # 1. Strip out nonsense chars leaving only
-    #    'T1_0x0000 T1_ADD T10_out_s3t2_latch'
-    # 2. Turn it into a list, etc. etc.
 
     # '"T1_0x0000" -> "T1_ADD" -> "T10_out_s3t2_latch";'
     # becomes
@@ -61,15 +48,20 @@ for line in sys.stdin:
     DBG=0
     line_array = line1.split(' ')
 
-    # First node in list: increment out_edges ONLY
+    # Count input, output edges of each node in list.
+    # First node has one output edge
+    # Last node has one input edge
+    # All others have one edge in, one edge out
+
+    # In: (T1_0x0000,T1_ADD,T10_out_s3t2_latch)
+    # Out: node_dict["T1_0x0000"]          += (0,1)
+    #      node_dict["T1_ADD"]             += (1,1)
+    #      node_dict["T10_out_s3t2_latch"] += (1,0)
+
     firstnode = line_array[0]
     lastnode  = line_array[-1]
     line_array = line_array[1:-1]
-    if DBG:
-        print "FOO " + firstnode
-        print "FOO " + lastnode
-        print "FOO " + str(line_array)
-        print ""
+    if DBG: print "FOO %s\nFOO %s\nFOO %s\n" (firstnode, lastnode, str(line_array))
 
     def incnode(node,ein,eout):
         '''Add "in" in-edges and "out" out_edges to "node"'''
@@ -97,8 +89,12 @@ for line in sys.stdin:
 
 # Okay now we're done with phase 1
 DBG=0
-if DBG: print "phase 1 complete"
-if DBG: print sorted(node_dict)  # Same as sorted(node_dict.keys()) 
+if DBG:
+    print "phase 1 complete"
+    for node in sorted(node_dict):  # Same as sorted(node_dict.keys()) 
+        print node, node_dict[node]
+    sys.exit(0)
+
 
 # Phase 2: canonicalize and merge
 # IN:
@@ -117,6 +113,36 @@ if DBG: print sorted(node_dict)  # Same as sorted(node_dict.keys())
 #    const15    1
 # 
 
+rewrite_bsa = (
+    # Rewrite-rules for *.bsa files (use tuples because immutable or whatever)
+
+    # T1_ADD             => ADD
+    # T1_0x000b          => const11 (this happens elsewhere)
+    # T10_out_s3t2_latch => latch
+    # T16_regA           => latch
+
+    ('^T\d+_', ''),        # Strip off tile number
+    ('.*latch.*','latch'), # All regs and latches are 'latch'
+    ('^reg.*','latch')
+)
+
+rewrite_map = (
+    # Rewrite-rules for map files
+
+    # PE_U10_add  => add
+    # PE_U38_mul  => mul
+    # const0      => const0
+    # const999    => const999
+    
+    # lb_conv1_2_stencil_update_stream$mem_1    => mem
+    # lb_conv1_2_stencil_update_stream$mem_2    => mem
+    # lb_conv1_2_stencil_update_stream$reg_0_1  => latch
+
+    ('^PE_.*_', ''),
+    ('.*[$]mem.*', 'mem'),
+    ('.*[$]reg.*', 'reg')
+)
+
 howmany = {}
 for node in sorted(node_dict):
     DBG=0
@@ -127,18 +153,12 @@ for node in sorted(node_dict):
     # T10_out_s3t2_latch => latch
     # T1_0x000b          => const11
     # T16_regA           => latch
+    # etc.
 
-    # Strip off tile number e.g. "T10_out_s3t2_latch" => "out_s3t2_latch"
-    node = re.sub('^T\d+_','', node)
-    if DBG: print "> %s" % node
-
-    # All latches should just be latch e.g. "out_s3t2_latch" => "latch"
-    node = re.sub('.*latch.*','latch', node)
-    if DBG: print "> %s" % node
-
-    # Also regs are latches e.g. "regA" => "latch"
-    node = re.sub('^reg.*','latch', node)
-    if DBG: print "> %s" % node
+    for subpair in rewrite_bsa + rewrite_map:
+        search = subpair[0]
+        replace = subpair[1]
+        node = re.sub(search, replace, node)
 
     # All constants should be dec e.g. '0x0011' => 'const17'
     # (Actually it's possible that bsview does this for us now...?
@@ -149,7 +169,10 @@ for node in sorted(node_dict):
 
     # Add in,out edges e.g. "const17" => "const17(0,1)"
 
-    node = "%s(i%d,o%d)" % (node,ein,eout)
+    # node = "%s(i%d,o%d)" % (node,ein,eout)
+    # node = "(i%d -> %-8s -> o%d)" % (ein,node,eout)
+    node = "(i%d -> %s -> o%d)" % (ein,node,eout)
+
     if DBG: print "> %s" % node
 
     # Count 'em up!
