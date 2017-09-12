@@ -1,3 +1,14 @@
+To compare two files f[12]_mapped.json:
+
+  ./mapcompare f1_mapped.json f2_mapped.json
+
+...which basically does this:
+
+  json2dot.py < file1_mapped.json > file1_mapped.dot
+  dotsummary.py < file1_mapped.dot > file1_mapped.dotsummary
+
+
+-----
 To compare two bs files:
 
 ./bscompare.csh file1.bsa file2.bsa cgra_info.txt
