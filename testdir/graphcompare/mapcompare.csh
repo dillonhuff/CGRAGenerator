@@ -1,7 +1,6 @@
 #!/bin/csh -f
 
 unset yakky
-set yakky
 
 # Usage: $0 gold_mapped.json prog_mapped.json
 
