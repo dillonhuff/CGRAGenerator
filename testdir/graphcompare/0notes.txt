@@ -1,3 +1,28 @@
+GOAL:
+  graphcompare.csh <-v> file1 file2 <cgra_info_file>
+
+where (file1, file2) can be json, dot or bsa.  
+
+For best results, bsa file needs updated cgra_info file on command line
+
+EXAMPLES:
+  graphcompare.csh bw_annotated gold/bw_annotated ../cgra_info.txt
+  graphcompare.csh bw_design_top.json bw_annotated ../cgra_info.txt
+  graphcompare.csh bw_design_top.json gold/bw_design_top.json
+
+
+
+TOOLS NEEDED:
+  convert2dot.csh foo.json foo.json.dot
+  convert2dot.csh foo.bsa  foo.bsa.dot cgra_info.txt
+  dotsummary.py < foo.json.dot > foo.json.dotsum
+
+
+
+
+
+
+------------------------------------------------------------------------------
 To compare two files f[12]_mapped.json:
 
   ./mapcompare f1_mapped.json f2_mapped.json
