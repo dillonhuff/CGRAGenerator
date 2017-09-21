@@ -1,8 +1,12 @@
 #!/bin/csh -f
 
-set tmp = /tmp/displaydot$$.dot
+set tmp = /tmp/displaydot$$
 
 set echo
-dot $1 -Tpdf > $tmp
-xpdf $tmp
+dot $1 -Tpdf > $tmp.pdf
+# xpdf $tmp
+# pdfjam --scale 0.8 $tmp.pdf -o $tmp.jam
+pdfjam --scale 0.8 --landscape $tmp.pdf -o $tmp.jam
+echo lp -d gala -h gala $tmp.jam
+xpdf $tmp.jam
 

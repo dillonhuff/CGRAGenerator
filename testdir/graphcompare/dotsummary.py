@@ -123,7 +123,13 @@ rewrite_bsa = (
 
     ('^T\d+_', ''),        # Strip off tile number
     ('.*latch.*','latch'), # All regs and latches are 'latch'
-    ('^reg.*','latch')
+    ('^reg.*','latch'),
+    # Maybe this is dumb, I dunno
+    ('ADD','add'),
+    ('MUL','mul'),
+    ('self.in','INPUT'),
+    ('self.out','OUTPUT'),
+
 )
 
 rewrite_map = (

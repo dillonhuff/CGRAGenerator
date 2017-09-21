@@ -66,7 +66,10 @@ echo $r2
 set tmpdir = /tmp/tmp.bscompare.$$
 mkdir $tmpdir
 
+if ($?yakky) echo Building $tmpdir/$r1.dot...
 $scripthome/convert2dot.csh $f1 $tmpdir/$r1.dot $cgra_info
+
+if ($?yakky) echo Building $tmpdir/$r2.dot...
 $scripthome/convert2dot.csh $f2 $tmpdir/$r2.dot $cgra_info
 
 ########################################################################
