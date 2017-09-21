@@ -3520,17 +3520,6 @@ def main():
             bsfiles.append(args[0])
         args = args[1:]
 
-#     if not PRINT_CONNECTIONS_AND_QUIT:
-#         import pygtk
-#         pygtk.require('2.0')
-#         import gtk
-# 
-#         import cairo
-#         from subprocess import call
-
-
-
-
     # Load cgra_info
     if REQUESTED_SIZE == [4,4]:
         cgra_info.read_cgra_info(cgra_filename, '4x4')
