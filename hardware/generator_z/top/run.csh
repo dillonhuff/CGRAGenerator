@@ -9,6 +9,11 @@ Genesis2.pl -parse -generate -top top -input\
   ../cb/cb.vp \
   ../pe_tile/pe_tile.vp top.vp \
   \
+  ../pe_new/pe/rtl/test_pe_red.svp \
+  ../pe_new/pe/rtl/test_pe_dual.vpf \
+  ../pe_new/pe/rtl/test_pe_comp.svp \
+  ../pe_new/pe/rtl/test_pe_comp_dual.svp \
+  ../pe_new/pe/rtl/test_cmpr.svp \
   ../pe_new/pe/rtl/test_pe.svp \
   ../pe_new/pe/rtl/test_mult_add.svp \
   ../pe_new/pe/rtl/test_full_add.svp \

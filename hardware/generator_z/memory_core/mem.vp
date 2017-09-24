@@ -1,8 +1,5 @@
 ///////////////////////////////////////////////////////////////////
-// CGRA MemTile generator 
-//
-// Nikhil Bhagdikar
-// (C) Stanford University
+// CGRA Memory generator 
 /////////////////////////////////////////////////////////////////
 //; my $dwidth   = parameter(Name=>'dwidth', val=> 16, doc=>'data width of instantitated memory');
 //; my $awidth   = parameter(Name=>'awidth', val=> 12, doc=>'address bus width of instantitated memory');

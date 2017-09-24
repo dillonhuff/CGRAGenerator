@@ -1,9 +1,7 @@
 //;    use POSIX;
 //;    my $backtick = "`";
 ///////////////////////////////////////////////////////////////////
-// CGRA memory tile generator
-//
-// Nikhil Bhagdikar
+// CGRA memory generator
 //////////////////////////////////////////////////////////////////
 
 
@@ -33,6 +31,7 @@ data_out,
 chain_in,
 chain_out,
 addr,
+addr_w,
 xwen,
 chain_wen_in,
 ren,
@@ -48,6 +47,7 @@ input [31:0] config_data;
 input config_en;
 input [`$dwidth - 1`:0] xdata_in;
 input [`$dwidth - 1`:0] addr;
+input [`$dwidth - 1`:0] addr_w;
 output reg [`$dwidth - 1`:0] data_out;
 input [`$dwidth - 1`:0] chain_in;
 output [`$dwidth - 1`:0] chain_out;
