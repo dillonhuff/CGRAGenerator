@@ -2,15 +2,15 @@
 //;                               Val=>2, Min=>2, Step=>1, Max=>16,
 //;                               Doc=>"Number of inputs to a LUT");
 //;
-//;my $c_in_decl = $lut_inps > 3 ? "["+($lut_inps-1)+":0]" : "     ";
-//;
+//; my $c_in_decl = $lut_inps > 3 ? "["+($lut_inps-1)+":0]" : "     ";
+
 module  `mname`  #(
   parameter DataWidth = 16
 ) (
   input                  cfg_clk,
   input                  cfg_rst_n,
-  input           [15:0] cfg_d,
-  input           [7:0]  cfg_a,
+  input  [15:0]          cfg_d,
+  input  [7:0]           cfg_a,
   input                  cfg_en,
 
   input  [DataWidth-1:0] op_a_in,
