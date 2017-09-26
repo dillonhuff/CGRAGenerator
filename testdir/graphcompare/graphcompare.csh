@@ -46,13 +46,15 @@ set scripthome = $0:h
 if ("$scripthome" == "$0") set scripthome = .
 
 set cgra_info = $3
-if ("$cgra_info" == "") then
-  set cgra_info = $scripthome/examples/cgra_info.txt
-  echo ""
-  echo "WARNING No cgra_info file specified; "
-  echo "WARNING will use default $cgra_info"
-  echo ""
-endif
+
+# I think "dotsummary" is responsible for this now...
+# if ("$cgra_info" == "") then
+#   set cgra_info = $scripthome/examples/cgra_info.txt
+#   echo ""
+#   echo "WARNING No cgra_info file specified; "
+#   echo "WARNING will use default $cgra_info"
+#   echo ""
+# endif
 
 # set r1 = $f1:t; set r1 = $r1
 # set r2 = $f2:t; set r2 = $r2
