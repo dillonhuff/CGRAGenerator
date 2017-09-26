@@ -4,7 +4,8 @@
 # @Caleb: For providing registers on all outputs of all SBs, do-
 # setenv CGRA_GEN_ALL_REG 1
 
-Genesis2.pl -parse -generate -top top -input\
+# Genesis2.pl -parse -generate -top top -input\
+Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../sb/sb.vp \
   ../cb/cb.vp \
   ../pe_tile/pe_tile.vp top.vp \
