@@ -53,14 +53,18 @@
 //; my %tile_pattern;
 //; #Tile pattern : <tile_name_defined_in_tile_config>_<number_of_columns>_<number_of_rows>
 //; #             : <pattern_name>_<number_of_columns>_<number_of_rows>
-//; # 
+
 //; # This makes 32 columns and 16 rows I think
 //; # $tile_pattern {'p1'} = "t0_3_2 t1_1_1";
 //; # $tile_pattern {'top'} = "p1_8_8";
-//; # 
+
 //; # This should make the old 8x8 pattern maybe
-//; $tile_pattern {'p1'} = "t0_1_2 t1_1_1";
-//; $tile_pattern {'top'} = "p1_4_4";
+//; # $tile_pattern {'p1'} = "t0_1_2 t1_1_1";
+//; # $tile_pattern {'top'} = "p1_4_4";
+
+//; # Oops no should be like this for the old 8x8
+//; $tile_pattern {'p1'} = "t0_3_2 t1_1_1";
+//; $tile_pattern {'top'} = "p1_2_4";
 
 
 
