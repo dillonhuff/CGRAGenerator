@@ -47,10 +47,10 @@ test_all:
 # 	make TEMPDIR=$(TEMPDIR) test_4x4_gray
 # 	make TEMPDIR=$(TEMPDIR) test_8x8_gray
 
-	make gray_small_4x4
-	make gray 4x4
 	make gray_small_8x8
 	make gray_8x8
+	make gray_small_4x4
+	make gray 4x4
 
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
