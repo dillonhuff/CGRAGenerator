@@ -13,7 +13,8 @@ echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
 echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
 echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
 
-set scriptpath = "$0"
+# set scriptpath = "$0"
+set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
 if ("$scriptpath" == "$0") then
   set scriptpath = `pwd`
@@ -21,6 +22,8 @@ if ("$scriptpath" == "$0") then
 else
   set CGROOT = `cd $scriptpath/..; pwd`
 endif
+
+# echo "I think CGRAGenerator is here: $CGROOT"; exit
 
 ##############################################################################
 # Set up to run Genesis2; installs genesis2 if necessary (in /tmp !)
