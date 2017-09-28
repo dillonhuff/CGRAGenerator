@@ -50,7 +50,7 @@ test_all:
 	make gray_small_8x8
 	make gray_8x8
 	make gray_small_4x4
-	make gray 4x4
+	make gray_4x4
 
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
@@ -67,7 +67,7 @@ test_all:
 hackdiff_test:
 	cd ../bitstream; \
 	decoder/hackdiff.csh \
-	  examples/convbw.bs examples/convbw.bsa \
+	  examples/conv_bw.bs examples/conv_bw.bsa \
 	  -cgra examples/cgra_configs/cgra_info_8x8.txt
 
 # TODO can combine all these down to one
