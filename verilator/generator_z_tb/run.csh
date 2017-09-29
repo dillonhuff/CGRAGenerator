@@ -267,7 +267,7 @@ ls ../../.. | grep -i smt
 # 
 # NOTE -v is messy and should be avoided unless you're trying to debg things.
 echo                    decode.py -cgra $cgra_info $config
-../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded
+../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded || exit -1
 
 
 # Show IO info derived from bitstream
