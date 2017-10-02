@@ -32,7 +32,7 @@ generate
     always_ff @(posedge cfg_clk or negedge cfg_rst_n) begin
       if(~cfg_rst_n) begin
         lut   <= 4'h0;
-      end else if(cfg_en && (cfg_a == (ggg/4))) begin
+      end else if(cfg_en && (cfg_a == ($unsigned(ggg)/4))) begin
         lut   <= cfg_d[`$lut_inps-1`: 0];
       end
     end

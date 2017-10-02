@@ -237,7 +237,7 @@ assign is_signed   = op_code[6];
 assign double_mode = op_code[7];
 assign dual_mode   = op_code[8]; //Save the OP code bit for half precision support
 
-//; if(~$is_msb) {
+//; if(~$is_msb & $en_double) {
   assign cmpr_eq_out = cmpr_eq;
 //;}
 
@@ -314,7 +314,7 @@ always_comb begin : proc_alu
         res_p_w     = diff_sign;
 //;} else {
         add_a[0]    = ~op_a;
-        add_c_in[0] = diff_sign;
+        add_c_in[0] = 1'b1;
         res_w       = diff_sign ? add_res[0] : op_a;
 
         res_p_w     = op_a[DataWidth-1];
