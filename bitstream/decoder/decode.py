@@ -732,9 +732,6 @@ for line in inputstream:
               % (EE,TTTT, thistile)
         sys.exit(-1)
 
-    # print "FOO etag='%s'" % e.tag
-
-
     if (e.tag == "mem"):
         # print "OOP found memory"
         cgra_info.mem_decode(e, DDDDDDDD)
@@ -814,9 +811,8 @@ for line in inputstream:
                 comments[configh] = "# data[(%d, %d)] : @ tile (%d, %d) connect wire %d (%s) to %s"\
                       % (configh,configl,r2,c,wireno,inwire,outwire)
 
-            # print "FOO inwire = '%s'" % inwire
             if (inwire == "pe_out_res"):
-                DBG=1
+                DBG=0
                 if (DBG): print "FOUND IT!",
                 if (DBG): print "pe connects to %s in tile %d" % (outwire,thistile)
                 iohack_pe_out[thistile] = outwire;
@@ -935,14 +931,12 @@ for t in iohack_io_tiles:
 #         print "About to fail.  t = %s, io='%s'" % (t, io)
 #         print "iohack_io_tiles = "; print iohack_io_tiles
 #         print "iohack_pe_out = "; print iohack_pe_out
-#         print ""
-#         print ""
-#         print ""
 
         if (iohack_pe_out == {}):
             print ""
-            print "ERROR Did not find output wire (let it fail and dump trace)"
+            print "ERROR Did not find output wire"
             print ""
+            # sys.exit(-1) # (let it fail on its own, so to dump trace)"
 
         inwire = iohack_pe_out[t]
         input_wirename  = "%8s / %s" % ( inwire, find_source(r,c, inwire))
