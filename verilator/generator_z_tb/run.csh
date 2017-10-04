@@ -615,11 +615,13 @@ echo '  First prepare input and output files...'
     echo
     set cmd = "od -t x1 $tmpdir/input.raw"
     set cmd = "od -t u1 $tmpdir/input.raw"
-    echo $cmd; $cmd | head
+  # echo $cmd; $cmd | head
+    echo $cmd; $cmd | head; echo ...; $cmd | tail -n 3
 
     echo
     set cmd = "od -t u1 $output"
-    echo $cmd; $cmd | head
+  # echo $cmd; $cmd | head
+    echo $cmd; $cmd | head; echo ...; $cmd | tail -n 3
   endif
 
 
