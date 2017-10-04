@@ -20,21 +20,23 @@ endif
 
 TEMPDIR := $(shell mktemp -d)
 
-gray_small_4x4:
-	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
-	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
-
-gray_4x4:
-	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
-	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
+# gray_small_4x4:
+# 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
+# 	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
+# 
+# gray_4x4:
+# 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
+# 	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
 
 gray_small_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
-	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
+	CONFIG="-usemem -config ../../bitstream/examples/pointwise_handcrafted.bs"
+# 	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
 
 gray_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
-	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
+	CONFIG="-usemem -config ../../bitstream/examples/pointwise_handcrafted.bs"
+# 	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
 
 test_all:
 	echo TEST SUMMARY > $(TEMPDIR)/test_summary.txt
@@ -49,8 +51,8 @@ test_all:
 
 	make gray_small_8x8
 	make gray_8x8
-	make gray_small_4x4
-	make gray_4x4
+	# make gray_small_4x4
+	# make gray_4x4
 
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
