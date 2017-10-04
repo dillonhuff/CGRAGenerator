@@ -85,6 +85,7 @@ test:
 	   $(CONFIG)                         \
 	   -input  io/$(IMAGE).png            \
 	   -output $(TEMPDIR)/$(IMAGE)_out.raw \
+	   -delay 1,0 \
 	   -nclocks 5M || echo FAIL
 
 	cd $(VERILATOR_TOP);\

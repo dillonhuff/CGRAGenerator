@@ -24,13 +24,17 @@ localparam REG_VALID  = 6'h2; // Pipeline delay with clock_en = 'clk_en'
 localparam REG_DELAY  = 6'h3; // Assumes data is always valid
 
 assign data_in_reg_next = load ? val : data_in;
-assign data_in_le       = load | (mode == REG_DELAY) |
+// assign data_in_le       = load | (mode == REG_DELAY) |
+//                          ((mode == REG_VALID) & clk_en);
+assign data_in_le       = (mode == REG_DELAY) |
                           ((mode == REG_VALID) & clk_en);
 
 always_ff @(posedge clk or negedge rst_n) begin
   if(~rst_n) begin
     data_in_reg <= 'h0;
-  end else if(data_in_le) begin
+  end else if (load) begin
+    data_in_reg <= val;
+  end else if (data_in_le) begin
     data_in_reg <= data_in;
   end
 end
