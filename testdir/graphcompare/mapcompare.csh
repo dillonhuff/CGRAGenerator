@@ -45,10 +45,10 @@ $j2d < $f2 > $tmpdir/$r2.dot
 
 ########################################################################
 if ($?yakky) echo Building $tmpdir/$r1.dotsummary...
-$scripthome/dotsummary.py < $tmpdir/$r1.dot > $tmpdir/$r1.dotsummary
+$scripthome/dotsummary.py $tmpdir/$r1.dot > $tmpdir/$r1.dotsummary
 
 if ($?yakky) echo Building $tmpdir/$r2.dotsummary...
-$scripthome/dotsummary.py < $tmpdir/$r2.dot > $tmpdir/$r2.dotsummary
+$scripthome/dotsummary.py $tmpdir/$r2.dot > $tmpdir/$r2.dotsummary
 
 ########################################################################
 if ($?yakky) echo
