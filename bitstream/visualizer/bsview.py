@@ -3194,6 +3194,15 @@ def process_decoded_bitstream(bs):
         # 'pe_out_res' => 'pe_out'
         line = re.sub("pe_out_res", "pe_out", line)
 
+        # New regime uses "op_a_in" and 'op_b_in" instead of just a and b
+        line = re.sub("op_a_in", "a", line)
+        line = re.sub("op_b_in", "b", line)
+
+        # New regime uses "alu_op" instead of just "op" maybe
+        line = re.sub("alu_op", "op", line)
+
+
+
         # "to a" => "to wireA", "to b" => "to wireB"
         # FIXME so egregious!!!
         line = re.sub("to a", "to wireA", line)
