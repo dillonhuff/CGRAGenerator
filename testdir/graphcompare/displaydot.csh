@@ -2,6 +2,11 @@
 
 set tmp = /tmp/displaydot$$
 
+if (! -e $1) then
+  echo "CAnnot find file '$1'"
+  exit -1
+endif
+
 set echo
 dot $1 -Tpdf > $tmp.pdf
 # xpdf $tmp
