@@ -15,7 +15,7 @@ EXAMPLES:
 TOOLS NEEDED:
   convert2dot.csh foo.json foo.json.dot
   convert2dot.csh foo.bsa  foo.bsa.dot cgra_info.txt
-  dotsummary.py < foo.json.dot > foo.json.dotsum
+  dotsummary.py foo.json.dot > foo.json.dotsum
 
 
 
