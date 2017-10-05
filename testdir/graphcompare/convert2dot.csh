@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+# Convert json or bsa file to dotfile
+
 unset yakky
 
 goto MAIN
@@ -9,7 +11,7 @@ USAGE:
   echo "  $0 [-v] INFILE OUTFILE [CGRA_INFO_FILE]"
   echo ""
   echo "Where:"
-  echo "  INFILE can be json, dot or bsa"
+  echo "  INFILE can be json or bsa"
   echo "  <-v> optional verbose mode, else silent"
   echo "  <CGRA_INFO_FILE> recommended for comparing bsa/annotated bitstream file(s)"
   echo ""
@@ -42,7 +44,9 @@ else if (-e $outfile) then
 endif
 
 set type = `$scripthome/filetype.csh $infile`
+
 if ("$type" == "bsa") then
+  # CONVERT BSA FILE
   if ($?yakky) echo '$infile' appears to be a bsa file...
 
   set cgra_info = $3
@@ -71,7 +75,22 @@ if ("$type" == "bsa") then
     |& grep . | grep -v GtkWarning | grep -v gtk.Warning | grep -v RANDR\
     | grep -v 'Using config'
 
+  if ($?yakky) echo Applying input hack to '$outfile'...
+  set tmp = /tmp/tmp.convert2dot.$$
+  mv $outfile $tmp
+  $scripthome/fix_input_hack.csh $tmp > $outfile
+  if ($?yakky) then
+    echo BEFORE:
+    diff $tmp $outfile | egrep '^<' | grep self
+    diff $tmp $outfile | egrep '^<' | grep const
+    diff $tmp $outfile | egrep '^<' | egrep -v 'self|const'
+    echo AFTER:
+    diff $tmp $outfile | egrep '^>'
+  endif
+
+
 else
+  # CONVERT JSON FILE
   # echo; echo "ERROR Cannot determine type of file '$f1'"; goto USAGE
   # If it's not bsa it's json :D
   if ($?yakky) echo '$infile' is not a bsa file, so must be json...
