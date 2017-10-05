@@ -62,10 +62,10 @@ $viz/bsview.py -cgra_info $cgra_info $f2 -dot $tmpdir/$r2.dot\
 
 ########################################################################
 if ($?yakky) echo Building $tmpdir/$r1.nodelist...
-$scripthome/dotsummary.py < $tmpdir/$r1.dot > $tmpdir/$r1.nodelist
+$scripthome/dotsummary.py $tmpdir/$r1.dot > $tmpdir/$r1.nodelist
 
 if ($?yakky) echo Building $tmpdir/$r2.nodelist...
-$scripthome/dotsummary.py < $tmpdir/$r2.dot > $tmpdir/$r2.nodelist
+$scripthome/dotsummary.py $tmpdir/$r2.dot > $tmpdir/$r2.nodelist
 
 ########################################################################
 if ($?yakky) echo
