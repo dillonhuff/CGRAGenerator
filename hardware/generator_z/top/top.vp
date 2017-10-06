@@ -53,20 +53,8 @@
 //; my %tile_pattern;
 //; #Tile pattern : <tile_name_defined_in_tile_config>_<number_of_columns>_<number_of_rows>
 //; #             : <pattern_name>_<number_of_columns>_<number_of_rows>
-
-//; # This makes 32 columns and 16 rows I think
-//; # $tile_pattern {'p1'} = "t0_3_2 t1_1_1";
-//; # $tile_pattern {'top'} = "p1_8_8";
-
-//; # This should make the old 8x8 pattern maybe
-//; # $tile_pattern {'p1'} = "t0_1_2 t1_1_1";
-//; # $tile_pattern {'top'} = "p1_4_4";
-
-//; # Oops no should be like this for the old 8x8
 //; $tile_pattern {'p1'} = "t0_3_2 t1_1_1";
 //; $tile_pattern {'top'} = "p1_2_4";
-
-
 
 //; #####################################################
 //; #Populate bus track hash
@@ -169,12 +157,24 @@
 //; #####################################################
 //; #Print cgra grid as comments in the verilog file
 //; #####################################################
+//; my $tile_count=0;
 //; my (%canvas_size) = stamp_pattern('top',0,0);
-//; for (my $i=0; $i<$canvas_size{'height'}; $i++) {
+//; for (my $j=0; $j<$canvas_size{'height'}; $j++) {
 //;   print "//";
-//;   for (my $j=0; $j<$canvas_size{'width'}; $j++) {
-//;     my $key = "${i}_${j}";
-//;     printf "%-12s", "$tile_grid->{$key}";
+//;   for (my $i=0; $i<$canvas_size{'width'}; $i++) {
+//;     my $key = "${j}_${i}";
+//;     my $tile = $tile_grid->{$key};
+//;     $tile =~ m/(\S+)#(\S+)#(\d+)/;
+//;     my $tile_type = $1;
+//;     my $tile_loc = $2;
+//;     my $tile_section = $3;
+//;     if ($tile_section==0) {
+//;       my $tile_count_hex = sprintf("0x%X", $tile_count);
+//;       printf "%-12s", "${tile_type}_${tile_count_hex}";
+//;       $tile_count+=1;
+//;     } else {
+//;       printf "%-12s", "XX";
+//;     }
 //;   }
 //;   print "\n";
 //; }
