@@ -2,17 +2,17 @@
 
 
 if ("$1" == "--help") then
-cat << ' eof'
+cat << eof
   Usage examples:
-        testdir/writelog.csh log1 -init TEST SUMMARY
-        testdir/writelog.csh log1 BEGIN `date`
-        testdir/writelog.csh log1 -print
-' eof'
+        $0 log1 -init TEST SUMMARY
+        $0 log1 BEGIN \`date\`
+        $0 log1 -print
+eof
   exit
 endif
 
 # This should totally work right?
-set f = /tmp/$USER_$1
+set f = /tmp/${USER}_$1
 shift
 
 if ("$1" == '-init') then
