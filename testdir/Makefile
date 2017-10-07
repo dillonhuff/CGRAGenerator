@@ -76,7 +76,7 @@ test_all:
 
 hackdiff_test:
 	cd ../bitstream; \
-	decoder/hackdiff.csh \
+	decoder/hackdiff.csh -v \
 	  examples/pw351.bs examples/pw351.bsa \
 	  -cgra examples/cgra_configs/cgra_info_new.txt
 

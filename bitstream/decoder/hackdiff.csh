@@ -16,12 +16,18 @@ MAIN:
 set scripthome = $0:h
 if ("$scripthome" == "$0") set scripthome = .
 
+unset VERBOSE
+
 set bs   = 'None'
 set bsa  = 'None'
 set cgra = 'None'
 while ($#argv)
   # echo "Found switch '$1'"
   switch ("$1")
+    case '-q':
+      unset VERBOSE; breaksw
+    case '-v':
+      set VERBOSE; breaksw
     case '-cgra':
       set cgra = "$2"; shift; breaksw
     default:
