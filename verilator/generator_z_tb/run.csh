@@ -114,6 +114,10 @@ while ($#argv)
 
     case '-q':
       unset VERBOSE; breaksw;
+    case '-v':
+      set VERBOSE; breaksw;
+
+
 
     # DEPRECATED SWITCHES
     case '-4x4':
