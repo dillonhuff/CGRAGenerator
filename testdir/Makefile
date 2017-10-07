@@ -41,8 +41,9 @@ gray_8x8:
 test_all:
 #	echo TEST SUMMARY > $(TEMPDIR)/test_summary.txt
 #	echo BEGIN `date` >> $(TEMPDIR)/test_summary.txt
-	writelog.csh log1 -init TEST SUMMARY
-	writelog.csh log1 BEGIN `date`
+	pwd; ls
+	./writelog.csh log1 -init TEST SUMMARY
+	./writelog.csh log1 BEGIN `date`
 	make hackdiff_test | tee $(TEMPDIR)/hackdiff_test.log
 
 #         # Note the '| tee' masks any errors that might have occurred :(
@@ -60,7 +61,7 @@ test_all:
 	@echo SUMMARY OF TEST RESULTS
 	@echo ==================================================
 #	cat $(TEMPDIR)/test_summary.txt
-	writelog.csh log1 -print
+	./writelog.csh log1 -print
 
 # 	@egrep '^00014'                \
 # 	  $(TEMPDIR)/hackdiff_test.log \
@@ -99,8 +100,8 @@ test:
 # 		|| echo $@ FAILED  >> $(TEMPDIR)/test_summary.txt;
 
 	cmp $(VERILATOR_TOP)/io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw      \
-		&& writelog.csh log1 $@ PASSED
-		|| writelog.csh log1 $@ FAILED
+		&& ./writelog.csh log1 $@ PASSED
+		|| ./writelog.csh log1 $@ FAILED
 
 
 
