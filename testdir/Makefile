@@ -39,11 +39,8 @@ gray_8x8:
 # 	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
 
 test_all:
-#	echo TEST SUMMARY > $(TEMPDIR)/test_summary.txt
-#	echo BEGIN `date` >> $(TEMPDIR)/test_summary.txt
 	pwd; ls
-	./writelog.csh log1 -init TEST SUMMARY
-	./writelog.csh log1 BEGIN `date`
+	./writelog.csh log1 -init TEST SUMMARY BEGIN `date`
 	make hackdiff_test | tee $(TEMPDIR)/hackdiff_test.log
 
 #         # Note the '| tee' masks any errors that might have occurred :(
