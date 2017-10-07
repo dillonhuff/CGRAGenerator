@@ -4,14 +4,17 @@
 
 # Script should be in CGROOT/bin
 
-if (! $?CGRA_GEN_ALL_REG) echo 'CGRA_GEN_ALL_REG NOT SET (yet)'
-if ($?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
-setenv CGRA_GEN_ALL_REG 1
-echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
-
-echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
-echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
-echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
+# No longer used
+# # if (! $?CGRA_GEN_ALL_REG) echo 'CGRA_GEN_ALL_REG NOT SET (yet)'
+# # if ($?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
+# 
+# setenv CGRA_GEN_ALL_REG 1
+# echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
+# 
+# echo "WARNING CGRA_GEN_ALL_REG === 1 ALWAYS"
+# echo "WARNING CGRA_GEN_ALL_REG === 1 ALWAYS"
+# echo "WARNING CGRA_GEN_ALL_REG === 1 ALWAYS"
+# echo "WARNING This means all outputs are always registered.  Is that okay?"
 
 # set scriptpath = "$0"
 set scriptpath = `readlink -f $0`
