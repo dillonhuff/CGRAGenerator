@@ -198,19 +198,21 @@ if (! -e "$testbench") then
   exit -1
 endif
 
-# Backslashes line up better when printed...
-echo "Running with the following switches:"
-echo "$0 top_tb.cpp \"
-echo "   $GENERATE                    \"
-echo "   -config   $config   \"
-#echo "   -io       $iofile   \"
-echo "   -input    $input  \"
-echo "   -output   $output    \"
-echo "   -delay   $DELAY    \"
-if ($?tracefile) then
-  echo "   -trace $tracefile \"
+if ($?VERBOSE) then
+  # Backslashes line up better when printed...
+  echo "Running with the following switches:"
+  echo "$0 top_tb.cpp \"
+  echo "   $GENERATE                    \"
+  echo "   -config   $config   \"
+  #echo "   -io       $iofile   \"
+  echo "   -input    $input  \"
+  echo "   -output   $output    \"
+  echo "   -delay   $DELAY    \"
+  if ($?tracefile) then
+    echo "   -trace $tracefile \"
+  endif
+  echo "   -nclocks  $nclocks                 \"
 endif
-echo "   -nclocks  $nclocks                 \"
 
 # Turn nclocks into an integer.
 set nclocks = `echo $nclocks | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
