@@ -103,8 +103,8 @@ test:
 	   -nclocks 5M || echo FAIL
 
 	cmp $(VERILATOR_TOP)/io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw      \
-		&& ./writelog.csh log1 $@ PASSED \
-		|| ./writelog.csh log1 $@ FAILED
+		&& ./writelog.csh log1 $(IMAGE) PASSED \
+		|| ./writelog.csh log1 $(IMAGE) FAILED
 
 	cd $(VERILATOR_TOP);\
 	cmp io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw
