@@ -92,9 +92,10 @@ while (len(args) > 0):
         bitstream_filename = args[0];
     args = args[1:]
 
-if verbose: print("Using uh cgra_info file %s" % cgra_filename)
-if verbose: print("and verbose is '%s'" % str(verbose))
-cgra_info.read_cgra_info(cgra_filename)
+# read_cgra_info() does this...
+# if verbose: print("Using uh cgra_info file %s" % cgra_filename)
+# if verbose: print("and verbose is '%s'" % str(verbose))
+cgra_info.read_cgra_info(cgra_filename, verbose=verbose)
 
 # # TBD this (below) could be a separate "print_intro()" function like
 # if (verbose):
