@@ -67,11 +67,22 @@ test_all:
 # 	  $(TEMPDIR)/test_4x4_gray.log       \
 # 	  $(TEMPDIR)/test_8x8_gray.log
 
+# Probably want to restore the more-challenging conv_bw test, once smoke has cleared.
+# hackdiff_test:
+# 	cd ../bitstream; \
+# 	decoder/hackdiff.csh \
+# 	  examples/conv_bw.bs examples/conv_bw.bsa \
+# 	  -cgra examples/cgra_configs/cgra_info_8x8.txt
+
 hackdiff_test:
 	cd ../bitstream; \
 	decoder/hackdiff.csh \
-	  examples/conv_bw.bs examples/conv_bw.bsa \
-	  -cgra examples/cgra_configs/cgra_info_8x8.txt
+	  examples/pw351.bs examples/pw351.bsa \
+	  -cgra examples/cgra_configs/cgra_info_new.txt
+
+
+
+
 
 # TODO can combine all these down to one
 # TODO make it look more like other makefile (cgraflow)
