@@ -80,6 +80,7 @@ cgra_filename = get_default_cgra_info_filename()
 if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
 while (len(args) > 0):
+    global verbose
     # if   (args[0] == '-nodefaults'): sbdefaults = False
     if   (args[0] == '-v'):    verbose = True
     elif (args[0] == '-4x4'): print 'WARNING switch "-4x4" not used'
@@ -91,7 +92,8 @@ while (len(args) > 0):
         bitstream_filename = args[0];
     args = args[1:]
 
-if verbose: print("Using cgra_info file %s" % cgra_filename)
+if verbose: print("Using uh cgra_info file %s" % cgra_filename)
+if verbose: print("and verbose is '%s'" % str(verbose))
 cgra_info.read_cgra_info(cgra_filename)
 
 # # TBD this (below) could be a separate "print_intro()" function like
