@@ -450,10 +450,10 @@ def pe_decode(RR, DDDDDDDD):
     DDDD = DDDDDDDD[4:8]   # last four hex digits
     dstring = "0x" + DDDD  # Same, with a "0x" in front
     # Note: C input unused/invalid for 2-input PEs!
-    if (RR == "F0"): areg = dstring; k="a"
-    if (RR == "F1"): breg = dstring; k="b"
-    if (RR == "F2"): creg = dstring; k="c"
-    if (RR == "F3"): dreg = dstring; k="d"; print "\n\nFOOOOOOOOOOOOOOO\n\n"
+    if (RR == "F0"): areg = dstring; k="op_a_in"
+    if (RR == "F1"): breg = dstring; k="op_b_in"
+    if (RR == "F2"): creg = dstring; k="op_c_in"
+    if (RR == "F3"): dreg = dstring; k="op_d_in"; print "\n\nFOOOOOOOOOOOOOOO\n\n"
     if (k):
         if verbose:
             iohack = "";
@@ -494,18 +494,18 @@ def pe_decode(RR, DDDDDDDD):
 
     # (Note default value for all tiles is opcode = 16'h0000 (ADD, src=reg, reg=wire)
 
-    if (dddd & 0x80): asrc = "wire `a`";
-    if (dddd & 0x20): bsrc = "wire `b`";
-    if (dddd & 0x02): dsrc = "wire `d`";
+    if (dddd & 0x80): asrc = "wire `op_a_in`";
+    if (dddd & 0x20): bsrc = "wire `op_b_in`";
+    if (dddd & 0x02): dsrc = "wire `op_d_in`";
 
-#     if     (asrc == "wireA"): print "# data[15] : read from wire `a`"
-#     else:                     print "# data[15] : read from reg `a`"
+#     if     (asrc == "wireA"): print "# data[15] : read from wire `op_a_in`"
+#     else:                     print "# data[15] : read from reg `op_a_in`"
 # 
-#     if     (bsrc == "wireB"): print "# data[13] : read from wire `b`"
-#     else:                     print "# data[13] : read from reg `b`"
+#     if     (bsrc == "wireB"): print "# data[13] : read from wire `op_b_in`"
+#     else:                     print "# data[13] : read from reg `op_b_in`"
 # 
-#     if     (dsrc == "wireD"): print "# data[2] : read from wire `d`"
-#     else:                     print "# data[2] : read from reg `d`"
+#     if     (dsrc == "wireD"): print "# data[2] : read from wire `op_d_in`"
+#     else:                     print "# data[2] : read from reg `op_d_in`"
 
     if (dddd & 0x40): areg = "wireA";
     if (dddd & 0x10): breg = "wireB";
@@ -573,10 +573,10 @@ def pe_decode(RR, DDDDDDDD):
     A = asrc; B = bsrc;
 
     # areg can be one of "wireA", "0x[0-9]+", "unset"
-    if ((asrc == "reg `a`") and re.search("0x", areg)): A = areg;
-    if ((bsrc == "reg `b`") and re.search("0x", breg)): B = breg;
-    if ((asrc == "reg `c`") and re.search("0x", creg)): A = creg;
-    if ((asrc == "reg `d`") and re.search("0x", dreg)): A = dreg;
+    if ((asrc == "reg `op_a_in`") and re.search("0x", areg)): A = areg;
+    if ((bsrc == "reg `op_b_in`") and re.search("0x", breg)): B = breg;
+    if ((asrc == "reg `op_c_in`") and re.search("0x", creg)): A = creg;
+    if ((asrc == "reg `op_d_in`") and re.search("0x", dreg)): A = dreg;
 
     if   (op == "00"): opp="add"; opstr = "ADD(%s,%s)" % (A,B)
     elif (op == "01"): opp="sub"; opstr = "SUB(%s,%s)" % (A,B)
@@ -643,15 +643,16 @@ def pe_decode(RR, DDDDDDDD):
     # PRINT:
     # "pe_out <= MUL(wireA,wireB) ; regA <= wireA (always) ; regB <= wireB (always)"
 
-    print "# data[(4, 0)] : op = %s" % opp
+    print "# data[(4, 0)] : alu_op = %s" % opp
+
     if (not iohack):
         # FIXME when/if have an op that uses d, will want to activate this...
         # print "# data[2] : read from "  + dsrc
 
         # Got to get the order correct!  Now don't we.
-        if breg == "wireB": print "# data[(12, 12)] : load `b` reg with wire"
+        if breg == "wireB": print "# data[(12, 12)] : load `op_b_in` reg with wire"
         if (1):             print "# data[(13, 13)] : read from " + bsrc
-        if areg == "wireA": print "# data[(14, 14)] : load `a` reg with wire"
+        if areg == "wireA": print "# data[(14, 14)] : load `op_a_in` reg with wire"
         if (1):             print "# data[(15, 15)] : read from " + asrc
 
         if dreg == "wireD": print "BOOOOOOOOOOOOOOOOO " + DDDD + "  " + str(dddd);
@@ -676,9 +677,9 @@ def found_new_tile(prevtile, thistile):
             print ""
             print "                        TILE %d %s" % (thistile, rc)
 
-        # valid values for e.g. asrc: "wire `a`" or "reg `a`" or (deprecated) "0x[0-9]+"
+        # valid values for e.g. asrc: "wire `op_a_in`" or "reg `op_a_in`" or (deprecated) "0x[0-9]+"
         global asrc, bsrc, csrc, dsrc
-        (asrc, bsrc, csrc, dsrc) = ("reg `a`", "reg `b`", "reg `c`", "reg `d`")
+        (asrc, bsrc, csrc, dsrc) = ("reg `op_a_in`", "reg `op_b_in`", "reg `op_c_in`", "reg `op_d_in`")
 
         # Contents of PE input regs
         # valid values for e.g. areg: "0x[0-9]+" or 'wireA' or 'unset'
