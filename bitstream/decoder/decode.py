@@ -80,7 +80,7 @@ cgra_filename = get_default_cgra_info_filename()
 if (len(args) < 1):       print usage; sys.exit(-1);
 if (args[0] == '--help'): print usage; sys.exit(0);
 while (len(args) > 0):
-    global verbose
+    # global verbose # this causes problems/errors
     # if   (args[0] == '-nodefaults'): sbdefaults = False
     if   (args[0] == '-v'):    verbose = True
     elif (args[0] == '-4x4'): print 'WARNING switch "-4x4" not used'

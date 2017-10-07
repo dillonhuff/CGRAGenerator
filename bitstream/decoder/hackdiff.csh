@@ -61,12 +61,9 @@ end
 # ... connect wire 0 (in_BUS16_S0_T0) to b
 egrep -v 'connect wire 0 .*to [soi]' $bsa > /tmp/tmp$$.bsa
 
-echo before
-set echo
 $scripthome/decode.py $vswitch $bs -cgra $cgra \
   | sed '/Summary/,$d' \
   > /tmp/tmp$$.bsd
-echo after
 
 if ($?VERBOSE) set echo
 diff /tmp/tmp$$.{bsa,bsd}
