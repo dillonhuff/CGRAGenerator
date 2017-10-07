@@ -61,7 +61,7 @@ $scripthome/decode.py $bs -cgra $cgra \
   | sed '/Summary/,$d' \
   > /tmp/tmp$$.bsd
 
-set echo
+if ($?VERBOSE) set echo
 diff /tmp/tmp$$.{bsa,bsd}
 
 # CLEAN UP!!!
