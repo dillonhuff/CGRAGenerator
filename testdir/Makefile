@@ -39,8 +39,10 @@ gray_8x8:
 # 	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
 
 test_all:
-	echo TEST SUMMARY > $(TEMPDIR)/test_summary.txt
-	echo BEGIN `date` >> $(TEMPDIR)/test_summary.txt
+#	echo TEST SUMMARY > $(TEMPDIR)/test_summary.txt
+#	echo BEGIN `date` >> $(TEMPDIR)/test_summary.txt
+        testdir/writelog.csh log1 -init TEST SUMMARY
+        testdir/writelog.csh log1 BEGIN `date`
 	make hackdiff_test | tee $(TEMPDIR)/hackdiff_test.log
 
 #         # Note the '| tee' masks any errors that might have occurred :(
@@ -57,7 +59,8 @@ test_all:
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS
 	@echo ==================================================
-	cat $(TEMPDIR)/test_summary.txt
+#	cat $(TEMPDIR)/test_summary.txt
+        testdir/writelog.csh log1 -print
 
 # 	@egrep '^00014'                \
 # 	  $(TEMPDIR)/hackdiff_test.log \
@@ -90,10 +93,17 @@ test:
 	   -delay 0,0 \
 	   -nclocks 5M || echo FAIL
 
+# 	cd $(VERILATOR_TOP);\
+# 	cmp io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw      \
+# 		&& echo $@ PASSED  >> $(TEMPDIR)/test_summary.txt \
+# 		|| echo $@ FAILED  >> $(TEMPDIR)/test_summary.txt;
+
 	cd $(VERILATOR_TOP);\
-	cmp io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw      \
-		&& echo $@ PASSED  >> $(TEMPDIR)/test_summary.txt \
-		|| echo $@ FAILED  >> $(TEMPDIR)/test_summary.txt;
+	cmp $(VERILATOR_TOP)/io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw      \
+		&& testdir/writelog.csh log1 $@ PASSED
+		|| testdir/writelog.csh log1 $@ FAILED
+
+
 
 	cd $(VERILATOR_TOP);\
 	cmp io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw
