@@ -31,13 +31,13 @@ endif
 ##############################################################################
 # Set up to run Genesis2; installs genesis2 if necessary (in /tmp !)
 
-set VERBOSE
-if ("$1" == "-q") then
-  # echo quiet
-  unset VERBOSE
-else
+unset VERBOSE
+if ("$1" == "-v") then
   # echo verbose
   set VERBOSE
+else if ("$1" == "-q") then
+  # echo quiet
+  unset VERBOSE
 endif
 
 source $CGROOT/bin/genesis2_setup.csh
@@ -53,7 +53,12 @@ cd $CGROOT/hardware/generator_z/top
     # NOTE THIS IS THE RUN.CSH IN HARDWARE/GENERATOR_Z
     set run = run.csh
     
-    echo ""; echo "Generator $run looks like this:"; cat $run | awk '{print "    " $0}'; echo ""
+    if ($?VERBOSE) then
+      echo "";
+      echo "Generator $run looks like this:"; 
+      cat $run | awk '{print "    " $0}';
+      echo ""
+    endif
 
     if (! $?VERBOSE) then
       set logfile = /tmp/generate_log.$$
@@ -71,4 +76,4 @@ cd $CGROOT/hardware/generator_z/top
 
     # New cgra_info is proof that something happened
     # ls -l cgra_info.txt examples/*.txt
-    ls -l cgra_info.txt
+    if ($?VERBOSE) ls -l cgra_info.txt
