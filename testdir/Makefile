@@ -41,8 +41,8 @@ gray_8x8:
 test_all:
 #	echo TEST SUMMARY > $(TEMPDIR)/test_summary.txt
 #	echo BEGIN `date` >> $(TEMPDIR)/test_summary.txt
-        testdir/writelog.csh log1 -init TEST SUMMARY
-        testdir/writelog.csh log1 BEGIN `date`
+	testdir/writelog.csh log1 -init TEST SUMMARY
+	testdir/writelog.csh log1 BEGIN `date`
 	make hackdiff_test | tee $(TEMPDIR)/hackdiff_test.log
 
 #         # Note the '| tee' masks any errors that might have occurred :(
@@ -60,7 +60,7 @@ test_all:
 	@echo SUMMARY OF TEST RESULTS
 	@echo ==================================================
 #	cat $(TEMPDIR)/test_summary.txt
-        testdir/writelog.csh log1 -print
+	testdir/writelog.csh log1 -print
 
 # 	@egrep '^00014'                \
 # 	  $(TEMPDIR)/hackdiff_test.log \
