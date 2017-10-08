@@ -280,7 +280,7 @@ echo                    decode.py -cgra $cgra_info $config
 if ($?VERBOSE) then
   echo; sed -n '/O Summary/,$p' $decoded; echo
 else
-  echo; sed -n '/O Summary/,$p' $decoded | grep PUT; echo
+  echo; sed -n '/O Summary/,$p' $decoded | grep PUT | sort; echo
 endif
 
 
@@ -320,42 +320,28 @@ set config = $newbs
 # set lno = 321; set tmpf = $newbs; echo "FOO-$lno"; head -1 $tmpf; echo
 
 
-echo ""
-echo '------------------------------------------------------------------------'
-echo "BEGIN find input and output wires"
-echo ""
+# This is what we're looking for:
+#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
+#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
+#     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
+set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
+set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
 
+if ($?VERBOSE) then
+    echo ""
+    echo '------------------------------------------------------------------------'
+    echo "BEGIN find input and output wires"
+    echo ""
     echo "  USING I/O WIRE NAMES DERIVED FROM BITSTREAM"
     echo ""
-
-    # This is what we're looking for:
-    #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
-    #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
-    #     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
-   
-    set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
-    # echo "  IN  $inwires"
-
-    set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
-    # echo "  OUT $outwires"
-
-    # set yikeswires = `egrep '^# YIKES' $decoded | awk '{print $NF}'`
-    # if ("$yikeswires" != "") then
-    #     set yikeswires = "-yikeswires '$yikeswires'"
-    # endif
-    # echo "  YIKES $yikeswires"
-    
-    # echo
     echo "  inwires  = $inwires"
     echo "  outwires = $outwires"
-    # echo "  yikeswires = $yikeswires"
     echo
+    echo "END find input and output wires"
+    echo ""
+    echo '------------------------------------------------------------------------'
+endif
 
-echo "END find input and output wires"
-
-echo ""
-echo '------------------------------------------------------------------------'
-# echo ""
 
 set vdir = ../../hardware/generator_z/top/genesis_verif
 if (! -e $vdir) then
