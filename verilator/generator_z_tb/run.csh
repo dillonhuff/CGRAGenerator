@@ -230,7 +230,7 @@ if ("$GENERATE" == "-nogen") then
 
 else
   # Build CGRA 
-  echo "Building CGRA because you asked for it with '-gen'..."
+  if ($?VERBOSE) echo "Building CGRA because you asked for it with '-gen'..."
 
   if ($?VERBOSE) then
     ../../bin/generate.csh -v || exit -1
@@ -246,15 +246,15 @@ endif
 unset embedded_io
 grep "FFFFFFFF" $config > /dev/null && set embedded_io
 if (! $?embedded_io) then
-  echo "Bitstream appears NOT to have embedded I/O information."
-  echo "We don't support that no more."
+  echo "ERROR run.csh: Bitstream appears NOT to have embedded I/O information."
+  echo "ERROR run.csh: We don't support that no more."
   exit -1
-else
-  echo; echo "Bitstream appears to have embedded i/o information (as it should)."
+else if ($?VERBOSE) then
+  echo
+  echo "Bitstream appears to have embedded i/o information (as it should)."
+  echo "Will strip out IO hack from '$config'"
+  echo
 endif
-
-echo "Will strip out IO hack from '$config'"
-echo
 
 # Nowadays decoder needs cgra_info to work correctly
 set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
@@ -263,8 +263,9 @@ set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
 set decoded = $tmpdir/{$config:t}.decoded
 if (-e $decoded) rm $decoded
 
-# Possible locations for pnr stuff
-ls ../../.. | grep -i smt
+# Why?  Leftover debug stuff I guess?
+# # Possible locations for pnr stuff
+# ls ../../.. | grep -i smt
 
 
 # echo \
@@ -275,9 +276,13 @@ ls ../../.. | grep -i smt
 echo                    decode.py -cgra $cgra_info $config
 ../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded || exit -1
 
-
 # Show IO info derived from bitstream
-echo; sed -n '/O Summary/,$p' $decoded; echo
+if ($?VERBOSE) then
+  echo; sed -n '/O Summary/,$p' $decoded; echo
+else
+  echo; sed -n '/O Summary/,$p' $decoded | grep PUT; echo
+endif
+
 
 # Clean bitstream (strip out comments and hacked-in IO info)
 set newbs = $decoded.bs
@@ -293,18 +298,19 @@ cat $decoded \
   > $newbs
 
 # This is small and SHOULD NOT BE OPTIONAL!
-# if ($?VERBOSE) then
+# Meh.  Now it's optional.
+if ($?VERBOSE) then
   echo diff $config $newbs
   diff $config $newbs | grep -v d
-# endif
+endif
 
 
 # Another useful test
 set ndiff = `diff $config $newbs | grep -v d | wc -l`
 if ("$ndiff" == "5") then
-  echo "Five lines of diff.  That's good!"
+  if ($?VERBOSE) echo "run.csh: Five lines of diff.  That's good!"
 else
-  echo ERROR Looks like we messed up the IO
+  echo "ERROR run.csh: Looks like we messed up the IO"
   exit -1
 endif
 
