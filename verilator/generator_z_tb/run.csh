@@ -442,11 +442,13 @@ echo "run.csh: Build the simulator..."
   # build C++ project
 
   echo
-  echo verilator -Wall $myswitches --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+  echo verilator -Wall $myswitches --cc --exe $testbench \
+    -y $vdir $vfiles --top-module $top \
     | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
   echo
 
-  verilator $myswitches -Wall $myswitches --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+  verilator $myswitches -Wall $myswitches --cc --exe $testbench \
+    -y $vdir $vfiles --top-module $top \
     >& $tmpdir/verilator.out
 
   set verilator_exit_status = $status
@@ -548,7 +550,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   endif
 
   echo
-  echo "# Run executable simulation"
+  echo "run.csh: Run executable simulation"
   echo -n " TIME NOW: "; date
 
   # 00020: Two times 19 = 38  *PASS*
@@ -558,23 +560,26 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   # 00058: Two times 31 = 62  *PASS*
   # 00059: Two times 29 = 58  *PASS*
 
-  set quietfilter = (grep -v "scanned config")
-  if ($?VERBOSE) set quietfilter = (cat)
-
-  set qf2 = (grep -v "^000[23456789].*Two times")
-  if ($?VERBOSE) set qf2 = (cat)
-
-
-
-  echo "Using bitstream '$config'..."
+  # For 'quiet' execution, use these two filters to limit output;
+  # Otherwise just cat everything to stdout
+  if (! $>VERBOSE) then
+    set quietfilter = (grep -v "scanned config")
+    set qf2 = (grep -v "^000[23456789].*Two times")
+  else
+    set quietfilter = (cat)
+    set qf2         = (cat)
+  endif
 
   if ($?VERBOSE) then
     echo
-    echo "BITSTREAM:"
+    echo "BITSTREAM '$config':"
     cat $config
   endif
 
-  set echo
+  echo
+  echo "run.csh: V$top -output $output:t"
+
+  if ($?VERBOSE) set echo
     obj_dir/V$top \
       -config $config \
       $in \
