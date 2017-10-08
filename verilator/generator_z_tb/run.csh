@@ -575,7 +575,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     echo "BITSTREAM '$config':"
     cat $config
   endif
-
+#######
   echo
   echo "run.csh: V$top -output $output:t"
 
