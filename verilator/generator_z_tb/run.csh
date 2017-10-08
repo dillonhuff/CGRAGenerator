@@ -352,10 +352,12 @@ if (! -e $vdir) then
   exit -1
 endif
 
-echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
-    echo
-    echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
-    echo
+# echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
+#     echo
+#     echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
+#     echo
+
+    echo "run.csh: Inserting IO wirenames into verilog top module '$vdir/top.v'..."
     ./run-wirehack.csh \
         -inwires "$inwires" \
         -outwires "$outwires" \
@@ -363,7 +365,7 @@ echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
 
     if ($?VERBOSE) cat $tmpdir/wirehack.log
 
-echo END top.v manipulation
+# echo END top.v manipulation
 
 echo ''
 echo '------------------------------------------------------------------------'
@@ -390,7 +392,7 @@ echo "Building the verilator simulator executable..."
     # To:
     #   assign wen = WENHACK
 
-    ls -l $vdir
+    # ls -l $vdir
     mv $vdir/memory_core_unq1.v $tmpdir/memory_core_unq1.v.orig
     cat $tmpdir/memory_core_unq1.v.orig \
       | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
@@ -414,6 +416,10 @@ echo "Building the verilator simulator executable..."
 
   endif
 
+echo ''
+echo '------------------------------------------------------------------------'
+echo "run.csh: Build the simulator..."
+
   # Build the necessary switches
 
   # Gather the verilog files for verilator command line
@@ -432,6 +438,8 @@ echo "Building the verilator simulator executable..."
   # Note default trace_filename in top_tb.cpp is "top_tb.vcd"
 
   # Run verilator to build the simulator.
+
+  # build C++ project
 
   echo
   echo verilator -Wall $myswitches --cc --exe $testbench -y $vdir $vfiles --top-module $top \
@@ -457,14 +465,8 @@ echo "Building the verilator simulator executable..."
 
   if ($verilator_exit_status != 0) exit -1
 
-echo ''
-echo '------------------------------------------------------------------------'
-echo "Build the simulator..."
-
-  # build C++ project
-
   echo
-  echo "# Build testbench"
+  echo "run.csh: Build the testbench..."
 
   if ($?VERBOSE) then
     echo
@@ -475,7 +477,7 @@ echo "Build the simulator..."
 
   echo
   echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
-  echo
+  echo "make V$top -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
   make \
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
     -j -C obj_dir/ -f V$top.mk V$top \
@@ -488,9 +490,9 @@ echo "Build the simulator..."
   endif
 
 echo '------------------------------------------------------------------------'
-echo "Run the simulator..."
+echo "run.csh: Run the simulator..."
 echo ''
-echo '  First prepare input and output files...'
+if ($?VERBOSE) echo '  First prepare input and output files...'
 
   # Prepare an input file
   #   if no input file requested => use random numbers generated internally
@@ -503,21 +505,27 @@ echo '  First prepare input and output files...'
 
   else if ("$input:e" == "png") then
     # Convert to raw format
-    echo "  Converting input file '$input' to '.raw'..."
-    echo "  io/myconvert.csh $input $tmpdir/input.raw"
-    echo
-    echo -n "  "
-    io/myconvert.csh $input $tmpdir/input.raw
+    if ($?VERBOSE) then
+      echo "  Converting input file '$input' to '.raw'..."
+      echo "  io/myconvert.csh $input $tmpdir/input.raw"
+      echo
+      echo -n "  "
+      io/myconvert.csh $input $tmpdir/input.raw
+    else
+      io/myconvert.csh -q $input $tmpdir/input.raw
+    endif
     set in = "-input $tmpdir/input.raw"
 
   else if ("$input:e" == "raw") then
-    echo "Using raw input from '$input'..."
-    echo cp $input $tmpdir/input.raw
+    if ($?VERBOSE) then
+      echo "Using raw input from '$input'..."
+      echo cp $input $tmpdir/input.raw
+    endif
     cp $input $tmpdir/input.raw
     set in = "-input $tmpdir/input.raw"
 
   else
-    echo "ERROR Input file '$input' has invalid extension"
+    echo "ERROR run.csh: Input file '$input' has invalid extension"
     exit -1
 
   endif
