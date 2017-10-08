@@ -551,7 +551,6 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
 
   echo
   echo "run.csh: Run executable simulation"
-  echo -n " TIME NOW: "; date
 
   # 00020: Two times 19 = 38  *PASS*
   # 00021: Two times 22 = 44  *PASS*
@@ -575,8 +574,9 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     echo "BITSTREAM '$config':"
     cat $config
   endif
-#######
+
   echo
+  echo "run.csh: TIME NOW: `date`"
   echo "run.csh: V$top -output $output:t"
 
   if ($?VERBOSE) set echo
