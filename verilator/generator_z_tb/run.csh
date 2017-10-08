@@ -562,7 +562,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
 
   # For 'quiet' execution, use these two filters to limit output;
   # Otherwise just cat everything to stdout
-  if (! $>VERBOSE) then
+  if (! $?VERBOSE) then
     set quietfilter = (grep -v "scanned config")
     set qf2 = (grep -v "^000[23456789].*Two times")
   else
