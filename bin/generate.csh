@@ -4,27 +4,29 @@
 
 # Script should be in CGROOT/bin
 
-# No longer used
-# # if (! $?CGRA_GEN_ALL_REG) echo 'CGRA_GEN_ALL_REG NOT SET (yet)'
-# # if ($?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
-# 
-# setenv CGRA_GEN_ALL_REG 1
-# echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
-# 
-# echo "WARNING CGRA_GEN_ALL_REG === 1 ALWAYS"
-# echo "WARNING CGRA_GEN_ALL_REG === 1 ALWAYS"
-# echo "WARNING CGRA_GEN_ALL_REG === 1 ALWAYS"
-# echo "WARNING This means all outputs are always registered.  Is that okay?"
+##############################################################################
+# Not used in the new regime;
+# safe to delete after we've finished the move.
+setenv CGRA_GEN_ALL_REG 1
+##############################################################################
 
-# set scriptpath = "$0"
+# Find out where we live
+# set scriptpath = "$0" # No good if symlinks exist maybe
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
-if ("$scriptpath" == "$0") then
-  set scriptpath = `pwd`
-  set CGROOT = `cd $scriptpath:h; pwd`
-else
-  set CGROOT = `cd $scriptpath/..; pwd`
-endif
+
+# if ("$scriptpath" == "$0") then
+#   set scriptpath = `pwd`
+#   set CGROOT = `cd $scriptpath:h; pwd`
+# else
+#   set CGROOT = `cd $scriptpath/..; pwd`
+# endif
+
+# Script lives in $CGROOT/bin/$0
+# Therefore scriptpath is "$CGROOT/bin"
+# Therefore CGROOT is $scriptpath:h
+set CGROOT = $scriptpath:h
+
 
 # echo "I think CGRAGenerator is here: $CGROOT"; exit
 
