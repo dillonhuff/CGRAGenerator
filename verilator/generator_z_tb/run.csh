@@ -20,39 +20,29 @@ setenv CGRA_GEN_USE_MEM 1
 
 # setenv CGRA_GEN_ALL_REG 1
 
-# setenv OLDMEM
-
 # Travis flow (CGRAFlow/.travis.yml)
-#  travis script calls "travis-test" to do the initial generate
+#  travis script calls "generate.csh" to do the initial generate
 #  travis script calls PNR to build map, io info from generated cgra_info.txt
 #  builds the full parrot
 
 # Travis flow (CGRAGenerator/.travis.yml)
-#  travis script calls "travis-test" to do the initial generate
+#  travis script calls "generate.csh" to do the initial generate
 #  travis script calls run.csh using pre-built bitstream w/embedded io info
 #  builds small parrot
 
 # Local flow (test):
-#  run.csh calls travis-test to do the initial generate
+#  run.csh calls generate.csh to do the initial generate
 #  run.csh uses pre-built io, map files in bitstream/example3 to build config file
 # builds small parrot
 
 # DEFAULTS
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
-# set config    = ../../bitstream/examples/calebscript.bs
-# set config    = ../../bitstream/examples/cd.bs
 
-# New memtile regime swaps r,c tile addresses HA
-# set config    = ../../bitstream/examples/cd-swizzled.bs
-
-# No, use swizzler instead
-# cd2 is suspect, may be WRONG
-set config    = ../../bitstream/examples/cd2.bs  # cd2 broken i think
-set config    = ../../bitstream/examples/cd.bsv1
-set config    = ../../bitstream/examples/cd387-good.bs
-
-# works under new regime: cd2, cd387
+# set config = ../../bitstream/examples/cd2.bs  # cd2 broken i think
+# set config = ../../bitstream/examples/cd.bsv1
+# set config = ../../bitstream/examples/cd387-good.bs
+set config   = ../../bitstream/examples/pointwise_handcrafted.bs
 
 set DELAY = '0,0'
 
