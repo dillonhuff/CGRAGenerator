@@ -28,15 +28,13 @@ TEMPDIR := $(shell mktemp -d)
 # 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
 # 	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
 
-gray_small_8x8:
+pw_gray_small_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
-	CONFIG="-usemem -config ../../bitstream/examples/pointwise_handcrafted.bs"
-# 	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
+	CONFIG="-config ../../bitstream/examples/pointwise_handcrafted.bs"
 
-gray_8x8:
+pw_gray_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
-	CONFIG="-usemem -config ../../bitstream/examples/pointwise_handcrafted.bs"
-# 	CONFIG="-usemem -8x8 -config ../../bitstream/examples/cd387-newmem-8x8.bs"
+	CONFIG="-config ../../bitstream/examples/pointwise_handcrafted.bs"
 
 test_all:
 	pwd; ls
@@ -49,10 +47,10 @@ test_all:
 # 	make TEMPDIR=$(TEMPDIR) test_4x4_gray
 # 	make TEMPDIR=$(TEMPDIR) test_8x8_gray
 
-	make gray_small_8x8
-	make gray_8x8
-	# make gray_small_4x4
-	# make gray_4x4
+	make pw_gray_small_8x8
+	make pw_gray_8x8
+# 	# make gray_small_4x4
+# 	# make gray_4x4
 
 	@echo ""
 	@echo SUMMARY OF TEST RESULTS

@@ -14,7 +14,10 @@ if (! -e $tmpdir) then
 endif
 
 
-# setenv CGRA_GEN_USE_MEM 1
+# ALWAYS BE USING MEMORY
+setenv CGRA_GEN_USE_MEM 1
+
+
 # setenv CGRA_GEN_ALL_REG 1
 
 # setenv OLDMEM
@@ -126,7 +129,8 @@ while ($#argv)
 
     case -usemem:
     case -newmem:
-      setenv CGRA_GEN_USE_MEM 1;
+      echo "WARNING Switch '$1' no longer valid"; breaksw
+      # setenv CGRA_GEN_USE_MEM 1; # always set
       breaksw;
 
 #     case -egregious_conv21_hack:
@@ -172,6 +176,7 @@ while ($#argv)
 
     # Unused / undocumented for now
     case -oldmem:
+      echo "WARNING Switch '$1' no longer valid"; breaksw
       unsetenv CGRA_GEN_USE_MEM
       unsetenv CGRA_GEN_ALL_REG
       breaksw
