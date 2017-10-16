@@ -466,9 +466,14 @@ def pe_decode(RR, DDDDDDDD):
         print "# data[(15, 0)] : init `%s` reg with const `%d`" % (k,int(dstring,16))
         return;
 
+    if (RR == "00"):
+        # print "# data[(15, 0)] : init `%s` reg with const `%d`" % (k,int(dstring,16))
+        print "# data[(8, 0)] : lut_value = %d" % int(DDDDDDDD)
+        return
+
     # Only other valid option is "FF" (load opcode)
     if (RR != "FF"):
-        print "ERROR Unknown register code for PE"
+        print "ERROR decode.py: Unknown register code for PE"
         sys.stdout.flush()
         sys.stderr.write("\n\nERROR Unknown register code for PE");
         sys.exit(-1);
@@ -605,6 +610,10 @@ def pe_decode(RR, DDDDDDDD):
     elif (op == "14"): opp="xor"; opstr = "XOR(%s,%s)" % (A,B)
     elif (op == "15"): opp="not"; opstr = "NOT(%s,%s)" % (A,B)
 
+    elif (op == "80"):
+        print "# data[(9, 9)] : Enable Lut"
+        return
+
     elif (op == "F0"):
         # IO hack/inputs
         #   FF00xxxx 000000F0    # (op==F0): pe_out is input to CGRA
@@ -638,7 +647,7 @@ def pe_decode(RR, DDDDDDDD):
         #         "(OUT wire_1_1_BUS16_S3_T0) (in_s1t0)"
 
     else:
-        print "ERROR Unknown/invalid opcode for PE"
+        print "ERROR decode.py: Unknown/invalid opcode for PE '%s'" % op
         sys.stdout.flush()
         sys.stderr.write("\n\nERROR Unknown/invalid opcode for PE");
         sys.exit(-1);
