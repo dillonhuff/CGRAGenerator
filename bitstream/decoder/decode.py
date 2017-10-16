@@ -473,9 +473,10 @@ def pe_decode(RR, DDDDDDDD):
 
     # Only other valid option is "FF" (load opcode)
     if (RR != "FF"):
-        print "ERROR decode.py: Unknown register code for PE"
+        err = "ERROR decode.py: Unknown PE register code '%s'"
+        print err
         sys.stdout.flush()
-        sys.stderr.write("\n\nERROR Unknown register code for PE");
+        sys.stderr.write("\n\n%s" % err);
         sys.exit(-1);
 
     # (Note default value for all tiles is opcode = 16'h0000 (ADD)
