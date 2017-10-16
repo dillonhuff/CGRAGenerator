@@ -36,17 +36,6 @@ assign data_in_le       = load | (mode == REG_DELAY) |
                           ((mode == REG_VALID) & clk_en);
 
 always_ff @(posedge clk or negedge rst_n) begin
-  if(rst_n && data_in_le) begin
-    $display("Configuring the register");
-    $display("load is %d and val is %d so data_in is %d", load, val, data_in);
-    $display("data_in_le is %d and load is %d", data_in_le, load);
-    $display("mode is %d", mode);
-  end
-end
-
-
-
-always_ff @(posedge clk or negedge rst_n) begin
   if(~rst_n) begin
     data_in_reg <= 'h0;
   end else if(data_in_le) begin

@@ -3142,7 +3142,7 @@ def process_decoded_bitstream(bs):
 
     operand = {} # operand['a'], operand['b']
 
-    DBG=1
+    DBG=0
     if DBG: print ""
     opname = False
     for line in bs:
@@ -3194,40 +3194,12 @@ def process_decoded_bitstream(bs):
         # 'pe_out_res' => 'pe_out'
         line = re.sub("pe_out_res", "pe_out", line)
 
-
-        if re.search("REG_", line):
-            if DBG: print "OOOOF it's a REG line"
-
-        # NEW
-        # data[(13, 12)] : op_b_in: REG_CONST
-        # data[(15, 14)] : op_a_in: REG_BYPASS
-        
-        # OLD
-        # data[(13, 13)] : read from reg `b`
-        # data[(15, 15)] : read from wire `a`
-
-        parse = re.search(".* op_(.)_in: REG_CONST", line)
-        if (parse):
-            if DBG: print "BEFORE: " + line
-            line = "# data[(13, 13)] : read from reg `%s`" % parse.group(1)
-            if DBG: print "AFTER:  " + line
-
-
-        parse = re.search(".* op_(.)_in: REG_BYPASS", line)
-        if (parse):
-            if DBG: print "BEFORE: " + line
-            line = "# data[(13, 13)] : read from wire `%s`" % parse.group(1)
-            if DBG: print "AFTER:  " + line
-
         # New regime uses "op_a_in" and 'op_b_in" instead of just a and b
         line = re.sub("op_a_in", "a", line)
         line = re.sub("op_b_in", "b", line)
 
         # New regime uses "alu_op" instead of just "op" maybe
         line = re.sub("alu_op", "op", line)
-
-
-
 
 
 

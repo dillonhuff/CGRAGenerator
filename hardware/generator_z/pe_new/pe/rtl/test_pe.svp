@@ -108,17 +108,6 @@ always_ff @(posedge clk or negedge rst_n) begin
   end
 end
 
-always_ff @(posedge clk or negedge rst_n) begin
-  if (rst_n && cfg_en) begin
-    // op_code <= cfg_d[15:0];
-    $display("");
-    $display("Configuring PE with cfg_a=%02X and cfg_d = %04X", cfg_a, cfg_d);
-    $display("");
-  end
-end
-
-
-
 
 //; my $op_a_r = generate_base('test_opt_reg', 'test_opt_reg_a');
 `$op_a_r->mname()` #(.DataWidth(DataWidth)) `$op_a_r->iname()`
