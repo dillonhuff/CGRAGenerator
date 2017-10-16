@@ -85,7 +85,7 @@ while (len(args) > 0):
     if   (args[0] == '-v'):    verbose = True
     elif (args[0] == '-4x4'): print 'WARNING switch "-4x4" not used'
     elif (args[0] == '-8x8'): print 'WARNING switch "-8x8" not used'
-    elif (args[0] == '-cgra'):
+    elif (args[0] == '-cgra' or args[0] == '-cgra_info'):
         cgra_filename = args[1]
         args = args[1:];
     else:
