@@ -268,8 +268,15 @@ if (-e $decoded) rm $decoded
 # ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
 # 
 # NOTE -v is messy and should be avoided unless you're trying to debg things.
-echo                    decode.py -cgra $cgra_info $config
-../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded || exit -1
+echo           run.csh: decode.py -cgra $cgra_info $config
+set VERBOSE
+if ($?VERBOSE) then
+  ../../bitstream/decoder/decode.py -cgra $cgra_info $config | tee $decoded || exit -1
+else
+  ../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded || exit -1
+endif
+unset VERBOSE
+
 
 # Show IO info derived from bitstream
 if ($?VERBOSE) then
