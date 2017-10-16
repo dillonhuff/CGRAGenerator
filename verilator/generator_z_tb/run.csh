@@ -246,8 +246,8 @@ if (! $?embedded_io) then
   exit -1
 else if ($?VERBOSE) then
   echo
-  echo "Bitstream appears to have embedded i/o information (as it should)."
-  echo "Will strip out IO hack from '$config'"
+  echo "run.csh: Bitstream appears to have embedded i/o information (as it should)."
+  echo "run.csh Will strip out IO hack from '$config'"
   echo
 endif
 
@@ -451,12 +451,14 @@ echo "run.csh: Build the simulator..."
   if ($?VERBOSE) then
     echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
     echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
-    echo '%Warning3 See $tmpdir/verilator.out for full log.'
+    echo "%Warning3 See $tmpdir/verilator.out for full log."
     echo
     cat $tmpdir/verilator.out \
       | awk -f ./run-verilator-warning-filter.awk \
       | head -n 40 
   else
+    echo $tmpdir
+    echo "$tmpdir"
     echo "See $tmpdir/verilator.out for full log of verilator warnings."
   endif
 
