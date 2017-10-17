@@ -581,6 +581,12 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   echo "run.csh: TIME NOW: `date`"
   echo "run.csh: V$top -output $output:t"
 
+  # OOPS big parrot won't work in travis if output gets filtered...
+  # Must have the printf every 10K cycles
+  set quietfilter = (cat)
+  set qf2         = (cat)
+
+
   if ($?VERBOSE) set echo
     obj_dir/V$top \
       -config $config \
