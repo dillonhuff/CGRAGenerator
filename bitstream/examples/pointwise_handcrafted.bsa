@@ -11,7 +11,7 @@ FF000000 000000F0
 # data[(3, 0)] : @ tile (1, 0) connect wire 9 (out_BUS16_S2_T4) to op_a_in
 F1000008 00000002
 # data[(15, 0)] : init `b` reg with const `2`
-FF000008 0000800B
+FF000008 0002000B
 # data[(4, 0)] : op = mul
 # data[(13, 13)] : read from reg `b`
 # data[(15, 15)] : read from wire `a`
