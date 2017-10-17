@@ -31,7 +31,7 @@ set bsa = $4.bsa
 set found = ()
 if (-e $bs)  set found = ($bs)
 if (-e $bsa) set found = ($found $bsa)
-if ($found != "") then
+if ("$found" != "") then
   echo ""
   echo "ERROR Do not want to overwrite existing file(s) '$found'"
   goto USAGE
@@ -56,5 +56,26 @@ grep -v \# $bsa > $bs
 echo "Extracted files '$bs', '$bsa'"
 echo ""
 head -3 $bs $bsa
+
+
+##############################################################################
+# # Temporary I hope:
+# # Sometimes the bsa file has erroneous wire names e.g.
+# # 'out_0_BUS1_2_0' instead of 'out_0_BUS1_S2_T0'
+# 
+# unset busted
+# egrep '(in|out)_[01]_BUS(1|16)_[0-9]_[0-9]' $raw > /dev/null && set busted
+# if ($?busted) echo "yep its busted"
+# 
+# 
+# set tmp = /tmp/extract$$
+# sed -r 's/(in|out)_([01])_(BUS1|BUS16)_([0-9])_([0-9])/\1_\2_\3_S\4_T\5/g' $raw \
+#   > $tmp
+# 
+# unset VERBOSE
+# if ($?VERBOSE) diff $raw $tmp
+# 
+# cat $tmp | grep . | egrep -v '^cat' > $bsa
+
 
 
