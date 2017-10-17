@@ -18,18 +18,10 @@ logic [DataWidth-1:0] data_in_reg;
 logic [DataWidth-1:0] data_in_reg_next;
 logic                 data_in_le;
 
-//localparam REG_CONST  = 2'h0; // FF is loaded only when 'load'=1 with 'val'
-
-//localparam REG_BYPASS = 2'h1; // FF is bypassed
-//localparam REG_VALID  = 6'h2; // Pipeline delay with clock_en = 'clk_en'
-localparam REG_BYPASS = 2'h2; // FF is bypassed
-localparam REG_VALID  = 2'h1; // Pipeline delay with clock_en = 'clk_en'
-
-
-
+localparam REG_CONST  = 2'h0; // FF is loaded only when 'load'=1 with 'val'
+localparam REG_BYPASS = 2'h1; // FF is bypassed
+localparam REG_VALID  = 6'h2; // Pipeline delay with clock_en = 'clk_en'
 localparam REG_DELAY  = 6'h3; // Assumes data is always valid
-
-
 
 assign data_in_reg_next = load ? val : data_in;
 assign data_in_le       = load | (mode == REG_DELAY) |
@@ -39,7 +31,7 @@ always_ff @(posedge clk or negedge rst_n) begin
   if(~rst_n) begin
     data_in_reg <= 'h0;
   end else if(data_in_le) begin
-    data_in_reg <= data_in_reg_next;
+    data_in_reg <= data_in;
   end
 end
 

@@ -36,25 +36,26 @@ module   `mname`  #(
 //;}
 
 //; if($use_lut || $reg_inputs) {
-  input         [DataWidth-1:0] cfg_d,
+  input         [31:0] cfg_d,
   input         [7:0]  cfg_a,
   input                cfg_en,
 
 //;} else {
+  input [15:0]                  inp_code,
   input [15:0]                  op_code,
 //;}
 
-  input  [DataWidth-1:0]        op_a_in,
+  input  [DataWidth-1:0]        data0,//op_a_in,
 //; if($en_double & $use_shift) {
   input  [DataWidth-1:0]        op_a_shift,
 //; }
-  input  [DataWidth-1:0]        op_b_in,
+  input  [DataWidth-1:0]        data1,//op_b_in,
 //; if($use_c_input) {
-  input  [DataWidth-1:0]        op_c_in,
+  input  [DataWidth-1:0]        data2,//op_c_in,
 //;}
-  input                         op_d_p_in,
-  input                         op_e_p_in,
-  input                         op_f_p_in,
+  input                         bit0,//op_d_p_in,
+  input                         bit1,//op_e_p_in,
+  input                         bit2,//op_f_p_in,
 
 //; if($en_double & $use_add > 0) {
 //;   if($is_msb) {
@@ -91,6 +92,8 @@ logic  [DataWidth-1:0]        op_b;
 logic  [DataWidth-1:0]        op_c;
 //; }
 logic                         op_d_p;
+logic                         op_e_p;
+logic                         op_f_p;
 
 logic [DataWidth-1:0] comp_res;
 logic                 comp_res_p;
@@ -99,12 +102,15 @@ logic                 res_p_w;
 //; if($reg_inputs) {
 
 
+logic [15:0] inp_code;
 logic [15:0] op_code;
 always_ff @(posedge clk or negedge rst_n) begin
   if(~rst_n) begin
-    op_code <= 'h0;
+    inp_code <= 'h0;
+    op_code  <= 'h0;
   end else if(cfg_en && (&cfg_a)) begin
-    op_code <= cfg_d[15:0];
+    inp_code <= cfg_d[31:16];
+    op_code  <= cfg_d[15:0];
   end
 end
 
@@ -117,8 +123,8 @@ end
   .rst_n      (rst_n),
   .load       (cfg_en && (cfg_a == 8'hF0)),
   .val        (cfg_d[DataWidth-1:0]),
-  .mode       (op_code[15:14]),
-  .data_in    (op_a_in),
+  .mode       (inp_code[1:0]),
+  .data_in    (data0),//op_a_in),
   .res        (op_a)
 );
 
@@ -148,8 +154,8 @@ logic [DataWidth-1:0] op_b_val;
   .rst_n      (rst_n),
   .load       (op_b_ld),
   .val        (op_b_val),
-  .mode       (op_code[13:12]),
-  .data_in    (op_b_in),
+  .mode       (inp_code[3:2]),
+  .data_in    (data1),//op_b_in),
   .res        (op_b)
 );
 
@@ -163,8 +169,8 @@ logic [DataWidth-1:0] op_b_val;
   .rst_n      (rst_n),
   .load       (cfg_en && (cfg_a == 8'hF2)),
   .val        (cfg_d[DataWidth-1:0]),
-  .mode       (op_code[11:10]),
-  .data_in    (op_c_in),
+  .mode       (inp_code[5:4]),
+  .data_in    (data2),//op_c_in),
   .res        (op_c)
 );
 //; }
@@ -178,9 +184,35 @@ logic [DataWidth-1:0] op_b_val;
   .rst_n      (rst_n),
   .load       (cfg_en && (cfg_a == 8'hF3)),
   .val        (cfg_d[0]),
-  .mode       (op_code[9:8]),
-  .data_in    (op_d_p_in),
+  .mode       (inp_code[9:8]),
+  .data_in    (bit_in0),//op_d_p_in),
   .res        (op_d_p)
+);
+
+//;my $op_e_r = clone($op_a_r, 'test_opt_reg_e');
+`$op_e_r->mname()` #(.DataWidth(1)) `$op_e_r->iname()`
+(
+  .clk        (clk),
+  .clk_en     (clk_en),
+  .rst_n      (rst_n),
+  .load       (cfg_en && (cfg_a == 8'hF4)),
+  .val        (cfg_d[0]),
+  .mode       (inp_code[11:10]),
+  .data_in    (bit_in1),//op_e_p_in),
+  .res        (op_e_p)
+);
+
+//;my $op_f_r = clone($op_a_r, 'test_opt_reg_f');
+`$op_f_r->mname()` #(.DataWidth(1)) `$op_f_r->iname()`
+(
+  .clk        (clk),
+  .clk_en     (clk_en),
+  .rst_n      (rst_n),
+  .load       (cfg_en && (cfg_a == 8'hF5)),
+  .val        (cfg_d[0]),
+  .mode       (inp_code[13:12]),
+  .data_in    (bit_in2),//op_f_p_in),
+  .res        (op_f_p)
 );
 
 
@@ -191,6 +223,8 @@ assign op_b = op_b_in;
 assign op_c = op_c_in;
 //; }
 assign op_d_p = op_d_p_in;
+assign op_e_p = op_e_p_in;
+assign op_f_p = op_f_p_in;
 
 //;}
 
@@ -203,7 +237,7 @@ assign op_d_p = op_d_p_in;
 
 `$pe_comp->instantiate()`
 (
-  .op_code ({1'b0, op_code[7:0]}),
+  .op_code (op_code[8:0]),
 
   .op_a     (op_a),
 //; if($en_double & $use_shift) {
@@ -258,7 +292,7 @@ logic res_lut;
 //; my $lut_c_inp     = "";
 //; my $c_in_slice    = ($lut->get_param('lut_inps') == 3) ? "[0]" : "["+($lut_inps-1)+":0]";
 //; if( $lut->get_param('lut_inps') == 3) {
-//;    $lut_c_inp     = "op_d_p_in";
+//;    $lut_c_inp     = "op_f_p";
 //; } elsif($use_c_input) {
 //;    $lut_c_inp     = "op_c".$c_in_slice;
 //; }
@@ -267,12 +301,12 @@ logic res_lut;
 (
   .cfg_clk  (clk),
   .cfg_rst_n(rst_n),
-  .cfg_d    (cfg_d),
+  .cfg_d    (cfg_d[15:0]),
   .cfg_a    (cfg_a),
   .cfg_en   (cfg_en),
 
-  .op_a_in  (op_e_p_in),
-  .op_b_in  (op_f_p_in),
+  .op_a_in  (op_d_p),
+  .op_b_in  (op_e_p),
 //; if($lut_extra_inp){
   .op_c_in  (`$lut_c_inp`),
 //;}
@@ -280,7 +314,7 @@ logic res_lut;
   .res      (res_lut)
 );
 
-  assign res_p_w = op_code[7] ? res_lut : comp_res_p;
+  assign res_p_w = op_code[9] ? res_lut : comp_res_p;
 //;} else {
 
   assign res_p_w = comp_res_p;

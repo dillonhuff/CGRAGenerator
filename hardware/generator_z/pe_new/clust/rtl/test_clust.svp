@@ -35,7 +35,7 @@ module   `mname`  #(
   input                         rst_n,
   input                         en,
 
-  input         [DataWidth-1:0] cfg_d,
+  input         [31:0]          cfg_d,
   input         [10:0]          cfg_a,
   input                         cfg_en,
 
@@ -155,15 +155,15 @@ logic [DataWidth-1:0] div_lsb[1:0];
   .cfg_a     (cfg_a[7:0]),
   .cfg_en    (cfg_en & (cfg_a[10:8]==3'h`$i`)), //'
 
-  .op_a_in   (pe_a_in[`$i`]),
+  .data0   (pe_a_in[`$i`]),
 //; if($en_double & $use_shift & !$is_msb) {
   .op_a_shift (pe_a_in[`$i+1`]),
 //; } elsif($en_double & $use_shift & $is_msb) {
   .op_a_shift (pe_a_in[`$i-1`]),
 //; }
-  .op_b_in   (pe_b_in[`$i`]),
+  .data1   (pe_b_in[`$i`]),
 //;if($use_c_input > 2) {
-  .op_c_in   (pe_c_in[`$i`]),
+  .data2   (pe_c_in[`$i`]),
 //;}
 
 //; if($en_double & ($use_add > 0) & !$is_msb) {
@@ -184,9 +184,9 @@ logic [DataWidth-1:0] div_lsb[1:0];
   .div_co    (div_lsb[`$chain_i`]),
 //;}
 
-  .op_d_p_in (op_d_p[`$i`]),
-  .op_e_p_in (op_e_p[`$i`]),
-  .op_f_p_in (op_f_p[`$i`]),
+  .bit0 (op_d_p[`$i`]),
+  .bit1 (op_e_p[`$i`]),
+  .bit2 (op_f_p[`$i`]),
 
   .res       (pe_res[`$i`]),
 //; if($en_double & $mult_mode > 0) {
