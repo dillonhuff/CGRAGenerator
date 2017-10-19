@@ -892,6 +892,7 @@ def get_connection_type(c):
 
     else:
         print "ERROR Unknown type for connection '%s'" % c
+        sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
         sys.exit(-1)
 
     DBG=0
@@ -3210,6 +3211,17 @@ def process_decoded_bitstream(bs):
         # mild FIXME/TODO b/c in a loop regex's should probably be compiled first
         # 'pe_out_res' => 'pe_out'
         line = re.sub("pe_out_res", "pe_out", line)
+
+
+        # So now we're doing this thing, with the " ; 26" on the end.
+        # data[(1, 0)] : @ tile (4, 1) connect wire 1 (in_BUS16_S2_T0) to out_BUS16_S0_T0 ; 26
+        line2 = re.sub(r" ; [0-9]+", "", line)
+        if (line2 != line):
+            print "WARNING rewrote line"
+            print "BEFORE: " + line
+            print "AFTER:  " + line2
+            print ""
+            line = line2
 
 
         if re.search("REG_", line):

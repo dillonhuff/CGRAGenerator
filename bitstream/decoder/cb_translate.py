@@ -3,7 +3,7 @@
 import sys;
 import re;
 
-def fix_cb(line, DBG=0):
+def parse_bs_line(line):
     parse = re.search("(..)(..)(....) (........)", line)
     if parse:
         reg = parse.group(1) 
@@ -11,18 +11,20 @@ def fix_cb(line, DBG=0):
         tile    = parse.group(3)
         data    = parse.group(4)
         # tileno = int(tile,16)
+        return (reg,feature,tile,data)
     else:
-        print "ERROR bad line:\n%s" % line; sys.exit(-1)
+        print "ERROR bad bitstream line:\n%s" % line; sys.exit(-1)
 
-    # Only interested in a, b connection boxes
-    # (Elsewhere, should have checked to make sure this is PE and not mem tile)
-    if feature != "02" and feature != "03": return False
 
-    # OLD:
+def fix_cba(line, DBG=0):
+    '''Connection box 'a' input'''
+
+    # Feature == "02" => op_a_in
+    # OLD (v0):
     # xx02xxxx 0000 000[01234] # a <= in_s1t[01234]
     # xx02xxxx 0000 000[56789] # a <= in_s3t[01234]
     # 
-    # NEW:
+    # NEW (v1):
     # xx02xxxx 0000 000[56789] # a <= out_s2t[01234]
     # xx05xxxx 1550 0000
     # 
@@ -38,27 +40,28 @@ def fix_cb(line, DBG=0):
     # xx05xxxx 0800 0000       #      out_s2t3 <= in_s3t3 [27:26]==2
     # xx05xxxx 2000 0000       #      out_s2t4 <= in_s3t4 [29:28]==2
 
-    # DBG=1
-    parse = re.search("0000000([0-9])", data)
-    sel = int(parse.group(1))
-    if feature == "02":
-        if sel < 5:
-            inside = 1; track = sel%5; sbsel=1; sel2=(track+5)
-        else:
-            inside = 3; track = sel%5; sbsel=2; sel2=(track+5)
+    (reg,feature,tile,data) = parse_bs_line(line)
+    sel = int(data, 16)  # O.k. to use all 32 bits
+    track = sel%5
 
-        line_out0 = "%s%s%s 0000000%d" % (reg,feature,tile,sel2)
+    # v0: 'a' originally came from inwire on side 1 or 3 as indicated by sel bits
+    if sel < 5: in_side = 1
+    else:       in_side = 3
 
-        shiftamt = 20 + 2*track
-        sbdata = sbsel << shiftamt
-        sbline = "%s%s%s %08x" % (reg,feature,tile,sbdata)
-        if DBG:
-            print "# BEFORE: %s # a <= in_s%dt%d" % (line,inside,track)
-            print "# AFTER:  %s # a <= out_s2t%d" % (line_out0,track)
-            print "#         %s #      out_s2t%d <= in_s%dt%d ([%d:%d]=%d)" \
-                  % (sbline,track,inside,track,shiftamt+1,shiftamt,sbsel)
-            # print "# op_a_in <= out_s2t[01234]"
-            print ""
+    # v1 step 1: change cb so 'a' input comes from out_s2
+    cbnew = "%s%s%s 0000000%d" % (reg,feature,tile, track+5)
+
+    # v1 step 2: tell sb to connect orig inwire to out_s2t<track> instead of 'a'
+    out_side = 2
+    (sel,shiftamt,sbstring) = sbconnect(in_side, out_side, track)
+    sbnew = "%s%s%s %08x" % (reg,"05",tile, sel<<shiftamt)
+
+    inwire  = "a <= in_s%dt%d"  % (in_side,  track)
+    outwire = "a <= out_s%dt%d" % (out_side, track)
+    return(cbnew, inwire, outwire, sbnew, sbstring)
+
+def fix_cbb(line, DBG=0):
+    '''Connection box 'b' input'''
 
     # OLD:
     # xx03xxxx 0000 000[01234] # b <= in_s0t[01234]
@@ -80,25 +83,79 @@ def fix_cb(line, DBG=0):
     # xx05xxxx 0001 0000       #      out_s1t3 <= in_s2t3 [17:16]==1
     # xx05xxxx 0004 0000       #      out_s1t4 <= in_s2t4 [19:18]==1
         
+    (reg,feature,tile,data) = parse_bs_line(line)
+    sel = int(data, 16)  # O.k. to use all 32 bits
+    track = sel%5
+
+    # v0: 'b' originally came from inwire on side 0 or 2 as indicated by sel bits
+    if sel < 5: in_side = 0
+    else:       in_side = 2
+
+    # v1 step 1: change cb so 'b' input comes from out_s1
+    cbnew = "%s%s%s 0000000%d" % (reg,feature,tile, track+5)
+
+    # v1 step 2: tell sb to connect orig inwire to out_s1t<track> instead of 'b'
+    out_side = 1
+    (sel,shiftamt,sbstring) = sbconnect(in_side, out_side, track)
+    sbnew = "%s%s%s %08x" % (reg,"05",tile, sel<<shiftamt)
+
+    inwire  = "b <= in_s%dt%d"  % (in_side,  track)
+    outwire = "b <= out_s%dt%d" % (out_side, track)
+    return(cbnew, inwire, outwire, sbnew, sbstring)
+
+def print_cb_rewrite(cbold, cbnew, inwire, outwire, sbnew, sbstring):
+    # What we did.
+    print "# BEFORE: %s # %s"      % (cbold, inwire)
+    print "# AFTER:  %s # %s"      % (cbnew, outwire)
+    print "#         %s #      %s" % (sbnew, sbstring)
+    print ""
+
+def sbconnect(in_side, out_side, track):
+    '''
+    Build a switchbox that connects in_s<in_side>t<track> to out_s<out_side>t<track>
+    '''
+
+    # (input b)
+    # For now only needs to work for output sides 1 and 2
+    if out_side == 1:
+        shiftamt = 10 + 2*track # output to side 1 (out_s1)
+        # For now only needs to work for input sides 0 and 2
+        if in_side == 0: sel = 0
+        if in_side == 2: sel = 1
+
+
+    # (input a)
+    # For now only needs to work for output sides 1 and 2
+    if out_side == 2:
+        shiftamt = 20 + 2*track # output to side 2 (out_s2)
+        # For now only needs to work for input sides 1 and 3
+        if in_side == 1: sel = 1
+        if in_side == 3: sel = 2
+
+
+    # For debug purposes, make a text string e.g.
+    # "out_s2t3 <= in_s2t3 ([17:16]=1)"
+    #
+    connection = "out_s%dt%d <= in_s%dt%d ([%d:%d]=%d)" \
+                 % (out_side, track, in_side, track, shiftamt+1, shiftamt, sel)
+
+    return (sel, shiftamt, connection)
+
+def fix_cb(line, DBG=0):
+    (reg,feature,tile,data) = parse_bs_line(line)
+
+    # Only interested in a, b connection boxes
+    # (Elsewhere, should have checked to make sure this is PE and not mem tile)
+    if feature != "02" and feature != "03": return False
+
+    if feature == "02":
+        (cbnew, inwire, outwire, sbnew, sbstring) = fix_cba(line,DBG)
+
     if feature == "03":
-        if sel < 5:
-            inside = 0; track = sel%5; sbsel=0; sel2=(track+5)
-        else:
-            inside = 2; track = sel%5; sbsel=1; sel2=(track+5)
+        (cbnew, inwire, outwire, sbnew, sbstring) = fix_cbb(line,DBG)
 
-        line_out0 = "%s%s%s 0000000%d" % (reg,feature,tile,sel2)
+    print_cb_rewrite(line, cbnew, inwire, outwire, sbnew, sbstring)
 
-        shiftamt = 10 + 2*track
-        sbdata = sbsel << shiftamt
-        sbline = "%s%s%s %08x" % (reg,feature,tile,sbdata)
-        if DBG:
-            print "# BEFORE: %s # a <= in_s%dt%d" % (line,inside,track)
-            print "# AFTER:  %s # a <= out_s2t%d" % (line_out0,track)
-            print "#         %s #      out_s2t%d <= in_s%dt%d ([%d:%d]=%d)" \
-                  % (sbline,track,inside,track,shiftamt+1,shiftamt,sbsel)
-            # print "# op_a_in <= out_s2t[01234]"
-            print ""
-        
 
 # NOTE MUST ADD 0005<TTTT> to a watchlist now!!!
 # Keep a list of all switchboxes used;
