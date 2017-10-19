@@ -44,6 +44,14 @@ set GENERATE  = "-gen"
 # set config = ../../bitstream/examples/cd387-good.bs
 set config   = ../../bitstream/examples/pointwise_handcrafted.bs
 
+set branch = `git branch | grep '^*' | awk '{print $2}'`
+if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
+if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
+
+
+
+
+
 set DELAY = '0,0'
 
 set input     = io/gray_small.png
