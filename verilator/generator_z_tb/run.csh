@@ -44,17 +44,33 @@ set GENERATE  = "-gen"
 # set config = ../../bitstream/examples/cd387-good.bs
 set config   = ../../bitstream/examples/pointwise_handcrafted.bs
 
-set branch = `git branch | grep '^*' | awk '{print $2}'`
+
+# Set config conditionally depending on current branch
+# bsview = v0, master = v1, srdev = v2
+set branch = `git branch | grep '^*'`
+
+# In travis, 'git branch' returns something like
+#   "* (HEAD detached at 09a4672)"
+#   "  master"
+#
+if (`expr "$branch" : ".*detached"`) then
+  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
+else
+  set branch = `git branch | grep '^*' | awk '{print $2}'`
+enif
+
+echo "run.csh: Found branch '$branch'"
+
 if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
 if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
 
 
-set echo
-git branch
-git branch | grep '^*'
-git branch | grep '^*' | awk '{print $2}'`
-echo $branch
-unset echo
+# set echo
+# git branch
+# git branch | grep '^*'
+# git branch | grep '^*' | awk '{print $2}'
+# echo $branch
+# unset echo
 
 
 set DELAY = '0,0'
