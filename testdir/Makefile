@@ -30,11 +30,11 @@ TEMPDIR := $(shell mktemp -d)
 
 pw_gray_small_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
-	CONFIG="-config ../../bitstream/examples/pointwise_handcrafted.bs"
+	CONFIG="-config ../../bitstream/examples/pwv1.bs"
 
 pw_gray_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
-	CONFIG="-config ../../bitstream/examples/pointwise_handcrafted.bs"
+	CONFIG="-config ../../bitstream/examples/pwv1.bs"
 
 test_all:
 	pwd; ls

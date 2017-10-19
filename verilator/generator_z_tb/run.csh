@@ -66,15 +66,7 @@ if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
 if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
 unset echo
 
-echo config = $config
-
-# set echo
-# git branch
-# git branch | grep '^*'
-# git branch | grep '^*' | awk '{print $2}'
-# echo $branch
-# unset echo
-
+echo 1. config = $config
 
 set DELAY = '0,0'
 
@@ -110,6 +102,8 @@ if ($#argv == 1) then
     exit 0
   endif
 endif
+
+echo config = $config 2
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
