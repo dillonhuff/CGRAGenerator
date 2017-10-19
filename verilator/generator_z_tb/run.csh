@@ -49,7 +49,12 @@ if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
 if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
 
 
-
+set echo
+git branch
+git branch | grep '^*'
+git branch | grep '^*' | awk '{print $2}'`
+echo $branch
+unset echo
 
 
 set DELAY = '0,0'
