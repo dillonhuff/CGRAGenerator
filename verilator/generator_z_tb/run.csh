@@ -61,9 +61,12 @@ endif
 
 echo "run.csh: Found branch '$branch'"
 
+set echo
 if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
 if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
+unset echo
 
+echo config = $config
 
 # set echo
 # git branch
@@ -236,6 +239,11 @@ if ($?VERBOSE) then
     echo "   -trace $tracefile \"
   endif
   echo "   -nclocks  $nclocks                 \"
+endif
+
+if (! -e $config) then
+  echo "run.csh: ERROR Cannot find config file '$config'"
+  exit -1
 endif
 
 # Turn nclocks into an integer.
