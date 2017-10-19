@@ -57,7 +57,7 @@ if (`expr "$branch" : ".*detached"`) then
   set branch = `git branch | grep -v '^*' | awk '{print $1}'`
 else
   set branch = `git branch | grep '^*' | awk '{print $2}'`
-enif
+endif
 
 echo "run.csh: Found branch '$branch'"
 
