@@ -4,37 +4,42 @@
 
 # Script should be in CGROOT/bin
 
-if (! $?CGRA_GEN_ALL_REG) echo 'CGRA_GEN_ALL_REG NOT SET (yet)'
-if ($?CGRA_GEN_ALL_REG) echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
+##############################################################################
+# Not used in the new regime;
+# safe to delete after we've finished the move.
 setenv CGRA_GEN_ALL_REG 1
-echo CGRA_GEN_ALL_REG = $?CGRA_GEN_ALL_REG
+##############################################################################
 
-echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
-echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
-echo "WARNING CGRA_GEN_ALL_REG == 1 ALWAYS"
-
-# set scriptpath = "$0"
+# Find out where we live
+# set scriptpath = "$0" # No good if symlinks exist maybe
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
-if ("$scriptpath" == "$0") then
-  set scriptpath = `pwd`
-  set CGROOT = `cd $scriptpath:h; pwd`
-else
-  set CGROOT = `cd $scriptpath/..; pwd`
-endif
+
+# if ("$scriptpath" == "$0") then
+#   set scriptpath = `pwd`
+#   set CGROOT = `cd $scriptpath:h; pwd`
+# else
+#   set CGROOT = `cd $scriptpath/..; pwd`
+# endif
+
+# Script lives in $CGROOT/bin/$0
+# Therefore scriptpath is "$CGROOT/bin"
+# Therefore CGROOT is $scriptpath:h
+set CGROOT = $scriptpath:h
+
 
 # echo "I think CGRAGenerator is here: $CGROOT"; exit
 
 ##############################################################################
 # Set up to run Genesis2; installs genesis2 if necessary (in /tmp !)
 
-set VERBOSE
-if ("$1" == "-q") then
-  # echo quiet
-  unset VERBOSE
-else
+unset VERBOSE
+if ("$1" == "-v") then
   # echo verbose
   set VERBOSE
+else if ("$1" == "-q") then
+  # echo quiet
+  unset VERBOSE
 endif
 
 source $CGROOT/bin/genesis2_setup.csh
@@ -50,7 +55,12 @@ cd $CGROOT/hardware/generator_z/top
     # NOTE THIS IS THE RUN.CSH IN HARDWARE/GENERATOR_Z
     set run = run.csh
     
-    echo ""; echo "Generator $run looks like this:"; cat $run | awk '{print "    " $0}'; echo ""
+    if ($?VERBOSE) then
+      echo "";
+      echo "Generator $run looks like this:"; 
+      cat $run | awk '{print "    " $0}';
+      echo ""
+    endif
 
     if (! $?VERBOSE) then
       set logfile = /tmp/generate_log.$$
@@ -68,4 +78,4 @@ cd $CGROOT/hardware/generator_z/top
 
     # New cgra_info is proof that something happened
     # ls -l cgra_info.txt examples/*.txt
-    ls -l cgra_info.txt
+    if ($?VERBOSE) ls -l cgra_info.txt

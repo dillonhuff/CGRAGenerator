@@ -27,13 +27,19 @@ genvar ggg;
 generate
   for (ggg = 0; ggg < DataWidth; ggg = ggg +1) begin : GEN_LUT
 
-    logic [`$lut_inps-1`:0] lut;
+  //logic [`$lut_inps-1`:0] lut;
+    logic [3:0] lut;
 
     always_ff @(posedge cfg_clk or negedge cfg_rst_n) begin
       if(~cfg_rst_n) begin
         lut   <= 4'h0;
+
+//    end else if(cfg_en && (cfg_a == 8'h0)) begin
+//      lut   <= cfg_d[`$lut_inps-1`: 0];
+
       end else if(cfg_en && (cfg_a == ($unsigned(ggg)/4))) begin
-        lut   <= cfg_d[`$lut_inps-1`: 0];
+        lut   <= cfg_d[3:0];
+
       end
     end
 
