@@ -3,6 +3,9 @@
 import sys;
 import re;
 
+# This should be in decode library I guess
+# and/or why not a single line
+# (reg,feature,tile,data) = myparse(line, "(..)(..)(....) (........)", 4)
 def parse_bs_line(line):
     parse = re.search("(..)(..)(....) (........)", line)
     if parse:

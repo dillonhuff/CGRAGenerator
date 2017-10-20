@@ -322,6 +322,8 @@ set newbs = $decoded.bs
 if (-e $newbs) rm $newbs
 
 ##############################################################################
+unset LUT_HACK
+if ($?LUT_HACK) then
   echo
   echo '  LUT hack'
   echo '  LUT hack'
@@ -341,6 +343,7 @@ if (-e $newbs) rm $newbs
   echo ""
 
   mv $tmpdir/lut_hack $decoded 
+endif
 ##############################################################################
 
 
