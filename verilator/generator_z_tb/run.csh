@@ -43,34 +43,15 @@ set GENERATE  = "-gen"
 # set config = ../../bitstream/examples/cd.bsv1
 # set config = ../../bitstream/examples/cd387-good.bs
 set config   = ../../bitstream/examples/pointwise_handcrafted.bs
+set config   = ../../bitstream/examples/pwv1.bs
 
 
-# Set config conditionally depending on current branch
-# bsview = v0, master = v1, srdev = v2
+
 set branch = `git branch | grep '^*'`
-
-# In travis, 'git branch' returns something like
-#   "* (HEAD detached at 09a4672)"
-#   "  master"
-#
-if (`expr "$branch" : ".*detached"`) then
-  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
-else
-  set branch = `git branch | grep '^*' | awk '{print $2}'`
-endif
-
-echo "run.csh: Found branch '$branch'"
-
 if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
-if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
+if ("$branch" == "avdev")  set config = ../../bitstream/examples/pwv2.bs
 
 
-# set echo
-# git branch
-# git branch | grep '^*'
-# git branch | grep '^*' | awk '{print $2}'
-# echo $branch
-# unset echo
 
 
 set DELAY = '0,0'
@@ -107,6 +88,8 @@ if ($#argv == 1) then
     exit 0
   endif
 endif
+
+echo config = $config 2
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
@@ -222,6 +205,49 @@ if (! -e "$testbench") then
   exit -1
 endif
 
+
+##############################################################################
+##############################################################################
+##############################################################################
+# Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
+
+# Set config conditionally depending on current branch
+# bsview = v0, master = v1, srdev = v2
+set branch = `git branch | grep '^*'`
+
+# In travis, 'git branch' returns something like
+#   "* (HEAD detached at 09a4672)"
+#   "  master"
+#
+if (`expr "$branch" : ".*detached"`) then
+  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
+  if ("$branch" == "srdev") then
+    echo
+    echo '  SRDEV TRAVIS hack'
+    echo '  SRDEV TRAVIS hack'
+    echo '  SRDEV TRAVIS hack'
+    echo '  srdev travis only gets to run with pwv2 config (for now)'
+    echo ''
+    set config = ../../bitstream/examples/pwv2.bs
+  endif
+else
+  set branch = `git branch | grep '^*' | awk '{print $2}'`
+endif
+
+echo "run.csh: Found branch '$branch'"
+
+# set echo
+# if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
+# if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
+# unset echo
+##############################################################################
+##############################################################################
+##############################################################################
+
+
+
+
+
 if ($?VERBOSE) then
   # Backslashes line up better when printed...
   echo "Running with the following switches:"
@@ -236,6 +262,11 @@ if ($?VERBOSE) then
     echo "   -trace $tracefile \"
   endif
   echo "   -nclocks  $nclocks                 \"
+endif
+
+if (! -e $config) then
+  echo "run.csh: ERROR Cannot find config file '$config'"
+  exit -1
 endif
 
 # Turn nclocks into an integer.
@@ -319,31 +350,62 @@ endif
 set newbs = $decoded.bs
 if (-e $newbs) rm $newbs
 
+##############################################################################
+unset LUT_HACK
+if ($?LUT_HACK) then
+  echo
+  echo '  LUT hack'
+  echo '  LUT hack'
+  echo '  LUT hack'
+  echo '  Temporarily stripping out LUT code...'
+  echo ''
+  set lut_hack_en = "^FF00.... 00000080"
+  set lut_hack_ld = "^0000.... ........"
+
+  cat $decoded \
+    | egrep -v "$lut_hack_en" \
+    | egrep -v "$lut_hack_ld" \
+    > $tmpdir/lut_hack
+
+  echo diff $decoded $tmpdir/lut_hack
+  diff $decoded $tmpdir/lut_hack | grep -v d
+  echo ""
+
+  mv $tmpdir/lut_hack $decoded 
+endif
+##############################################################################
+
+
+
 # grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
 cat $decoded \
   | egrep -v '^F000.... FFFFFFFF' \
   | egrep -v '^F100.... FFFFFFFF' \
   | egrep -v '^FF00.... 000000F0' \
   | egrep -v '^FF00.... 000000FF' \
-  | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
-  > $newbs
+  > $tmpdir/decode2
+
 
 # This is small and SHOULD NOT BE OPTIONAL!
 # Meh.  Now it's optional.
 if ($?VERBOSE) then
-  echo diff $config $newbs
-  diff $config $newbs | grep -v d
+  echo diff $decoded $tmpdir/decode2
+  diff $decoded $tmpdir/decode2 | grep -v d
 endif
 
-
 # Another useful test
-set ndiff = `diff $config $newbs | grep -v d | wc -l`
+set ndiff = `diff $decoded $tmpdir/decode2 | grep -v d | wc -l`
 if ("$ndiff" == "5") then
   if ($?VERBOSE) echo "run.csh: Five lines of diff.  That's good!"
 else
   echo "ERROR run.csh: Looks like we messed up the IO"
   exit -1
 endif
+
+# Strip out comments from decoded bitstream
+cat $tmpdir/decode2\
+  | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
+  > $newbs
 
 set config = $newbs
 
