@@ -587,6 +587,23 @@ def pe_decode(RR, DDDDDDDD):
     if ((asrc == "reg `op_c_in`") and re.search("0x", creg)): A = creg;
     if ((asrc == "reg `op_d_in`") and re.search("0x", dreg)): A = dreg;
 
+#     if (op == "8B"):
+#         print "okay here we go"
+#         # Oh yes this will break things.
+#         print ""
+#         print "op = %s" % op
+#         print "opi = %d" % opi
+            
+    # There are better ways to do this I'm sure... FIXME maybe
+    if not (op == "F0" or op == "FF"):
+        opi = int(op,16)
+        op = "%02X" % (opi & 0x7F)
+        if (opi & 0x80): print "# data[(7, 7)] : Enable Lut"
+
+
+
+
+
     if   (op == "00"): opp="add"; opstr = "ADD(%s,%s)" % (A,B)
     elif (op == "01"): opp="sub"; opstr = "SUB(%s,%s)" % (A,B)
 
