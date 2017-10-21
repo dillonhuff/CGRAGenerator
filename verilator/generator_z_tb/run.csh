@@ -43,30 +43,16 @@ set GENERATE  = "-gen"
 # set config = ../../bitstream/examples/cd.bsv1
 # set config = ../../bitstream/examples/cd387-good.bs
 set config   = ../../bitstream/examples/pointwise_handcrafted.bs
+set config   = ../../bitstream/examples/pwv1.bs
 
 
-# Set config conditionally depending on current branch
-# bsview = v0, master = v1, srdev = v2
+
 set branch = `git branch | grep '^*'`
-
-# In travis, 'git branch' returns something like
-#   "* (HEAD detached at 09a4672)"
-#   "  master"
-#
-if (`expr "$branch" : ".*detached"`) then
-  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
-else
-  set branch = `git branch | grep '^*' | awk '{print $2}'`
-endif
-
-echo "run.csh: Found branch '$branch'"
-
-set echo
 if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
-if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
-unset echo
+if ("$branch" == "avdev")  set config = ../../bitstream/examples/pwv2.bs
 
-echo 1. config = $config
+
+
 
 set DELAY = '0,0'
 
@@ -218,6 +204,49 @@ if (! -e "$testbench") then
   end
   exit -1
 endif
+
+
+##############################################################################
+##############################################################################
+##############################################################################
+# Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
+
+# Set config conditionally depending on current branch
+# bsview = v0, master = v1, srdev = v2
+set branch = `git branch | grep '^*'`
+
+# In travis, 'git branch' returns something like
+#   "* (HEAD detached at 09a4672)"
+#   "  master"
+#
+if (`expr "$branch" : ".*detached"`) then
+  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
+  if ("$branch" == "srdev") then
+    echo
+    echo '  SRDEV TRAVIS hack'
+    echo '  SRDEV TRAVIS hack'
+    echo '  SRDEV TRAVIS hack'
+    echo '  srdev travis only gets to run with pwv2 config (for now)'
+    echo ''
+    set config = ../../bitstream/examples/pwv2.bs
+  endif
+else
+  set branch = `git branch | grep '^*' | awk '{print $2}'`
+endif
+
+echo "run.csh: Found branch '$branch'"
+
+# set echo
+# if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
+# if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
+# unset echo
+##############################################################################
+##############################################################################
+##############################################################################
+
+
+
+
 
 if ($?VERBOSE) then
   # Backslashes line up better when printed...
