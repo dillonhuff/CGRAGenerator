@@ -46,13 +46,11 @@ set config   = ../../bitstream/examples/pointwise_handcrafted.bs
 set config   = ../../bitstream/examples/pwv1.bs
 
 
-
-set branch = `git branch | grep '^*'`
-if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
-if ("$branch" == "avdev")  set config = ../../bitstream/examples/pwv2.bs
-
-
-
+# srdev/avdev have different default bitstream, of course.
+git branch | grep '^*' > $tmpdir/tmp
+set branch = `sed 's/^..//' $tmpdir/tmp`
+if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2.bs
+if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2.bs
 
 set DELAY = '0,0'
 
