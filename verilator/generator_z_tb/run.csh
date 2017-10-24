@@ -47,9 +47,18 @@ set config   = ../../bitstream/examples/pwv1.bs
 
 
 # srdev/avdev have different default bitstream, of course.
+set echo
+git branch
+git branch -a
+git branch -v
+git branch -av
+unset echo
+
 git branch | grep '^*' > $tmpdir/tmp
 cat $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
+echo "run.csh: I think you are in branch '$branch'"
+
 if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2.bs
 if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2.bs
 
