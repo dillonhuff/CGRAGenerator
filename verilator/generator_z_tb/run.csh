@@ -233,10 +233,10 @@ endif
 ##############################################################################
 # Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
 
-# Set config conditionally depending on current branch
-# bsview = v0, master = v1, srdev = v2
-set branch = `git branch | grep '^*'`
-
+# # Set config conditionally depending on current branch
+# # bsview = v0, master = v1, srdev = v2
+# set branch = `git branch | grep '^*'`
+# 
 # # In travis, 'git branch' returns something like
 # #   "* (HEAD detached at 09a4672)"
 # #   "  master"
