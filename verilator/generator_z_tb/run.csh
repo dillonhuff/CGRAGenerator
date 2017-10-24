@@ -46,9 +46,33 @@ set config   = ../../bitstream/examples/pointwise_handcrafted.bs
 set config   = ../../bitstream/examples/pwv1.bs
 
 
+
+
 # srdev/avdev have different default bitstream, of course.
+
+# set echo
+# git branch
+# git branch -a
+# git branch -v
+# git branch -av
+# unset echo
+
 git branch | grep '^*' > $tmpdir/tmp
+# cat $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
+
+# In travis, 'git branch' returns something like
+#   "* (HEAD detached at 09a4672)"
+#   "  master"
+
+# Travis branch comes up as 'detached' :(
+#   * (HEAD detached at a220e19)
+#     master
+if (`expr "$branch" : ".*detached"`) then
+  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
+endif
+echo "run.csh: I think we are in branch '$branch'"
+
 if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2.bs
 if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2.bs
 
@@ -213,13 +237,13 @@ endif
 # bsview = v0, master = v1, srdev = v2
 set branch = `git branch | grep '^*'`
 
-# In travis, 'git branch' returns something like
-#   "* (HEAD detached at 09a4672)"
-#   "  master"
-#
-if (`expr "$branch" : ".*detached"`) then
-  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
-  if ("$branch" == "srdev") then
+# # In travis, 'git branch' returns something like
+# #   "* (HEAD detached at 09a4672)"
+# #   "  master"
+# #
+# if (`expr "$branch" : ".*detached"`) then
+#   set branch = `git branch | grep -v '^*' | awk '{print $1}'`
+  if ("$branch" == "srdev" || "$branch" == "avdev") then
     echo
     echo '  SRDEV TRAVIS hack'
     echo '  SRDEV TRAVIS hack'
@@ -228,11 +252,11 @@ if (`expr "$branch" : ".*detached"`) then
     echo ''
     set config = ../../bitstream/examples/pwv2.bs
   endif
-else
-  set branch = `git branch | grep '^*' | awk '{print $2}'`
-endif
-
-echo "run.csh: Found branch '$branch'"
+# else
+#   set branch = `git branch | grep '^*' | awk '{print $2}'`
+# endif
+# 
+# echo "run.csh: Found branch '$branch'"
 
 # set echo
 # if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
