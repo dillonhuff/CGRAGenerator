@@ -268,7 +268,6 @@ def parse_const(line, tilestr):
                 comment = "# Remember opb[%04X] = %s" % (tileno, opb[tileno])
             
             data = "%08X" % int(k)
-            data = op_data['mul']
             addbs(addr, data, line+"\n"+comment)
             return True
 
