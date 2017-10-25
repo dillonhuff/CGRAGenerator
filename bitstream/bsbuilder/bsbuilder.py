@@ -268,7 +268,6 @@ def parse_const(line, tilestr):
                 comment = "# Remember opb[%04X] = %s" % (tileno, opb[tileno])
             
             data = "%08X" % int(k)
-            data = op_data['mul']
             addbs(addr, data, line+"\n"+comment)
             return True
 
@@ -307,12 +306,19 @@ def emit_bitstream():
     print "#----------------------------------------------------------------"
     for addr in sorted(bitstream.iterkeys(), key=bs_addr_sort):
         if DBG:
-            print addr, bscomment[addr]
-            print addr, bitstream[addr]
+            print "# " + addr, bscomment[addr]
+            print "# " + addr, bitstream[addr]
             print ""
 
         # If addr indicates an op, then merge in operands a, b
         insert_operands(addr)
+        data = merge_data(addr)
+        if (data == "ERROR"): sys.exit(1)
+
+        # print data, type(data)
+        print "%s %08X" % (addr,data)
+        for c in bscomment[addr]: print "# " + c
+        print ""
 
 
         # Merge all the data into one
@@ -336,7 +342,7 @@ def insert_operands(addr, DBG=1):
 
             print "# opa = %7s = %s" % (wra, op_data[wra])
             print "# opb = %7s = %s" % (wrb, op_data[wrb])
-            print addr, bitstream[addr]
+            print "# " + addr, bitstream[addr]
             print ""
 
 
@@ -588,9 +594,10 @@ main()
 
 
 
-print '''
-NEXT:
-- sort bs by index
-- emit each bs_addr data, merging where appropriate
-- when feature = '00' (pe), remember to merge in the operands
-'''
+# print '''
+# NEXT:
+# - sort bs by index
+# - emit each bs_addr data, merging where appropriate
+# - when feature = '00' (pe), remember to merge in the operands
+# '''
+# 
