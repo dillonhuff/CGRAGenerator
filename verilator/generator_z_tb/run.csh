@@ -243,7 +243,8 @@ endif
 # #
 # if (`expr "$branch" : ".*detached"`) then
 #   set branch = `git branch | grep -v '^*' | awk '{print $1}'`
-  if ("$branch" == "srdev" || "$branch" == "avdev") then
+#  if ("$branch" == "srdev" || "$branch" == "avdev") then
+  if (0) then
     echo
     echo '  SRDEV TRAVIS hack'
     echo '  SRDEV TRAVIS hack'
