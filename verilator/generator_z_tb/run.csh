@@ -224,23 +224,23 @@ endif
 ##############################################################################
 ##############################################################################
 ##############################################################################
-# Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
-
-# # Set config conditionally depending on current branch
-# # bsview = v0, master = v1, srdev = v2
+# # Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
 # 
-if ("$branch" == "srdev" || "$branch" == "avdev") then
-  if ("$config" == "../../bitstream/examples/pwv1.bs") then
-    echo
-    echo '  SRDEV TRAVIS hack'
-    echo '  SRDEV TRAVIS hack'
-    echo '  SRDEV TRAVIS hack'
-    echo '  pwv1 was requested; using pwv2 instead...'
-    echo ''
-    set config = ../../bitstream/examples/pwv2.bs
-  endif
-endif
-
+# # # Set config conditionally depending on current branch
+# # # bsview = v0, master = v1, srdev = v2
+# # 
+# if ("$branch" == "srdev" || "$branch" == "avdev") then
+#   if ("$config" == "../../bitstream/examples/pwv1.bs") then
+#     echo
+#     echo '  SRDEV TRAVIS hack'
+#     echo '  SRDEV TRAVIS hack'
+#     echo '  SRDEV TRAVIS hack'
+#     echo '  pwv1 was requested; using pwv2 instead...'
+#     echo ''
+#     set config = ../../bitstream/examples/pwv2.bs
+#   endif
+# endif
+# 
 ##############################################################################
 ##############################################################################
 ##############################################################################
