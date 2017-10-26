@@ -39,19 +39,11 @@ setenv CGRA_GEN_USE_MEM 1
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
 
-# set config = ../../bitstream/examples/cd2.bs  # cd2 broken i think
-# set config = ../../bitstream/examples/cd.bsv1
-# set config = ../../bitstream/examples/cd387-good.bs
-set config   = ../../bitstream/examples/pointwise_handcrafted.bs
-set config   = ../../bitstream/examples/pwv1.bs
+# Default configuration bitstream
+set config   = ../../bitstream/examples/940/pw.bs
 
-
-
-
-# srdev/avdev have different default bitstream, of course.
-
+# Sometimes may need to know what branch we are in
 git branch | grep '^*' > $tmpdir/tmp
-# cat $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
 
 # In travis, 'git branch' returns something like
