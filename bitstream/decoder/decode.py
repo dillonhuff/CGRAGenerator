@@ -17,6 +17,18 @@ if (0):
 global verbose
 verbose = False
 
+# Haha FIXME FIXME oh yeahhhh...this is gonna break big time
+# FIXME names should come from cgra_info
+OP_IN = {}
+# OP_IN['a'] = "op_a_in"
+# OP_IN['b'] = "op_b_in"
+# OP_IN['c'] = "op_c_in"
+# OP_IN['d'] = "op_d_in"
+OP_IN['a'] = "data1"
+OP_IN['b'] = "data2"
+OP_IN['c'] = "data3"
+OP_IN['d'] = "data4"
+
 def get_default_cgra_info_filename():
     '''
     Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
@@ -453,10 +465,18 @@ def pe_decode(RR, DDDDDDDD):
     DDDD = DDDDDDDD[4:8]   # last four hex digits
     dstring = "0x" + DDDD  # Same, with a "0x" in front
     # Note: C input unused/invalid for 2-input PEs!
-    if (RR == "F0"): areg = dstring; k="op_a_in"
-    if (RR == "F1"): breg = dstring; k="op_b_in"
-    if (RR == "F2"): creg = dstring; k="op_c_in"
-    if (RR == "F3"): dreg = dstring; k="op_d_in"; print "\n\nFOOOOOOOOOOOOOOO\n\n"
+
+    # Haha FIXME FIXME oh yeahhhh...this is gonna break big time
+    # FIXME names should come from cgra_info
+    # if (RR == "F0"): areg = dstring; k="op_a_in"
+    # if (RR == "F1"): breg = dstring; k="op_b_in"
+    # if (RR == "F2"): creg = dstring; k="op_c_in"
+    # if (RR == "F3"): dreg = dstring; k="op_d_in"; print "\n\nFOOOOOOOOOOOOOOO\n\n"
+    if (RR == "F0"): areg = dstring; k=OP_IN['a']
+    if (RR == "F1"): breg = dstring; k=OP_IN['b']
+    if (RR == "F2"): creg = dstring; k=OP_IN['c']
+    if (RR == "F3"): dreg = dstring; k=OP_IN['d']; print "\n\nFOOOOOOOOOOOOOOO\n\n"
+
     if (k):
         if verbose:
             iohack = "";
@@ -673,7 +693,9 @@ def pe_decode(RR, DDDDDDDD):
     # PRINT:
     # "pe_out <= MUL(wireA,wireB) ; regA <= wireA (always) ; regB <= wireB (always)"
 
-    print "# data[(4, 0)] : alu_op = %s" % opp
+    # Oops FIXME bits should come from cgra_info
+    # print "# data[(4, 0)] : alu_op = %s" % opp
+    print "# data[(5, 0)] : alu_op = %s" % opp
 
     if (not iohack):
         # FIXME when/if have an op that uses d, will want to activate this...
