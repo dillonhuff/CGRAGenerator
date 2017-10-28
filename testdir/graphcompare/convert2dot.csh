@@ -8,7 +8,7 @@ goto MAIN
 USAGE:
   echo ""
   echo "Usage:"
-  echo "  $0 [-v] INFILE OUTFILE [CGRA_INFO_FILE]"
+  echo "  $0:t [-v] INFILE OUTFILE [CGRA_INFO_FILE]"
   echo ""
   echo "Where:"
   echo "  INFILE can be json or bsa"
@@ -16,8 +16,8 @@ USAGE:
   echo "  <CGRA_INFO_FILE> recommended for comparing bsa/annotated bitstream file(s)"
   echo ""
   echo "Examples:"
-  echo "  $0 bw_annotated bw_annotated.dot ../cgra_info.txt"
-  echo "  $0 bw_design_top.json bw.json.dot"
+  echo "  $0:t bw_annotated bw_annotated.dot ../cgra_info.txt"
+  echo "  $0:t bw_design_top.json bw.json.dot"
   echo ""
   exit
 
