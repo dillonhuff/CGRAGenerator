@@ -3,20 +3,25 @@
 import sys;
 import re;
 
-# from ../decoder/lib import cgra_info
-sys.path.append("../decoder")
-from lib import cgra_info
+# # from ../decoder/lib import cgra_info
+# sys.path.append("../decoder")
+# from lib import cgra_info
 
-def main():
-    print '''
-Plan: move this to the library I guess.
-    '''
-    test_ctsr()
-    test_ctsc()
+# Should be in same dir as this one, yes?
+import cgra_info
+
+
+
+# def main():
+#     print '''
+# Plan: move this to the library I guess.
+#     '''
+#     test_ctsr()
+#     test_ctsc()
 
 def test_ctsr():
-    cgra_filename = get_default_cgra_info_filename()
-    cgra_info.read_cgra_info(cgra_filename)
+#     cgra_filename = get_default_cgra_info_filename()
+#     cgra_info.read_cgra_info(cgra_filename)
 
     track = 0
 
@@ -40,8 +45,8 @@ def test_ctsr():
     print ""
 
 def test_ctsc():
-    cgra_filename = get_default_cgra_info_filename()
-    cgra_info.read_cgra_info(cgra_filename)
+#     cgra_filename = get_default_cgra_info_filename()
+#     cgra_info.read_cgra_info(cgra_filename)
 
     track = 0
 
@@ -214,18 +219,19 @@ def printpath(begin,path,end):
     return
 
 
-def get_default_cgra_info_filename():
-    '''
-    Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
-    '''
-    import os
-    mydir = os.path.dirname(os.path.realpath(__file__))
-    cgra_filename = mydir + "../decoder/examples/cgra_info.txt"
-
-    VERBOSE=0
-    # global verbose #(implied because use before def)
-    if VERBOSE: print("I think I am here:\n  %s" % mydir)
-    if VERBOSE: print("Default cgra_info file is\n  %s" % cgra_filename)
-    return cgra_filename
-
-main()
+# def get_default_cgra_info_filename():
+#     '''
+#     Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
+#     '''
+#     import os
+#     mydir = os.path.dirname(os.path.realpath(__file__))
+#     cgra_filename = mydir + "../decoder/examples/cgra_info.txt"
+# 
+#     VERBOSE=0
+#     # global verbose #(implied because use before def)
+#     if VERBOSE: print("I think I am here:\n  %s" % mydir)
+#     if VERBOSE: print("Default cgra_info file is\n  %s" % cgra_filename)
+#     return cgra_filename
+# 
+# main()
+# 
