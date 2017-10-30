@@ -4,6 +4,12 @@
 
 # Usage: myconvert gray.png gray.raw
 
+set VERBOSE
+if ("$1" == "-q") then
+  unset VERBOSE
+  shift
+endif
+
 set input = $1
 set output = $2
 
@@ -22,5 +28,7 @@ tail -c $nbytes $tmp > $output
 # To check the result
 (head -3 $tmp; cat $output) > $tmpdir/verify.pgm
 
-echo "Converted $input to $output...to verify result, do:"
-echo "  gwenview $tmpdir/verify.pgm"
+if ($?VERBOSE) then
+  echo "Converted $input to $output...to verify result, do:"
+  echo "  gwenview $tmpdir/verify.pgm"
+endif

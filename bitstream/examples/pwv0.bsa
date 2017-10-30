@@ -1,0 +1,33 @@
+00020000 00000001
+# data[(3, 0)] : @ tile (0, 0) connect wire 1 (in_BUS16_S1_T1) to a
+F1000000 FFFFFFFF
+FF000000 000000FF
+# data[(4, 0)] : op = output
+00020001 00000000
+# data[(3, 0)] : @ tile (0, 1) connect wire 0 (in_BUS16_S1_T0) to a
+00050001 00003000
+# data[(13, 12)] : @ tile (0, 1) connect wire 3 (pe_out_res) to out_BUS16_S1_T1
+F1000001 00000002
+# data[(15, 0)] : init `b` reg with const `2`
+FF000001 0000800B
+# data[(4, 0)] : op = mul
+# data[(13, 13)] : read from reg `b`
+# data[(15, 15)] : read from wire `a`
+00050002 00000C00
+# data[(11, 10)] : @ tile (0, 2) connect wire 3 (pe_out_res) to out_BUS16_S1_T0
+F0000002 FFFFFFFF
+F1000002 FFFFFFFF
+FF000002 000000F0
+# data[(4, 0)] : op = input
+01050004 00000000
+00050005 00800000
+# data[(23, 22)] : @ tile (0, 5) connect wire 2 (in_BUS16_S3_T1) to out_BUS16_S2_T1
+00050006 00200000
+# data[(21, 20)] : @ tile (0, 6) connect wire 2 (in_BUS16_S3_T0) to out_BUS16_S2_T0
+# I/O Summary:
+# OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+# INPUT  tile  2 (0,2) / out_BUS16_S1_T0 / wire_0_2_BUS16_S1_T0
+  <io name='ioin' type='source'>
+    <wire_name>wire_0_2_BUS16_S1_T0</wire_name>
+  <io name='ioout' type='sink'>
+    <wire_name>wire_1_0_BUS16_S3_T1</wire_name>

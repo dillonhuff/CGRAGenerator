@@ -416,7 +416,9 @@ def connectionpoint(tileno, wirename):
             print "ERROR Invalid wire name '%s' in memtile %d" % (wirename,tileno)
             print "ERROR Should have this format: 'out1_s2t3'"
             sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
-            sys.exit(-1)
+            # sys.exit(-1)
+            print "Can we recover?  Default to 10,10"; return (10,10)
+
 
     ########################################################################
     # TODO/FIXME maybe this should be a separate add_fudge() function
@@ -742,7 +744,7 @@ def draw_pe(cr, opname, A, B):
             # FIXME (below)
             if (label == ''):
                 msg = "WARNING neva-2 crashes when label=''; "\
-                      + "changing to label=' '"
+                      + "changing to label=' '\n"
                 print_once(msg)
                 label = ' '
             (text_ulx, text_uly, text_w, text_h, nextx, nexty) = cr.text_extents(label)
@@ -873,8 +875,24 @@ def get_connection_type(c):
     elif (c == "mem_out"):
         type = "pe_out"
         print_once( "\nWARNING MEMHACK modeling '%s' as '%s'" % (c, type) )
+
+    elif (c == "pe_out_p"):
+        type = "pe_out"
+        print "ERROR Don't know what to do with '%s' (yet)" % c
+        print "Will attempt recovery; modeling '%s' as '%s'" % (c,type)
+        print ""
+
+
+    # elif (c == "wen" or c == 'wdata'):
+    elif c in ("wen", 'wdata', 'rdata'):
+        type = "pe_in"
+        print "ERROR Don't know what to do with '%s' (yet)" % c
+        print "Will attempt recovery; modeling '%s' as '%s'" % (c,type)
+        print ""
+
     else:
         print "ERROR Unknown type for connection '%s'" % c
+        sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
         sys.exit(-1)
 
     DBG=0
@@ -3194,6 +3212,42 @@ def process_decoded_bitstream(bs):
         # 'pe_out_res' => 'pe_out'
         line = re.sub("pe_out_res", "pe_out", line)
 
+
+        # So now we're doing this thing, with the " ; 26" on the end.
+        # data[(1, 0)] : @ tile (4, 1) connect wire 1 (in_BUS16_S2_T0) to out_BUS16_S0_T0 ; 26
+        line2 = re.sub(r" ; [0-9]+", "", line)
+        if (line2 != line):
+            print "WARNING rewrote line"
+            print "BEFORE: " + line
+            print "AFTER:  " + line2
+            print ""
+            line = line2
+
+
+        if re.search("REG_", line):
+            if DBG: print "OOOOF it's a REG line"
+
+        # NEW
+        # data[(13, 12)] : op_b_in: REG_CONST
+        # data[(15, 14)] : op_a_in: REG_BYPASS
+        
+        # OLD
+        # data[(13, 13)] : read from reg `b`
+        # data[(15, 15)] : read from wire `a`
+
+        parse = re.search(".* op_(.)_in: REG_CONST", line)
+        if (parse):
+            if DBG: print "BEFORE: " + line
+            line = "# data[(13, 13)] : read from reg `%s`" % parse.group(1)
+            if DBG: print "AFTER:  " + line
+
+
+        parse = re.search(".* op_(.)_in: REG_BYPASS", line)
+        if (parse):
+            if DBG: print "BEFORE: " + line
+            line = "# data[(13, 13)] : read from wire `%s`" % parse.group(1)
+            if DBG: print "AFTER:  " + line
+
         # New regime uses "op_a_in" and 'op_b_in" instead of just a and b
         line = re.sub("op_a_in", "a", line)
         line = re.sub("op_b_in", "b", line)
@@ -3203,10 +3257,28 @@ def process_decoded_bitstream(bs):
 
 
 
+
+
+
         # "to a" => "to wireA", "to b" => "to wireB"
         # FIXME so egregious!!!
         line = re.sub("to a", "to wireA", line)
         line = re.sub("to b", "to wireB", line)
+
+
+
+        # Okay this is even more terrible FIXME TODO
+        # Cannot handle one-bit wires (yet), so rewrite as 16-bit
+        line2 = re.sub('_BUS1_', "_BUS16_", line)
+        # print "FOO %s" % line;         print "BOO %s" % line2;         print ""
+
+        if (line != line2):
+            print "WARNING Rewriting 1b wire(s) as 16b bus(es):"
+            print "WARNING Was: '%s'" % line
+            print "WARNING Now: '%s'" % line2
+            print ""
+            line = line2
+
 
         # 'out_BUS16_S0_T0' => 'out_s0t0'
         line = re.sub(r'(in|out)_BUS16_S(\S+)_T(\S+)', r"\1_s\2t\3", line)
@@ -3215,10 +3287,23 @@ def process_decoded_bitstream(bs):
         # Rewrite crazy memtile wire names
         # 'out_1_BUS16_0_0'        => 'out1_s0t0'
         # 'sb_wire_in_1_BUS16_3_2' => 'sb_wire_in1_s3t2'
-        line2 = re.sub(r'(in|out)_([01])_BUS16_(\S+)_(\S+)', r"\1\2_s\3t\4", line)
+        line2 = re.sub(r'(in|out)_([01])_BUS16_(\d+)_(\d+)', r"\1\2_s\3t\4", line)
         if DBG and (line != line2):
             print "Rewrote line\n   '%s' =>\n   '%s'" % (line,line2)
         line = line2
+
+        # Or maybe sometimes it looks like this:
+        # 'out_1_BUS16_S0_T0'        => 'out1_s0t0'
+        # 'sb_wire_in_1_BUS16_S3_T2' => 'sb_wire_in1_s3t2'
+        line2 = re.sub(r'(in|out)_([01])_BUS16_S(\S+)_T(\S+)', r"\1\2_s\3t\4", line)
+        if DBG and (line != line2):
+            print "Rewrote line\n   '%s' =>\n   '%s'" % (line,line2)
+        line = line2
+
+
+
+
+
 
         # 'data[(1, 0)] : connect wire 3 (X) to Y'
         # => 'Y <= X'

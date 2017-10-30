@@ -16,12 +16,18 @@ MAIN:
 set scripthome = $0:h
 if ("$scripthome" == "$0") set scripthome = .
 
+unset VERBOSE;
+
 set bs   = 'None'
 set bsa  = 'None'
 set cgra = 'None'
 while ($#argv)
   # echo "Found switch '$1'"
   switch ("$1")
+    case '-q':
+      unset VERBOSE; breaksw
+    case '-v':
+      set VERBOSE; breaksw
     case '-cgra':
       set cgra = "$2"; shift; breaksw
     default:
@@ -37,6 +43,10 @@ while ($#argv)
   shift;
 end
 
+set vswitch = '-q'
+if ($?VERBOSE) set vswitch = '-v'
+
+
 foreach f ($bs $bsa $cgra)
   test -f $f || echo ""
   test -f $f || echo "ERROR Cannot find file '$f'"
@@ -51,11 +61,11 @@ end
 # ... connect wire 0 (in_BUS16_S0_T0) to b
 egrep -v 'connect wire 0 .*to [soi]' $bsa > /tmp/tmp$$.bsa
 
-$scripthome/decode.py $bs -cgra $cgra \
+$scripthome/decode.py $vswitch $bs -cgra $cgra \
   | sed '/Summary/,$d' \
   > /tmp/tmp$$.bsd
 
-set echo
+if ($?VERBOSE) set echo
 diff /tmp/tmp$$.{bsa,bsd}
 
 # CLEAN UP!!!

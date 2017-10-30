@@ -14,42 +14,59 @@ if (! -e $tmpdir) then
 endif
 
 
-# setenv CGRA_GEN_USE_MEM 1
+# ALWAYS BE USING MEMORY
+setenv CGRA_GEN_USE_MEM 1
+
+
 # setenv CGRA_GEN_ALL_REG 1
 
-# setenv OLDMEM
-
 # Travis flow (CGRAFlow/.travis.yml)
-#  travis script calls "travis-test" to do the initial generate
+#  travis script calls "generate.csh" to do the initial generate
 #  travis script calls PNR to build map, io info from generated cgra_info.txt
 #  builds the full parrot
 
 # Travis flow (CGRAGenerator/.travis.yml)
-#  travis script calls "travis-test" to do the initial generate
+#  travis script calls "generate.csh" to do the initial generate
 #  travis script calls run.csh using pre-built bitstream w/embedded io info
 #  builds small parrot
 
 # Local flow (test):
-#  run.csh calls travis-test to do the initial generate
+#  run.csh calls generate.csh to do the initial generate
 #  run.csh uses pre-built io, map files in bitstream/example3 to build config file
 # builds small parrot
 
 # DEFAULTS
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
-# set config    = ../../bitstream/examples/calebscript.bs
-# set config    = ../../bitstream/examples/cd.bs
 
-# New memtile regime swaps r,c tile addresses HA
-# set config    = ../../bitstream/examples/cd-swizzled.bs
+# set config = ../../bitstream/examples/cd2.bs  # cd2 broken i think
+# set config = ../../bitstream/examples/cd.bsv1
+# set config = ../../bitstream/examples/cd387-good.bs
+set config   = ../../bitstream/examples/pointwise_handcrafted.bs
 
-# No, use swizzler instead
-# cd2 is suspect, may be WRONG
-set config    = ../../bitstream/examples/cd2.bs  # cd2 broken i think
-set config    = ../../bitstream/examples/cd.bsv1
-set config    = ../../bitstream/examples/cd387-good.bs
 
-# works under new regime: cd2, cd387
+# Set config conditionally depending on current branch
+# bsview = v0, master = v1, srdev = v2
+set branch = `git branch | grep '^*'`
+
+# In travis, 'git branch' returns something like
+#   "* (HEAD detached at 09a4672)"
+#   "  master"
+#
+if (`expr "$branch" : ".*detached"`) then
+  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
+else
+  set branch = `git branch | grep '^*' | awk '{print $2}'`
+endif
+
+echo "run.csh: Found branch '$branch'"
+
+set echo
+if ("$branch" == "srdev")  set config = ../../bitstream/examples/pwv2.bs
+if ("$branch" == "master") set config = ../../bitstream/examples/pwv1.bs
+unset echo
+
+echo 1. config = $config
 
 set DELAY = '0,0'
 
@@ -86,6 +103,8 @@ if ($#argv == 1) then
   endif
 endif
 
+echo config = $config 2
+
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
 # CLEANUP
@@ -114,6 +133,10 @@ while ($#argv)
 
     case '-q':
       unset VERBOSE; breaksw;
+    case '-v':
+      set VERBOSE; breaksw;
+
+
 
     # DEPRECATED SWITCHES
     case '-4x4':
@@ -122,7 +145,8 @@ while ($#argv)
 
     case -usemem:
     case -newmem:
-      setenv CGRA_GEN_USE_MEM 1;
+      echo "WARNING Switch '$1' no longer valid"; breaksw
+      # setenv CGRA_GEN_USE_MEM 1; # always set
       breaksw;
 
 #     case -egregious_conv21_hack:
@@ -168,6 +192,7 @@ while ($#argv)
 
     # Unused / undocumented for now
     case -oldmem:
+      echo "WARNING Switch '$1' no longer valid"; breaksw
       unsetenv CGRA_GEN_USE_MEM
       unsetenv CGRA_GEN_ALL_REG
       breaksw
@@ -194,19 +219,26 @@ if (! -e "$testbench") then
   exit -1
 endif
 
-# Backslashes line up better when printed...
-echo "Running with the following switches:"
-echo "$0 top_tb.cpp \"
-echo "   $GENERATE                    \"
-echo "   -config   $config   \"
-#echo "   -io       $iofile   \"
-echo "   -input    $input  \"
-echo "   -output   $output    \"
-echo "   -delay   $DELAY    \"
-if ($?tracefile) then
-  echo "   -trace $tracefile \"
+if ($?VERBOSE) then
+  # Backslashes line up better when printed...
+  echo "Running with the following switches:"
+  echo "$0 top_tb.cpp \"
+  echo "   $GENERATE                    \"
+  echo "   -config   $config   \"
+  #echo "   -io       $iofile   \"
+  echo "   -input    $input  \"
+  echo "   -output   $output    \"
+  echo "   -delay   $DELAY    \"
+  if ($?tracefile) then
+    echo "   -trace $tracefile \"
+  endif
+  echo "   -nclocks  $nclocks                 \"
 endif
-echo "   -nclocks  $nclocks                 \"
+
+if (! -e $config) then
+  echo "run.csh: ERROR Cannot find config file '$config'"
+  exit -1
+endif
 
 # Turn nclocks into an integer.
 set nclocks = `echo $nclocks | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
@@ -224,10 +256,10 @@ if ("$GENERATE" == "-nogen") then
 
 else
   # Build CGRA 
-  echo "Building CGRA because you asked for it with '-gen'..."
+  if ($?VERBOSE) echo "Building CGRA because you asked for it with '-gen'..."
 
   if ($?VERBOSE) then
-    ../../bin/generate.csh || exit -1
+    ../../bin/generate.csh -v || exit -1
   else
     ../../bin/generate.csh -q || exit -1
   endif
@@ -240,15 +272,15 @@ endif
 unset embedded_io
 grep "FFFFFFFF" $config > /dev/null && set embedded_io
 if (! $?embedded_io) then
-  echo "Bitstream appears NOT to have embedded I/O information."
-  echo "We don't support that no more."
+  echo "ERROR run.csh: Bitstream appears NOT to have embedded I/O information."
+  echo "ERROR run.csh: We don't support that no more."
   exit -1
-else
-  echo; echo "Bitstream appears to have embedded i/o information (as it should)."
+else if ($?VERBOSE) then
+  echo
+  echo "Bitstream appears to have embedded i/o information (as it should)."
+  echo "Will strip out IO hack from '$config'"
+  echo
 endif
-
-echo "Will strip out IO hack from '$config'"
-echo
 
 # Nowadays decoder needs cgra_info to work correctly
 set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
@@ -257,8 +289,9 @@ set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
 set decoded = $tmpdir/{$config:t}.decoded
 if (-e $decoded) rm $decoded
 
-# Possible locations for pnr stuff
-ls ../../.. | grep -i smt
+# Why?  Leftover debug stuff I guess?
+# # Possible locations for pnr stuff
+# ls ../../.. | grep -i smt
 
 
 # echo \
@@ -266,16 +299,54 @@ ls ../../.. | grep -i smt
 # ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
 # 
 # NOTE -v is messy and should be avoided unless you're trying to debg things.
-echo                    decode.py -cgra $cgra_info $config
-../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded || exit -1
+echo           run.csh: decode.py -cgra $cgra_info $config
+set VERBOSE
+if ($?VERBOSE) then
+  ../../bitstream/decoder/decode.py -cgra $cgra_info $config | tee $decoded || exit -1
+else
+  ../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded || exit -1
+endif
+unset VERBOSE
 
 
 # Show IO info derived from bitstream
-echo; sed -n '/O Summary/,$p' $decoded; echo
+if ($?VERBOSE) then
+  echo; sed -n '/O Summary/,$p' $decoded; echo
+else
+  echo; sed -n '/O Summary/,$p' $decoded | grep PUT | sort; echo
+endif
+
 
 # Clean bitstream (strip out comments and hacked-in IO info)
 set newbs = $decoded.bs
 if (-e $newbs) rm $newbs
+
+##############################################################################
+unset LUT_HACK
+if ($?LUT_HACK) then
+  echo
+  echo '  LUT hack'
+  echo '  LUT hack'
+  echo '  LUT hack'
+  echo '  Temporarily stripping out LUT code...'
+  echo ''
+  set lut_hack_en = "^FF00.... 00000080"
+  set lut_hack_ld = "^0000.... ........"
+
+  cat $decoded \
+    | egrep -v "$lut_hack_en" \
+    | egrep -v "$lut_hack_ld" \
+    > $tmpdir/lut_hack
+
+  echo diff $decoded $tmpdir/lut_hack
+  diff $decoded $tmpdir/lut_hack | grep -v d
+  echo ""
+
+  mv $tmpdir/lut_hack $decoded 
+endif
+##############################################################################
+
+
 
 # grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
 cat $decoded \
@@ -283,24 +354,29 @@ cat $decoded \
   | egrep -v '^F100.... FFFFFFFF' \
   | egrep -v '^FF00.... 000000F0' \
   | egrep -v '^FF00.... 000000FF' \
-  | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
-  > $newbs
+  > $tmpdir/decode2
+
 
 # This is small and SHOULD NOT BE OPTIONAL!
-# if ($?VERBOSE) then
-  echo diff $config $newbs
-  diff $config $newbs | grep -v d
-# endif
-
+# Meh.  Now it's optional.
+if ($?VERBOSE) then
+  echo diff $decoded $tmpdir/decode2
+  diff $decoded $tmpdir/decode2 | grep -v d
+endif
 
 # Another useful test
-set ndiff = `diff $config $newbs | grep -v d | wc -l`
+set ndiff = `diff $decoded $tmpdir/decode2 | grep -v d | wc -l`
 if ("$ndiff" == "5") then
-  echo "Five lines of diff.  That's good!"
+  if ($?VERBOSE) echo "run.csh: Five lines of diff.  That's good!"
 else
-  echo ERROR Looks like we messed up the IO
+  echo "ERROR run.csh: Looks like we messed up the IO"
   exit -1
 endif
+
+# Strip out comments from decoded bitstream
+cat $tmpdir/decode2\
+  | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
+  > $newbs
 
 set config = $newbs
 
@@ -308,42 +384,28 @@ set config = $newbs
 # set lno = 321; set tmpf = $newbs; echo "FOO-$lno"; head -1 $tmpf; echo
 
 
-echo ""
-echo '------------------------------------------------------------------------'
-echo "BEGIN find input and output wires"
-echo ""
+# This is what we're looking for:
+#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
+#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
+#     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
+set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
+set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
 
+if ($?VERBOSE) then
+    echo ""
+    echo '------------------------------------------------------------------------'
+    echo "BEGIN find input and output wires"
+    echo ""
     echo "  USING I/O WIRE NAMES DERIVED FROM BITSTREAM"
     echo ""
-
-    # This is what we're looking for:
-    #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
-    #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
-    #     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
-   
-    set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
-    # echo "  IN  $inwires"
-
-    set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
-    # echo "  OUT $outwires"
-
-    # set yikeswires = `egrep '^# YIKES' $decoded | awk '{print $NF}'`
-    # if ("$yikeswires" != "") then
-    #     set yikeswires = "-yikeswires '$yikeswires'"
-    # endif
-    # echo "  YIKES $yikeswires"
-    
-    # echo
     echo "  inwires  = $inwires"
     echo "  outwires = $outwires"
-    # echo "  yikeswires = $yikeswires"
     echo
+    echo "END find input and output wires"
+    echo ""
+    echo '------------------------------------------------------------------------'
+endif
 
-echo "END find input and output wires"
-
-echo ""
-echo '------------------------------------------------------------------------'
-# echo ""
 
 set vdir = ../../hardware/generator_z/top/genesis_verif
 if (! -e $vdir) then
@@ -354,10 +416,12 @@ if (! -e $vdir) then
   exit -1
 endif
 
-echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
-    echo
-    echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
-    echo
+# echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
+#     echo
+#     echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
+#     echo
+
+    echo "run.csh: Inserting IO wirenames into verilog top module '$vdir/top.v'..."
     ./run-wirehack.csh \
         -inwires "$inwires" \
         -outwires "$outwires" \
@@ -365,7 +429,7 @@ echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
 
     if ($?VERBOSE) cat $tmpdir/wirehack.log
 
-echo END top.v manipulation
+# echo END top.v manipulation
 
 echo ''
 echo '------------------------------------------------------------------------'
@@ -392,7 +456,7 @@ echo "Building the verilator simulator executable..."
     # To:
     #   assign wen = WENHACK
 
-    ls -l $vdir
+    # ls -l $vdir
     mv $vdir/memory_core_unq1.v $tmpdir/memory_core_unq1.v.orig
     cat $tmpdir/memory_core_unq1.v.orig \
       | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
@@ -416,6 +480,10 @@ echo "Building the verilator simulator executable..."
 
   endif
 
+echo ''
+echo '------------------------------------------------------------------------'
+echo "run.csh: Build the simulator..."
+
   # Build the necessary switches
 
   # Gather the verilog files for verilator command line
@@ -435,12 +503,16 @@ echo "Building the verilator simulator executable..."
 
   # Run verilator to build the simulator.
 
+  # build C++ project
+
   echo
-  echo verilator -Wall $myswitches --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+  echo verilator -Wall $myswitches --cc --exe $testbench \
+    -y $vdir $vfiles --top-module $top \
     | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
   echo
 
-  verilator $myswitches -Wall $myswitches --cc --exe $testbench -y $vdir $vfiles --top-module $top \
+  verilator $myswitches -Wall $myswitches --cc --exe $testbench \
+    -y $vdir $vfiles --top-module $top \
     >& $tmpdir/verilator.out
 
   set verilator_exit_status = $status
@@ -459,14 +531,8 @@ echo "Building the verilator simulator executable..."
 
   if ($verilator_exit_status != 0) exit -1
 
-echo ''
-echo '------------------------------------------------------------------------'
-echo "Build the simulator..."
-
-  # build C++ project
-
   echo
-  echo "# Build testbench"
+  echo "run.csh: Build the testbench..."
 
   if ($?VERBOSE) then
     echo
@@ -477,7 +543,7 @@ echo "Build the simulator..."
 
   echo
   echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
-  echo
+  echo "make V$top -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
   make \
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
     -j -C obj_dir/ -f V$top.mk V$top \
@@ -490,9 +556,9 @@ echo "Build the simulator..."
   endif
 
 echo '------------------------------------------------------------------------'
-echo "Run the simulator..."
+echo "run.csh: Run the simulator..."
 echo ''
-echo '  First prepare input and output files...'
+if ($?VERBOSE) echo '  First prepare input and output files...'
 
   # Prepare an input file
   #   if no input file requested => use random numbers generated internally
@@ -505,21 +571,27 @@ echo '  First prepare input and output files...'
 
   else if ("$input:e" == "png") then
     # Convert to raw format
-    echo "  Converting input file '$input' to '.raw'..."
-    echo "  io/myconvert.csh $input $tmpdir/input.raw"
-    echo
-    echo -n "  "
-    io/myconvert.csh $input $tmpdir/input.raw
+    if ($?VERBOSE) then
+      echo "  Converting input file '$input' to '.raw'..."
+      echo "  io/myconvert.csh $input $tmpdir/input.raw"
+      echo
+      echo -n "  "
+      io/myconvert.csh $input $tmpdir/input.raw
+    else
+      io/myconvert.csh -q $input $tmpdir/input.raw
+    endif
     set in = "-input $tmpdir/input.raw"
 
   else if ("$input:e" == "raw") then
-    echo "Using raw input from '$input'..."
-    echo cp $input $tmpdir/input.raw
+    if ($?VERBOSE) then
+      echo "Using raw input from '$input'..."
+      echo cp $input $tmpdir/input.raw
+    endif
     cp $input $tmpdir/input.raw
     set in = "-input $tmpdir/input.raw"
 
   else
-    echo "ERROR Input file '$input' has invalid extension"
+    echo "ERROR run.csh: Input file '$input' has invalid extension"
     exit -1
 
   endif
@@ -542,8 +614,7 @@ echo '  First prepare input and output files...'
   endif
 
   echo
-  echo "# Run executable simulation"
-  echo -n " TIME NOW: "; date
+  echo "run.csh: Run executable simulation"
 
   # 00020: Two times 19 = 38  *PASS*
   # 00021: Two times 22 = 44  *PASS*
@@ -552,23 +623,33 @@ echo '  First prepare input and output files...'
   # 00058: Two times 31 = 62  *PASS*
   # 00059: Two times 29 = 58  *PASS*
 
-  set quietfilter = (grep -v "scanned config")
-  if ($?VERBOSE) set quietfilter = (cat)
-
-  set qf2 = (grep -v "^000[23456789].*Two times")
-  if ($?VERBOSE) set qf2 = (cat)
-
-
-
-  echo "Using bitstream '$config'..."
+  # For 'quiet' execution, use these two filters to limit output;
+  # Otherwise just cat everything to stdout
+  if (! $?VERBOSE) then
+    set quietfilter = (grep -v "scanned config")
+    set qf2 = (grep -v "^000[23456789].*Two times")
+  else
+    set quietfilter = (cat)
+    set qf2         = (cat)
+  endif
 
   if ($?VERBOSE) then
     echo
-    echo "BITSTREAM:"
+    echo "BITSTREAM '$config':"
     cat $config
   endif
 
-  set echo
+  echo
+  echo "run.csh: TIME NOW: `date`"
+  echo "run.csh: V$top -output $output:t"
+
+  # OOPS big parrot won't work in travis if output gets filtered...
+  # Must have the printf every 10K cycles
+  set quietfilter = (cat)
+  set qf2         = (cat)
+
+
+  if ($?VERBOSE) set echo
     obj_dir/V$top \
       -config $config \
       $in \

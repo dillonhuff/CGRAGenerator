@@ -303,7 +303,7 @@ def sb_decode(sb,RR,DDDDDDDD):
 global CGRA
 CGRA = False
 
-def read_cgra_info(filename, grid='8x8'):
+def read_cgra_info(filename, grid='8x8', verbose=False):
     # https://docs.python.org/3/library/xml.etree.elementtree.html
 
     # Default config file is e.g. 'cgra_info_8x8.txt' in this directory
@@ -318,7 +318,7 @@ def read_cgra_info(filename, grid='8x8'):
     global CGRA
     import xml.etree.ElementTree
     try:
-        sys.stderr.write("Using config file '%s'\n\n" % filename)
+        if verbose: sys.stderr.write("Using config file '%s'\n\n" % filename)
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
         return
     except:
