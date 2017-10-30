@@ -345,6 +345,10 @@ def read_cgra_info(filename, grid='8x8', verbose=False):
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
         sys.stderr.write("WARNING loaded default '%s'\n\n" % filename)
 
+def ntiles():
+    '''How many tiles?'''
+    return len(CGRA.findall('tile'))
+
 def tileno2rc(tileno):
     '''
     Search CGRA xml data structure with tile info e.g.
