@@ -341,7 +341,7 @@ config_data
 //;     if ($tile_section!=0) {next}
 //;#     print "NB:create tile $tile for location $tile_loc for i=$i j=$j\n";
 //;     my $options = "";
-//;     my $tile_id = "${tile_type}_${tile_loc}";
+//;     my $tile_id = sprintf("%s_0x%X", $tile_type, $tile_count);
 //;#Add PE specific parameters from the tile config to the generate command
 //;#All paramters in the tile_config hash except type, tile_height/width are passed to the generator
 //;     # while( my ($f, $v) = each %$tile_config->{ $tile_type } ) { # ref use DEPRECATED
