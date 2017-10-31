@@ -8,7 +8,7 @@
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../sb/sb.vp \
   ../cb/cb.vp \
-  ../pe_tile/pe_tile.vp top.vp \
+#  ../pe_tile/pe_tile.vp top.vp \
   \
   ../pe_new/pe/rtl/test_pe_red.svp \
   ../pe_new/pe/rtl/test_pe_dual.vpf \
