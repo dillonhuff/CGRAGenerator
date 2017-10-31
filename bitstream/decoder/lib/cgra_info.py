@@ -347,7 +347,7 @@ def read_cgra_info(filename, grid='8x8', verbose=False):
 
 def ntiles():
     '''How many tiles?'''
-    return len(CGRA.findall('tile'))
+    return len(CGRA.findall('tile')) # length = number of items in list
 
 def tileno2rc(tileno):
     '''
