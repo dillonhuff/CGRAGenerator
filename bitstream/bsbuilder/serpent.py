@@ -390,39 +390,14 @@ def register_folding(DBG=9):
 # 
 # def fold_regop_to_input(n,d): print 'its not plugged in yet'
 
-def fold_input_connected_pe(pe_name, DBG=1):
-    '''assign pe to input tile'''
+def place(name, tileno, src, DBG=0):
+    '''
+    Place "name" in tile "tileno" at location "src"
+    where e.g. local name 'src' = 'pe_out' or 'out_s1t1'
+    '''
 
-    # Route INPUT to folded PE
-    INPUT = nodes['INPUT']
-    INPUT_tileno = INPUT.tileno
-    INPUT_src   = 'in_s1t0'
-    assert INPUT_tileno == 0
-
-    # Place foldable PE in tile 0 with INPUT
-    place(pe_name, INPUT_tileno, 'pe_out')
-
-    # Really?
-    assert INPUT.name   == 'INPUT'
-    assert INPUT.tileno == 0
-    assert INPUT.op1 == False
-    assert INPUT.op2 == False
-    assert INPUT.src == INPUT_src
-
-    # Route src (INPUT) to dst (folded pe op 'op1' or 'op2')
-    src = "T%d_%s" % (INPUT.tileno, INPUT.src)
-    op = nodes[pe_name].addop('INPUT')
-    dst = "T%d_%s" % (INPUT.tileno, op)
-    add_route('INPUT', pe_name, INPUT.tileno, src, dst)
-
-    # Mark this route COMPLETED
-    finish_route('INPUT', pe_name)
-
-
-
-
-def place(name, tileno, src,DBG=0):
-    '''Place "name" in tile "tileno" at location "src"'''
+    if   is_pe(name):  assert src ==  'pe_out'
+    elif is_mem(name): assert src == 'mem_out'
 
     n = nodes[name]
     if n.placed:
@@ -441,7 +416,7 @@ def place(name, tileno, src,DBG=0):
     assert src not in resources[tileno]
     
     if DBG: print "# Placed '%s' in tile %d at location '%s'" % (name, tileno, src)
-
+    return (0, src)
 
 def add_route(sname, dname, tileno, src_port, dst_port, DBG=1):
     '''
@@ -450,6 +425,13 @@ def add_route(sname, dname, tileno, src_port, dst_port, DBG=1):
     Add ports to netlist for 'src'
     Port names have the form 'T0_in_s1t1'
     '''
+
+    if dst_port == 'choose_op':
+        assert is_pe(dname)
+        op       = nodes[dname].addop(sname)
+        dst_port = "T%d_%s" % (nodes[dname].tileno, op)
+        if DBG: print "# I chose to connect '%s' to '%s'/'%s'" \
+                  % (sname,dname,op)
 
     # Can't route unplaced nodes, right?
     assert nodes[sname].placed == True
@@ -600,15 +582,41 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
     if sname=='INPUT' \
        and is_pe(dname) \
        and ('pe_out' in resources[0]):
+
         print "FOO whhop ther ti tis - avail pe slot in input tile"
 
-        fold_input_connected_pe(dname, DBG=1)
-        assert not ('pe_out' in resources[0])
+        # TODO global INPUTWIRE = 'T0_in_s1t0', INPUTTILE=0
 
+        DBG=1
+        if DBG: print "Connecting '%s' to '%s'" % (sname,dname)
+
+        itile = 0; assert nodes['INPUT'].tileno == itile
+
+        place(dname, itile, 'pe_out')
+        add_route(sname, dname, itile, 'T0_in_s1t0', 'choose_op')
+        finish_route(sname, dname)       
         return
+
+#         print "# Placing pe in INPUT tile..."
+#         place(dname, itile, 'pe_out')
+# 
+#         print "# Routing INPUT to pe..."
+#         add_route(sname, dname, itile, 'T0_in_s1t0', 'choose_op')
+# 
+#         print '# Mark route COMPLETED'
+#         finish_route(sname, dname)       
+# 
+#         # Check that pe_out got removed from INPUT (tile0) resources
+#         assert not ('pe_out' in resources[0])
 
     # Does destination have a home?
     if not is_placed(dname):
+
+        # BOOKMARK
+        # do DBG=1
+        # Figure how to do the first placement INPUT -> mem_1 maybe
+        # Use new connection thingies maybe
+
         # print indent+"No home for '%s'"
         if DBG: print indent+"No home for '%s'" % dname
         if DBG: print indent+"For now just place it randomly"
@@ -624,8 +632,6 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         finish_route(sname,dname)
 
     return (tileno,resource)
-
-
 
 def place_and_route_test(sname,dname,indent='# ',DBG=1):
     if DBG: print indent+"  PNR '%s' -> '%s'" % (sname,dname)
