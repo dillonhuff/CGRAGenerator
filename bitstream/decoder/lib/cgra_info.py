@@ -30,6 +30,21 @@ use the data structure like this sorta
 import re
 import sys
 
+# Index:
+# def extract_field(dword, bith, bitl):
+# def mem_decode(e,DDDDDDDD):
+# def cb_decode(cb,tileno,DDDDDDDD):
+# def sb_decode(sb,RR,DDDDDDDD):
+# def read_cgra_info(filename, grid='8x8', verbose=False):
+# def ntiles():
+# def tileno2rc(tileno):
+# def rc2tileno(row,col):
+# def tiletype(tileno):
+# def tile_exists(tileno):
+# def get_element(EE, TTTT):
+# def test():
+
+
 # def sb_decode_cgra(bitstream_line):
 #     '''
 #     # Given a bitstream line e.g. "00050008 00000003",
@@ -320,7 +335,7 @@ def sb_decode(sb,RR,DDDDDDDD):
 global CGRA
 CGRA = False
 
-def read_cgra_info(filename, grid='8x8', verbose=False):
+def read_cgra_info(filename='', grid='8x8', verbose=False):
     # https://docs.python.org/3/library/xml.etree.elementtree.html
 
     # Default config file is e.g. 'cgra_info_8x8.txt' in this directory
@@ -364,6 +379,15 @@ def tileno2rc(tileno):
                12  13  14  15      (3,0) (3,1) (3,2) (3,3)
 
     '''
+
+    # if not CGRA:
+    # FutureWarning: The behavior of this method will change in future
+    # versions.  Use specific 'len(elem)' or 'elem is not None' test instead.
+    if CGRA is False:
+        print "ERROR cgra_info file not loaded.  Did you do a read_cgra_info()?"
+        print ""
+        assert False
+
     for tile in CGRA.findall('tile'):
         t = int(tile.attrib['tile_addr'])
         r = int(tile.attrib['row'])
