@@ -31,6 +31,12 @@ def test_all():
     print ""
 
     print "########################################"
+    print "# Same thing except vh instead of hv"
+    # BOOKMARK
+
+
+
+    print "########################################"
     print "# End turn takes us further down a mem column"
     connect_tiles(src=0,dst=39,track=0,dir='hv',DBG=1)
     print ""
@@ -47,6 +53,21 @@ def test_all():
     # What happens if tile is straight across from bottom half of mem tile?
     (begin,path,end) =          connect_tiles(8,10, track, DBG=1); print ""
 
+
+
+
+def verify(begin,path,end, result_list, rnum=0, test='ctsr'):
+    # Set result_list to e.g. range(100) if not doing compares.
+    DO_COMPARE = (result_list[0] != 0)
+
+    print '# '
+    print "# Check %s %d" % (test, rnum),
+    print (begin,path,end)
+    if DO_COMPARE:
+        assert (begin,path,end) == result_list[rnum], 'path looks wrong'
+        print "# Result checks out!\n"
+    else:
+        print "# (Use above result for verification.)\n"
 
 def test_ctsr():
     track = 0
@@ -65,47 +86,35 @@ def test_ctsr():
         ('T8_out_s0t0', ['T9_in_s2t0 -> T9_out_s0t0', 'T10_in_s2t0 -> T10_out_s0t0'], 'T3_in_s6t0'),
         ('T8_out_s0t0', ['T9_in_s2t0 -> T9_out_s0t0', 'T10_in_s2t0 -> T10_out_s0t0', 'T3_in_s6t0 -> T3_out_s4t0', 'T11_in_s2t0 -> T11_out_s0t0', 'T12_in_s2t0 -> T12_out_s0t0'], 'T13_in_s2t0')
         ]
-    nresults = len(results)
 
-    def verify(begin,path,end):
-        rnum = nresults-len(results)
-        r=results.pop(0)
-        print '# '
-        print "# Check ctsr %d" % rnum, (begin,path,end)
-        TEST_RESULTS = True
-        if TEST_RESULTS:
-            assert (begin,path,end) == r, 'path looks wrong'
-            print "# Result checks out!\n"
-        else:
-            print "# (Use above result for verification.)\n"
+    testname = 'ctsr'; resno = 0
 
     (begin,path,end) = connect_tiles_same_row( 0, 1, track, DBG=1)
-    verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     (begin,path,end) = connect_tiles_same_row( 0, 2, track, DBG=1)
-    verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     (begin,path,end) = connect_tiles_same_row( 2, 0, track, DBG=1)
-    verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     (begin,path,end) = connect_tiles_same_row( 0, 5, track, DBG=1)
-    verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     (begin,path,end) = connect_tiles_same_row( 5, 0, track, DBG=1)
-    verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     print "# Connect to top half of a memory tile"
     (begin,path,end) = connect_tiles_same_row( 0, 3, track, DBG=1)
-    verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     print "# Connect to bottom half of a memory tile"
     (begin,path,end) = connect_tiles_same_row( 8, 3, track, DBG=1)
-    verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     print "# This one crosses bottom half of a memory tile"
     (begin,path,end) = connect_tiles_same_row( 8, 13, track, DBG=1)
-    verify(begin,path,end)
-
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
 
 def test_ctsc():
@@ -115,50 +124,48 @@ def test_ctsc():
     print "# Begin ctsc testing"
     print ""
 
-    results = range(99)
+    results = range(100)
     nresults = len(results)
-    def verify(begin,path,end):
-        rnum = nresults-len(results)
-        r=results.pop(0)
-        print '# '
-        print "# Check ctsc %d" % rnum, (begin,path,end)
-        TEST_RESULTS = False
-        if TEST_RESULTS:
-            assert (begin,path,end) == r, 'path looks wrong'
-            print "# Result checks out!\n"
-        else:
-            print "# (Use above result for verification.)\n"
 
+    testname = 'ctsc'; resno = 0
     (begin,path,end) = connect_tiles_same_col(0, 8, track, DBG=1)
-    verify(begin,path,end)
+    # verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
+
 
     (begin,path,end) = connect_tiles_same_col(0,14, track, DBG=1)
-    verify(begin,path,end)
+    # verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
+
 
     (begin,path,end) = connect_tiles_same_col(14,0, track, DBG=1)
-    verify(begin,path,end)
+    # verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
+
 
     (begin,path,end) = connect_tiles_same_col(0,36, track, DBG=1)
-    verify(begin,path,end)
+    # verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
+
 
     (begin,path,end) = connect_tiles_same_col(36,0, track, DBG=1)
-    verify(begin,path,end)
+    # verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
-
-    # What happens if we try to make a path through mem column?
+    print "# What happens if we try to make a path through mem column?"
     (begin,path,end) = connect_tiles_same_col(3,45,track,DBG=1)
-    verify(begin,path,end)
+    # verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
-
-    # What happens if we try to make a path UP through mem column?
+    print "# What happens if we try to make a path UP through mem column?"
     (begin,path,end) = connect_tiles_same_col(45,3,track,DBG=1)
-    verify(begin,path,end)
-
+    # verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     print "# Connect adjacent NS mem tiles"
     (begin,path,end) = connect_tiles_same_col(3, 17, track, DBG=1)
-    verify(begin,path,end)
-
+    # verify(begin,path,end)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
 def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
     '''tile17 should be row 2, col 3 maybe'''
