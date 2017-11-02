@@ -15,27 +15,31 @@ import cgra_info
 
 DO_TEST=1
 def do_test():
-
-#     print "NEXT: build and execute tests for connect_tiles(any)"
-#     print "test_all()"
-#     sys.exit(1)
-
-    print "connect_tiles TEST-ONLY MODE"
-    print "connect_tiles TEST-ONLY MODE"
-    print "connect_tiles TEST-ONLY MODE"
-
-    # cgra_info.read_cgra_info()
-    # (begin,path,end) = connect_tiles_same_row(0,5,track=0,DBG=1); print ""
-    # sys.exit(0)
-
     if not DO_TEST: return
     cgra_info.read_cgra_info()
 
     test_ctsr()
     test_ctsc()
+    test_all()
 
 def test_all():
     track = 0
+
+    print "########################################"
+    print "# End turn takes us down a mem column"
+    connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=1)
+    print ""
+
+    print "########################################"
+    print "# End turn takes us further down a mem column"
+    connect_tiles(src=0,dst=39,track=0,dir='hv',DBG=1)
+    print ""
+
+    print "########################################"
+    print "# A long path straight down column zero"
+    connect_tiles(src=0,dst=36,track=0,dir='hv',DBG=1)
+    print ""
+
     (begin,path,end) = connect_tiles_same_row(0, 1, track, DBG=1); print ""
     (begin,path,end) = connect_tiles_same_col(0, 8, track, DBG=1); print ""
     (begin,path,end) =          connect_tiles(0,10, track, DBG=1); print ""
@@ -46,42 +50,142 @@ def test_all():
 
 def test_ctsr():
     track = 0
-    (begin,path,end) = connect_tiles_same_row( 0, 1, track, DBG=1); print ""
-    (begin,path,end) = connect_tiles_same_row( 0, 2, track, DBG=1); print ""
-    (begin,path,end) = connect_tiles_same_row( 2, 0, track, DBG=1); print ""
-    (begin,path,end) = connect_tiles_same_row( 0, 5, track, DBG=1); print ""
-    (begin,path,end) = connect_tiles_same_row( 5, 0, track, DBG=1); print ""
 
-    # This one crosses a memory tile in a funny way
-    (begin,path,end) = connect_tiles_same_row(8,13,track,DBG=1); print ""
+    print "########################################"
+    print "# Begin ctsr testing"
+    print ""
+
+    results = [
+        ('T0_out_s0t0', [], 'T1_in_s2t0'),
+        ('T0_out_s0t0', ['T1_in_s2t0 -> T1_out_s0t0'], 'T2_in_s2t0'),
+        ('T2_out_s2t0', ['T1_in_s0t0 -> T1_out_s2t0'], 'T0_in_s0t0'),
+        ('T0_out_s0t0', ['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0', 'T3_in_s2t0 -> T3_out_s0t0', 'T4_in_s2t0 -> T4_out_s0t0'], 'T5_in_s2t0'),
+        ('T5_out_s2t0', ['T4_in_s0t0 -> T4_out_s2t0', 'T3_in_s0t0 -> T3_out_s2t0', 'T2_in_s0t0 -> T2_out_s2t0', 'T1_in_s0t0 -> T1_out_s2t0'], 'T0_in_s0t0'),
+        ('T0_out_s0t0', ['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0'], 'T3_in_s2t0'),
+        ('T8_out_s0t0', ['T9_in_s2t0 -> T9_out_s0t0', 'T10_in_s2t0 -> T10_out_s0t0'], 'T3_in_s6t0'),
+        ('T8_out_s0t0', ['T9_in_s2t0 -> T9_out_s0t0', 'T10_in_s2t0 -> T10_out_s0t0', 'T3_in_s6t0 -> T3_out_s4t0', 'T11_in_s2t0 -> T11_out_s0t0', 'T12_in_s2t0 -> T12_out_s0t0'], 'T13_in_s2t0')
+        ]
+    nresults = len(results)
+
+    def verify(begin,path,end):
+        rnum = nresults-len(results)
+        r=results.pop(0)
+        print '# '
+        print "# Check ctsr %d" % rnum, (begin,path,end)
+        TEST_RESULTS = True
+        if TEST_RESULTS:
+            assert (begin,path,end) == r, 'path looks wrong'
+            print "# Result checks out!\n"
+        else:
+            print "# (Use above result for verification.)\n"
+
+    (begin,path,end) = connect_tiles_same_row( 0, 1, track, DBG=1)
+    verify(begin,path,end)
+
+    (begin,path,end) = connect_tiles_same_row( 0, 2, track, DBG=1)
+    verify(begin,path,end)
+
+    (begin,path,end) = connect_tiles_same_row( 2, 0, track, DBG=1)
+    verify(begin,path,end)
+
+    (begin,path,end) = connect_tiles_same_row( 0, 5, track, DBG=1)
+    verify(begin,path,end)
+
+    (begin,path,end) = connect_tiles_same_row( 5, 0, track, DBG=1)
+    verify(begin,path,end)
+
+    print "# Connect to top half of a memory tile"
+    (begin,path,end) = connect_tiles_same_row( 0, 3, track, DBG=1)
+    verify(begin,path,end)
+
+    print "# Connect to bottom half of a memory tile"
+    (begin,path,end) = connect_tiles_same_row( 8, 3, track, DBG=1)
+    verify(begin,path,end)
+
+    print "# This one crosses bottom half of a memory tile"
+    (begin,path,end) = connect_tiles_same_row( 8, 13, track, DBG=1)
+    verify(begin,path,end)
+
 
 
 def test_ctsc():
     track = 0
-    (begin,path,end) = connect_tiles_same_col(0, 8, track, DBG=1); print ""
-    (begin,path,end) = connect_tiles_same_col(0,14, track, DBG=1); print ""
-    (begin,path,end) = connect_tiles_same_col(14,0, track, DBG=1); print ""
-    (begin,path,end) = connect_tiles_same_col(0,36, track, DBG=1); print ""
-    (begin,path,end) = connect_tiles_same_col(36,0, track, DBG=1); print ""
+
+    print "########################################"
+    print "# Begin ctsc testing"
+    print ""
+
+    results = range(99)
+    nresults = len(results)
+    def verify(begin,path,end):
+        rnum = nresults-len(results)
+        r=results.pop(0)
+        print '# '
+        print "# Check ctsc %d" % rnum, (begin,path,end)
+        TEST_RESULTS = False
+        if TEST_RESULTS:
+            assert (begin,path,end) == r, 'path looks wrong'
+            print "# Result checks out!\n"
+        else:
+            print "# (Use above result for verification.)\n"
+
+    (begin,path,end) = connect_tiles_same_col(0, 8, track, DBG=1)
+    verify(begin,path,end)
+
+    (begin,path,end) = connect_tiles_same_col(0,14, track, DBG=1)
+    verify(begin,path,end)
+
+    (begin,path,end) = connect_tiles_same_col(14,0, track, DBG=1)
+    verify(begin,path,end)
+
+    (begin,path,end) = connect_tiles_same_col(0,36, track, DBG=1)
+    verify(begin,path,end)
+
+    (begin,path,end) = connect_tiles_same_col(36,0, track, DBG=1)
+    verify(begin,path,end)
+
 
     # What happens if we try to make a path through mem column?
-    (begin,path,end) = connect_tiles_same_col(3,45,track,DBG=1); print ""
+    (begin,path,end) = connect_tiles_same_col(3,45,track,DBG=1)
+    verify(begin,path,end)
+
 
     # What happens if we try to make a path UP through mem column?
-    (begin,path,end) = connect_tiles_same_col(45,3,track,DBG=1); print ""
+    (begin,path,end) = connect_tiles_same_col(45,3,track,DBG=1)
+    verify(begin,path,end)
+
+
+    print "# Connect adjacent NS mem tiles"
+    (begin,path,end) = connect_tiles_same_col(3, 17, track, DBG=1)
+    verify(begin,path,end)
+
 
 def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
     '''tile17 should be row 2, col 3 maybe'''
     (rsrc,csrc) = cgra_info.tileno2rc(src)
     (rdst,cdst) = cgra_info.tileno2rc(dst)
-    if DBG: print "# Connect tile %d (r%d,c%d) to tile %d (r%d,c%d)" %\
-       (src,rsrc,csrc,dst,rdst,cdst)
+
+    if DBG:
+        print "# Connect tile %d (r%d,c%d)" % (src,rsrc,csrc),
+        print "to tile %d (r%d,c%d)" % (dst,rdst,cdst),
+        print "on %s path" % dir
+        if is_mem_rc(rdst,cdst):
+            print "# Destination is a memory tile"
 
     # No need for a corner if sr, dst are in same row or col
-    if   rsrc==rdst:
-        return connect_tiles_same_row(src,dst,track,DBG=DBG)
+    (cornerconn,hpath,vpath) = ([],[],[])
+    
+    if rsrc==rdst:
+        if DBG: print "# Both tiles are in same row\n# "
+        (begin,hpath,end) = connect_tiles_same_row(src,dst,track,DBG=DBG-1)
+        if DBG: prettyprint_path(dir, begin, hpath, cornerconn, vpath, end)
+        return (begin,hpath,end)
+
     elif csrc==cdst:
-        return connect_tiles_same_col(src,dst,track,DBG=DBG)
+        if DBG: print "# Both tiles are in same column\n# "
+        (begin,vpath,end) = connect_tiles_same_col(src,dst,track,DBG=DBG-1)
+        if DBG: prettyprint_path(dir, begin, hpath, cornerconn, vpath, end)
+        return (begin,vpath,end)
 
     if dir=='hv':
         # Fist go horizontal (EW), then vertical (NS)
@@ -93,40 +197,55 @@ def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
            % (corn, rcorn, ccorn)
 
         # horizontal path from src to corn
-        if DBG: print "# hpath:",
-        (hbegin,hpath,hend) = connect_tiles_same_row(src,corn,track,DBG=DBG)
-        if DBG: print ""
+        if DBG>1: print "# hpath:",
+        (hbegin,hpath,hend) = connect_tiles_same_row(src,corn,track,DBG=DBG-1)
+        if DBG>1: print "# "
 
         # vert path from corn to dest
-        if DBG: print "# vpath:",
-        (vbegin,vpath,vend) = connect_tiles_same_col(corn,dst,track,DBG=DBG)
-        if DBG: print ""
+        if DBG>1: print "# vpath:",
+        (vbegin,vpath,vend) = connect_tiles_same_col(corn,dst,track,DBG=DBG-1)
+        if DBG>1: print "# "
 
         # In corner tile, connect hend to vbegin
-        cornerconn = "%s -> %s" % (hend,vbegin)
-        final_path = hpath + [cornerconn] + vpath
+        cornerconn = ["%s -> %s" % (hend,vbegin)]
+        if DBG>1: print "# corner:", cornerconn
+        if DBG: print "# "
 
-        if DBG:
-            print "# Begin: %s" % [hbegin]
-            print "# hpath  %s" %  hpath
-            print "# corner %s" % [cornerconn]
-            print "# vpath  %s" %  vpath 
-            print "# End:   %s" % [vend]
-            print "# "
-            print "# Complete path: %s" % final_path
+        # If corner tile is mem, it needs an extra connection
 
-
+        final_path = hpath + cornerconn + vpath
+        if DBG: prettyprint_path(dir, hbegin, hpath, cornerconn, vpath, vend)
         return (hbegin, final_path, vend)
 
-    # hv or vh?
-
+    # TODO WERE IS VH?? FIXME
+    assert False, 'should not be here!!!'
     return (1,2,3)
+
+
+def prettyprint_path(dir, begin, path1, cornerconn, path2, end):
+    if dir == 'hv': (p1,p2) = ('hpath','vpath')
+    else:           (p1,p2) = ('vpath','hpath')
+
+    print "# Begin: %s" % [begin]
+    if path1: print "# %s  %s" % (p1,path1)
+    if cornerconn:  print "# corner %s" % cornerconn
+    if path2: print "# %s  %s" % (p2,path2)
+    if True:  print "# End:   %s" % [end]
+    print "# "
+
+    final_path = path1 + cornerconn + path2
+    print "# Complete path: %s%s%s" % ([begin], final_path,[end])
 
 
 def connect_tiles_same_row(src=0,dst=5,track=0,DBG=0):
 
     (rsrc,csrc) = cgra_info.tileno2rc(src)
     (rdst,cdst) = cgra_info.tileno2rc(dst)
+
+    # If mem tile is 2 rows high, can match rsrc to either rdst or rdst+1
+    if rsrc == (rdst+1) and is_mem_rc(rdst,cdst):
+        # Source row matches bottom half of mem tile
+        rdst = rdst+1
 
     if DBG: print "# Connect tile %d (r%d,c%d) to tile %d (r%d,c%d)" %\
        (src,rsrc,csrc, dst,rdst,cdst)
@@ -214,13 +333,7 @@ def connect_tiles_same_col(src,dst,track,DBG=0):
 def build_wire_rc(r,c,inout,side,track):
     tileno = cgra_info.rc2tileno(r,c)
 
-#     # Need mem offset (mo) on EW sides if row is odd and tile is mem
-#     # mo = 0
-#     # if side==0 or side==2:
-#     mo = mem_offset(r,c,side)
-#     # print "# mo=", mo
-
-    # Need mem offset if row indicates mem tile bottom-half
+    # Need mem offset if row==odd indicates mem tile bottom-half
     if is_mem_rc(r,c) and (r%2==1): mo=4
     else                          : mo=0
 
@@ -229,8 +342,13 @@ def build_wire_rc(r,c,inout,side,track):
 def is_mem_rc(r,c):
     tileno   = cgra_info.rc2tileno(r,c)
     tiletype = cgra_info.tiletype(tileno)
-    # if DBG: print "Tile %d has type '%s'" % (tileno,tiletype)
-    return re.search("^mem", tiletype)
+
+    # print "Tile %d has type '%s'" % (tileno,tiletype)
+
+    # "return re.search()" DOES NOT WORK! (why?)
+    if re.search("^mem", tiletype): return True
+    else:                           return False
+
 
 def printpath(begin,path,end):
     if path == []:
