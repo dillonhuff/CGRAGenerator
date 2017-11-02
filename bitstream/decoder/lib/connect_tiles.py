@@ -13,7 +13,7 @@ import cgra_info
 # INDEX
 # FIXME/TODO build a index
 
-DO_TEST=1
+DO_TEST=0
 def do_test():
     if not DO_TEST: return
     cgra_info.read_cgra_info()
@@ -26,32 +26,48 @@ def test_all():
     track = 0
 
     print "########################################"
-    print "# End turn takes us down a mem column"
-    connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=1)
+    print "# Begin any-to-any testing"
     print ""
+
+    results = range(100)
+    nresults = len(results)
+
+    testname = 'anypath'; resno = 0
+
+    print "########################################"
+    print "# End turn takes us down a mem column"
+    (begin,path,end) = connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=1)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     print "########################################"
     print "# Same thing except vh instead of hv"
-    # BOOKMARK
+    (begin,path,end) = connect_tiles(src=0,dst=17,track=0,dir='vh',DBG=1)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
-
+    # TODO/FIXME more vh tests maybe
 
     print "########################################"
     print "# End turn takes us further down a mem column"
-    connect_tiles(src=0,dst=39,track=0,dir='hv',DBG=1)
-    print ""
+    (begin,path,end) = connect_tiles(src=0,dst=39,track=0,dir='hv',DBG=1)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     print "########################################"
     print "# A long path straight down column zero"
-    connect_tiles(src=0,dst=36,track=0,dir='hv',DBG=1)
-    print ""
+    (begin,path,end) = connect_tiles(src=0,dst=36,track=0,dir='hv',DBG=1)
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
-    (begin,path,end) = connect_tiles_same_row(0, 1, track, DBG=1); print ""
-    (begin,path,end) = connect_tiles_same_col(0, 8, track, DBG=1); print ""
-    (begin,path,end) =          connect_tiles(0,10, track, DBG=1); print ""
+    (begin,path,end) = connect_tiles_same_row(0, 1, track, DBG=1);
+    verify(begin,path,end, results,resno,testname); resno = resno+1
+
+    (begin,path,end) = connect_tiles_same_col(0, 8, track, DBG=1);
+    verify(begin,path,end, results,resno,testname); resno = resno+1
+
+    (begin,path,end) =          connect_tiles(0,10, track, DBG=1);
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
     # What happens if tile is straight across from bottom half of mem tile?
-    (begin,path,end) =          connect_tiles(8,10, track, DBG=1); print ""
+    (begin,path,end) =          connect_tiles(8,10, track, DBG=1);
+    verify(begin,path,end, results,resno,testname); resno = resno+1
 
 
 
@@ -180,54 +196,60 @@ def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
             print "# Destination is a memory tile"
 
     # No need for a corner if sr, dst are in same row or col
-    (cornerconn,hpath,vpath) = ([],[],[])
+    (cornerconn,path1,path2) = ([],[],[])
     
     if rsrc==rdst:
         if DBG: print "# Both tiles are in same row\n# "
-        (begin,hpath,end) = connect_tiles_same_row(src,dst,track,DBG=DBG-1)
-        if DBG: prettyprint_path(dir, begin, hpath, cornerconn, vpath, end)
-        return (begin,hpath,end)
+        (begin,path1,end) = connect_tiles_same_row(src,dst,track,DBG=DBG-1)
+        if DBG: prettyprint_path(dir, begin, path1, cornerconn, path2, end)
+        return (begin,path1,end)
 
     elif csrc==cdst:
         if DBG: print "# Both tiles are in same column\n# "
-        (begin,vpath,end) = connect_tiles_same_col(src,dst,track,DBG=DBG-1)
-        if DBG: prettyprint_path(dir, begin, hpath, cornerconn, vpath, end)
-        return (begin,vpath,end)
+        (begin,path2,end) = connect_tiles_same_col(src,dst,track,DBG=DBG-1)
+        if DBG: prettyprint_path(dir, begin, path1, cornerconn, path2, end)
+        return (begin,path2,end)
 
-    if dir=='hv':
-        # Fist go horizontal (EW), then vertical (NS)
-    
-        # Find the corner tile: same row as src, same col as dst
+    elif dir=='hv':
+        # First go horizontal (EW), then vertical (NS)
+        # Find corner tile: same row as src, same col as dst
         (rcorn,ccorn) = (rsrc,cdst)
+        return connect_through_corner(src,dst,rcorn,ccorn,track,dir,DBG)
+
+    elif dir=='vh':
+        # First go vertical (NS), then horizontal (EW)
+        # Find corner tile: same row as dst, same col as src
+        (rcorn,ccorn) = (rdst,csrc)
+        return connect_through_corner(src,dst,rcorn,ccorn,track,dir,DBG)
+
+    assert False, 'unknown case in connect_tiles()'
+    return (1,2,3)
+
+def connect_through_corner(src,dst,rcorn,ccorn,track=0,dir='hv',DBG=0):
+
         corn = cgra_info.rc2tileno(rcorn,ccorn)
         if DBG: print "# Found corner tile %d (r%d,c%d)"\
            % (corn, rcorn, ccorn)
 
         # horizontal path from src to corn
-        if DBG>1: print "# hpath:",
-        (hbegin,hpath,hend) = connect_tiles_same_row(src,corn,track,DBG=DBG-1)
+        if DBG>1: print "# path1:",
+        (begin1,path1,end1) = connect_tiles(src,corn,track,DBG=0)
         if DBG>1: print "# "
 
         # vert path from corn to dest
-        if DBG>1: print "# vpath:",
-        (vbegin,vpath,vend) = connect_tiles_same_col(corn,dst,track,DBG=DBG-1)
+        if DBG>1: print "# path2:",
+        # (begin2,path2,end2) = connect_tiles(corn,dst,track,DBG=DBG-1)
+        (begin2,path2,end2) = connect_tiles(corn,dst,track,DBG=0)
         if DBG>1: print "# "
 
-        # In corner tile, connect hend to vbegin
-        cornerconn = ["%s -> %s" % (hend,vbegin)]
+        # In corner tile, connect end1 to begin2
+        cornerconn = ["%s -> %s" % (end1,begin2)]
         if DBG>1: print "# corner:", cornerconn
         if DBG: print "# "
 
-        # If corner tile is mem, it needs an extra connection
-
-        final_path = hpath + cornerconn + vpath
-        if DBG: prettyprint_path(dir, hbegin, hpath, cornerconn, vpath, vend)
-        return (hbegin, final_path, vend)
-
-    # TODO WERE IS VH?? FIXME
-    assert False, 'should not be here!!!'
-    return (1,2,3)
-
+        final_path = path1 + cornerconn + path2
+        if DBG: prettyprint_path(dir, begin1, path1, cornerconn, path2, end2)
+        return (begin1, final_path, end2)
 
 def prettyprint_path(dir, begin, path1, cornerconn, path2, end):
     if dir == 'hv': (p1,p2) = ('hpath','vpath')
@@ -245,6 +267,7 @@ def prettyprint_path(dir, begin, path1, cornerconn, path2, end):
 
 
 def connect_tiles_same_row(src=0,dst=5,track=0,DBG=0):
+    if DBG<0: DBG=0 # ugh
 
     (rsrc,csrc) = cgra_info.tileno2rc(src)
     (rdst,cdst) = cgra_info.tileno2rc(dst)
@@ -287,6 +310,7 @@ def connect_tiles_same_row(src=0,dst=5,track=0,DBG=0):
 
 
 def connect_tiles_same_col(src,dst,track,DBG=0):
+    if DBG<0: DBG=0 # ugh
 
     (rsrc,csrc) = cgra_info.tileno2rc(src)
     (rdst,cdst) = cgra_info.tileno2rc(dst)

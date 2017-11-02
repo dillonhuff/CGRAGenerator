@@ -6,7 +6,144 @@ import re;
 # from ../decoder/lib import cgra_info
 sys.path.append("../decoder")
 from lib import cgra_info
-from lib import connect_tiles
+from lib import connect_tiles as CT
+
+GRID_WIDTH  = 8
+GRID_HEIGHT = GRID_WIDTH
+
+# BOOKMARK
+def nearest_mem_tile(node='INPUT', exclude = [], DBG=1):
+    '''
+    Find mem tile nearest to indicated node,
+    excluding tiles in exclude list
+    '''
+
+    mytileno = nodes[node].tileno
+    (myrow,mycol) = rc2tileno(mytileno)
+    if DBG: print \
+       "# Looking for memtile nearest to node '%s' in tile %d (r%d,c%d)" \
+       % (node, mytileno, myrow, mycol)
+
+    for i in range( max(GRID_WIDTH, GRID_HEIGHT)):
+        if DBG: print "# Searching distance %d" % i
+        
+
+def manhattan_distance_rc(src=[0,0], dst=[5,1], DBG=0):
+
+    # use connect_tiles.connect_tiles_same_{row,col} to connect;
+    # count ntiles in path
+
+    (begin,path,end) = CT.connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=DBG-1)
+    dist = len(path)
+    
+    # E.g. extract_tile('T1_in_s2t0 -> T1_out_s0t0') = 'T1'
+    def extract_tile(s): return re.search('^(T\d+)', s).group(1)
+
+    if DBG:
+        print "# Distance from %s to %s is %d:" % (src, dst, dist)
+        # T0-> (T1 -> T2 -> T3) ->T17
+        a = extract_tile(begin)
+
+        tiles = []
+        for i in path: tiles.append(extract_tile(i))
+        b = tiles
+
+        c = extract_tile(end)
+        print '# %s-> %s ->%s' % (a,b,c)
+            
+cgra_info.read_cgra_info()    
+manhattan_distance_rc(DBG=1)
+
+# sys.exit(1)
+
+# # FIXME combine with other manhattan thing above maybe
+# def manhattan_distance(src=[0,0], dst=[5,1]):
+#     '''
+#     Return manhattan distance (number of intervening tiles) from src
+#     tile to each side (e,s,w,n) of dst tile.
+#     E.g. path from (0,0) to (5,1) should be (7,8,5,5)
+#     '''
+# 
+#     dist = {}
+#     # Eight cases: dest is (n, ne, e, se, s, sw, w, nw) of src
+#     d2s = direction(dst,src)
+#     delta_row = abs( src[0] - dst[0] )
+#     delta_col = abs( src[1] - dst[1] )
+# 
+#     short_straight_path = min(delta_row-2,delta_col-2)
+# 
+#     if d2s == 'n':
+#         
+#         dist['n'] = (delta_row-2) + 0
+#         dist['w'] = (delta_row-1) + (delta_col-1)
+#         dist['e'] = (delta_row-1) + (delta_col+1)
+#         dist['s'] = (delta_row-0) + (delta_col-0)
+#     if d2s == 's':
+#         dist['s'] = (delta_row-2) + 0
+#         dist['w'] = (delta_row-1) + (delta_col-1)
+#         dist['e'] = (delta_row-1) + (delta_col+1)
+#         dist['n'] = (delta_row-0) + (delta_col-0)
+#     if d2s == 'e':
+#         dist['e'] = (delta_col-2) + 0
+#         dist['w'] = (delta_col-1) + (delta_row-1)
+#         dist['n'] = (delta_col-0) + (delta_row-0)
+#         dist['e'] = (delta_col-1) + (delta_row+1)
+# 
+# 
+# 
+# 
+# def search_pattern_old(n,DBG=1):
+#     '''
+#     Produce a searchpattern list of (r,c) coords for all tiles at
+#     distance n away from center tile (0,0).  The idea is to pack as
+#     closely as possible to the NW corner of the grid and to prefer-
+#     entially find tiles in a straight line form the center tile.
+# 
+#                     1--------> 3
+#                     2          |
+#                     |   +--+   |
+#                     |   |  |   |
+#                     |   +--+   |
+#                     |          v
+#                     v 4-------->
+# 
+#     '''
+#     (top,left,right,bottom) = ([],[],[],[])
+# 
+#     # Top side, NW corner to NE neighbor
+#     top.append([-n,0]) # Opt: straight-line tile goes first
+#     for c in range(-n, n): top.append([-n,c])
+#     if DBG: print top
+# 
+#     # Left side, NW neighbor to SW corner
+#     left.append([0,-n]) # Opt: straight-line tile goes first
+#     for r in range(1-n, n+1): left.append([r,-n])
+#     if DBG: print left
+# 
+#     # Right side, NE corner to SE neighbor
+#     right.append([0,n]) # Opt: straight-line tile goes first
+#     for r in range(-n, n): right.append([r,n])
+#     if DBG: print right
+# 
+#     # Bottom side, SW neighbor to SE corner
+#     bottom.append([n,0]) # Opt: straight-line tile goes first
+#     for c in range(1-n, n+1): bottom.append([n,c])
+#     if DBG: print bottom
+# 
+# 
+# def test_search_pattern():
+#     search_pattern(1,DBG=1)
+#     # [[-1, 0], [-1, -1], [-1, 0]]
+#     # [[0, -1], [0, -1], [1, -1]]
+#     # [[0, 1], [-1, 1], [0, 1]]
+#     # [[1, 0], [1, 0], [1, 1]]
+# 
+#     print "----"
+#     search_pattern(2,DBG=1)
+#     # [[-2, 0], [-2, -2], [-2, -1], [-2, 0], [-2, 1]]
+#     # [[0, -2], [-1, -2], [0, -2], [1, -2], [2, -2]]
+#     # [[0, 2], [-2, 2], [-1, 2], [0, 2], [1, 2]]
+#     # [[2, 0], [2, -1], [2, 0], [2, 1], [2, 2]]
 
 def main():
     # test_connect_tiles()
