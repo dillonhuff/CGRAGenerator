@@ -11,7 +11,12 @@ from lib import connect_tiles as CT
 GRID_WIDTH  = 8
 GRID_HEIGHT = GRID_WIDTH
 
-# BOOKMARK
+# INPUT always comes in on bus 'T0_in_s1t0' (tile 0)
+INPUT_TILENO = 0
+INPUT_WIRE   = 'T0_in_s1t0'
+
+import packer
+
 def nearest_mem_tile(node='INPUT', exclude = [], DBG=1):
     '''
     Find mem tile nearest to indicated node,
@@ -168,15 +173,17 @@ def main():
     constant_folding(DBG=1)
     print "# consts should be gone now"
 
+    print ''
     print '########################################'
     print '# serpent.py: register folding'
-    register_folding()
+    register_folding(DBG=1)
 
     # Happens automatically as long as we process non-regop regs LAST (right?)
     # print '######################################################'
     # print '# serpent.py: Process and optimize INPUT node'
     # process_input()
 
+    print ''
     print '######################################################'
     print '# serpent.py: Process remaining nodes, starting with INPUT'
     process_nodes('INPUT')
@@ -285,7 +292,6 @@ class Node:
             return False
 
     def show(self):
-        print ""
         print "node='%s'" % self.name        
         print "  tileno= %s" % self.tileno
         print "  op1='%s'"   % self.op1
@@ -341,7 +347,8 @@ def build_nodes(DBG=0):
         # print nodes[rhs].dests
 
     if DBG:
-        print "Found dests:"
+        print ''
+        print "Found nodes and destinations:"
         for n in sorted(nodes): print "  %-20s %s" % (n, nodes[n].dests)
         print ""
 
@@ -440,8 +447,8 @@ def constant_folding(DBG=0):
     # dests['const16_16'] = ['mul_48716_488_PE']
     global nodes
     for n in nodes:
-        
         if not is_const(n): continue
+
         k = nodes[n]
 
         # Constant has only one destination (the PE)
@@ -451,12 +458,15 @@ def constant_folding(DBG=0):
         pe = nodes[k.dests[0]]
         assert is_pe(pe.name)
 
-        pe.addop(k.name)
-        if DBG: pe.show()
+        op = pe.addop(k.name)
 
-        # k.processed = True
-        # del nodes[n]
-        
+        if DBG:
+            kstr = '%-14s' % ("'" + k.name + "'")
+            pstr = '%-20s' % ("'" + pe.name + "'")
+            print "#   Folded %s into %s as %s" % (kstr,pstr,op)
+        if DBG>1: pe.show(); print ""
+
+
 def register_folding(DBG=9):
     '''
     Process all the reg->pe pairs
@@ -464,7 +474,7 @@ def register_folding(DBG=9):
     '''
     
     global nodes
-    if DBG: print "Process all the reg->pe pairs"
+    if DBG: print "# Process all the reg->pe pairs"
     for reg_name in nodes:
 
         # Only look at nodes that are regs
@@ -484,10 +494,10 @@ def register_folding(DBG=9):
         reg.src  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
 
         # if DBG: print "Found foldable reg '%s'" % reg_name
-        if DBG: print "Will fold reg '%s' into pe '%s' as '%s'" % \
+        if DBG: print "#   Folded '%s' into pe '%s' as '%s'" % \
            (reg_name,pe_name,op)
 
-        if DBG:
+        if DBG>1:
             reg.show()
             pe.show()
             print '-----'
@@ -552,7 +562,8 @@ def place(name, tileno, src, DBG=0):
     resources[tileno].remove(src)
     assert src not in resources[tileno]
     
-    if DBG: print "# Placed '%s' in tile %d at location '%s'" % (name, tileno, src)
+    if DBG: print "# Placed '%s' in tile %d at location '%s'" \
+       % (name, tileno, src)
     return (0, src)
 
 def add_route(sname, dname, tileno, src_port, dst_port, DBG=1):
@@ -670,14 +681,19 @@ def process_nodes(sname, indent='# ', DBG=1):
 
         if not DBG: continue
 
+        # Everything from here down is just debug info right?
         # Not sure about these...!
         if was_placed:
             print indent+"  ('%s' was already placed)" % dname
         else:
+            # was not placed before but is placed now
+            assert is_placed(dname)
             (t,loc) = (nodes[dname].tileno,nodes[dname].src)
             print indent+"  Placed '%s' in tile %d at location '%s'" % (dname, t, loc)
 
         if was_routed:
+            # was not placed before but is placed now
+            assert is_routed(dname)
             print indent+"  ('%s' was already routed)" % dname
         else:
             # (tileno,resource) = (nodes[dname].tileno, nodes[dname].src)
@@ -714,37 +730,48 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         print "ERROR '%s' has not been placed yet?" % sname
     assert is_placed(sname)
 
-    # FIXME this is not optimal
-    # place(pe_name, INPUT_tileno, 'pe_out')
+    # Apparently...if src is INPUT node and dest is an unallocated PE,
+    # we'll put the PE in same tile with INPUT.
+    # Note what if it's a reg-folded PE?
+
     if sname=='INPUT' \
        and is_pe(dname) \
-       and ('pe_out' in resources[0]):
+       and ('pe_out' in resources[INPUT_TILENO]):
 
-        print "FOO whhop ther ti tis - avail pe slot in input tile"
-
-        # TODO global INPUTWIRE = 'T0_in_s1t0', INPUTTILE=0
+        print "# Place input-connected PE '%s' in INPUT tile" % dname
 
         DBG=1
         if DBG: print "Connecting '%s' to '%s'" % (sname,dname)
 
-        itile = 0; assert nodes['INPUT'].tileno == itile
+        INPUT_TILE = 0; assert nodes['INPUT'].tileno == INPUT_TILE
 
-        place(dname, itile, 'pe_out')
-        add_route(sname, dname, itile, 'T0_in_s1t0', 'choose_op')
+        place(dname, INPUT_TILE, 'pe_out')
+        # add_route(sname, dname, INPUT_TILE, 'T0_in_s1t0', 'choose_op')
+        add_route(sname, dname, INPUT_TILE, INPUT_WIRE, 'choose_op')
         finish_route(sname, dname)       
         return
 
-#         print "# Placing pe in INPUT tile..."
-#         place(dname, itile, 'pe_out')
-# 
-#         print "# Routing INPUT to pe..."
-#         add_route(sname, dname, itile, 'T0_in_s1t0', 'choose_op')
-# 
-#         print '# Mark route COMPLETED'
-#         finish_route(sname, dname)       
-# 
-#         # Check that pe_out got removed from INPUT (tile0) resources
-#         assert not ('pe_out' in resources[0])
+        # Long form:
+        # TODO global INPUTWIRE = 'T0_in_s1t0', INPUTTILE=0
+        # print "# Placing pe in INPUT tile..."
+        # place(dname, itile, 'pe_out')
+        # 
+        # print "# Routing INPUT to pe..."
+        # add_route(sname, dname, itile, 'T0_in_s1t0', 'choose_op')
+        # 
+        # print '# Mark route COMPLETED'
+        # finish_route(sname, dname)       
+        # 
+        # # Check that pe_out got removed from INPUT (tile0) resources
+        # assert not ('pe_out' in resources[INPUT_TILENO])
+
+
+    if sname=='INPUT' \
+       and is_folded_reg(dname) \
+       and ('pe_out' in resources[INPUT_TILENO]):
+
+        print "TODO put reg-pe folded pair in INPUT tile :("
+        assert False, "TODO put reg-pe folded pair in INPUT tile :("
 
     # Does destination have a home?
     if not is_placed(dname):
@@ -754,9 +781,19 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # Figure how to do the first placement INPUT -> mem_1 maybe
         # Use new connection thingies maybe
 
+        DBG=1
         # print indent+"No home for '%s'"
         if DBG: print indent+"No home for '%s'" % dname
+
+        assert False, '\nBOOKMARK: this is where we call the packer, right?'
+
+        # something like:
+        # - change packer to use cgra_info for rc2tileno/tileno2rc DONE maybe
+        # - set packer.order[] such that only mem tiles are valid (!= -1); 
+        # - call the appropriate thingy mcboo
+
         if DBG: print indent+"For now just place it randomly"
+
         (tileno,resource) = randomly_place(dname)
     else:
         (tileno,resource) = (-1, "already_placed")
@@ -769,6 +806,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         finish_route(sname,dname)
 
     return (tileno,resource)
+
+def is_folded_reg(node_name): is_regop(node_name)
+#     if not is_reg(node_name): return False
+#     reg = nodes[node_name]
+#     return is_pe(reg.src)
+
 
 def place_and_route_test(sname,dname,indent='# ',DBG=1):
     if DBG: print indent+"  PNR '%s' -> '%s'" % (sname,dname)

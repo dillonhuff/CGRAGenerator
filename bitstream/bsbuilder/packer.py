@@ -20,6 +20,8 @@ try:
 
 except: DO_TEST=0
 
+USE_CGRA_INFO = False
+
 # GLOBALS and their defaults
 GRID_WIDTH = 8
 GRID_HEIGHT = GRID_WIDTH
@@ -28,7 +30,21 @@ NTILES = GRID_HEIGHT * GRID_WIDTH
 tiles = []
 order = []
 
+cgra_info = False
+
 def init_globals(grid_width = 8, grid_height = 8, DBG=0):
+
+    if USE_CGRA_INFO:
+        sys.path.append("../decoder")
+        global cgra_info
+        from lib import cgra_info
+        # cgra_info.read_cgra_info()
+
+        try: cgra_info.ntiles()
+        except:
+            print "Loading cgra_info..\n" 
+            cgra_info.read_cgra_info()
+
 
     # Set these
     global GRID_WIDTH
@@ -42,6 +58,10 @@ def init_globals(grid_width = 8, grid_height = 8, DBG=0):
     GRID_WIDTH  = grid_width
     GRID_HEIGHT = grid_height
     NTILES = GRID_HEIGHT * GRID_WIDTH
+
+    if USE_CGRA_INFO:
+        # FIXME should also use cgra_info to set width, height
+        NTILES = cgra_info.ntiles()
 
     tiles = range(NTILES)
     if DBG: print "# tiles:"; print '#', tiles, '\n'
@@ -65,7 +85,7 @@ def tile_exists(tileno): return tileno >= 0 and tileno < NTILES
 
 def allocate(tileno, DBG=0):
     '''tileno will be next in the ordered list'''
-    # assert DBG==0
+
     n_allocated = max(order)
     order[tileno] = n_allocated+1
     n_allocated = n_allocated+1
@@ -85,7 +105,18 @@ def allocate(tileno, DBG=0):
     return n_allocated
 
 def tileno2rc(tileno):
-    return (int(tileno)/8,int(tileno)%8)
+    if USE_CGRA_INFO: return cgra_info.tileno2rc(tileno)
+    else:
+        return (int(tileno)/8,int(tileno)%8)
+
+def rc2tileno(r,c):
+    if USE_CGRA_INFO: return cgra_info.rc2tileno(r,c)
+    else:
+        if (r < 0) or (c < 0): return -1
+        tno = 8*r + c
+        if tno > NTILES: return -1
+        return tno
+
 
 class Format:
     def tile(self,r,c=-1):
@@ -115,6 +146,17 @@ class Format:
                 else: print '%2d' % order[tno],
             print ''
 
+    def grid(self):
+        for r in range(GRID_HEIGHT):
+            print '#   ',
+            for c in range(GRID_WIDTH):
+                tno = rc2tileno(r,c)
+                # if order[tno] == -1: print ' .',
+                # else: print '%2d' % tno
+                print '%2d' % tno,
+            print ''
+
+
 FMT = Format()
 
 def print_nearest(src,dst):
@@ -141,8 +183,21 @@ def find_nearest(tileno, DBG=1):
         
 def test_find_nearest():
     DBG=0
+
     print "# Starting with tile 0, trace a path through the grid"
-    allocate(63,DBG=1) # yeah, sorry
+
+    if USE_CGRA_INFO: 
+        allocate(34,DBG=1) # little clunker in there at random
+    else:
+        allocate(NTILES-1,DBG=1) # yeah, sorry
+
+    print "# Begin pattern:"
+    print "# "
+    FMT.order()
+    print "# "
+    print ""
+    print ""
+
     allocate(0,DBG=1)
     next = 0
     while next != -1:
@@ -152,7 +207,7 @@ def test_find_nearest():
     print "# Final pattern:"
     print "# "
     FMT.order()
-    print "# "
+    print ''
 
     #  1  4  5 16 17 36 37 -1 
     #  2  3  6 15 18 35 38 -1 
@@ -314,24 +369,21 @@ def go_straight(t=0, L=3, dir='e'):
     return rc2tileno(rdst, cdst)
 
 
-def rc2tileno(r,c):
-    if (r < 0) or (c < 0): return -1
-    tno = 8*r + c
-    if tno > NTILES: return -1
-    return tno
-
-
 def test_all():
-    assert go_straight(0, 3, 'e') == 3
-    assert go_straight(9, 1, 's') == 17
+    init_globals(8,8,DBG=1) # this is crucial out there
+
+    if USE_CGRA_INFO:
+        assert go_straight(0, 3, 'e') == 3
+        assert go_straight(9, 1, 's') == 15
+    else:
+        assert go_straight(0, 3, 'e') == 3
+        assert go_straight(9, 1, 's') == 17
 
     # sp = search_box(ctr=9, L=1, DBG=1)
 
     ##########################################################
     print ""
     print "# Quick test of find_nearest:"
-
-    init_globals(8,8,DBG=1) # this is crucial out there
 
     n = find_nearest(17,DBG=0)
     print_nearest(17,n)
@@ -350,15 +402,23 @@ def test_all():
     print ""
     print "# More exhaustive test of find_nearest:"
     
-    print "# Begin pattern:"
-    print "# "
-    FMT.order()
-    print "# "
-
-
-    print ""
-    print ""
-    # init_globals(8,8) # Clear results of prev test (or not!!)
     test_find_nearest()
 
-if DO_TEST: test_all()
+if DO_TEST:
+    USE_CGRA_INFO = False
+    test_all()
+
+    # Okay this should be fun
+    print ""
+    print '############################################################'
+    print "# Try it using cgra_info...!"
+    print ""
+    USE_CGRA_INFO = True
+    init_globals() # this is crucial out there
+
+    print '# So...cgra_info says grid should look like...'
+    print '# '
+    FMT.grid()
+    print ''
+
+    test_all()

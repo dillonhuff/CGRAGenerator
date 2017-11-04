@@ -344,7 +344,9 @@ def read_cgra_info(filename='', grid='8x8', verbose=False):
     default_filename = mydir + "/cgra_info_" + grid + ".txt"
     if (filename == ''):
         filename = default_filename
+        sys.stdout.flush()
         sys.stderr.write("WARNING using default cgra_info file\n  '%s'\n\n" % filename)
+        sys.stderr.flush()
 
     # If cannot open indicated config file (or if config file is blank), try default file
     global CGRA
@@ -360,8 +362,18 @@ def read_cgra_info(filename='', grid='8x8', verbose=False):
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
         sys.stderr.write("WARNING loaded default '%s'\n\n" % filename)
 
+def load_check():
+    # if not CGRA:
+    # FutureWarning: The behavior of this method will change in future
+    # versions.  Use specific 'len(elem)' or 'elem is not None' test instead.
+    if CGRA is False:
+        print "ERROR cgra_info file not loaded.  Did you do a read_cgra_info()?"
+        print ""
+        assert False, "\nERROR cgra_info file not loaded.  Did you do a read_cgra_info()?"
+
 def ntiles():
     '''How many tiles?'''
+    load_check()
     return len(CGRA.findall('tile')) # length = number of items in list
 
 def tileno2rc(tileno):
@@ -380,13 +392,7 @@ def tileno2rc(tileno):
 
     '''
 
-    # if not CGRA:
-    # FutureWarning: The behavior of this method will change in future
-    # versions.  Use specific 'len(elem)' or 'elem is not None' test instead.
-    if CGRA is False:
-        print "ERROR cgra_info file not loaded.  Did you do a read_cgra_info()?"
-        print ""
-        assert False
+    load_check()
 
     for tile in CGRA.findall('tile'):
         t = int(tile.attrib['tile_addr'])
