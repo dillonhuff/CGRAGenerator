@@ -1,0 +1,1848 @@
+
+# Quick test of find_nearest:
+# tiles:
+# [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63] 
+
+# order:
+# [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] 
+
+# Pattern so far:
+# 
+#     .  .  .  .  .  .  .  . 
+#     .  0  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+# 
+# Avail perp-first tile nearest to T17 (r2,c1) in NW direction is T09 (r1,c1) maybe
+# Pattern so far:
+# 
+#     .  .  .  .  .  .  .  . 
+#     .  0  .  .  .  .  .  . 
+#     1  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+# 
+# Avail perp-first tile nearest to T17 (r2,c1) in NW direction is T16 (r2,c0) maybe
+# Pattern so far:
+# 
+#     .  .  .  .  .  .  .  . 
+#     .  0  .  .  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+# 
+# Avail perp-first tile nearest to T17 (r2,c1) in NW direction is T18 (r2,c2) maybe
+# Pattern so far:
+# 
+#     .  .  .  .  .  .  .  . 
+#     .  0  .  .  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+# 
+# Avail perp-first tile nearest to T17 (r2,c1) in NW direction is T25 (r3,c1) maybe
+
+
+# More exhaustive test of find_nearest:
+# Begin pattern:
+# 
+#     .  .  .  .  .  .  .  . 
+#     .  0  .  .  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+# 
+
+
+# Starting with tile 0, trace a path through the grid
+#   Allocated T63 (r7,c7) as 4th tile. Remaining free tiles: 59
+
+# Pattern so far:
+# 
+#     .  .  .  .  .  .  .  . 
+#     .  0  .  .  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+#   Allocated T00 (r0,c0) as 5th tile. Remaining free tiles: 58
+
+# Pattern so far:
+# 
+#     5  .  .  .  .  .  .  . 
+#     .  0  .  .  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Find perp-first tile nearest to tile 0 (r0,c0) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... no tile exists.
+#   Looking 'n' for perp at dist 1... no tile exists.
+#   Looking 's' for perp at dist 1... found T08 (r1,c0).  Is it free?  Yes.
+#   Allocated T08 (r1,c0) as 6th tile. Remaining free tiles: 57
+
+# Pattern so far:
+# 
+#     5  .  .  .  .  .  .  . 
+#     6  0  .  .  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T00 (r0,c0) in NW direction is T08 (r1,c0) maybe
+# Find perp-first tile nearest to tile 8 (r1,c0) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T00 (r0,c0).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... no tile exists.
+#   Looking 'e' for perp at dist 1... found T09 (r1,c1).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T16 (r2,c0).  Is it free?  No.
+#   Found no perps.
+#   Searching 'n' side L1 for any avail tile...
+#     Search r(0,3) x c(0,2)
+#     Checking location (0,0)... found T00 (r0,c0).  Is it free?  No.
+#     Checking location (0,1)... found T01 (r0,c1).  Is it free?  Yes.
+#   Allocated T01 (r0,c1) as 7th tile. Remaining free tiles: 56
+
+# Pattern so far:
+# 
+#     5  7  .  .  .  .  .  . 
+#     6  0  .  .  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+found 1
+# Avail perp-first tile nearest to T08 (r1,c0) in NW direction is T01 (r0,c1) maybe
+# Find perp-first tile nearest to tile 1 (r0,c1) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T00 (r0,c0).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... no tile exists.
+#   Looking 's' for perp at dist 1... found T09 (r1,c1).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T02 (r0,c2).  Is it free?  Yes.
+#   Allocated T02 (r0,c2) as 8th tile. Remaining free tiles: 55
+
+# Pattern so far:
+# 
+#     5  7  8  .  .  .  .  . 
+#     6  0  .  .  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T01 (r0,c1) in NW direction is T02 (r0,c2) maybe
+# Find perp-first tile nearest to tile 2 (r0,c2) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T01 (r0,c1).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... no tile exists.
+#   Looking 's' for perp at dist 1... found T10 (r1,c2).  Is it free?  Yes.
+#   Allocated T10 (r1,c2) as 9th tile. Remaining free tiles: 54
+
+# Pattern so far:
+# 
+#     5  7  8  .  .  .  .  . 
+#     6  0  9  .  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T02 (r0,c2) in NW direction is T10 (r1,c2) maybe
+# Find perp-first tile nearest to tile 10 (r1,c2) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T09 (r1,c1).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T02 (r0,c2).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T18 (r2,c2).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T11 (r1,c3).  Is it free?  Yes.
+#   Allocated T11 (r1,c3) as 10th tile. Remaining free tiles: 53
+
+# Pattern so far:
+# 
+#     5  7  8  .  .  .  .  . 
+#     6  0  9 10  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T10 (r1,c2) in NW direction is T11 (r1,c3) maybe
+# Find perp-first tile nearest to tile 11 (r1,c3) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T10 (r1,c2).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T03 (r0,c3).  Is it free?  Yes.
+#   Allocated T03 (r0,c3) as 11th tile. Remaining free tiles: 52
+
+# Pattern so far:
+# 
+#     5  7  8 11  .  .  .  . 
+#     6  0  9 10  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T11 (r1,c3) in NW direction is T03 (r0,c3) maybe
+# Find perp-first tile nearest to tile 3 (r0,c3) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T02 (r0,c2).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... no tile exists.
+#   Looking 's' for perp at dist 1... found T11 (r1,c3).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T04 (r0,c4).  Is it free?  Yes.
+#   Allocated T04 (r0,c4) as 12th tile. Remaining free tiles: 51
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10  .  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T03 (r0,c3) in NW direction is T04 (r0,c4) maybe
+# Find perp-first tile nearest to tile 4 (r0,c4) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T03 (r0,c3).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... no tile exists.
+#   Looking 's' for perp at dist 1... found T12 (r1,c4).  Is it free?  Yes.
+#   Allocated T12 (r1,c4) as 13th tile. Remaining free tiles: 50
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1  .  2  .  .  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T04 (r0,c4) in NW direction is T12 (r1,c4) maybe
+# Find perp-first tile nearest to tile 12 (r1,c4) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T11 (r1,c3).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T04 (r0,c4).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T20 (r2,c4).  Is it free?  Yes.
+#   Allocated T20 (r2,c4) as 14th tile. Remaining free tiles: 49
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1  .  2  . 14  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T12 (r1,c4) in NW direction is T20 (r2,c4) maybe
+# Find perp-first tile nearest to tile 20 (r2,c4) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T19 (r2,c3).  Is it free?  Yes.
+#   Allocated T19 (r2,c3) as 15th tile. Remaining free tiles: 48
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1  .  2 15 14  .  .  . 
+#     .  3  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T20 (r2,c4) in NW direction is T19 (r2,c3) maybe
+# Find perp-first tile nearest to tile 19 (r2,c3) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T18 (r2,c2).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T11 (r1,c3).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T27 (r3,c3).  Is it free?  Yes.
+#   Allocated T27 (r3,c3) as 16th tile. Remaining free tiles: 47
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1  .  2 15 14  .  .  . 
+#     .  3  . 16  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T19 (r2,c3) in NW direction is T27 (r3,c3) maybe
+# Find perp-first tile nearest to tile 27 (r3,c3) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T26 (r3,c2).  Is it free?  Yes.
+#   Allocated T26 (r3,c2) as 17th tile. Remaining free tiles: 46
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1  .  2 15 14  .  .  . 
+#     .  3 17 16  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T27 (r3,c3) in NW direction is T26 (r3,c2) maybe
+# Find perp-first tile nearest to tile 26 (r3,c2) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T18 (r2,c2).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T25 (r3,c1).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T27 (r3,c3).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T34 (r4,c2).  Is it free?  Yes.
+#   Allocated T34 (r4,c2) as 18th tile. Remaining free tiles: 45
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1  .  2 15 14  .  .  . 
+#     .  3 17 16  .  .  .  . 
+#     .  . 18  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T26 (r3,c2) in NW direction is T34 (r4,c2) maybe
+# Find perp-first tile nearest to tile 34 (r4,c2) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T26 (r3,c2).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T33 (r4,c1).  Is it free?  Yes.
+#   Allocated T33 (r4,c1) as 19th tile. Remaining free tiles: 44
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1  .  2 15 14  .  .  . 
+#     .  3 17 16  .  .  .  . 
+#     . 19 18  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T34 (r4,c2) in NW direction is T33 (r4,c1) maybe
+# Find perp-first tile nearest to tile 33 (r4,c1) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T25 (r3,c1).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T32 (r4,c0).  Is it free?  Yes.
+#   Allocated T32 (r4,c0) as 20th tile. Remaining free tiles: 43
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1  .  2 15 14  .  .  . 
+#     .  3 17 16  .  .  .  . 
+#    20 19 18  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T33 (r4,c1) in NW direction is T32 (r4,c0) maybe
+# Find perp-first tile nearest to tile 32 (r4,c0) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T24 (r3,c0).  Is it free?  Yes.
+#   Allocated T24 (r3,c0) as 21th tile. Remaining free tiles: 42
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1  .  2 15 14  .  .  . 
+#    21  3 17 16  .  .  .  . 
+#    20 19 18  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T32 (r4,c0) in NW direction is T24 (r3,c0) maybe
+# Find perp-first tile nearest to tile 24 (r3,c0) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T16 (r2,c0).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... no tile exists.
+#   Looking 'e' for perp at dist 1... found T25 (r3,c1).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T32 (r4,c0).  Is it free?  No.
+#   Found no perps.
+#   Searching 'n' side L1 for any avail tile...
+#     Search r(2,5) x c(0,2)
+#     Checking location (2,0)... found T16 (r2,c0).  Is it free?  No.
+#     Checking location (2,1)... found T17 (r2,c1).  Is it free?  Yes.
+#   Allocated T17 (r2,c1) as 22th tile. Remaining free tiles: 41
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1 22  2 15 14  .  .  . 
+#    21  3 17 16  .  .  .  . 
+#    20 19 18  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+found 17
+# Avail perp-first tile nearest to T24 (r3,c0) in NW direction is T17 (r2,c1) maybe
+# Find perp-first tile nearest to tile 17 (r2,c1) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T09 (r1,c1).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T16 (r2,c0).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T18 (r2,c2).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T25 (r3,c1).  Is it free?  No.
+#   Found no perps.
+#   Searching 'n' side L1 for any avail tile...
+#     Search r(1,4) x c(0,3)
+#     Checking location (1,0)... found T08 (r1,c0).  Is it free?  No.
+#     Checking location (1,1)... found T09 (r1,c1).  Is it free?  No.
+#     Checking location (1,2)... found T10 (r1,c2).  Is it free?  No.
+#     Checking location (1,3)... found T11 (r1,c3).  Is it free?  No.
+#     Checking location (2,0)... found T16 (r2,c0).  Is it free?  No.
+#     Checking location (2,1)... found T17 (r2,c1).  Is it free?  No.
+#     Checking location (2,2)... found T18 (r2,c2).  Is it free?  No.
+#     Checking location (2,3)... found T19 (r2,c3).  Is it free?  No.
+#     Checking location (3,0)... found T24 (r3,c0).  Is it free?  No.
+#     Checking location (3,1)... found T25 (r3,c1).  Is it free?  No.
+#     Checking location (3,2)... found T26 (r3,c2).  Is it free?  No.
+#     Checking location (3,3)... found T27 (r3,c3).  Is it free?  No.
+#     Checking location (4,0)... found T32 (r4,c0).  Is it free?  No.
+#     Checking location (4,1)... found T33 (r4,c1).  Is it free?  No.
+#     Checking location (4,2)... found T34 (r4,c2).  Is it free?  No.
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  Yes.
+#   Allocated T35 (r4,c3) as 23th tile. Remaining free tiles: 40
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1 22  2 15 14  .  .  . 
+#    21  3 17 16  .  .  .  . 
+#    20 19 18 23  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+found 35
+# Avail perp-first tile nearest to T17 (r2,c1) in NW direction is T35 (r4,c3) maybe
+# Find perp-first tile nearest to tile 35 (r4,c3) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T27 (r3,c3).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T34 (r4,c2).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T36 (r4,c4).  Is it free?  Yes.
+#   Allocated T36 (r4,c4) as 24th tile. Remaining free tiles: 39
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1 22  2 15 14  .  .  . 
+#    21  3 17 16  .  .  .  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T35 (r4,c3) in NW direction is T36 (r4,c4) maybe
+# Find perp-first tile nearest to tile 36 (r4,c4) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T35 (r4,c3).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T28 (r3,c4).  Is it free?  Yes.
+#   Allocated T28 (r3,c4) as 25th tile. Remaining free tiles: 38
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1 22  2 15 14  .  .  . 
+#    21  3 17 16 25  .  .  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T36 (r4,c4) in NW direction is T28 (r3,c4) maybe
+# Find perp-first tile nearest to tile 28 (r3,c4) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T27 (r3,c3).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T20 (r2,c4).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T36 (r4,c4).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T29 (r3,c5).  Is it free?  Yes.
+#   Allocated T29 (r3,c5) as 26th tile. Remaining free tiles: 37
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1 22  2 15 14  .  .  . 
+#    21  3 17 16 25 26  .  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T28 (r3,c4) in NW direction is T29 (r3,c5) maybe
+# Find perp-first tile nearest to tile 29 (r3,c5) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T28 (r3,c4).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T21 (r2,c5).  Is it free?  Yes.
+#   Allocated T21 (r2,c5) as 27th tile. Remaining free tiles: 36
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13  .  .  . 
+#     1 22  2 15 14 27  .  . 
+#    21  3 17 16 25 26  .  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T29 (r3,c5) in NW direction is T21 (r2,c5) maybe
+# Find perp-first tile nearest to tile 21 (r2,c5) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T20 (r2,c4).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T13 (r1,c5).  Is it free?  Yes.
+#   Allocated T13 (r1,c5) as 28th tile. Remaining free tiles: 35
+
+# Pattern so far:
+# 
+#     5  7  8 11 12  .  .  . 
+#     6  0  9 10 13 28  .  . 
+#     1 22  2 15 14 27  .  . 
+#    21  3 17 16 25 26  .  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T21 (r2,c5) in NW direction is T13 (r1,c5) maybe
+# Find perp-first tile nearest to tile 13 (r1,c5) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T12 (r1,c4).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T05 (r0,c5).  Is it free?  Yes.
+#   Allocated T05 (r0,c5) as 29th tile. Remaining free tiles: 34
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29  .  . 
+#     6  0  9 10 13 28  .  . 
+#     1 22  2 15 14 27  .  . 
+#    21  3 17 16 25 26  .  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T13 (r1,c5) in NW direction is T05 (r0,c5) maybe
+# Find perp-first tile nearest to tile 5 (r0,c5) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T04 (r0,c4).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... no tile exists.
+#   Looking 's' for perp at dist 1... found T13 (r1,c5).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T06 (r0,c6).  Is it free?  Yes.
+#   Allocated T06 (r0,c6) as 30th tile. Remaining free tiles: 33
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28  .  . 
+#     1 22  2 15 14 27  .  . 
+#    21  3 17 16 25 26  .  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T05 (r0,c5) in NW direction is T06 (r0,c6) maybe
+# Find perp-first tile nearest to tile 6 (r0,c6) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T05 (r0,c5).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... no tile exists.
+#   Looking 's' for perp at dist 1... found T14 (r1,c6).  Is it free?  Yes.
+#   Allocated T14 (r1,c6) as 31th tile. Remaining free tiles: 32
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27  .  . 
+#    21  3 17 16 25 26  .  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T06 (r0,c6) in NW direction is T14 (r1,c6) maybe
+# Find perp-first tile nearest to tile 14 (r1,c6) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T13 (r1,c5).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T06 (r0,c6).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T22 (r2,c6).  Is it free?  Yes.
+#   Allocated T22 (r2,c6) as 32th tile. Remaining free tiles: 31
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26  .  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T14 (r1,c6) in NW direction is T22 (r2,c6) maybe
+# Find perp-first tile nearest to tile 22 (r2,c6) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T21 (r2,c5).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T14 (r1,c6).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T30 (r3,c6).  Is it free?  Yes.
+#   Allocated T30 (r3,c6) as 33th tile. Remaining free tiles: 30
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T22 (r2,c6) in NW direction is T30 (r3,c6) maybe
+# Find perp-first tile nearest to tile 30 (r3,c6) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T29 (r3,c5).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T22 (r2,c6).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T38 (r4,c6).  Is it free?  Yes.
+#   Allocated T38 (r4,c6) as 34th tile. Remaining free tiles: 29
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24  . 34  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T30 (r3,c6) in NW direction is T38 (r4,c6) maybe
+# Find perp-first tile nearest to tile 38 (r4,c6) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T37 (r4,c5).  Is it free?  Yes.
+#   Allocated T37 (r4,c5) as 35th tile. Remaining free tiles: 28
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T38 (r4,c6) in NW direction is T37 (r4,c5) maybe
+# Find perp-first tile nearest to tile 37 (r4,c5) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T36 (r4,c4).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T29 (r3,c5).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T45 (r5,c5).  Is it free?  Yes.
+#   Allocated T45 (r5,c5) as 36th tile. Remaining free tiles: 27
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#     .  .  .  .  . 36  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T37 (r4,c5) in NW direction is T45 (r5,c5) maybe
+# Find perp-first tile nearest to tile 45 (r5,c5) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T44 (r5,c4).  Is it free?  Yes.
+#   Allocated T44 (r5,c4) as 37th tile. Remaining free tiles: 26
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#     .  .  .  . 37 36  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T45 (r5,c5) in NW direction is T44 (r5,c4) maybe
+# Find perp-first tile nearest to tile 44 (r5,c4) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T36 (r4,c4).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T43 (r5,c3).  Is it free?  Yes.
+#   Allocated T43 (r5,c3) as 38th tile. Remaining free tiles: 25
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#     .  .  . 38 37 36  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T44 (r5,c4) in NW direction is T43 (r5,c3) maybe
+# Find perp-first tile nearest to tile 43 (r5,c3) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T35 (r4,c3).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T42 (r5,c2).  Is it free?  Yes.
+#   Allocated T42 (r5,c2) as 39th tile. Remaining free tiles: 24
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#     .  . 39 38 37 36  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T43 (r5,c3) in NW direction is T42 (r5,c2) maybe
+# Find perp-first tile nearest to tile 42 (r5,c2) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T34 (r4,c2).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T41 (r5,c1).  Is it free?  Yes.
+#   Allocated T41 (r5,c1) as 40th tile. Remaining free tiles: 23
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#     . 40 39 38 37 36  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T42 (r5,c2) in NW direction is T41 (r5,c1) maybe
+# Find perp-first tile nearest to tile 41 (r5,c1) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T33 (r4,c1).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T40 (r5,c0).  Is it free?  Yes.
+#   Allocated T40 (r5,c0) as 41th tile. Remaining free tiles: 22
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36  .  . 
+#     .  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T41 (r5,c1) in NW direction is T40 (r5,c0) maybe
+# Find perp-first tile nearest to tile 40 (r5,c0) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T32 (r4,c0).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... no tile exists.
+#   Looking 'e' for perp at dist 1... found T41 (r5,c1).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T48 (r6,c0).  Is it free?  Yes.
+#   Allocated T48 (r6,c0) as 42th tile. Remaining free tiles: 21
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36  .  . 
+#    42  .  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T40 (r5,c0) in NW direction is T48 (r6,c0) maybe
+# Find perp-first tile nearest to tile 48 (r6,c0) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T40 (r5,c0).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... no tile exists.
+#   Looking 'e' for perp at dist 1... found T49 (r6,c1).  Is it free?  Yes.
+#   Allocated T49 (r6,c1) as 43th tile. Remaining free tiles: 20
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36  .  . 
+#    42 43  .  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T48 (r6,c0) in NW direction is T49 (r6,c1) maybe
+# Find perp-first tile nearest to tile 49 (r6,c1) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T41 (r5,c1).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T48 (r6,c0).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T50 (r6,c2).  Is it free?  Yes.
+#   Allocated T50 (r6,c2) as 44th tile. Remaining free tiles: 19
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36  .  . 
+#    42 43 44  .  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T49 (r6,c1) in NW direction is T50 (r6,c2) maybe
+# Find perp-first tile nearest to tile 50 (r6,c2) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T42 (r5,c2).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T49 (r6,c1).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T51 (r6,c3).  Is it free?  Yes.
+#   Allocated T51 (r6,c3) as 45th tile. Remaining free tiles: 18
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36  .  . 
+#    42 43 44 45  .  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T50 (r6,c2) in NW direction is T51 (r6,c3) maybe
+# Find perp-first tile nearest to tile 51 (r6,c3) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T43 (r5,c3).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T50 (r6,c2).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T52 (r6,c4).  Is it free?  Yes.
+#   Allocated T52 (r6,c4) as 46th tile. Remaining free tiles: 17
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36  .  . 
+#    42 43 44 45 46  .  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T51 (r6,c3) in NW direction is T52 (r6,c4) maybe
+# Find perp-first tile nearest to tile 52 (r6,c4) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T44 (r5,c4).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T51 (r6,c3).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T53 (r6,c5).  Is it free?  Yes.
+#   Allocated T53 (r6,c5) as 47th tile. Remaining free tiles: 16
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36  .  . 
+#    42 43 44 45 46 47  .  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T52 (r6,c4) in NW direction is T53 (r6,c5) maybe
+# Find perp-first tile nearest to tile 53 (r6,c5) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T45 (r5,c5).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T52 (r6,c4).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T54 (r6,c6).  Is it free?  Yes.
+#   Allocated T54 (r6,c6) as 48th tile. Remaining free tiles: 15
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36  .  . 
+#    42 43 44 45 46 47 48  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T53 (r6,c5) in NW direction is T54 (r6,c6) maybe
+# Find perp-first tile nearest to tile 54 (r6,c6) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T53 (r6,c5).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T46 (r5,c6).  Is it free?  Yes.
+#   Allocated T46 (r5,c6) as 49th tile. Remaining free tiles: 14
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36 49  . 
+#    42 43 44 45 46 47 48  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T54 (r6,c6) in NW direction is T46 (r5,c6) maybe
+# Find perp-first tile nearest to tile 46 (r5,c6) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T45 (r5,c5).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T38 (r4,c6).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T54 (r6,c6).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T47 (r5,c7).  Is it free?  Yes.
+#   Allocated T47 (r5,c7) as 50th tile. Remaining free tiles: 13
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34  . 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T46 (r5,c6) in NW direction is T47 (r5,c7) maybe
+# Find perp-first tile nearest to tile 47 (r5,c7) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T46 (r5,c6).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T39 (r4,c7).  Is it free?  Yes.
+#   Allocated T39 (r4,c7) as 51th tile. Remaining free tiles: 12
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33  . 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T47 (r5,c7) in NW direction is T39 (r4,c7) maybe
+# Find perp-first tile nearest to tile 39 (r4,c7) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T38 (r4,c6).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T31 (r3,c7).  Is it free?  Yes.
+#   Allocated T31 (r3,c7) as 52th tile. Remaining free tiles: 11
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32  . 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T39 (r4,c7) in NW direction is T31 (r3,c7) maybe
+# Find perp-first tile nearest to tile 31 (r3,c7) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T30 (r3,c6).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T23 (r2,c7).  Is it free?  Yes.
+#   Allocated T23 (r2,c7) as 53th tile. Remaining free tiles: 10
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31  . 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T31 (r3,c7) in NW direction is T23 (r2,c7) maybe
+# Find perp-first tile nearest to tile 23 (r2,c7) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T22 (r2,c6).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T15 (r1,c7).  Is it free?  Yes.
+#   Allocated T15 (r1,c7) as 54th tile. Remaining free tiles: 9
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30  . 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T23 (r2,c7) in NW direction is T15 (r1,c7) maybe
+# Find perp-first tile nearest to tile 15 (r1,c7) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T14 (r1,c6).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T07 (r0,c7).  Is it free?  Yes.
+#   Allocated T07 (r0,c7) as 55th tile. Remaining free tiles: 8
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48  . 
+#     .  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T15 (r1,c7) in NW direction is T07 (r0,c7) maybe
+# Find perp-first tile nearest to tile 7 (r0,c7) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T06 (r0,c6).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... no tile exists.
+#   Looking 's' for perp at dist 1... found T15 (r1,c7).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T08 (r1,c0).  Is it free?  No.
+#   Found no perps.
+#   Searching 'w' side L1 for any avail tile...
+#     Search r(1,4) x c(6,7)
+#     Checking location (1,6)... found T14 (r1,c6).  Is it free?  No.
+#     Checking location (1,7)... found T15 (r1,c7).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+
+#   Searching 'n' side L1 for any avail tile...
+#     Search r(0,2) x c(6,7)
+#     Checking location (0,6)... found T06 (r0,c6).  Is it free?  No.
+#     Checking location (0,7)... found T07 (r0,c7).  Is it free?  No.
+#     Checking location (1,6)... found T14 (r1,c6).  Is it free?  No.
+#     Checking location (1,7)... found T15 (r1,c7).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+
+#   Searching 's' side L1 for any avail tile...
+#   Searching 'e' side L1 for any avail tile...
+#     Search r(0,2) x c(6,7)
+#     Checking location (0,6)... found T06 (r0,c6).  Is it free?  No.
+#     Checking location (0,7)... found T07 (r0,c7).  Is it free?  No.
+#     Checking location (1,6)... found T14 (r1,c6).  Is it free?  No.
+#     Checking location (1,7)... found T15 (r1,c7).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 2... found T05 (r0,c5).  Is it free?  No.
+#   Looking 'n' for perp at dist 2... no tile exists.
+#   Looking 's' for perp at dist 2... found T23 (r2,c7).  Is it free?  No.
+#   Looking 'e' for perp at dist 2... found T09 (r1,c1).  Is it free?  No.
+#   Found no perps.
+#   Searching 'w' side L2 for any avail tile...
+#     Search r(2,7) x c(5,7)
+#     Checking location (2,5)... found T21 (r2,c5).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+#     Checking location (3,5)... found T29 (r3,c5).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  Yes.
+#   Allocated T55 (r6,c7) as 56th tile. Remaining free tiles: 7
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48 56 
+#     .  .  .  .  .  .  .  4 
+# 
+found 55
+# Avail perp-first tile nearest to T07 (r0,c7) in NW direction is T55 (r6,c7) maybe
+# Find perp-first tile nearest to tile 55 (r6,c7) in NW direction
+# Because (c<=r), search pattern is 'wnse'
+#   Looking 'w' for perp at dist 1... found T54 (r6,c6).  Is it free?  No.
+#   Looking 'n' for perp at dist 1... found T47 (r5,c7).  Is it free?  No.
+#   Looking 's' for perp at dist 1... found T63 (r7,c7).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T56 (r7,c0).  Is it free?  Yes.
+#   Allocated T56 (r7,c0) as 57th tile. Remaining free tiles: 6
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48 56 
+#    57  .  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T55 (r6,c7) in NW direction is T56 (r7,c0) maybe
+# Find perp-first tile nearest to tile 56 (r7,c0) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T48 (r6,c0).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... no tile exists.
+#   Looking 'e' for perp at dist 1... found T57 (r7,c1).  Is it free?  Yes.
+#   Allocated T57 (r7,c1) as 58th tile. Remaining free tiles: 5
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48 56 
+#    57 58  .  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T56 (r7,c0) in NW direction is T57 (r7,c1) maybe
+# Find perp-first tile nearest to tile 57 (r7,c1) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T49 (r6,c1).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T56 (r7,c0).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T58 (r7,c2).  Is it free?  Yes.
+#   Allocated T58 (r7,c2) as 59th tile. Remaining free tiles: 4
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48 56 
+#    57 58 59  .  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T57 (r7,c1) in NW direction is T58 (r7,c2) maybe
+# Find perp-first tile nearest to tile 58 (r7,c2) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T50 (r6,c2).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T57 (r7,c1).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T59 (r7,c3).  Is it free?  Yes.
+#   Allocated T59 (r7,c3) as 60th tile. Remaining free tiles: 3
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48 56 
+#    57 58 59 60  .  .  .  4 
+# 
+# Avail perp-first tile nearest to T58 (r7,c2) in NW direction is T59 (r7,c3) maybe
+# Find perp-first tile nearest to tile 59 (r7,c3) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T51 (r6,c3).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T58 (r7,c2).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T60 (r7,c4).  Is it free?  Yes.
+#   Allocated T60 (r7,c4) as 61th tile. Remaining free tiles: 2
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48 56 
+#    57 58 59 60 61  .  .  4 
+# 
+# Avail perp-first tile nearest to T59 (r7,c3) in NW direction is T60 (r7,c4) maybe
+# Find perp-first tile nearest to tile 60 (r7,c4) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T52 (r6,c4).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T59 (r7,c3).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T61 (r7,c5).  Is it free?  Yes.
+#   Allocated T61 (r7,c5) as 62th tile. Remaining free tiles: 1
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48 56 
+#    57 58 59 60 61 62  .  4 
+# 
+# Avail perp-first tile nearest to T60 (r7,c4) in NW direction is T61 (r7,c5) maybe
+# Find perp-first tile nearest to tile 61 (r7,c5) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T53 (r6,c5).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T60 (r7,c4).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T62 (r7,c6).  Is it free?  Yes.
+#   Allocated T62 (r7,c6) as 63th tile. Remaining free tiles: 0
+
+# Pattern so far:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48 56 
+#    57 58 59 60 61 62 63  4 
+# 
+# Avail perp-first tile nearest to T61 (r7,c5) in NW direction is T62 (r7,c6) maybe
+# Find perp-first tile nearest to tile 62 (r7,c6) in NW direction
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 1... found T54 (r6,c6).  Is it free?  No.
+#   Looking 'w' for perp at dist 1... found T61 (r7,c5).  Is it free?  No.
+#   Looking 'e' for perp at dist 1... found T63 (r7,c7).  Is it free?  No.
+#   Looking 's' for perp at dist 1... no tile exists.
+#   Found no perps.
+#   Searching 'n' side L1 for any avail tile...
+#     Search r(6,7) x c(5,7)
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 'w' side L1 for any avail tile...
+#   Searching 'e' side L1 for any avail tile...
+#     Search r(6,7) x c(5,7)
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 's' side L1 for any avail tile...
+#     Search r(6,7) x c(7,7)
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 2... found T46 (r5,c6).  Is it free?  No.
+#   Looking 'w' for perp at dist 2... found T60 (r7,c4).  Is it free?  No.
+#   Looking 'e' for perp at dist 2... no tile exists.
+#   Looking 's' for perp at dist 2... no tile exists.
+#   Found no perps.
+#   Searching 'n' side L2 for any avail tile...
+#     Search r(5,7) x c(4,7)
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 'w' side L2 for any avail tile...
+#   Searching 'e' side L2 for any avail tile...
+#     Search r(5,7) x c(4,7)
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 's' side L2 for any avail tile...
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 3... found T38 (r4,c6).  Is it free?  No.
+#   Looking 'w' for perp at dist 3... found T59 (r7,c3).  Is it free?  No.
+#   Looking 'e' for perp at dist 3... no tile exists.
+#   Looking 's' for perp at dist 3... no tile exists.
+#   Found no perps.
+#   Searching 'n' side L3 for any avail tile...
+#     Search r(4,7) x c(3,7)
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 'w' side L3 for any avail tile...
+#   Searching 'e' side L3 for any avail tile...
+#     Search r(4,7) x c(3,7)
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 's' side L3 for any avail tile...
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 4... found T30 (r3,c6).  Is it free?  No.
+#   Looking 'w' for perp at dist 4... found T58 (r7,c2).  Is it free?  No.
+#   Looking 'e' for perp at dist 4... no tile exists.
+#   Looking 's' for perp at dist 4... no tile exists.
+#   Found no perps.
+#   Searching 'n' side L4 for any avail tile...
+#     Search r(3,7) x c(2,7)
+#     Checking location (3,2)... found T26 (r3,c2).  Is it free?  No.
+#     Checking location (3,3)... found T27 (r3,c3).  Is it free?  No.
+#     Checking location (3,4)... found T28 (r3,c4).  Is it free?  No.
+#     Checking location (3,5)... found T29 (r3,c5).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,2)... found T34 (r4,c2).  Is it free?  No.
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,2)... found T42 (r5,c2).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,2)... found T50 (r6,c2).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,2)... found T58 (r7,c2).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 'w' side L4 for any avail tile...
+#   Searching 'e' side L4 for any avail tile...
+#     Search r(3,7) x c(2,7)
+#     Checking location (3,2)... found T26 (r3,c2).  Is it free?  No.
+#     Checking location (3,3)... found T27 (r3,c3).  Is it free?  No.
+#     Checking location (3,4)... found T28 (r3,c4).  Is it free?  No.
+#     Checking location (3,5)... found T29 (r3,c5).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,2)... found T34 (r4,c2).  Is it free?  No.
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,2)... found T42 (r5,c2).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,2)... found T50 (r6,c2).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,2)... found T58 (r7,c2).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 's' side L4 for any avail tile...
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 5... found T22 (r2,c6).  Is it free?  No.
+#   Looking 'w' for perp at dist 5... found T57 (r7,c1).  Is it free?  No.
+#   Looking 'e' for perp at dist 5... no tile exists.
+#   Looking 's' for perp at dist 5... no tile exists.
+#   Found no perps.
+#   Searching 'n' side L5 for any avail tile...
+#     Search r(2,7) x c(1,7)
+#     Checking location (2,1)... found T17 (r2,c1).  Is it free?  No.
+#     Checking location (2,2)... found T18 (r2,c2).  Is it free?  No.
+#     Checking location (2,3)... found T19 (r2,c3).  Is it free?  No.
+#     Checking location (2,4)... found T20 (r2,c4).  Is it free?  No.
+#     Checking location (2,5)... found T21 (r2,c5).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+#     Checking location (3,1)... found T25 (r3,c1).  Is it free?  No.
+#     Checking location (3,2)... found T26 (r3,c2).  Is it free?  No.
+#     Checking location (3,3)... found T27 (r3,c3).  Is it free?  No.
+#     Checking location (3,4)... found T28 (r3,c4).  Is it free?  No.
+#     Checking location (3,5)... found T29 (r3,c5).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,1)... found T33 (r4,c1).  Is it free?  No.
+#     Checking location (4,2)... found T34 (r4,c2).  Is it free?  No.
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,1)... found T41 (r5,c1).  Is it free?  No.
+#     Checking location (5,2)... found T42 (r5,c2).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,1)... found T49 (r6,c1).  Is it free?  No.
+#     Checking location (6,2)... found T50 (r6,c2).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,1)... found T57 (r7,c1).  Is it free?  No.
+#     Checking location (7,2)... found T58 (r7,c2).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 'w' side L5 for any avail tile...
+#   Searching 'e' side L5 for any avail tile...
+#     Search r(2,7) x c(1,7)
+#     Checking location (2,1)... found T17 (r2,c1).  Is it free?  No.
+#     Checking location (2,2)... found T18 (r2,c2).  Is it free?  No.
+#     Checking location (2,3)... found T19 (r2,c3).  Is it free?  No.
+#     Checking location (2,4)... found T20 (r2,c4).  Is it free?  No.
+#     Checking location (2,5)... found T21 (r2,c5).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+#     Checking location (3,1)... found T25 (r3,c1).  Is it free?  No.
+#     Checking location (3,2)... found T26 (r3,c2).  Is it free?  No.
+#     Checking location (3,3)... found T27 (r3,c3).  Is it free?  No.
+#     Checking location (3,4)... found T28 (r3,c4).  Is it free?  No.
+#     Checking location (3,5)... found T29 (r3,c5).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,1)... found T33 (r4,c1).  Is it free?  No.
+#     Checking location (4,2)... found T34 (r4,c2).  Is it free?  No.
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,1)... found T41 (r5,c1).  Is it free?  No.
+#     Checking location (5,2)... found T42 (r5,c2).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,1)... found T49 (r6,c1).  Is it free?  No.
+#     Checking location (6,2)... found T50 (r6,c2).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,1)... found T57 (r7,c1).  Is it free?  No.
+#     Checking location (7,2)... found T58 (r7,c2).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 's' side L5 for any avail tile...
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 6... found T14 (r1,c6).  Is it free?  No.
+#   Looking 'w' for perp at dist 6... found T56 (r7,c0).  Is it free?  No.
+#   Looking 'e' for perp at dist 6... no tile exists.
+#   Looking 's' for perp at dist 6... no tile exists.
+#   Found no perps.
+#   Searching 'n' side L6 for any avail tile...
+#     Search r(1,7) x c(0,7)
+#     Checking location (1,0)... found T08 (r1,c0).  Is it free?  No.
+#     Checking location (1,1)... found T09 (r1,c1).  Is it free?  No.
+#     Checking location (1,2)... found T10 (r1,c2).  Is it free?  No.
+#     Checking location (1,3)... found T11 (r1,c3).  Is it free?  No.
+#     Checking location (1,4)... found T12 (r1,c4).  Is it free?  No.
+#     Checking location (1,5)... found T13 (r1,c5).  Is it free?  No.
+#     Checking location (1,6)... found T14 (r1,c6).  Is it free?  No.
+#     Checking location (1,7)... found T15 (r1,c7).  Is it free?  No.
+#     Checking location (2,0)... found T16 (r2,c0).  Is it free?  No.
+#     Checking location (2,1)... found T17 (r2,c1).  Is it free?  No.
+#     Checking location (2,2)... found T18 (r2,c2).  Is it free?  No.
+#     Checking location (2,3)... found T19 (r2,c3).  Is it free?  No.
+#     Checking location (2,4)... found T20 (r2,c4).  Is it free?  No.
+#     Checking location (2,5)... found T21 (r2,c5).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+#     Checking location (3,0)... found T24 (r3,c0).  Is it free?  No.
+#     Checking location (3,1)... found T25 (r3,c1).  Is it free?  No.
+#     Checking location (3,2)... found T26 (r3,c2).  Is it free?  No.
+#     Checking location (3,3)... found T27 (r3,c3).  Is it free?  No.
+#     Checking location (3,4)... found T28 (r3,c4).  Is it free?  No.
+#     Checking location (3,5)... found T29 (r3,c5).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,0)... found T32 (r4,c0).  Is it free?  No.
+#     Checking location (4,1)... found T33 (r4,c1).  Is it free?  No.
+#     Checking location (4,2)... found T34 (r4,c2).  Is it free?  No.
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,0)... found T40 (r5,c0).  Is it free?  No.
+#     Checking location (5,1)... found T41 (r5,c1).  Is it free?  No.
+#     Checking location (5,2)... found T42 (r5,c2).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,0)... found T48 (r6,c0).  Is it free?  No.
+#     Checking location (6,1)... found T49 (r6,c1).  Is it free?  No.
+#     Checking location (6,2)... found T50 (r6,c2).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,0)... found T56 (r7,c0).  Is it free?  No.
+#     Checking location (7,1)... found T57 (r7,c1).  Is it free?  No.
+#     Checking location (7,2)... found T58 (r7,c2).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 'w' side L6 for any avail tile...
+#   Searching 'e' side L6 for any avail tile...
+#     Search r(1,7) x c(0,7)
+#     Checking location (1,0)... found T08 (r1,c0).  Is it free?  No.
+#     Checking location (1,1)... found T09 (r1,c1).  Is it free?  No.
+#     Checking location (1,2)... found T10 (r1,c2).  Is it free?  No.
+#     Checking location (1,3)... found T11 (r1,c3).  Is it free?  No.
+#     Checking location (1,4)... found T12 (r1,c4).  Is it free?  No.
+#     Checking location (1,5)... found T13 (r1,c5).  Is it free?  No.
+#     Checking location (1,6)... found T14 (r1,c6).  Is it free?  No.
+#     Checking location (1,7)... found T15 (r1,c7).  Is it free?  No.
+#     Checking location (2,0)... found T16 (r2,c0).  Is it free?  No.
+#     Checking location (2,1)... found T17 (r2,c1).  Is it free?  No.
+#     Checking location (2,2)... found T18 (r2,c2).  Is it free?  No.
+#     Checking location (2,3)... found T19 (r2,c3).  Is it free?  No.
+#     Checking location (2,4)... found T20 (r2,c4).  Is it free?  No.
+#     Checking location (2,5)... found T21 (r2,c5).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+#     Checking location (3,0)... found T24 (r3,c0).  Is it free?  No.
+#     Checking location (3,1)... found T25 (r3,c1).  Is it free?  No.
+#     Checking location (3,2)... found T26 (r3,c2).  Is it free?  No.
+#     Checking location (3,3)... found T27 (r3,c3).  Is it free?  No.
+#     Checking location (3,4)... found T28 (r3,c4).  Is it free?  No.
+#     Checking location (3,5)... found T29 (r3,c5).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,0)... found T32 (r4,c0).  Is it free?  No.
+#     Checking location (4,1)... found T33 (r4,c1).  Is it free?  No.
+#     Checking location (4,2)... found T34 (r4,c2).  Is it free?  No.
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,0)... found T40 (r5,c0).  Is it free?  No.
+#     Checking location (5,1)... found T41 (r5,c1).  Is it free?  No.
+#     Checking location (5,2)... found T42 (r5,c2).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,0)... found T48 (r6,c0).  Is it free?  No.
+#     Checking location (6,1)... found T49 (r6,c1).  Is it free?  No.
+#     Checking location (6,2)... found T50 (r6,c2).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,0)... found T56 (r7,c0).  Is it free?  No.
+#     Checking location (7,1)... found T57 (r7,c1).  Is it free?  No.
+#     Checking location (7,2)... found T58 (r7,c2).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 's' side L6 for any avail tile...
+# Because (r>c), search pattern is 'nwes'
+#   Looking 'n' for perp at dist 7... found T06 (r0,c6).  Is it free?  No.
+#   Looking 'w' for perp at dist 7... no tile exists.
+#   Looking 'e' for perp at dist 7... no tile exists.
+#   Looking 's' for perp at dist 7... no tile exists.
+#   Found no perps.
+#   Searching 'n' side L7 for any avail tile...
+#     Search r(0,7) x c(0,7)
+#     Checking location (0,0)... found T00 (r0,c0).  Is it free?  No.
+#     Checking location (0,1)... found T01 (r0,c1).  Is it free?  No.
+#     Checking location (0,2)... found T02 (r0,c2).  Is it free?  No.
+#     Checking location (0,3)... found T03 (r0,c3).  Is it free?  No.
+#     Checking location (0,4)... found T04 (r0,c4).  Is it free?  No.
+#     Checking location (0,5)... found T05 (r0,c5).  Is it free?  No.
+#     Checking location (0,6)... found T06 (r0,c6).  Is it free?  No.
+#     Checking location (0,7)... found T07 (r0,c7).  Is it free?  No.
+#     Checking location (1,0)... found T08 (r1,c0).  Is it free?  No.
+#     Checking location (1,1)... found T09 (r1,c1).  Is it free?  No.
+#     Checking location (1,2)... found T10 (r1,c2).  Is it free?  No.
+#     Checking location (1,3)... found T11 (r1,c3).  Is it free?  No.
+#     Checking location (1,4)... found T12 (r1,c4).  Is it free?  No.
+#     Checking location (1,5)... found T13 (r1,c5).  Is it free?  No.
+#     Checking location (1,6)... found T14 (r1,c6).  Is it free?  No.
+#     Checking location (1,7)... found T15 (r1,c7).  Is it free?  No.
+#     Checking location (2,0)... found T16 (r2,c0).  Is it free?  No.
+#     Checking location (2,1)... found T17 (r2,c1).  Is it free?  No.
+#     Checking location (2,2)... found T18 (r2,c2).  Is it free?  No.
+#     Checking location (2,3)... found T19 (r2,c3).  Is it free?  No.
+#     Checking location (2,4)... found T20 (r2,c4).  Is it free?  No.
+#     Checking location (2,5)... found T21 (r2,c5).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+#     Checking location (3,0)... found T24 (r3,c0).  Is it free?  No.
+#     Checking location (3,1)... found T25 (r3,c1).  Is it free?  No.
+#     Checking location (3,2)... found T26 (r3,c2).  Is it free?  No.
+#     Checking location (3,3)... found T27 (r3,c3).  Is it free?  No.
+#     Checking location (3,4)... found T28 (r3,c4).  Is it free?  No.
+#     Checking location (3,5)... found T29 (r3,c5).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,0)... found T32 (r4,c0).  Is it free?  No.
+#     Checking location (4,1)... found T33 (r4,c1).  Is it free?  No.
+#     Checking location (4,2)... found T34 (r4,c2).  Is it free?  No.
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,0)... found T40 (r5,c0).  Is it free?  No.
+#     Checking location (5,1)... found T41 (r5,c1).  Is it free?  No.
+#     Checking location (5,2)... found T42 (r5,c2).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,0)... found T48 (r6,c0).  Is it free?  No.
+#     Checking location (6,1)... found T49 (r6,c1).  Is it free?  No.
+#     Checking location (6,2)... found T50 (r6,c2).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,0)... found T56 (r7,c0).  Is it free?  No.
+#     Checking location (7,1)... found T57 (r7,c1).  Is it free?  No.
+#     Checking location (7,2)... found T58 (r7,c2).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 'w' side L7 for any avail tile...
+#   Searching 'e' side L7 for any avail tile...
+#     Search r(0,7) x c(0,7)
+#     Checking location (0,0)... found T00 (r0,c0).  Is it free?  No.
+#     Checking location (0,1)... found T01 (r0,c1).  Is it free?  No.
+#     Checking location (0,2)... found T02 (r0,c2).  Is it free?  No.
+#     Checking location (0,3)... found T03 (r0,c3).  Is it free?  No.
+#     Checking location (0,4)... found T04 (r0,c4).  Is it free?  No.
+#     Checking location (0,5)... found T05 (r0,c5).  Is it free?  No.
+#     Checking location (0,6)... found T06 (r0,c6).  Is it free?  No.
+#     Checking location (0,7)... found T07 (r0,c7).  Is it free?  No.
+#     Checking location (1,0)... found T08 (r1,c0).  Is it free?  No.
+#     Checking location (1,1)... found T09 (r1,c1).  Is it free?  No.
+#     Checking location (1,2)... found T10 (r1,c2).  Is it free?  No.
+#     Checking location (1,3)... found T11 (r1,c3).  Is it free?  No.
+#     Checking location (1,4)... found T12 (r1,c4).  Is it free?  No.
+#     Checking location (1,5)... found T13 (r1,c5).  Is it free?  No.
+#     Checking location (1,6)... found T14 (r1,c6).  Is it free?  No.
+#     Checking location (1,7)... found T15 (r1,c7).  Is it free?  No.
+#     Checking location (2,0)... found T16 (r2,c0).  Is it free?  No.
+#     Checking location (2,1)... found T17 (r2,c1).  Is it free?  No.
+#     Checking location (2,2)... found T18 (r2,c2).  Is it free?  No.
+#     Checking location (2,3)... found T19 (r2,c3).  Is it free?  No.
+#     Checking location (2,4)... found T20 (r2,c4).  Is it free?  No.
+#     Checking location (2,5)... found T21 (r2,c5).  Is it free?  No.
+#     Checking location (2,6)... found T22 (r2,c6).  Is it free?  No.
+#     Checking location (2,7)... found T23 (r2,c7).  Is it free?  No.
+#     Checking location (3,0)... found T24 (r3,c0).  Is it free?  No.
+#     Checking location (3,1)... found T25 (r3,c1).  Is it free?  No.
+#     Checking location (3,2)... found T26 (r3,c2).  Is it free?  No.
+#     Checking location (3,3)... found T27 (r3,c3).  Is it free?  No.
+#     Checking location (3,4)... found T28 (r3,c4).  Is it free?  No.
+#     Checking location (3,5)... found T29 (r3,c5).  Is it free?  No.
+#     Checking location (3,6)... found T30 (r3,c6).  Is it free?  No.
+#     Checking location (3,7)... found T31 (r3,c7).  Is it free?  No.
+#     Checking location (4,0)... found T32 (r4,c0).  Is it free?  No.
+#     Checking location (4,1)... found T33 (r4,c1).  Is it free?  No.
+#     Checking location (4,2)... found T34 (r4,c2).  Is it free?  No.
+#     Checking location (4,3)... found T35 (r4,c3).  Is it free?  No.
+#     Checking location (4,4)... found T36 (r4,c4).  Is it free?  No.
+#     Checking location (4,5)... found T37 (r4,c5).  Is it free?  No.
+#     Checking location (4,6)... found T38 (r4,c6).  Is it free?  No.
+#     Checking location (4,7)... found T39 (r4,c7).  Is it free?  No.
+#     Checking location (5,0)... found T40 (r5,c0).  Is it free?  No.
+#     Checking location (5,1)... found T41 (r5,c1).  Is it free?  No.
+#     Checking location (5,2)... found T42 (r5,c2).  Is it free?  No.
+#     Checking location (5,3)... found T43 (r5,c3).  Is it free?  No.
+#     Checking location (5,4)... found T44 (r5,c4).  Is it free?  No.
+#     Checking location (5,5)... found T45 (r5,c5).  Is it free?  No.
+#     Checking location (5,6)... found T46 (r5,c6).  Is it free?  No.
+#     Checking location (5,7)... found T47 (r5,c7).  Is it free?  No.
+#     Checking location (6,0)... found T48 (r6,c0).  Is it free?  No.
+#     Checking location (6,1)... found T49 (r6,c1).  Is it free?  No.
+#     Checking location (6,2)... found T50 (r6,c2).  Is it free?  No.
+#     Checking location (6,3)... found T51 (r6,c3).  Is it free?  No.
+#     Checking location (6,4)... found T52 (r6,c4).  Is it free?  No.
+#     Checking location (6,5)... found T53 (r6,c5).  Is it free?  No.
+#     Checking location (6,6)... found T54 (r6,c6).  Is it free?  No.
+#     Checking location (6,7)... found T55 (r6,c7).  Is it free?  No.
+#     Checking location (7,0)... found T56 (r7,c0).  Is it free?  No.
+#     Checking location (7,1)... found T57 (r7,c1).  Is it free?  No.
+#     Checking location (7,2)... found T58 (r7,c2).  Is it free?  No.
+#     Checking location (7,3)... found T59 (r7,c3).  Is it free?  No.
+#     Checking location (7,4)... found T60 (r7,c4).  Is it free?  No.
+#     Checking location (7,5)... found T61 (r7,c5).  Is it free?  No.
+#     Checking location (7,6)... found T62 (r7,c6).  Is it free?  No.
+#     Checking location (7,7)... found T63 (r7,c7).  Is it free?  No.
+
+#   Searching 's' side L7 for any avail tile...
+# Final pattern:
+# 
+#     5  7  8 11 12 29 30 55 
+#     6  0  9 10 13 28 31 54 
+#     1 22  2 15 14 27 32 53 
+#    21  3 17 16 25 26 33 52 
+#    20 19 18 23 24 35 34 51 
+#    41 40 39 38 37 36 49 50 
+#    42 43 44 45 46 47 48 56 
+#    57 58 59 60 61 62 63  4 
+# 

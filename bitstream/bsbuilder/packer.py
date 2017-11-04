@@ -1,0 +1,364 @@
+#!/usr/bin/python
+
+DO_TEST=0
+import sys;
+import re;
+
+# tstring = ''.join(str(x) for x in range(0,5))
+
+# Another thing you could do:
+#   '-test packer' and/or '-help packer'
+
+try:
+    for i in sys.argv:
+        if i == '--test_packer':
+            print "Time to test the packer I guess..."
+            DO_TEST=1
+
+        # if i == '-test' and i+1 == 'packer' ...
+        # if i == '-help' and i+1 == 'packer' ...
+
+except: DO_TEST=0
+
+# GLOBALS and their defaults
+GRID_WIDTH = 8
+GRID_HEIGHT = GRID_WIDTH
+
+NTILES = GRID_HEIGHT * GRID_WIDTH
+tiles = []
+order = []
+
+def init_globals(grid_width = 8, grid_height = 8, DBG=0):
+
+    # Set these
+    global GRID_WIDTH
+    global GRID_HEIGHT
+
+    # Derive these
+    global NTILES
+    global tiles
+    global order
+
+    GRID_WIDTH  = grid_width
+    GRID_HEIGHT = grid_height
+    NTILES = GRID_HEIGHT * GRID_WIDTH
+
+    tiles = range(NTILES)
+    if DBG: print "# tiles:"; print '#', tiles, '\n'
+
+    order = 64 * [-1]
+    if DBG: print "# order:"; print '#', order, '\n'
+   
+def is_free(tileno): return order[tileno] == -1
+# def is_free(tileno):
+#     # print order
+#     return order[tileno] == -1
+
+def ntiles_free():
+    n = 0
+    for i in range( len(order)):
+        if order[i] == -1: n = n+1
+    return n
+
+
+def tile_exists(tileno): return tileno >= 0 and tileno < NTILES
+
+def allocate(tileno, DBG=0):
+    '''tileno will be next in the ordered list'''
+    # assert DBG==0
+    n_allocated = max(order)
+    order[tileno] = n_allocated+1
+    n_allocated = n_allocated+1
+
+    if DBG: print "#   Allocated %s as %dth tile." \
+       % (FMT.tileT(tileno),n_allocated),
+    if DBG: print "Remaining free tiles: %d" % ntiles_free()
+    if DBG: print ""
+
+    if DBG>5:
+        print "# Pattern so far:"
+        print "# "
+        FMT.order()
+        print "# "
+
+    # print tileno,order
+    return n_allocated
+
+def tileno2rc(tileno):
+    return (int(tileno)/8,int(tileno)%8)
+
+class Format:
+    def tile(self,r,c=-1):
+        '''
+        E.g. Format.tile(10)  = "10 (r1,c2)"
+        E.g. Format.tile(1,2) = "10 (r1,c2)"
+        '''
+        if c == -1: tileno = r; (r,c) = tileno2rc(tileno)
+        else:       tileno = rc2tileno(r,c)
+        return "%d (r%d,c%d)" % (tileno,r,c)
+
+    def tileT(self,r,c=-1):
+        '''
+        E.g. tile(10)  = "T10 (r1,c2)"
+        E.g. tile(0,2) = "T09 (r1,c2)"
+        '''
+        if c == -1: tileno = r; (r,c) = tileno2rc(tileno)
+        else:       tileno = rc2tileno(r,c)
+        return "T%02d (r%d,c%d)" % (tileno,r,c)
+
+    def order(self):
+        for r in range(GRID_HEIGHT):
+            print '#   ',
+            for c in range(GRID_WIDTH):
+                tno = rc2tileno(r,c)
+                if order[tno] == -1: print ' .',
+                else: print '%2d' % order[tno],
+            print ''
+
+FMT = Format()
+
+def print_nearest(src,dst):
+    print "# Avail perp-first tile",
+    print "nearest to %s in NW direction" % FMT.tileT(src),
+    print "is %s maybe" % FMT.tileT(dst)
+    
+def find_nearest(tileno, DBG=1):
+    # Search in expanding circles from center tile 'tileno'
+
+    if DBG: print "# Find perp-first tile nearest to tile %s in NW direction" \
+          % FMT.tile(tileno)
+
+    if DBG>1: print "# Search for avail tile in expanding circles from %s"\
+       % FMT.tile(tileno)
+    
+    for radius in range(1, GRID_WIDTH):
+        tile = search_box(tileno,radius,DBG)
+        if (tile != -1):
+            if DBG: print_nearest(tileno,tile)
+            return tile
+
+    return -1
+        
+def test_find_nearest():
+    DBG=0
+    print "# Starting with tile 0, trace a path through the grid"
+    allocate(63,DBG=1) # yeah, sorry
+    allocate(0,DBG=1)
+    next = 0
+    while next != -1:
+        if DBG: print "# Find tile nearest to T%d" % next
+        next = find_nearest(next,DBG=1)
+
+    print "# Final pattern:"
+    print "# "
+    FMT.order()
+    print "# "
+
+    #  1  4  5 16 17 36 37 -1 
+    #  2  3  6 15 18 35 38 -1 
+    #  9  8  7 14 19 34 39 -1 
+    # 10 11 12 13 20 33 40 -1 
+    # 25 24 23 22 21 32 41 -1 
+    # 26 27 28 29 30 31 42 -1 
+    # 49 48 47 46 45 44 43 -1 
+    # 50 51 52 53 54 55 56  0 
+
+
+
+def search_box(ctr, L, DBG=1):
+
+    sp = search_pattern(ctr, L, DBG=DBG)
+
+    # Search perps (straight-line routes) FIRST
+    t = search_perps(ctr, L, sp, DBG=DBG)
+    if (t != -1): return t
+
+    #     FMT.order()
+    #     sys.exit(1)
+    #     return -1
+
+    if DBG: print "#   Found no perps."
+
+    t = search_sides(ctr, L, sp, DBG=DBG)
+    if (t != -1):
+        print "found", t
+        return t
+
+    return -1
+
+def search_sides(ctr, L, sp='nwes', DBG=1):
+
+    for side in sp:
+        if DBG: print "#   Searching '%s' side L%d for any avail tile..." \
+           % (side,L)
+
+        # Farthest corner is always SE, check that LAST
+        (r,c) = tileno2rc(ctr)
+        if (side == 'n'): (rbegin,cbegin) = (r-L,c-L) # NW
+        if (side == 'e'): (rbegin,cbegin) = (r-L,c-L) # NW
+        if (side == 's'): (rbegin,cbegin) = (r-L,c+L) # NE
+        if (side == 'w'): (rbegin,cbegin) = (r+L,c-L) # SW
+
+
+        rend = rbegin+2*L+1
+        cend = cbegin+2*L+1
+
+        # (optional) shortcuts
+        (rmin,rmax) = (0,GRID_WIDTH-1)
+        (cmin,cmax) = (0,GRID_HEIGHT-1)
+        if   (rend < rmin) or   (cend < cmin):
+            continue
+        if (rbegin > rmax) or (cbegin > cmax): continue
+        rbegin = max(rmin,rbegin)
+        cbegin = max(cmin,cbegin)
+
+        rend = min(rmax,rend)
+        cend = min(cmax,cend)
+
+        if DBG: print "#     Search r(%d,%d) x c(%d,%d)" \
+           % (rbegin,rend,cbegin,cend)
+
+
+        for r in range(rbegin,rend+1):
+            if (r < 0) or (r > GRID_WIDTH-1): return -1
+
+            for c in range(cbegin,cend+1):
+                if (c < 0) or (c > GRID_HEIGHT-1): return -1
+
+
+                tno = rc2tileno(r,c)
+
+                if DBG: print '#     Checking location (%d,%d)...' % (r,c),
+
+                t = alloc_tile(tno, DBG=DBG)
+                if t != -1: return t
+        if DBG: print ""
+
+                
+    return -1
+
+def search_perps(ctr, L, sp='nwes', DBG=1):
+    '''Look for tiles in perpendicular directions from center (src) tile'''
+
+    for side in sp:
+        if DBG: print "#   Looking '%s' for perp at dist %d..." % (side,L),
+
+        # check perpendicular tile first
+        # then run through the side starting w/tile nearest to INPUT tile 0
+        # nearest(n,s,e,w) = (nw,nw,ne,sw)
+
+        # check perpendicular tile first
+        perp = go_straight(ctr, L, side)
+
+        t = alloc_tile(perp, DBG=DBG)
+        if t != -1: return t
+
+    return -1
+
+def alloc_tile(tno, DBG=0):
+    if not tile_exists(tno):
+        if DBG: print "no tile exists."
+        return -1
+
+    if DBG: print "found %s.  Is it free? " % FMT.tileT(tno),
+    if not is_free(tno):
+        if DBG: print "No."
+        return -1
+
+    if DBG: print "Yes."
+    allocate(tno, DBG=DBG)
+    return tno
+
+
+def search_pattern(ctr, L, DBG=1):
+    '''Search all tiles in a ring of radius L away from center tile ctr'''
+    (r,c) = tileno2rc(ctr)
+
+    # Find the tile closest to INPUT tile 0
+    # => Search box sides n and e first, depending on which is closest
+    # => Can determine which is closest by looking at whether tile is
+    #    NE or SW of dividing line going SE from INPUT in NW corner (0,0)
+    #    (draw a picture if you want...)
+
+    if r>c:
+        search_pattern = 'nwes'; why='r>c'
+    else:
+        search_pattern = 'wnse'; why='c<=r'
+
+    if DBG: print "# Because (%s), search pattern is '%s'" % (why,search_pattern)
+    return search_pattern
+
+
+# FWIW canonical side numbering is 0123 = eswn
+
+def go_straight(t=0, L=3, dir='e'):
+    '''
+    Find the tile 'L' tiles away from tile 't' in direction 'dir'
+    Examples 8x8 grid):
+        go_straight(t=0, L=3, 'e') ==  3
+        go_straight(t=9, L=1, 's') == 17
+    '''
+    (r,c) = tileno2rc(t)
+
+    # print "# Looking straight '%s' from tile %s" % (dir, FMT.tile(t))
+    # print r,c, 'L=',L
+
+    if (dir == 'n'): (rdst,cdst) = (r-L, c+0)
+    if (dir == 'e'): (rdst,cdst) = (r+0, c+L)
+    if (dir == 's'): (rdst,cdst) = (r+L, c+0)
+    if (dir == 'w'): (rdst,cdst) = (r+0, c-L)
+    
+    # rc2tileno should so this
+    # if (rdst<0) or (cdst<0): return -1
+
+    return rc2tileno(rdst, cdst)
+
+
+def rc2tileno(r,c):
+    if (r < 0) or (c < 0): return -1
+    tno = 8*r + c
+    if tno > NTILES: return -1
+    return tno
+
+
+def test_all():
+    assert go_straight(0, 3, 'e') == 3
+    assert go_straight(9, 1, 's') == 17
+
+    # sp = search_box(ctr=9, L=1, DBG=1)
+
+    ##########################################################
+    print ""
+    print "# Quick test of find_nearest:"
+
+    init_globals(8,8,DBG=1) # this is crucial out there
+
+    n = find_nearest(17,DBG=0)
+    print_nearest(17,n)
+
+    n = find_nearest(17,DBG=0)
+    print_nearest(17,n)
+    
+    n = find_nearest(17,DBG=0)
+    print_nearest(17,n)
+    
+    n = find_nearest(17,DBG=0)
+    print_nearest(17,n)
+    
+    ##########################################################
+    print ""
+    print ""
+    print "# More exhaustive test of find_nearest:"
+    
+    print "# Begin pattern:"
+    print "# "
+    FMT.order()
+    print "# "
+
+
+    print ""
+    print ""
+    # init_globals(8,8) # Clear results of prev test (or not!!)
+    test_find_nearest()
+
+if DO_TEST: test_all()
