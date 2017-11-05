@@ -417,8 +417,12 @@ def init_tile_resources(DBG=0):
     if DBG: print "Initialized %d tiles" % ntiles
     print resources[0]
 
-def is_pe_tile(tileno):  return re.search("^pe",  cgra_info.tiletype(tileno))
-def is_mem_tile(tileno): return re.search("^mem", cgra_info.tiletype(tileno))
+# def is_pe_tile(tileno):  return re.search("^pe",  cgra_info.tiletype(tileno))
+# def is_mem_tile(tileno): return re.search("^mem", cgra_info.tiletype(tileno))
+
+def is_pe_tile(tileno):  return cgra_info.mem_or_pe(tileno) == 'pe'
+def is_mem_tile(tileno): return cgra_info.mem_or_pe(tileno) == 'mem'
+
 
 
 def initialize_node_INPUT():
@@ -776,14 +780,52 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
     # Does destination have a home?
     if not is_placed(dname):
 
+        DBG=1
+        # print indent+"No home for '%s'"
+        if DBG: print indent+"No home for '%s'" % dname
+
+
+
+
+
+
+
         # BOOKMARK
         # do DBG=1
         # Figure how to do the first placement INPUT -> mem_1 maybe
         # Use new connection thingies maybe
 
-        DBG=1
-        # print indent+"No home for '%s'"
-        if DBG: print indent+"No home for '%s'" % dname
+        print '# initialize packer'
+        packer.USE_CGRA_INFO = True
+        packer.init_globals() # this is crucial out there
+        
+        print "# here's the grid!"
+        print '# '
+        packer.FMT.grid()
+        print ''
+
+        packer.allocate(0)
+
+        print "# order so far"
+        print '# '
+        packer.FMT.order()
+        print ''
+
+        # print "# i'm in tile %s" % packer.FMT.tileT(sname)
+        nearest = packer.find_nearest(0,DBG=1)
+
+
+        print "# order so far"
+        print '# '
+        packer.FMT.order()
+        print ''
+
+
+
+
+
+
+
 
         assert False, '\nBOOKMARK: this is where we call the packer, right?'
 

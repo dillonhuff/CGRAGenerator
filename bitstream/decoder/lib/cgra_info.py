@@ -438,6 +438,13 @@ def tiletype(tileno):
     print "ERROR Could not find type for tile %d" % tileno
     sys.exit(-1)
 
+def mem_or_pe(tileno):
+    type = tiletype(tileno)
+    if   re.search("^mem", type): return 'mem'
+    elif re.search("^pe",  type): return 'pe'
+    else:
+        assert False, 'unknown tile type'
+        return 'unknown'
 
 def tile_exists(tileno):
     for tile in CGRA.findall('tile'):

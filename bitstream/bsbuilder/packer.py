@@ -30,6 +30,9 @@ NTILES = GRID_HEIGHT * GRID_WIDTH
 tiles = []
 order = []
 
+TYPE_NEEDED = 'any'
+
+
 cgra_info = False
 
 def init_globals(grid_width = 8, grid_height = 8, DBG=0):
@@ -315,12 +318,23 @@ def alloc_tile(tno, DBG=0):
         if DBG: print "no tile exists."
         return -1
 
-    if DBG: print "found %s.  Is it free? " % FMT.tileT(tno),
+    if DBG: print "found %s. Free:" % FMT.tileT(tno),
     if not is_free(tno):
-        if DBG: print "No."
+        if DBG: print "no."
         return -1
 
-    if DBG: print "Yes."
+    if TYPE_NEEDED == 'any':
+        if DBG: print "yes."
+        allocate(tno, DBG=DBG)
+        return tno
+
+    if DBG: print "yes. Type '%s':" % TYPE_NEEDED,
+
+    if TYPE_NEEDED != cgra_info.mem_or_pe(tno):
+        if DBG: print "no."
+        return -1
+    
+    if DBG: print "yes."
     allocate(tno, DBG=DBG)
     return tno
 
@@ -420,5 +434,20 @@ if DO_TEST:
     print '# '
     FMT.grid()
     print ''
-
     test_all()
+
+    print '############################################################'
+    print "# Try mem tiles only"
+    print ""
+    TYPE_NEEDED = 'mem'
+    init_globals() # this is crucial out there
+    test_all()
+
+    print '############################################################'
+    print "# Try pe tiles only"
+    print ""
+    TYPE_NEEDED = 'pe'
+    init_globals() # this is crucial out there
+    test_all()
+
+
