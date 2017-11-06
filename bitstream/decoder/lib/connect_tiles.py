@@ -388,6 +388,19 @@ def is_mem_rc(r,c):
     else:                           return False
 
 
+def allports(path):
+    # Path looks like this:
+    # ['T0_out_s0t0', 'T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0', 'T3_in_s2t0']
+    # Want list of all the ports
+
+    pstring = ' -> '.join(path)
+    # "T0_out_s0t0 -> T1_in_s2t0 -> T1_out_s0t0 -> T2_in_s2t0 -> T2_out_s0t0 -> T3_in_s2t0"
+
+    plist = pstring.split(' -> ')
+    ['T0_out_s0t0', 'T1_in_s2t0', 'T1_out_s0t0', 'T2_in_s2t0', 'T2_out_s0t0', 'T3_in_s2t0']
+
+    return plist
+
 def printpath(begin,path,end):
     if path == []:
         print "# %s -> %s" % (begin,end)
