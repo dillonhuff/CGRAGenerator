@@ -40,8 +40,10 @@ import sys
 # def tileno2rc(tileno):
 # def rc2tileno(row,col):
 # def tiletype(tileno):
+# def mem_or_pe(tileno):
 # def tile_exists(tileno):
 # def get_element(EE, TTTT):
+# def reachable(rsrc, tileno=0, DBG=0):
 # def test():
 
 
@@ -486,6 +488,69 @@ def get_element(EE, TTTT):
                 fa = int(feature.attrib['feature_address'])
                 if (fa == elemno): return feature
     return False
+
+def reachable(rsrc, tileno=0, DBG=0):
+
+    # list all resources in tile that are reachable from 'rsrc'
+    # 'rsrc' can be one of: in*, pe_out_res, wdata, mem_out
+
+    if DBG: print 'who can connect to', rsrc, 'in tile', tileno, '?'
+
+    return sb_reachable(rsrc,tileno, DBG)
+    return cb_reachable(rsrc,tileno, DBG)
+
+def sb_reachable(rsrc, tileno=0, DBG=0):
+    tile = get_tile(tileno)
+    assert tile != -1, '404 tile not found'
+
+    # Note some resources are reachable from both sb and cb e.g.
+    # in_BUS16_S2_T0 can connect to
+    #   sb: ['out_BUS16_S0_T0', 'out_BUS16_S1_T0', 'out_BUS16_S3_T0']
+    #   cb: ['data0']
+
+    # Rewrites:
+    if rsrc == 'mem_out': rsrc = 'rdata'
+    if rsrc == 'mem_in':  rsrc = 'wdata'
+
+    # if DBG: print 'found tile', tileno
+    sblist = search_muxes(tile, 'sb', rsrc, DBG-1)
+    cblist = search_muxes(tile, 'cb', rsrc, DBG-1)
+
+    if DBG>2: print 'sb:', rsrc, 'can connect to', sblist
+    if DBG>2: print 'cb:', rsrc, 'can connect to', cblist
+
+    if DBG: print rsrc, 'can connect to\n', sblist+cblist
+    if DBG: print ''
+
+    return sblist+cblist
+
+def search_muxes(tile, box, rsrc, DBG=0):
+    DBG = max(DBG,0)
+    # 'box' is one of: ['sb','cb']
+    assert box in ['sb','cb']
+    rlist = []
+    for box in tile.iter(box):
+        for mux in box.iter('mux'):
+            for src in mux.iter('src'):
+                if DBG: print 'found src', src.text
+                if src.text == rsrc:
+                    snk = mux.attrib['snk']
+                    if DBG: print 'found snk', snk
+                    rlist.append(snk)
+    return rlist
+
+    DBG=1
+    if DBG: print rsrc, 'can connect to', rlist
+    print ''
+        
+    assert False, 'under construction'
+    assert False, 'no such tile'
+     
+def get_tile(tileno):
+    for tile in CGRA.findall('tile'):
+        t = int(tile.attrib['tile_addr'])
+        if t == tileno: return tile
+    return -1
 
 # def get_switchbox(EE,TTTT):
 #     '''

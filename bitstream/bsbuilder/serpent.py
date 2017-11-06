@@ -38,7 +38,10 @@ def manhattan_distance_rc(src=[0,0], dst=[5,1], DBG=0):
     # use connect_tiles.connect_tiles_same_{row,col} to connect;
     # count ntiles in path
 
-    (begin,path,end) = CT.connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=DBG-1)
+    # (begin,path,end) = CT.connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=DBG-1)
+    p = CT.connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=DBG-1)
+    (begin,path,end) = CT.unpack_path(p)
+
     dist = len(path)
     
     # E.g. extract_tile('T1_in_s2t0 -> T1_out_s0t0') = 'T1'
@@ -56,10 +59,20 @@ def manhattan_distance_rc(src=[0,0], dst=[5,1], DBG=0):
         c = extract_tile(end)
         print '# %s-> %s ->%s' % (a,b,c)
             
-cgra_info.read_cgra_info()    
-manhattan_distance_rc(DBG=1)
+def test_manhattan_distance_rc():
+    cgra_info.read_cgra_info()
+    manhattan_distance_rc(DBG=1)
+    print ''
 
-# sys.exit(1)
+def test_reachable():
+    # S0 only connecst to four sides
+    cgra_info.reachable('in_BUS16_S0_T0', 0, DBG=1)
+    
+    # S2 can also connect to op1
+    cgra_info.reachable('in_BUS16_S2_T0', 0, DBG=1)
+    
+    cgra_info.reachable('mem_out', 3, DBG=1)
+    cgra_info.reachable('pe_out_res', 0, DBG=1)
 
 # # FIXME combine with other manhattan thing above maybe
 # def manhattan_distance(src=[0,0], dst=[5,1]):
@@ -160,13 +173,30 @@ def main():
     cgra_filename = get_default_cgra_info_filename()
     cgra_info.read_cgra_info(cgra_filename)
 
+    print '######################################################'
+    print '# serpent.py: Initialize the packer'
+    packer.USE_CGRA_INFO = True
+    packer.init_globals() # this is crucial out there
+    print "# here's the grid!"
+    print '# '
+    packer.FMT.grid()
+    print ''
 
     print '######################################################'
     print '# serpent.py: Initialize node and tile data structures'
     init_tile_resources(DBG=1)
     build_nodes(DBG=1)
+    assert not nodes['INPUT'].placed
     initialize_routes()
     initialize_node_INPUT()
+
+    # FIXME should be part of initialize_node_INPUT somehow right?
+    # Allocate tile 0 for input node
+    packer.allocate(0)
+    print "# order so far"
+    print '# '
+    packer.FMT.order()
+    print ''
 
     print '########################################'
     print '# serpent.py: constant folding'
@@ -281,6 +311,10 @@ class Node:
         self.net = []
         # self.processed = False
 
+    def type(self):
+        if self.name[0] == 'm': return 'mem'
+        else: return 'pe'
+
     def addop(self, operand):
         assert type(operand) == str
         if   not self.op1:
@@ -305,11 +339,205 @@ class Node:
 
     def is_routed(dest_name): return self.route[dest_name] != []
 
+    def is_avail(self, r):
+        '''Resource r in tile T is avail if it is free and/or if it
+        is already in mynet.'''
+        
+        # E.g. resources[T] = ['in_s0t0', 'in_s0t1', ...
+
+        print r, self.net
+
+        if r in self.net: return True
+
+        # Resource must have embedded tileno, e.g. 'T1_in_s3t2' or 'T5_mem_out'
+
+        parse = re.search('^T(\d+)_(.*)', r)
+        if not parse: assert False
+        tileno = int(parse.group(1))
+        rname = parse.group(2)
+
+        print rname, resources[tileno]
+
+        if rname in resources[tileno]: return True
+        else: return False
+
+
+    def connect(self,a,b,T=-1,DBG=9):
+        '''
+        In tile T, connect a to b if possible.
+        a and b may or may not have embedded tile info.
+        Both must be resources available to self.
+        If can connect, return connection(s) necessary.
+        Else return FALSE i guess.
+        '''
+
+        print ''
+        print "looking to connect '%s' and '%s'" % (a,b)
+
+        # Canonicalize a,b to have embedded tile info e.g. 'T<t>_resource'
+        if a[0] != 'T': a = "T%d_%s" % (T,a)
+        if b[0] != 'T': b = "T%d_%s" % (T,b)
+
+        if not self.is_avail(a):
+            print "'%s' not avail to tile %d" % (a,T)
+            return False
+        if not self.is_avail(b):
+            print "'%s' not avail to tile %d" % (b,T)
+            return False
+
+        # Valid combinations:       a               b
+        #                     pe_out|mem_out      out_.*
+        #                          in.*           out_.*
+        #                          in.*      {mem_in,op1,op2}   
+
+        print "looks like both are available to '%s'" % self.name
+        print ''
+
+        # If can reach a->b directly, return a->b'
+
+        # rlist = all ports that a can reach in tile T
+        rlist = cgra_info.reachable(to_cgra(a), T, DBG=1)
+        print rlist
+
+        bprime = to_cgra(b)
+        print "is '%s' in the list?" % bprime
+        if bprime in rlist:
+            print 'YES'
+            return ['%s -> %s' % (a,b)]
+
+        print "NO"
+        print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
+        print "maybe can connect through intermediary?"
+            
+        # Try to salvage it; e.g. if dest is 'op1' then
+        # 'reachable' list can contain 'out' wires; if
+        # one of the reachable wires can connect to 'op1'
+        # then return both paths
+        #
+        # To test:
+        # - data0 (op1) can only connect to side 2;
+        # - try and connect (in_s3t0) to op1 in tile 0
+
+        # It only works when dest is op1 or op2 or mem_in, i think
+
+        if not re.search('(op1|op2|mem_in)', b): return False
+        print "maybe can connect intermediary"
+        for r in rlist:
+            rprime = from_cgra(r, T)
+            p1 = self.connect(a,rprime,T,DBG)
+            if not p1: continue
+            p2 = self.connect(rprime,b,T,DBG)
+            if not p2: continue
+
+            print "Found double connection.  What a day!"
+            return p1+p2
+
+        print "no good"
+        return False
+            
+
+
+def parsewire(w):
+    '''wire can be "T0_in_s0t0" or "out_s1t1"'''
+
+    # Examples
+    # "T0_in_s0t0" returns (0, 'in', 0, 0)
+    # "out_s1t1"   returns (-1, 'out', 1, 1)
+    # "T0_mem_out" returns (0, 'mem_out', -1, -1)
+    # "mem_out"    returns (-1, 'mem_out', -1, -1)
+
+    tileno = -1
+    parse = re.search('^T(\d+)_(.*)', w)
+    if parse:
+        (tileno,w) = (parse.group(1),parse.group(2))
+
+    parse = re.search('(in|out)_s(\d+)t(\d+)', w)
+    if not parse: return (tileno,w,-1,-1)
+
+    (dir,side,track) = (
+        parse.group(1), parse.group(2), parse.group(3))
+    return (int(tileno),dir,int(side),int(track))
+
+
+
 def prettyprint_dict(dictname, dict):
     for d in sorted(dict):
         print "%s%-20s = %s" % (dictname, [d], dict[d])
     
 
+# def reachable(a,b):
+#     # Will use cgra_info.reachable(), but first have to rewrite some things
+#     # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'
+    
+
+def to_cgra(name):
+    # Valid names include
+    # Valid combinations:       a               b
+    #                     pe_out|mem_out      out_.*
+    #                          in.*           out_.*
+    #                          in.*      {mem_in,op1,op2}   
+
+    print "converting", name
+
+    # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'
+    (T,d,s,t) = parsewire(name)
+    # assert T != -1
+    print (T,d,s,t)
+    if s == -1:
+        # not a wire; name is returned as 'd'
+        if d == 'op1'   :  newname = 'data0'
+        if d == 'op2'   :  newname = 'data1'
+        if d == 'pe_out':  newname = 'pe_out_res'
+
+        if d == 'mem_in':  newname = 'wdata'
+        if d == 'mem_out': newname = 'rdata'
+
+    else:
+        print 'hoo', s
+        assert s < 4, 'oops need more rewrites'
+        newname = '%s_BUS16_S%d_T%d' % (d,s,t)
+
+    print 'new name is', newname
+    print ''
+
+    return newname
+
+
+def from_cgra(name, tileno):
+    print "converting", name
+    (dir,side,track) = parse_cgra_wirename(name)
+    print (dir,side,track)
+
+    if dir == -1:
+        # not a wire
+        if name == 'data0':      newname = 'op1'
+        elif name == 'data1':      newname = 'op2'
+        elif name == 'pe_out_res': newname = 'pe_out'
+        
+        elif name == 'wdata': newname = 'mem_in'
+        elif name == 'rdata': newname = 'mem_out'
+        else: assert False, 'sb_wire or something?'
+    else:
+        newname = '%s_s%st%s' % (dir,side,track)
+
+    print 'new name is', newname
+    print ''
+    newname = 'T%d_%s' % (tileno, newname)
+    return newname
+
+def parse_cgra_wirename(w):
+    parse = re.search('(in|out)_BUS16_S(\d+)_T(\d+)', w)
+    print "in", w
+    rval = (-1,-1,-1)
+    if (parse):
+        print 'parsed'
+        (dir,side,track) = (parse.group(1), parse.group(2), parse.group(3))
+        rval = (dir,side,track)
+    print 'out', rval
+    return rval
+
+
+# FIXME do the thing with the globals and the init-globals...
 nodes = {}
 def build_nodes(DBG=0):
     # Build a global data structure from the dot file e.g.
@@ -323,6 +551,7 @@ def build_nodes(DBG=0):
     #   node["INPUT"].dests = ["mem_1" "reg_0_1", "mul_49119_492_PE"]
 
     global nodes
+    nodes = {}
     for line in sys.stdin:
         line = line.strip()
 
@@ -422,8 +651,6 @@ def init_tile_resources(DBG=0):
 
 def is_pe_tile(tileno):  return cgra_info.mem_or_pe(tileno) == 'pe'
 def is_mem_tile(tileno): return cgra_info.mem_or_pe(tileno) == 'mem'
-
-
 
 def initialize_node_INPUT():
     src = 'in_s1t0'
@@ -553,7 +780,8 @@ def place(name, tileno, src, DBG=0):
     n = nodes[name]
     if n.placed:
         print "ERROR %s already placed at %s" % (name, n.src)
-        sys.exit(1)
+        assert False, "ERROR %s already placed at %s" % (name, n.src)
+
 
     n.tileno = tileno
     n.src = src
@@ -784,50 +1012,89 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # print indent+"No home for '%s'"
         if DBG: print indent+"No home for '%s'" % dname
 
-
-
-
-
-
-
         # BOOKMARK
         # do DBG=1
         # Figure how to do the first placement INPUT -> mem_1 maybe
         # Use new connection thingies maybe
 
-        print '# initialize packer'
-        packer.USE_CGRA_INFO = True
-        packer.init_globals() # this is crucial out there
-        
-        print "# here's the grid!"
-        print '# '
-        packer.FMT.grid()
-        print ''
-
-        packer.allocate(0)
+#         print '# initialize packer'
+#         packer.USE_CGRA_INFO = True
+#         packer.init_globals() # this is crucial out there
+#         
+#         print "# here's the grid!"
+#         print '# '
+#         packer.FMT.grid()
+#         print ''
+# 
+#         packer.allocate(0)
 
         print "# order so far"
         print '# '
         packer.FMT.order()
         print ''
+
+        dtype = nodes[dname].type()
+        print 'dname   is type %s' % dtype
 
         # print "# i'm in tile %s" % packer.FMT.tileT(sname)
-        nearest = packer.find_nearest(0,DBG=1)
+        nearest = packer.find_nearest(0, dtype, DBG=1)
 
+        assert nearest != -1
+
+#         stile = nodes[sname].tileno
+#         dtile = nodes[dname].tileno
+        print '"nearest" is type %s' % cgra_info.mem_or_pe(nearest)
+        assert nodes[dname].type() == cgra_info.mem_or_pe(nearest)
 
         print "# order so far"
         print '# '
         packer.FMT.order()
         print ''
 
+########################################################################
+########################################################################
+########################################################################
+        # next:
+        # trying to route sname/stileno to dname/dtileno
+        # foreach port p in snode.src,snode.net
+        #   foreach (begin,path,end) in connect {hv,vh}connect(ptile,dtile)
+        #     if src.canconnect(sname.src,begin) and src.canconnect(end,dname)
+        #        paths.append (begin,path,end)
+        # choose a path in paths
+
+        print 'FOO made it to here'
+
+        # trying to route sname/stileno to dname/dtileno
+        # foreach port p in snode.src,snode.net
+        
+        snode = nodes[sname]
+        plist = [snode.src] + snode.net
+        print 'src node is still input, right?'
+        print 'node=',sname
+        print "ports used by '%s' so far: %s" % (sname,plist)
+
+        assert False, '\nBOOKMARK: route it!'
+
+
+
+        #   foreach (begin,path,end) in connect {hv,vh}connect(ptile,dtile)
+        #     if src.canconnect(sname.src,begin) and src.canconnect(end,dname)
+        #        paths.append (begin,path,end)
+        # choose a path in paths
+
+
+
+
+
+########################################################################
+########################################################################
+########################################################################
 
 
 
 
 
 
-
-        assert False, '\nBOOKMARK: this is where we call the packer, right?'
 
         # something like:
         # - change packer to use cgra_info for rc2tileno/tileno2rc DONE maybe
@@ -936,6 +1203,50 @@ def is_routed(sname,dname):
     return (dname in nodes[sname].net)
 
 
+def test_connect():
+
+    print '######################################################'
+    print '# serpent.py: Read cgra info'
+    cgra_info.read_cgra_info()
+
+
+    print '######################################################'
+    print '# serpent.py: Initialize node and tile data structures'
+    init_tile_resources(DBG=0)
+    build_nodes(DBG=0)
+    initialize_routes()
+    initialize_node_INPUT()
+
+    print 'TEST: who can reach pe_out_res?'
+    rlist = cgra_info.reachable('pe_out_res', 0, DBG=1)
+    print rlist
+
+
+    print 'TEST: who can reach to_cgra(pe_out)?'
+    rlist = cgra_info.reachable(to_cgra('pe_out'), 0)
+    print 'boo'
+    print rlist
+
+
+    print 'TEST: can connect pe_out to out_s1t1 in INPUT tile?'
+    rval = nodes['INPUT'].connect('pe_out', 'out_s1t1', T=0, DBG=9)
+    print rval
+
+    print 'TEST: can find double-connection from  in_s1t1 to op1 in tile 4?'
+    print resources[0]
+    rval = nodes['INPUT'].connect('in_s1t1', 'op1', T=0, DBG=9)
+    print rval
+
+DO_TEST=1
+if DO_TEST:
+    test_manhattan_distance_rc()
+    test_reachable()
+
+    print 'test the new stuff'
+    test_connect()
+    exit()
+
+
 main()
 
 
@@ -944,3 +1255,44 @@ main()
 
 
 
+# BOOKMARK
+# NEXT: implement and test cgra_info.reachable (see below)
+
+#         rlist = cgra_info.reachable(T,a)
+#         if is_avail(b) and b in rlist: return a->b
+#         else for r in rlist: if canconnect(r,b) return ['a->r','r->b']
+
+# reachable(tileno,src)
+# given tileno and src::src in {pe_out, mem_out, in_s1t1}
+# return a list of everything that src can connect to in the tile
+
+# #         else if b is out_s<S> and is_avail in_s<S> and in_s<S> in reachable:
+# #             return ['a->in
+
+#         # 'a' wires pe_out, mem_out (rdata) can connect to any outwire
+#         if re.search('out$', a):
+#             # If 'a' is an '_out' then b should be an outwire
+#             assert re.search('^T\d+_out', b)
+#             return '%s -> %s' % (a,b)
+# 
+#         # a should be inwire now
+#         assert re.search('^T\d+_in', a)
+# 
+#         # 'a' inwire can connect to any wire not on same side
+#         if re.search('^T\d+_out', b):
+#             (Ta,da,sa,ta) = parsewire(a)
+#             (Tb,db,sb,tb) = parsewire(b)
+#             return not (sa == sb)
+# 
+#         # b is one of ['mem_in','op1','op2'] (mem_in == wdata maybe)
+#         # who can connect to mem_in (wdata)? anything on side 2
+# 
+# 
+# 
+# 
+#         (Ta,da,sa,ta) = parsewire(a)
+#         (Tb,db,sb,tb) = parsewire(b)
+#         assert Ta == Tb
+# 
+
+        

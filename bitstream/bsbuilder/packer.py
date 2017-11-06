@@ -167,11 +167,17 @@ def print_nearest(src,dst):
     print "nearest to %s in NW direction" % FMT.tileT(src),
     print "is %s maybe" % FMT.tileT(dst)
     
-def find_nearest(tileno, DBG=1):
+def find_nearest(tileno, type='any', DBG=1):
     # Search in expanding circles from center tile 'tileno'
+
+    global TYPE_NEEDED
+    TYPE_NEEDED = type
 
     if DBG: print "# Find perp-first tile nearest to tile %s in NW direction" \
           % FMT.tile(tileno)
+
+    if DBG: print "# Note tile must be type '%s'" % TYPE_NEEDED
+
 
     if DBG>1: print "# Search for avail tile in expanding circles from %s"\
        % FMT.tile(tileno)

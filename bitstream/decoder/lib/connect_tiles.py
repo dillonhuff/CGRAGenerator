@@ -34,45 +34,50 @@ def test_all():
 
     testname = 'anypath'; resno = 0
 
+    # anypath 0
     print "########################################"
     print "# End turn takes us down a mem column"
-    (begin,path,end) = connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
+
+    # assert False
 
     print "########################################"
     print "# Same thing except vh instead of hv"
-    (begin,path,end) = connect_tiles(src=0,dst=17,track=0,dir='vh',DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles(src=0,dst=17,track=0,dir='vh',DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
     # TODO/FIXME more vh tests maybe
 
     print "########################################"
     print "# End turn takes us further down a mem column"
-    (begin,path,end) = connect_tiles(src=0,dst=39,track=0,dir='hv',DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles(src=0,dst=39,track=0,dir='hv',DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
     print "########################################"
     print "# A long path straight down column zero"
-    (begin,path,end) = connect_tiles(src=0,dst=36,track=0,dir='hv',DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles(src=0,dst=36,track=0,dir='hv',DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
-    (begin,path,end) = connect_tiles_same_row(0, 1, track, DBG=1);
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    # anypath 4
+    p = connect_tiles_same_row(0, 1, track, DBG=1);
+    verify(p, results,resno,testname); resno = resno+1
 
-    (begin,path,end) = connect_tiles_same_col(0, 8, track, DBG=1);
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    # anypath 5
+    p = connect_tiles_same_col(0, 8, track, DBG=1);
+    verify(p, results,resno,testname); resno = resno+1
 
-    (begin,path,end) =          connect_tiles(0,10, track, DBG=1);
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p =          connect_tiles(0,10, track, DBG=1);
+    verify(p, results,resno,testname); resno = resno+1
 
     # What happens if tile is straight across from bottom half of mem tile?
-    (begin,path,end) =          connect_tiles(8,10, track, DBG=1);
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p  =          connect_tiles(8,10, track, DBG=1);
+    verify(p, results,resno,testname); resno = resno+1
 
 
+def verify(path, result_list, rnum=0, test='ctsr'):
+    (begin,path,end) = (path[0],path[1:-1],path[-1])
 
-
-def verify(begin,path,end, result_list, rnum=0, test='ctsr'):
     # Set result_list to e.g. range(100) if not doing compares.
     DO_COMPARE = (result_list[0] != 0)
 
@@ -105,32 +110,32 @@ def test_ctsr():
 
     testname = 'ctsr'; resno = 0
 
-    (begin,path,end) = connect_tiles_same_row( 0, 1, track, DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_row( 0, 1, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
-    (begin,path,end) = connect_tiles_same_row( 0, 2, track, DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_row( 0, 2, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
-    (begin,path,end) = connect_tiles_same_row( 2, 0, track, DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_row( 2, 0, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
-    (begin,path,end) = connect_tiles_same_row( 0, 5, track, DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_row( 0, 5, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
-    (begin,path,end) = connect_tiles_same_row( 5, 0, track, DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_row( 5, 0, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
     print "# Connect to top half of a memory tile"
-    (begin,path,end) = connect_tiles_same_row( 0, 3, track, DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_row( 0, 3, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
     print "# Connect to bottom half of a memory tile"
-    (begin,path,end) = connect_tiles_same_row( 8, 3, track, DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_row( 8, 3, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
     print "# This one crosses bottom half of a memory tile"
-    (begin,path,end) = connect_tiles_same_row( 8, 13, track, DBG=1)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_row( 8, 13, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
 
 def test_ctsc():
@@ -144,44 +149,32 @@ def test_ctsc():
     nresults = len(results)
 
     testname = 'ctsc'; resno = 0
-    (begin,path,end) = connect_tiles_same_col(0, 8, track, DBG=1)
-    # verify(begin,path,end)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_col(0, 8, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
+    p = connect_tiles_same_col(0,14, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
-    (begin,path,end) = connect_tiles_same_col(0,14, track, DBG=1)
-    # verify(begin,path,end)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_col(14,0, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
+    p = connect_tiles_same_col(0,36, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
-    (begin,path,end) = connect_tiles_same_col(14,0, track, DBG=1)
-    # verify(begin,path,end)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
-
-
-    (begin,path,end) = connect_tiles_same_col(0,36, track, DBG=1)
-    # verify(begin,path,end)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
-
-
-    (begin,path,end) = connect_tiles_same_col(36,0, track, DBG=1)
-    # verify(begin,path,end)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_col(36,0, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
     print "# What happens if we try to make a path through mem column?"
-    (begin,path,end) = connect_tiles_same_col(3,45,track,DBG=1)
-    # verify(begin,path,end)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_col(3,45,track,DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
     print "# What happens if we try to make a path UP through mem column?"
-    (begin,path,end) = connect_tiles_same_col(45,3,track,DBG=1)
-    # verify(begin,path,end)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_col(45,3,track,DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
     print "# Connect adjacent NS mem tiles"
-    (begin,path,end) = connect_tiles_same_col(3, 17, track, DBG=1)
-    # verify(begin,path,end)
-    verify(begin,path,end, results,resno,testname); resno = resno+1
+    p = connect_tiles_same_col(3, 17, track, DBG=1)
+    verify(p, results,resno,testname); resno = resno+1
 
 def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
     '''tile17 should be row 2, col 3 maybe'''
@@ -200,30 +193,42 @@ def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
     
     if rsrc==rdst:
         if DBG: print "# Both tiles are in same row\n# "
-        (begin,path1,end) = connect_tiles_same_row(src,dst,track,DBG=DBG-1)
+        p = connect_tiles_same_row(src,dst,track,DBG=DBG-1)
+        (begin,path1,end) = unpack_path(p)
         if DBG: prettyprint_path(dir, begin, path1, cornerconn, path2, end)
-        return (begin,path1,end)
+        return pack_path(begin,path1,end)
 
     elif csrc==cdst:
         if DBG: print "# Both tiles are in same column\n# "
-        (begin,path2,end) = connect_tiles_same_col(src,dst,track,DBG=DBG-1)
+        p = connect_tiles_same_col(src,dst,track,DBG=DBG-1)
+        (begin,path2,end) = unpack_path(p)
         if DBG: prettyprint_path(dir, begin, path1, cornerconn, path2, end)
-        return (begin,path2,end)
+        return pack_path(begin,path2,end)
 
     elif dir=='hv':
         # First go horizontal (EW), then vertical (NS)
         # Find corner tile: same row as src, same col as dst
         (rcorn,ccorn) = (rsrc,cdst)
-        return connect_through_corner(src,dst,rcorn,ccorn,track,dir,DBG)
+        p = connect_through_corner(src,dst,rcorn,ccorn,track,dir,DBG)
+        return p
 
     elif dir=='vh':
         # First go vertical (NS), then horizontal (EW)
         # Find corner tile: same row as dst, same col as src
         (rcorn,ccorn) = (rdst,csrc)
-        return connect_through_corner(src,dst,rcorn,ccorn,track,dir,DBG)
+        p = connect_through_corner(src,dst,rcorn,ccorn,track,dir,DBG)
+        return p
 
     assert False, 'unknown case in connect_tiles()'
-    return (1,2,3)
+    return [-1,-1,-1]
+
+def unpack_path(p):
+    (begin,path,end) = (p[0],p[1:-1],p[-1])
+    return (begin,path,end)
+
+def pack_path(begin,path,end):
+    p = [begin]+path+[end]
+    return p
 
 def connect_through_corner(src,dst,rcorn,ccorn,track=0,dir='hv',DBG=0):
 
@@ -233,13 +238,15 @@ def connect_through_corner(src,dst,rcorn,ccorn,track=0,dir='hv',DBG=0):
 
         # horizontal path from src to corn
         if DBG>1: print "# path1:",
-        (begin1,path1,end1) = connect_tiles(src,corn,track,DBG=0)
+        p = connect_tiles(src,corn,track,DBG=0)
+        (begin1,path1,end1) = unpack_path(p)
         if DBG>1: print "# "
 
         # vert path from corn to dest
         if DBG>1: print "# path2:",
         # (begin2,path2,end2) = connect_tiles(corn,dst,track,DBG=DBG-1)
-        (begin2,path2,end2) = connect_tiles(corn,dst,track,DBG=0)
+        p = connect_tiles(corn,dst,track,DBG=0)
+        (begin2,path2,end2) = unpack_path(p)
         if DBG>1: print "# "
 
         # In corner tile, connect end1 to begin2
@@ -249,7 +256,7 @@ def connect_through_corner(src,dst,rcorn,ccorn,track=0,dir='hv',DBG=0):
 
         final_path = path1 + cornerconn + path2
         if DBG: prettyprint_path(dir, begin1, path1, cornerconn, path2, end2)
-        return (begin1, final_path, end2)
+        return pack_path(begin1, final_path, end2)
 
 def prettyprint_path(dir, begin, path1, cornerconn, path2, end):
     if dir == 'hv': (p1,p2) = ('hpath','vpath')
@@ -306,7 +313,7 @@ def connect_tiles_same_row(src=0,dst=5,track=0,DBG=0):
     endwire = build_wire_rc(rdst,cdst,'in',inside,track)
 
     if DBG: printpath(beginwire, path, endwire)
-    return (beginwire, path, endwire)
+    return pack_path(beginwire, path, endwire)
 
 
 def connect_tiles_same_col(src,dst,track,DBG=0):
@@ -358,7 +365,7 @@ def connect_tiles_same_col(src,dst,track,DBG=0):
     endwire = build_wire_rc(rdst,cdst,'in',inside,track)
 
     if DBG: printpath(beginwire, path, endwire)
-    return (beginwire, path, endwire)
+    return pack_path(beginwire, path, endwire)
 
 
 def build_wire_rc(r,c,inout,side,track):
