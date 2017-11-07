@@ -1323,25 +1323,31 @@ def eval_path(path, snode, dname, dtileno, DBG=0):
     # to dst node 'dname' in possible dest tile 'dtileno',
     # see if path is valid
     if DBG: pwhere(1325, "Evaluating path %s" % path)
-
     stileno = snode.tileno
     sname   = snode.name
 
-    if DBG>2: print "# is entire path available to src net?"
-    path_ports = CT.allports(path)
-    if DBG>2: print "#   entire path: ", path_ports
-
-    for p in path_ports:
-        if not snode.is_avail(p,DBG):
-            if DBG: print "NO path not available"
-            return False
-
+    # part 1 verify the tile-to-tile path
+    # Check every port on the path for availability to snode
+    if not ports_available(snode, path, DBG): return False
     if DBG:
         print "YES path from T%d to T%d is available\n" % (stileno,dtileno)
         print "Can we attach the path to the two nodes?"
         print "  First attach source node '%s' to path begin_port '%s'"\
               % (sname, path[0])
             
+    # part 2 verify begin and end points
+    final_path = can_connect_ends(path, snode, dname, dtileno, DBG)
+    if not final_path:
+        print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
+        assert False, 'disaster could not find a path (and/or could try again with a different tile?'
+        return False
+
+    return final_path
+
+def can_connect_ends(path, snode, dname, dtileno, DBG=0):
+    stileno = snode.tileno
+    sname   = snode.name
+
     # foreach port p in snode.src,snode.net
     canon_src = 'T%d_%s' % (stileno, snode.src)
     plist = [canon_src] + snode.net
@@ -1358,43 +1364,65 @@ def eval_path(path, snode, dname, dtileno, DBG=0):
             continue
         print 'ready to connect beginpoint!', cbegin
 
+        cend = connect_endpoint(snode, path[-1], dname, dtileno)
+        if not cend:
+            print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
+            assert False, 'disaster could not find a path'
+            return False
+
+        print 'ready to connect endpoint! %s' % cend
+
+        # For now, return first path found
+        # FIXME for future, keep findin paths and return them all
+        print 'SUCCESS!  final path is:'
+        final_path = cbegin + path[1:-1] + cend
+        print final_path
+
+        # middle part was verified previously.
+        # looks like we're good to go!
+        
+        # For now, return first valid path.
+        # FIXME/TODO later will want to construct all paths
+        # (or at least hv vs.vh) and compare thetwo
+        return final_path
+            
+
+def ports_available(snode, path, DBG=0):
+    stileno = snode.tileno
+    sname   = snode.name
+
+    if DBG>2: print "# is entire path available to src net?"
+    path_ports = CT.allports(path)
+    if DBG>2: print "#   entire path: ", path_ports
+
+    for p in path_ports:
+        if not snode.is_avail(p,DBG):
+            if DBG: print "NO path not available"
+            return False
+
+    return True
+
+
+def connect_endpoint(snode, endpoint, dname, dtileno):
+        # endpoint = path[-1]
         dplist = dstports(dname,dtileno)
         print "want to route this port to a dest port", dplist
         for dstport in dplist:
 
             # print "want to route '%s' to a dest port %s" % (p, dstport)
             print "  Can path endpoint '%s' connect to dest port '%s'?" \
-                  % (path[-1], dstport)
+                  % (endpoint, dstport)
             
-            cend = can_connect_end(snode, path[-1], dstport)
+            cend = can_connect_end(snode, endpoint, dstport)
             if not cend:
                 print "  Cannot connect path endpoint '%s' to dest port '%s'" \
-                      % (path[-1], dstport)
+                      % (endpoint, dstport)
                 print "Continuing with next dstport"
                 continue
-            print 'ready to connect endpoint!', cend
 
-#             final_path = complete_the_path(path,snode,dstport)
-#             if final_path:
-# 
-#                 # For now, return first path found
-#                 # FIXME for future, keep findin paths and return them all
-#                 return final_path
-
-            # For now, return first path found
-            # FIXME for future, keep findin paths and return them all
-            print 'SUCCESS!  final path is:'
-            final_path = cbegin + path[1:-1] + cend
-            print final_path
-
-            # middle part was checked above
-            # looks like we're good to go!
-
-            # For now, return first valid path.
-            # FIXME/TODO later will want to construct all paths
-            # (or at least hv vs.vh) and compare thetwo
-            return final_path
-            
+            # print 'ready to connect endpoint!', cend
+            return cend
+        return False
 
 
 
