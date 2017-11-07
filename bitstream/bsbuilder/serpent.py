@@ -400,14 +400,14 @@ class Node:
         if DBG>2: print "is_avail: looking for '%s' in '%s' nodenet" \
               % (rname, self.name)
         if r in self.net:
-            print "  %-11s available in '%s' nodenet" \
+            print "       %-11s available in '%s' nodenet" \
                   % (r, self.name)
             return True
 
         if DBG>2: print "is_avail: looking for '%s' in tile %d resources %s" \
               % (rname, tileno, resources[tileno])
         if rname in resources[tileno]:
-            print "  %-11s available in free list for tile %d"\
+            print "       %-11s available in free list for tile %d"\
                   % (r, tileno)
             return True
 
@@ -423,7 +423,7 @@ class Node:
         If can connect, return connection(s) necessary.
         Else return FALSE i guess.
         '''
-
+        DBG = max(0,DBG)
         if a[0] == 'T': T = int(re.search('^T(\d+)', a).group(1))
         if b[0] == 'T': T = int(re.search('^T(\d+)', b).group(1))
 
@@ -431,14 +431,14 @@ class Node:
         if a[0] != 'T': a = "T%d_%s" % (T,a)
         if b[0] != 'T': b = "T%d_%s" % (T,b)
 
-        print ''
-        print "looking to connect '%s' and '%s'" % (a,b)
+        if DBG>1: print ''
+        if DBG>1: print "looking to connect '%s' and '%s'" % (a,b)
 
         if not self.is_avail(a):
-            print "'%s' not avail to tile %d" % (a,T)
+            if DBG>1: print "'%s' not avail to tile %d" % (a,T)
             return False
         if not self.is_avail(b):
-            print "'%s' not avail to tile %d" % (b,T)
+            if DBG>1: print "'%s' not avail to tile %d" % (b,T)
             return False
 
         # Valid combinations:       a               b
@@ -446,8 +446,8 @@ class Node:
         #                          in.*           out_.*
         #                          in.*      {mem_in,op1,op2}   
 
-        print "looks like both are available to '%s'" % self.name
-        print ''
+        if DBG: print "     Looks like both are available to '%s'" % self.name
+        if DBG: print ''
 
         # If can reach a->b directly, return a->b'
 
@@ -458,10 +458,10 @@ class Node:
         bprime = to_cgra(b)
         print "is '%s' in the list?" % bprime
         if bprime in rlist:
-            print 'YES'
+            if DBG: print 'YES'
             return ['%s -> %s' % (a,b)]
 
-        print "NO"
+        if DBG: print "NO"
         print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
         print "maybe can connect through intermediary?"
         # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
@@ -534,19 +534,19 @@ def prettyprint_dict(dictname, dict):
 #     # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'
     
 
-def to_cgra(name):
+def to_cgra(name, DBG=0):
     # Valid names include
     # Valid combinations:       a               b
     #                     pe_out|mem_out      out_.*
     #                          in.*           out_.*
     #                          in.*      {mem_in,op1,op2}   
 
-    print "converting", name
+    if DBG>1: print "converting", name
 
     # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'
     (T,d,s,t) = parsewire(name)
     # assert T != -1
-    print (T,d,s,t)
+    if DBG>1: print (T,d,s,t)
     if s == -1:
         # not a wire; name is returned as 'd'
         if d == 'op1'   :  newname = 'data0'
@@ -557,15 +557,14 @@ def to_cgra(name):
         if d == 'mem_out': newname = 'rdata'
 
     else:
-        print 'hoo', s
         assert s < 4, 'oops need more rewrites'
         newname = '%s_BUS16_S%d_T%d' % (d,s,t)
         if is_mem_tile(T):
             newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
 
 
-    print 'to_cgra: new name is', newname
-    print ''
+    if DBG: print "to_cgra: cgra name for '%s' is '%s'" % (name, newname)
+    if DBG: print ''
 
     return newname
 
@@ -1331,8 +1330,9 @@ def eval_path(path, snode, dname, dtileno, DBG=0):
     if not ports_available(snode, path, DBG): return False
     if DBG:
         print "YES path from T%d to T%d is available\n" % (stileno,dtileno)
-        print "Can we attach the path to the two nodes?"
-        print "  First attach source node '%s' to path begin_port '%s'"\
+        print "Can we attach nodes to path endpoints '%s' and '%s'?"\
+              % (path[0],path[-1])
+        print "1. Attach source node '%s' to path begin_port '%s'"\
               % (sname, path[0])
             
     # part 2 verify begin and end points
@@ -1352,13 +1352,16 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     canon_src = 'T%d_%s' % (stileno, snode.src)
     plist = [canon_src] + snode.net
 
-    if DBG: print "  Ports avail to '%s' so far: %s" % (sname,plist)
+    if DBG:
+        print "   Ports avail to '%s': %s" % (sname,plist)
+        print "   Take each one in turn"
+
     for p in plist:
-        print "  Can '%s' connect to begin_port '%s'?" % (p, path[0])
+        print "     Can '%s' connect to begin_port '%s'?" % (p, path[0])
 
         # (begin,middle,end) = CT.unpack_path(path)
 
-        cbegin = can_connect_begin(snode, snode.src, path[0])
+        cbegin = can_connect_begin(snode, snode.src, path[0], DBG)
         if not cbegin:
             print "  Cannot connect '%s' to begin_port '%s'?" % (p, path[0])
             continue
@@ -1424,33 +1427,29 @@ def connect_endpoint(snode, endpoint, dname, dtileno):
             return cend
         return False
 
+def can_connect_begin(snode,src,begin,DBG):
+    if DBG>1:
+        print "input src is '%s'" % snode.src
+        print "path-begin is '%s'" % begin
+        print "can connect as part of src net?"
 
-
-
-def can_connect_begin(snode,src,begin):
-    print "input src is '%s'" % snode.src
-    print "path-begin is '%s'" % begin
-    print "can connect as part of src net?"
-    cbegin = snode.connect(snode.src,begin)
+    cbegin = snode.connect(snode.src,begin,DBG=DBG)
     if not cbegin:
-        print 'oops no route to path begin'
+        if DBG>1: print 'oops no route to path begin'
         # break
         return False
-    else:
-        return cbegin
+    return cbegin
 
-
-def can_connect_end(snode, end,dstport):
+def can_connect_end(snode, end,dstport,DBG=0):
     print "dest port is '%s'" % dstport
     print "path-end is '%s'" % end
     print "can connect as part of src net?"
-    cend = snode.connect(end,dstport)
+    cend = snode.connect(end,dstport,DBG-1)
     if not cend:
         print 'oops no route from path end to dest node'
         # break
         return False
-    else:
-        return cend
+    return cend
 
 def is_folded_reg(node_name): is_regop(node_name)
 #     if not is_reg(node_name): return False
