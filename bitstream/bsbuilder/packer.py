@@ -4,6 +4,8 @@ DO_TEST=0
 import sys;
 import re;
 
+import traceback # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+
 # tstring = ''.join(str(x) for x in range(0,5))
 
 # Another thing you could do:
@@ -113,9 +115,9 @@ def tileno2rc(tileno):
         return (int(tileno)/8,int(tileno)%8)
 
 def rc2tileno(r,c):
+    if (r < 0) or (c < 0): return -1
     if USE_CGRA_INFO: return cgra_info.rc2tileno(r,c)
     else:
-        if (r < 0) or (c < 0): return -1
         tno = 8*r + c
         if tno > NTILES: return -1
         return tno
@@ -245,7 +247,7 @@ def search_box(ctr, L, DBG=1):
 
     t = search_sides(ctr, L, sp, DBG=DBG)
     if (t != -1):
-        print "found", t
+        # print "found", t
         return t
 
     return -1
@@ -383,7 +385,7 @@ def go_straight(t=0, L=3, dir='e'):
     if (dir == 's'): (rdst,cdst) = (r+L, c+0)
     if (dir == 'w'): (rdst,cdst) = (r+0, c-L)
     
-    # rc2tileno should so this
+    # rc2tileno does this
     # if (rdst<0) or (cdst<0): return -1
 
     return rc2tileno(rdst, cdst)

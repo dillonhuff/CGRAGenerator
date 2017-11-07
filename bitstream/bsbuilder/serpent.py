@@ -8,14 +8,46 @@ sys.path.append("../decoder")
 from lib import cgra_info
 from lib import connect_tiles as CT
 
+import traceback # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+def show_trace(nlines=100):
+    sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+
+from inspect import currentframe, getframeinfo
+def where():
+    # E.g. 'serpent.py/42'
+    # frameinfo = getframeinfo(currentframe())
+    frameinfo = getframeinfo(currentframe().f_back)
+    print frameinfo.filename, frameinfo.lineno
+    return '%s/%s' % (frameinfo.filename, frameinfo.lineno)
+
+def pwhere(lno, txt=''):
+    frameinfo = getframeinfo(currentframe().f_back)
+    if not lno: lno = frameinfo.lineno
+    info = '%s/%s' % (frameinfo.filename, lno)
+    if txt=='':
+        # E.g. "serpent.py/42"
+        print info
+    else:
+        # E.g. "serpent.py/42: hello world"
+        print '%s: %s' % (info, txt)
+
+def test_where():
+    where()
+    pwhere('hello')
+    where()
+    exit()
+# test_where()
+
+import packer
+
+# FIXME/TODO globals wrapper and initializer thingy, see packer.py maybe
 GRID_WIDTH  = 8
 GRID_HEIGHT = GRID_WIDTH
 
-# INPUT always comes in on bus 'T0_in_s1t0' (tile 0)
+# INPUT always comes in on bus 'T0_in_s2t0'
 INPUT_TILENO = 0
-INPUT_WIRE   = 'T0_in_s1t0'
-
-import packer
+INPUT_WIRE   = 'in_s2t0'
+INPUT_WIRE_T = 'T0_in_s2t0'
 
 def nearest_mem_tile(node='INPUT', exclude = [], DBG=1):
     '''
@@ -163,7 +195,7 @@ def test_reachable():
 #     # [[0, 2], [-2, 2], [-1, 2], [0, 2], [1, 2]]
 #     # [[2, 0], [2, -1], [2, 0], [2, 1], [2, 2]]
 
-def main():
+def main(DBG=1):
     # test_connect_tiles()
     # sys.exit(0)
     # notes()
@@ -193,10 +225,11 @@ def main():
     # FIXME should be part of initialize_node_INPUT somehow right?
     # Allocate tile 0 for input node
     packer.allocate(0)
-    print "# order so far"
-    print '# '
-    packer.FMT.order()
-    print ''
+    if DBG>2:
+        print "# order so far"
+        print '# '
+        packer.FMT.order()
+        print ''
 
     print '########################################'
     print '# serpent.py: constant folding'
@@ -339,29 +372,48 @@ class Node:
 
     def is_routed(dest_name): return self.route[dest_name] != []
 
-    def is_avail(self, r):
-        '''Resource r in tile T is avail if it is free and/or if it
-        is already in mynet.'''
-        
-        # E.g. resources[T] = ['in_s0t0', 'in_s0t1', ...
-
-        print "is_avail: looking for '%s' in %s" % (r, self.net)
-
-        if r in self.net: return True
-
-        # Resource must have embedded tileno, e.g. 'T1_in_s3t2' or 'T5_mem_out'
-
+    def is_avail(self, r, DBG=0):
+        '''
+        Resource r in tile T is avail
+        if it is free and/or if it is already in mynet.
+        r should be of the form 'T%d_something'
+        '''
+        # r must have embedded tileno, e.g. 'T1_in_s3t2' or 'T5_mem_out'
         parse = re.search('^T(\d+)_(.*)', r)
         if not parse: assert False
         tileno = int(parse.group(1))
         rname = parse.group(2)
 
-        print "is_avail: looking for '%s' in tile %d resources %s" \
+        if DBG>2: pwhere(386)
+        if DBG>2: print "Looking for '%s' in %s" % (r, self.net)
+
+        # E.g. resources[T] = ['in_s0t0', 'in_s0t1', ...
+        # Can't use a register unless we're specifically looking for a register
+        if r in REGISTERS:
+            assert rname not in resources[tileno],\
+                   "'%s' is a register: should not be in resources list!"
+            # But it CAN be in the net list maybe...?
+            print "'%s' not avail to '%s' b/c its a register" % (r, self.name)
+            return False
+            # assert r not in self.net, "'%s' is a register: should not be part of net list!"
+
+        if DBG>2: print "is_avail: looking for '%s' in '%s' nodenet" \
+              % (rname, self.name)
+        if r in self.net:
+            print "  %-11s is available b/c already in '%s' nodenet" \
+                  % (r, self.name)
+            return True
+
+        if DBG>2: print "is_avail: looking for '%s' in tile %d resources %s" \
               % (rname, tileno, resources[tileno])
+        if rname in resources[tileno]:
+            print "  %-11s is available b/c it is in free list for tile %d"\
+                  % (r, tileno)
+            return True
 
-        if rname in resources[tileno]: return True
-        else: return False
-
+        else:
+            print "  %-11s is not available to node '%s'" % (r, self.name)
+            return False
 
     def connect(self,a,b,T=-1,DBG=9):
         '''
@@ -412,7 +464,10 @@ class Node:
         print "NO"
         print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
         print "maybe can connect through intermediary?"
-            
+        # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+        # FIXME too many intermediaries?
+        pwhere(469)
+    
         # Try to salvage it; e.g. if dest is 'op1' then
         # 'reachable' list can contain 'out' wires; if
         # one of the reachable wires can connect to 'op1'
@@ -424,10 +479,15 @@ class Node:
 
         # It only works when dest is op1 or op2 or mem_in, i think
 
-        if not re.search('(op1|op2|mem_in)', b): return False
+        # FIXME too many intermediaries?
+        if not re.search('(op1|op2|mem_in)', b):
+            print "Nope wrong kind of tile for intermediary..."
+            return False
         print "maybe can connect intermediary"
         for r in rlist:
             rprime = from_cgra(r, T)
+            print "maybe can connect intermediary '%s' -> '%s' -> '%s'"\
+                  % (a,rprime,b)
             p1 = self.connect(a,rprime,T,DBG)
             if not p1: continue
             p2 = self.connect(rprime,b,T,DBG)
@@ -542,6 +602,9 @@ def parse_cgra_wirename(w):
         rval = (dir,side,track)
     print 'out', rval
     return rval
+
+# List of output ports being used as registers
+REGISTERS = []
 
 
 # FIXME do the thing with the globals and the init-globals...
@@ -660,7 +723,7 @@ def is_pe_tile(tileno):  return cgra_info.mem_or_pe(tileno) == 'pe'
 def is_mem_tile(tileno): return cgra_info.mem_or_pe(tileno) == 'mem'
 
 def initialize_node_INPUT():
-    src = 'in_s1t0'
+    src = INPUT_WIRE
     tileno=0
 
     # Place 'name' in tile 'tileno' at location 'src'
@@ -687,8 +750,8 @@ def is_io(nodename):
         )
 
 
-# 'inport' is what you need to connect to to get the indicated node, yes?
-def inport(name,tile):
+# 'dstports' is what you need to connect to to get the indicated node, yes?
+def dstports(name,tile):
     def T(port): return 'T%d_%s' % (tile,port)
 
     print name
@@ -696,15 +759,25 @@ def inport(name,tile):
     if is_mem(name):  p = [T('mem_in')]
     elif is_pe(name): p = [T('op1'),T('op2')]
     else:
-        assert False
+        # 'name' is a register, I guess;
+        # so return names of all outports in the tile
+        # as possible dest ports
+        p = []
+        if is_mem_tile(tile): nsides = 8
+        else:                 nsides = 4
+        for side in range(nsides):
+            outport = "T%d_out_s%dt0" % (tile,side)
+            p.append(outport)
 
-    print 'found inports', p
+    print 'found destination ports', p
     return p
 
-# inport('mem_1', 8)
-# inport('add_1', 1)
-# inport('mul_1', 1)
-# inport('reg_1', 1)
+def test_dstports():
+    dstports('mem_1', 8)
+    dstports('add_1', 1)
+    dstports('mul_1', 1)
+    dstports('reg_1', 1)
+# test_dstports()
 
 
 def constant_folding(DBG=0):
@@ -774,7 +847,7 @@ def register_folding(DBG=9):
 # Happens automatically as long as we process non-regop regs LAST (right?)
 # def process_input(DBG=1):
 #     # INPUT tile is always tile 0
-#     # INPUT wire is always wire_m1_1_BUS16_S1_T0 i.e. T0_in_s1t0
+#     # INPUT wire is always wire_m1_1_BUS16_S1_T0 i.e. T0_in_s2t0
 # 
 #     INPUT = nodes['INPUT']
 #     INPUT_dests  = sorted(INPUT.dests)
@@ -812,6 +885,7 @@ def place(name, tileno, src, DBG=0):
 
     if   is_pe(name):  assert src ==  'pe_out'
     elif is_mem(name): assert src == 'mem_out'
+    # elif is_reg(name)...
 
     n = nodes[name]
     if n.placed:
@@ -1010,40 +1084,16 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
        and is_pe(dname) \
        and ('pe_out' in resources[INPUT_TILENO]):
 
-        print "# Place input-connected PE '%s' in INPUT tile" % dname
-
-        DBG=1
-        if DBG: print "Connecting '%s' to '%s'" % (sname,dname)
-
-        INPUT_TILE = 0; assert nodes['INPUT'].tileno == INPUT_TILE
-
-        place(dname, INPUT_TILE, 'pe_out')
-        # add_route(sname, dname, INPUT_TILE, 'T0_in_s1t0', 'choose_op')
-        add_route(sname, dname, INPUT_TILE, INPUT_WIRE, 'choose_op')
-        finish_route(sname, dname)       
+        place_pe_in_input_tile(dname)
         return
-
-        # Long form:
-        # TODO global INPUTWIRE = 'T0_in_s1t0', INPUTTILE=0
-        # print "# Placing pe in INPUT tile..."
-        # place(dname, itile, 'pe_out')
-        # 
-        # print "# Routing INPUT to pe..."
-        # add_route(sname, dname, itile, 'T0_in_s1t0', 'choose_op')
-        # 
-        # print '# Mark route COMPLETED'
-        # finish_route(sname, dname)       
-        # 
-        # # Check that pe_out got removed from INPUT (tile0) resources
-        # assert not ('pe_out' in resources[INPUT_TILENO])
-
 
     if sname=='INPUT' \
        and is_folded_reg(dname) \
        and ('pe_out' in resources[INPUT_TILENO]):
 
-        print "TODO put reg-pe folded pair in INPUT tile :("
+        place_folded_reg_in_input_tile(dname)
         assert False, "TODO put reg-pe folded pair in INPUT tile :("
+        return
 
     # Does destination have a home?
     if not is_placed(dname):
@@ -1052,48 +1102,175 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # print indent+"No home for '%s'"
         if DBG: print indent+"No home for '%s'" % dname
 
-        # do DBG=1
-        # Figure how to do the first placement INPUT -> mem_1 maybe
-        # Use new connection thingies maybe
+        # Get nearest tile compatible with target node 'dname'
+        # "Nearest" means closest to input tile (NW corner)
+        dtileno = get_nearest_tile(dname)
+        
+        # FIXME will need an 'undo' for order[] list if dtileno ends up not used
 
-#         print '# initialize packer'
-#         packer.USE_CGRA_INFO = True
-#         packer.init_globals() # this is crucial out there
-#         
-#         print "# here's the grid!"
-#         print '# '
-#         packer.FMT.grid()
-#         print ''
-# 
-#         packer.allocate(0)
+        # if dtileno==8: print 666
 
-        print "# order so far"
-        print '# '
+        # print 'dtileno/nearest is %d' % dtileno
+        if DBG: pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
+
+        print 666
+    
+        path = find_best_path(sname, dname, dtileno)
+        
+        # Having found the final path,
+        # - place dname in dtileno
+        # - add all the path ports to the src net
+        # - what else?
+
+        # - place dname in dtileno
+        if   is_pe(dname):  dsrc = 'pe_out'
+        elif is_mem(dname): dsrc = 'mem_out'
+        else:
+            assert False, 'what do we do with regs?? (see below)'
+
+            # ANSWER: make sure reg dest is registered in REGISTERS etc.
+
+
+        place(dname, dtileno, dsrc)
+        
+        # Add the connection to src->dst route list
+        nodes[sname].route[dname].append(path)
+        if DBG: print "#   Added connection '%s' to route from '%s' to '%s'" % \
+           (path, sname, dname)
+        # nodes[sname].routed[dname] = True
+        if DBG: print "#   Now node['%s'].route['%s'] = %s" % \
+           (sname,dname,nodes[sname].route[dname])
+
+
+        # - add all the path ports to the src net
+        # TODO don't add redundant ports maybe
+        snode = nodes[sname]
+        print "BEFORE: '%s' net is %s" % (sname, snode.net)
+        for p in CT.allports(path):
+            snode.net.append(p)
+        print "AFTER: '%s' net is %s" % (sname, snode.net)
+        
+        print "HOORAY connected '%s' to '%s'" % (sname,dname)
+
+
+        if DBG: nodes[sname].show()
+
+
+        # uhhhh...is this a good idea?
+        # aka finish_route(sname,dname)
+        # '''Mark *route completed* by adding dname to sname netlist'''
+        nodes[sname].net.append(dname)
+        
+        if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
+        if DBG: print "# Add '%s' to nodes['%s'].net"      % (sname,dname)
+        if DBG: print "#   Now node['%s'].net = %s" % (sname,nodes[sname].net)
+
+
+
+#         # BOOKMARK
+#         assert False, '\nBOOKMARK: routing it'
+#         assert False, '\nBOOKMARK: route it!'
+
+        # something like:
+        # - change packer to use cgra_info for rc2tileno/tileno2rc DONE maybe
+        # - set packer.order[] such that only mem tiles are valid (!= -1); 
+        # - call the appropriate thingy mcboo
+
+        # if DBG: print indent+"For now just place it randomly"
+        # (tileno,resource) = randomly_place(dname)
+        (tileno,resource) = (dtileno, dsrc)
+
+    else:
+        (tileno,resource) = (-1, "already_placed")
+
+    if not is_routed(sname,dname):
+        assert False, 'cannot be placed without being routed...right??'
+        if DBG: print indent+"No route '%s -> %s'" % (sname,dname)
+        if DBG: print indent+"For now just mark it finished"
+        bogus_route = "%s -> %s BOGOSITY" % (sname,dname)
+        nodes[sname].route[dname].append(bogus_route)
+        finish_route(sname,dname)
+
+    return (tileno,resource)
+
+def place_pe_in_input_tile(dname):
+    '''INPUT connects to pe 'dname'; place it in same node as INPUT'''
+    sname = 'INPUT'
+
+    DBG=1
+    if DBG: print "# Place input-connected PE '%s' in INPUT tile" % dname
+    if DBG: print "Connecting '%s' to '%s'" % (sname,dname)
+
+    INPUT_TILE = 0; assert nodes['INPUT'].tileno == INPUT_TILE
+
+    place(dname, INPUT_TILE, 'pe_out')
+    # add_route(sname, dname, INPUT_TILE, 'T0_in_s2t0', 'choose_op')
+    add_route(sname, dname, INPUT_TILE, INPUT_WIRE_T, 'choose_op')
+    finish_route(sname, dname)       
+    return
+
+    # Long form:
+    # TODO global INPUTWIRE = 'T0_in_s2t0', INPUTTILE=0
+    # print "# Placing pe in INPUT tile..."
+    # place(dname, itile, 'pe_out')
+    # 
+    # print "# Routing INPUT to pe..."
+    # add_route(sname, dname, itile, 'T0_in_s2t0', 'choose_op')
+    # 
+    # print '# Mark route COMPLETED'
+    # finish_route(sname, dname)       
+    # 
+    # # Check that pe_out got removed from INPUT (tile0) resources
+    # assert not ('pe_out' in resources[INPUT_TILENO])
+
+
+def place_folded_reg_in_input_tile(dname):
+        print "TODO put reg-pe folded pair in INPUT tile :("
+        assert False, "TODO put reg-pe folded pair in INPUT tile :("
+
+
+def get_nearest_tile(dname, DBG=0):
+
+    DBG=1
+    # Figure how to do the first placement INPUT -> mem_1 maybe
+    # Use new connection thingies maybe
+
+    if DBG:
+        print ''
+        print "# order before get_nearest():"
         packer.FMT.order()
         print ''
 
-        dtype = nodes[dname].type()
-        print 'dname   is type %s' % dtype
+    dtype = nodes[dname].type()
 
-        # print "# i'm in tile %s" % packer.FMT.tileT(sname)
-        nearest = packer.find_nearest(0, dtype, DBG=0)
+    # print "# i'm in tile %s" % packer.FMT.tileT(sname)
+    nearest = packer.find_nearest(0, dtype, DBG=0)
 
-        assert nearest != -1
+    # print 'foudn nearest tile', nearest
+    assert nearest != -1
 
-#         stile = nodes[sname].tileno
-#         dtile = nodes[dname].tileno
-        print '"nearest" is type %s' % cgra_info.mem_or_pe(nearest)
-        assert nodes[dname].type() == cgra_info.mem_or_pe(nearest)
+    # stile = nodes[sname].tileno
+    # dtile = nodes[dname].tileno
 
-        print "# order so far"
-        print '# '
+    # print 'dname is type %s and...' % dtype,
+    # print '"nearest" is type %s' % cgra_info.mem_or_pe(nearest)
+    assert nodes[dname].type() == cgra_info.mem_or_pe(nearest)
+
+    if DBG:
+        print "# order after get_nearest():"
         packer.FMT.order()
         print ''
+
+    return nearest
+
 
 ########################################################################
 ########################################################################
 ########################################################################
 # BOOKMARK: scrub scrub scrub!  from here down
+
+def find_best_path(sname,dname,dtileno):
+        DBG=1
 
         # next:
         # trying to route sname/stileno to dname/dtileno
@@ -1107,118 +1284,130 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # trying to route sname/stileno to dname/dtileno
         snode = nodes[sname]
         dnode = nodes[dname]
-        dtileno = nearest
         stileno = snode.tileno
-        print "want to route from src tile %d ('%s') to dest tile %d ('%s')" \
-              % (stileno, sname, dtileno, dname)
+        pwhere(1289,\
+            "Want to route from src tile %d ('%s') to dest tile %d ('%s')" \
+            % (stileno, sname, dtileno, dname))
 
         # foreach path p in connect_{hv,vh}connect(ptile,dtile)
         # FIXME for now only looking at track 0(!)
         phv = CT.connect_tiles(stileno,dtileno,track=0,dir='hv',DBG=DBG-1)
-        print 'found path phv', phv
+        if DBG>2: print '  Found path phv', phv
 
         pvh = CT.connect_tiles(stileno,dtileno,track=0,dir='vh',DBG=DBG-1)
-        print 'found path pvh', pvh
+        if DBG>2: print '  Found path pvh', pvh
 
         # FIXME need a better way to determine if path is straight-line
         if pvh==phv:
-            print "NOTE path is a straight line"
+            if DBG>2: print "  NOTE path is a straight line"
 
         for path in [pvh,phv]:
-            print "evaluating path", path
 
-            print "# is entire path available to src net?"
-            path_ports = CT.allports(path)
-            print "# entire path: ", path_ports
-            avail = True
-            for p in path_ports:
-                if not snode.is_avail(p):
-                    avail = False; break
-
-            if avail:
-                print "YES path is available"
-            else:
-                print "NO path not available"
-                break;
-
-            # foreach port p in snode.src,snode.net
-            canon_src = 'T%d_%s' % (stileno, snode.src)
-            plist = [canon_src] + snode.net
-            print 'src node is still input, right?'
-            print "ports used by '%s' so far: %s" % (sname,plist)
-            for p in plist:
-                print "Checking port '%s'..." % p
-                dstports = inport(dname,dtileno)
-                print "want to route this port to a dest port", dstports
-                for dstport in dstports:
-        
-                    # (begin,path,end) = unpack(path)
-                    (begin,middle,end) = CT.unpack_path(path)
-
-                    # if src.canconnect(sname.src,begin)
-                    # and src.canconnect(end,dname)
-                    # paths.append (begin,path,end)
-
-                    print "input src is '%s'" % snode.src
-                    print "path-begin is '%s'" % begin
-                    print "can connect as part of src net?"
-                    cbegin = snode.connect(snode.src,begin)
-                    if not cbegin:
-                        print 'oops no route to path begin'
-                        break
-                    print 'ready to connect!', cbegin
-
-                    print "dest port is '%s'" % dstport
-                    print "path-end is '%s'" % end
-                    print "can connect as part of src net?"
-                    cend = snode.connect(end,dstport)
-                    if not cend:
-                        print 'oops no route from path end to dest node'
-                        break
-                    print 'ready to connect!', cend
-
-                    print 'SUCCESS!  final path is:'
-                    print cbegin + middle + cend
-
-                    # middle part was checked above
-                    # looks like we're good to go!
-
-                    assert False, '\nBOOKMARK: routing it'
+            final_path = eval_path(path, snode, dname, dtileno, DBG)
+            if final_path:
+                # FIXME For now, use first path found
+                # FIXME for future, keep findin paths and return them all
+                return final_path
 
             if pvh==phv:
                 # duh.  straight-line path
                 # don't do it twicet
                 break 
 
-        # choose a path in paths
-
-        # BOOKMARK
-        assert False, '\nBOOKMARK: route it!'
-########################################################################
-########################################################################
-########################################################################
+            # choose a path in paths
 
 
+# Given 'path' from 
+# src node 'snode' in stileno
+# to dst node 'dname' in possible dest tile 'dtileno',
+def eval_path(path, snode, dname, dtileno, DBG=0):
+    pwhere(1325,\
+        "Evaluating path %s" % path)
 
-        # something like:
-        # - change packer to use cgra_info for rc2tileno/tileno2rc DONE maybe
-        # - set packer.order[] such that only mem tiles are valid (!= -1); 
-        # - call the appropriate thingy mcboo
+    stileno = snode.tileno
+    sname   = snode.name
 
-        if DBG: print indent+"For now just place it randomly"
+    if DBG>2: print "# is entire path available to src net?"
+    path_ports = CT.allports(path)
+    if DBG>2: print "#   entire path: ", path_ports
 
-        (tileno,resource) = randomly_place(dname)
-    else:
-        (tileno,resource) = (-1, "already_placed")
+    for p in path_ports:
+        if not snode.is_avail(p,DBG):
+            print "NO path not available"
+            return False
 
-    if not is_routed(sname,dname):
-        if DBG: print indent+"No route '%s -> %s'" % (sname,dname)
-        if DBG: print indent+"For now just mark it finished"
-        bogus_route = "%s -> %s BOGOSITY" % (sname,dname)
-        nodes[sname].route[dname].append(bogus_route)
-        finish_route(sname,dname)
+    print "YES path is available\n"
 
-    return (tileno,resource)
+    # foreach port p in snode.src,snode.net
+    canon_src = 'T%d_%s' % (stileno, snode.src)
+    plist = [canon_src] + snode.net
+    print 'src node is still input, right?'
+    print "ports used by '%s' so far: %s" % (sname,plist)
+    for p in plist:
+        print "Checking port '%s'..." % p
+        dplist = dstports(dname,dtileno)
+        print "want to route this port to a dest port", dplist
+        for dstport in dplist:
+            print "want to route '%s' to a dest port" % p, dstport
+            final_path = complete_the_path(path,snode,dstport)
+            if final_path:
+
+                # For now, return first path found
+                # FIXME for future, keep findin paths and return them all
+                return final_path
+
+            print "Continuing with next dstport"
+
+
+
+def complete_the_path(path,snode,dstport):
+    # Given 'path' from 'snode' to 'dstport'
+    # verify that path is available to snode (no conflicts w/other nodes)
+
+
+    # (begin,path,end) = unpack(path)
+    (begin,middle,end) = CT.unpack_path(path)
+
+    # if src.canconnect(sname.src,begin)
+    # and src.canconnect(end,dname)
+    # paths.append (begin,path,end)
+
+    print "input src is '%s'" % snode.src
+    print "path-begin is '%s'" % begin
+    print "can connect as part of src net?"
+    cbegin = snode.connect(snode.src,begin)
+    if not cbegin:
+        print 'oops no route to path begin'
+        # break
+        return False
+
+    print 'ready to connect!', cbegin
+
+    print "dest port is '%s'" % dstport
+    print "path-end is '%s'" % end
+    print "can connect as part of src net?"
+    cend = snode.connect(end,dstport)
+    if not cend:
+        print 'oops no route from path end to dest node'
+        # break
+        return False
+
+    print 'ready to connect!', cend
+
+    print 'SUCCESS!  final path is:'
+    final_path = cbegin + middle + cend
+    print final_path
+
+    # middle part was checked above
+    # looks like we're good to go!
+
+    # For now, return first valid path.
+    # FIXME/TODO later will want to construct all paths
+    # (or at least hv vs.vh) and compare thetwo
+    return final_path
+
+
+
 
 def is_folded_reg(node_name): is_regop(node_name)
 #     if not is_reg(node_name): return False
