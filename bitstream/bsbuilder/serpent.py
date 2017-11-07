@@ -400,14 +400,14 @@ class Node:
         if DBG>2: print "is_avail: looking for '%s' in '%s' nodenet" \
               % (rname, self.name)
         if r in self.net:
-            print "  %-11s is available b/c already in '%s' nodenet" \
+            print "  %-11s available in '%s' nodenet" \
                   % (r, self.name)
             return True
 
         if DBG>2: print "is_avail: looking for '%s' in tile %d resources %s" \
               % (rname, tileno, resources[tileno])
         if rname in resources[tileno]:
-            print "  %-11s is available b/c it is in free list for tile %d"\
+            print "  %-11s available in free list for tile %d"\
                   % (r, tileno)
             return True
 
@@ -1317,12 +1317,12 @@ def find_best_path(sname,dname,dtileno):
             # choose a path in paths
 
 
-# Given 'path' from 
-# src node 'snode' in stileno
-# to dst node 'dname' in possible dest tile 'dtileno',
+
 def eval_path(path, snode, dname, dtileno, DBG=0):
-    pwhere(1325,\
-        "Evaluating path %s" % path)
+    # Given 'path' from src node 'snode' in stileno
+    # to dst node 'dname' in possible dest tile 'dtileno',
+    # see if path is valid
+    if DBG: pwhere(1325, "Evaluating path %s" % path)
 
     stileno = snode.tileno
     sname   = snode.name
@@ -1333,45 +1333,73 @@ def eval_path(path, snode, dname, dtileno, DBG=0):
 
     for p in path_ports:
         if not snode.is_avail(p,DBG):
-            print "NO path not available"
+            if DBG: print "NO path not available"
             return False
 
-    print "YES path is available\n"
-
+    if DBG:
+        print "YES path from T%d to T%d is available\n" % (stileno,dtileno)
+        print "Can we attach the path to the two nodes?"
+        print "  First attach source node '%s' to path begin_port '%s'"\
+              % (sname, path[0])
+            
     # foreach port p in snode.src,snode.net
     canon_src = 'T%d_%s' % (stileno, snode.src)
     plist = [canon_src] + snode.net
-    print 'src node is still input, right?'
-    print "ports used by '%s' so far: %s" % (sname,plist)
+
+    if DBG: print "  Ports avail to '%s' so far: %s" % (sname,plist)
     for p in plist:
-        print "Checking port '%s'..." % p
+        print "  Can '%s' connect to begin_port '%s'?" % (p, path[0])
+
+        # (begin,middle,end) = CT.unpack_path(path)
+
+        cbegin = can_connect_begin(snode, snode.src, path[0])
+        if not cbegin:
+            print "  Cannot connect '%s' to begin_port '%s'?" % (p, path[0])
+            continue
+        print 'ready to connect beginpoint!', cbegin
+
         dplist = dstports(dname,dtileno)
         print "want to route this port to a dest port", dplist
         for dstport in dplist:
-            print "want to route '%s' to a dest port" % p, dstport
-            final_path = complete_the_path(path,snode,dstport)
-            if final_path:
 
-                # For now, return first path found
-                # FIXME for future, keep findin paths and return them all
-                return final_path
+            # print "want to route '%s' to a dest port %s" % (p, dstport)
+            print "  Can path endpoint '%s' connect to dest port '%s'?" \
+                  % (path[-1], dstport)
+            
+            cend = can_connect_end(snode, path[-1], dstport)
+            if not cend:
+                print "  Cannot connect path endpoint '%s' to dest port '%s'" \
+                      % (path[-1], dstport)
+                print "Continuing with next dstport"
+                continue
+            print 'ready to connect endpoint!', cend
 
-            print "Continuing with next dstport"
+#             final_path = complete_the_path(path,snode,dstport)
+#             if final_path:
+# 
+#                 # For now, return first path found
+#                 # FIXME for future, keep findin paths and return them all
+#                 return final_path
+
+            # For now, return first path found
+            # FIXME for future, keep findin paths and return them all
+            print 'SUCCESS!  final path is:'
+            final_path = cbegin + path[1:-1] + cend
+            print final_path
+
+            # middle part was checked above
+            # looks like we're good to go!
+
+            # For now, return first valid path.
+            # FIXME/TODO later will want to construct all paths
+            # (or at least hv vs.vh) and compare thetwo
+            return final_path
+            
 
 
 
-def complete_the_path(path,snode,dstport):
-    # Given 'path' from 'snode' to 'dstport'
-    # verify that path is available to snode (no conflicts w/other nodes)
 
-
-    # (begin,path,end) = unpack(path)
-    (begin,middle,end) = CT.unpack_path(path)
-
-    # if src.canconnect(sname.src,begin)
-    # and src.canconnect(end,dname)
-    # paths.append (begin,path,end)
-
+def can_connect_begin(snode,src,begin):
     print "input src is '%s'" % snode.src
     print "path-begin is '%s'" % begin
     print "can connect as part of src net?"
@@ -1380,9 +1408,11 @@ def complete_the_path(path,snode,dstport):
         print 'oops no route to path begin'
         # break
         return False
+    else:
+        return cbegin
 
-    print 'ready to connect!', cbegin
 
+def can_connect_end(snode, end,dstport):
     print "dest port is '%s'" % dstport
     print "path-end is '%s'" % end
     print "can connect as part of src net?"
@@ -1391,23 +1421,8 @@ def complete_the_path(path,snode,dstport):
         print 'oops no route from path end to dest node'
         # break
         return False
-
-    print 'ready to connect!', cend
-
-    print 'SUCCESS!  final path is:'
-    final_path = cbegin + middle + cend
-    print final_path
-
-    # middle part was checked above
-    # looks like we're good to go!
-
-    # For now, return first valid path.
-    # FIXME/TODO later will want to construct all paths
-    # (or at least hv vs.vh) and compare thetwo
-    return final_path
-
-
-
+    else:
+        return cend
 
 def is_folded_reg(node_name): is_regop(node_name)
 #     if not is_reg(node_name): return False
