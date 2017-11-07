@@ -442,8 +442,12 @@ def tiletype(tileno):
 
 def mem_or_pe(tileno):
     type = tiletype(tileno)
-    if   re.search("^mem", type): return 'mem'
-    elif re.search("^pe",  type): return 'pe'
+
+    # if   re.search("^mem", type): return 'mem'
+    # elif re.search("^pe",  type): return 'pe'
+
+    if   type[0] == 'm': return 'mem'
+    elif type[0] == 'p': return 'pe'
     else:
         assert False, 'unknown tile type'
         return 'unknown'
@@ -529,14 +533,25 @@ def search_muxes(tile, box, rsrc, DBG=0):
     # 'box' is one of: ['sb','cb']
     assert box in ['sb','cb']
     rlist = []
+
+    # FIXME this needs a scrubbin i thinks
     for box in tile.iter(box):
         for mux in box.iter('mux'):
+            # FIXME this seems so wrong...
+            # 1. look for sources whose snk is rsrc
             for src in mux.iter('src'):
                 if DBG: print 'found src', src.text
                 if src.text == rsrc:
                     snk = mux.attrib['snk']
                     if DBG: print 'found snk', snk
                     rlist.append(snk)
+            # 2. It goes both ways, yes?
+            # Look for sinks whose src is rsrc
+            if DBG: print 'found snk', mux.attrib['snk']
+            if mux.attrib['snk'] == rsrc:
+                for src in mux.iter('src'):
+                    if DBG: print 'found src', src.text
+                    rlist.append(src.text)
     return rlist
 
     DBG=1
