@@ -336,10 +336,12 @@ class Node:
         self.input  = False  # E.g. T0_out_s0t0 or 'add_x_y.op1'
         self.output = False
         # EXAMPLES   input           output
-        # regpe      T0_op[12]       'REGPE'
-        # regreg     T0_out_s0t0     'REGREG'
+        # regpe      op1             'alu_3_2' (unplaced)
+        # regpe      T0_op1          'alu_3_2' (placed)
+
+        # regreg     T0_out_s0t0     'reg_2_4'
         # mem        T3_mem_in       T3_mem_out
-        # pe         T0_op[12]       T0_pe_out
+        # pe         T0_op{1,2}      T0_pe_out
         # regsolo    T0_out_s0t0     T1_in_s2t0
 
         self.dests = []
@@ -429,7 +431,7 @@ class Node:
             print "  %-11s is not available to node '%s'" % (r, self.name)
             return False
 
-    def connect(self,a,b,T=-1,DBG=9):
+    def connect(self,a,b,T=-1,DBG=88):
         '''
         In tile T, connect a to b if possible.
         a and b may or may not have embedded tile info.
@@ -438,6 +440,8 @@ class Node:
         Else return FALSE i guess.
         '''
         DBG = max(0,DBG)
+        if DBG==88: pwhere(1544, 'WARNING did you mean to not set DBG?')
+
         if a[0] == 'T': T = int(re.search('^T(\d+)', a).group(1))
         if b[0] == 'T': T = int(re.search('^T(\d+)', b).group(1))
 
@@ -768,14 +772,16 @@ def is_io(nodename):
         )
 
 
-# 'dstports' is what you need to connect to to get the indicated node, yes?
 def dstports(name,tile):
+    # 'dstports' is what you need to connect to to get the indicated node, yes?
+    # E.g. for pe it's op1 AND op2; for mem it's 'mem_in'
+    # for regsolo it's every outport in the tile
+    # for regpe it's op1 or op2
     def T(port): return 'T%d_%s' % (tile,port)
 
-    print name
-    print is_mem(name)
     if is_mem(name):  p = [T('mem_in')]
     elif is_pe(name): p = [T('op1'),T('op2')]
+    elif is_folded_reg(name): p = [T(nodes[regname].input)]
     else:
         # 'name' is a register, I guess;
         # so return names of all outports in the tile
@@ -787,8 +793,14 @@ def dstports(name,tile):
             outport = "T%d_out_s%dt0" % (tile,side)
             p.append(outport)
 
-    print 'found destination ports', p
+    # if DBG: print 'found destination ports', p
     return sorted(p)
+# Return pe input that contains the register
+# e.g. regpe_input('reg_2_3') = 'op1' (unplaced regpe) or
+# or   regpe_input('reg_2_3') = 'T6_op1' (placed regpe)
+def regpe_input(name): return nodes[name].input
+
+
 
 def test_dstports():
     dstports('mem_1', 8)
@@ -828,7 +840,8 @@ def constant_folding(DBG=0):
 def register_folding(DBG=9):
     '''
     Process all the reg->pe pairs
-    Mark by setting reg src to e.g. 'add_x_y.op1'
+    Mark by setting reg ouput to pe node e.g. 'add_x_y'
+    And set input to operand e.g. 'op1'
     Also: set nodes['add_x_y'].op1 = regname
     '''
     
@@ -851,7 +864,15 @@ def register_folding(DBG=9):
         # Also set nodes['add_x_y'].op1 = regname
         # route [pe, "op1"] means duh obvious right?
         op = pe.addop(reg_name) # "op1" or "op2"
-        reg.input  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
+        # reg.input  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
+        reg.input  = op       # E.g. "op1"
+        reg.output = pe_name  # E.g. "add_x_y"
+
+#         # Fold it!
+#         reg.input  = 'REGPE'
+#         reg.output = pe_name       # E.g. "add_x_y"
+
+
 
         # if DBG: print "Found foldable reg '%s'" % reg_name
         if DBG: print "#   Folded '%s' into pe '%s' as '%s'" % \
@@ -987,16 +1008,17 @@ def finish_route(sname,dname, DBG=0):
 def is_regop(regname):
     '''
     "regname" is a reg-pair if:
-    - regname is the name of a reg node
-    - regname.input is assigned and is a pe
+    - regname is the name of a reg node AND
+    - regname.input is one of 'op1','op2' OR
+    - regname.output is a PE node
     '''
     assert type(regname) == str
     if not is_reg(regname):         return False
 
-    reg_src = nodes[regname].input # E.g. "add_2_3.op1"
+    reg_out = nodes[regname].output # E.g. "op1" or "T2_op1"
     # print reg_src;
                 
-    if is_pe(reg_src): return True
+    if is_pe(reg_out): return True
     else:              return False
 
 
@@ -1136,8 +1158,6 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # print 'dtileno/nearest is %d' % dtileno
         if DBG: pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
 
-        print 666
-    
         path = find_best_path(sname, dname, dtileno)
         
         # Having found the final path,
@@ -1368,6 +1388,8 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     stileno = snode.tileno
     sname   = snode.name
 
+    print 666
+    
     if DBG: print "Can we attach nodes to path endpoints '%s' and '%s'?"\
        % (path[0],path[-1])
 
@@ -1385,7 +1407,7 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     if DBG: print "2. Attach path endpoint '%s' to dest node '%s' (%s)"\
        % (path[-1], dname, where(1413))
 
-    cend = connect_endpoint(snode, path[-1], dname, dtileno)
+    cend = connect_endpoint(snode, path[-1], dname, dtileno, DBG)
     if not cend:
         print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
         assert False, 'disaster could not find a path'
@@ -1433,11 +1455,9 @@ def connect_beginpoint(snode, beginpoint, DBG=0):
 
     assert snode.input in snode.net
     plist = sorted(snode.net)
-    print plist
-
+    # print plist
     # FIXME should only look at ports in same tile as beginpoint...RIGHT?
     # FIXME verify no redundancies in plist
-
     if DBG:
         print "   Ports avail to source node '%s': %s" % (sname,plist)
         print "   Take each one in turn"
@@ -1445,66 +1465,89 @@ def connect_beginpoint(snode, beginpoint, DBG=0):
     for p in plist:
         print "     Can '%s' connect to beginpoint '%s'?" % (p, beginpoint)
 
-        # (begin,middle,end) = CT.unpack_path(path)
-
         cbegin = can_connect_begin(snode, snode.input, beginpoint, DBG)
-
         if cbegin:
-            print '   Ready to connect beginpoint: %s (%s)', (cbegin, where(1374))
+            print '   Ready to connect beginpoint %s (%s)' \
+                  % (cbegin, where(1374))
+            print ''
             return cbegin
-
         else:
             print "  Cannot connect '%s' to beginpoint '%s'?" % (p, beginpoint)
             print "  Try next port in the list?"
             continue
 
-    return cbegin
+    return False
 
-def connect_endpoint(snode, endpoint, dname, dtileno):
-        # endpoint = path[-1]
-        dplist = dstports(dname,dtileno)
-        print "want to route this port to a dest port", dplist
-        for dstport in dplist:
+def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
 
-            # print "want to route '%s' to a dest port %s" % (p, dstport)
-            print "  Can path endpoint '%s' connect to dest port '%s'?" \
-                  % (endpoint, dstport)
-            
-            cend = can_connect_end(snode, endpoint, dstport)
-            if not cend:
-                print "  Cannot connect path endpoint '%s' to dest port '%s'" \
-                      % (endpoint, dstport)
-                print "Continuing with next dstport"
-                continue
+    # 'dstports' is what you need to connect to to get the indicated node, yes?
+    # E.g. for pe it's op1 AND op2; for mem it's 'mem_in'
+    # for regsolo it's every outport in the tile
+    # for regpe it's op1 or op2
+    dplist = dstports(dname,dtileno)
+    if DBG:
+        print "   Want to route endpoint to a dest port %s" % dplist
 
-            # print 'ready to connect endpoint!', cend
+    if DBG:
+        print "   In-ports avail to dest node '%s': %s" % (dname,dplist)
+        print "   Take each one in turn"
+
+    for dstport in dplist:
+        print "     Can path endpoint '%s' connect to dest port '%s'?" \
+              % (endpoint, dstport)
+
+        cend = can_connect_end(snode, endpoint, dstport,DBG)
+        if cend:
+            print '   Ready to connect endpoint %s (%s)' \
+                  % (cend, where(1501))
             return cend
-        return False
+        else:
+            print "  Cannot connect path endpoint '%s' to dest port '%s'" \
+                  % (endpoint, dstport)
+            print "  Try next port in the list?"
 
-def can_connect_begin(snode,src,begin,DBG):
-    if DBG>1:
-        print "input src is '%s'" % snode.input
-        print "path-begin is '%s'" % begin
-        print "can connect as part of src net?"
+    return False
 
-    cbegin = snode.connect(snode.input,begin,DBG=DBG)
-    if not cbegin:
-        if DBG>1: print 'oops no route to path begin'
-        # break
-        return False
-    return cbegin
+def can_connect_begin(snode,src,begin,DBG=0):
+    return can_connect(snode,src,begin,DBG)
+#     if DBG>1:
+#         print "input src is '%s'" % snode.input
+#         print "path-begin is '%s'" % begin
+#         print "can connect as part of src net?"
+# 
+#     cbegin = snode.connect(snode.input,begin,DBG=DBG)
+#     if not cbegin:
+#         if DBG>1: print 'oops no route to path begin'
+#         return False
+#     return cbegin
 
 def can_connect_end(snode, end,dstport,DBG=0):
-    print "dest port is '%s'" % dstport
-    print "path-end is '%s'" % end
-    print "can connect as part of src net?"
-    cend = snode.connect(end,dstport,DBG-1)
-    if not cend:
-        print 'oops no route from path end to dest node'
-        # break
-        return False
-    return cend
+    return can_connect(snode, end,dstport,DBG)
+#     if DBG>1:
+#         print "dest port is '%s'" % dstport
+#         print "path-end is '%s'" % end
+#         print "can connect as part of src net?"
+#     cend = snode.connect(end,dstport,DBG-1)
+#     if not cend:
+#         if DBG>1: print 'oops no route from path end to dest node'
+#         return False
+#     return cend
 
+def can_connect(snode, p1, p2, DBG=0):
+    # Can we connect ports p1 to p2 as part of 'snode' net?
+    if DBG>1: print "Can we connect '%s' to '%s' as part of '%s' net? (%s)"\
+       % (p1,p2,snode,where(1536))
+    c = snode.connect(p1,p2,DBG=DBG)
+    if not c:
+        if DBG>1: print 'oops no route from p1 to p2'
+        return False
+    return c
+
+
+
+
+# FIXME OH NOOOOOO
+def is_regpe(node_name):      is_regop(node_name)
 def is_folded_reg(node_name): is_regop(node_name)
 #     if not is_reg(node_name): return False
 #     reg = nodes[node_name]
