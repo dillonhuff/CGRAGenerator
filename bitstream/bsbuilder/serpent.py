@@ -13,12 +13,12 @@ def show_trace(nlines=100):
     sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
 
 from inspect import currentframe, getframeinfo
-def where():
+def where(lno=0):
     # E.g. 'serpent.py/42'
     # frameinfo = getframeinfo(currentframe())
     frameinfo = getframeinfo(currentframe().f_back)
-    print frameinfo.filename, frameinfo.lineno
-    return '%s/%s' % (frameinfo.filename, frameinfo.lineno)
+    if not lno: lno = frameinfo.lineno
+    return '%s/%s' % (frameinfo.filename, lno)
 
 def pwhere(lno, txt=''):
     frameinfo = getframeinfo(currentframe().f_back)
@@ -32,9 +32,9 @@ def pwhere(lno, txt=''):
         print '%s: %s' % (info, txt)
 
 def test_where():
-    where()
+    print where()
     pwhere('hello')
-    where()
+    print where()
     exit()
 # test_where()
 
@@ -446,22 +446,27 @@ class Node:
         #                          in.*           out_.*
         #                          in.*      {mem_in,op1,op2}   
 
-        if DBG: print "     Looks like both are available to '%s'" % self.name
+        if DBG: print "     Looks like both are available to '%s' (%s)" \
+           % (self.name, where(451))
         if DBG: print ''
 
         # If can reach a->b directly, return a->b'
 
+        (aprime,bprime) = (to_cgra(a),to_cgra(b))
+        print "     Ask cgra: can '%s' connect to '%s'? (%s)"\
+              % (aprime,bprime,where())
+
         # rlist = all ports that a can reach in tile T
-        rlist = cgra_info.reachable(to_cgra(a), T, DBG=1)
-        print rlist
+        rlist = cgra_info.reachable(to_cgra(a), T, DBG=0)
+        print "       %s can connect to %s" % (aprime,rlist)
 
         bprime = to_cgra(b)
-        print "is '%s' in the list?" % bprime
+        print "       Is '%s' in the list?" % bprime
         if bprime in rlist:
-            if DBG: print 'YES'
+            if DBG: print '       YES'
             return ['%s -> %s' % (a,b)]
 
-        if DBG: print "NO"
+        if DBG: print "           NO"
         print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
         print "maybe can connect through intermediary?"
         # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
@@ -1363,9 +1368,9 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
 
         cbegin = can_connect_begin(snode, snode.src, path[0], DBG)
         if not cbegin:
-            print "  Cannot connect '%s' to begin_port '%s'?" % (p, path[0])
+            print "  Cannot connect '%s' to beginpoint '%s'?" % (p, path[0])
             continue
-        print 'ready to connect beginpoint!', cbegin
+        print '       Ready to connect beginpoint: %s (%s)', (cbegin, where())
 
         cend = connect_endpoint(snode, path[-1], dname, dtileno)
         if not cend:
