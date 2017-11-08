@@ -334,6 +334,9 @@ class Node:
         self.op2 = False
 
         self.src = False  # E.g. T0_out_s0t0 or 'add_x_y.op1'
+        # DOO instead of src use in,out
+
+
         self.dests = []
         self.placed = False
         self.route  = {}   # E.g. route['INPUT'] = [T0_in_s0t0, 'T0_op1']
@@ -364,6 +367,12 @@ class Node:
         print "  op1='%s'"   % self.op1
         print "  op2='%s'"   % self.op2
         print "  src='%s'" % self.src
+
+        # DOO
+#         print "  in= '%s'" % self.in
+#         print "  out='%s'" % self.out
+
+
         print "  placed= %s" % self.placed
         print "  dests=%s" % self.dests
         # print "  route=%s" % self.route
@@ -446,24 +455,24 @@ class Node:
         #                          in.*           out_.*
         #                          in.*      {mem_in,op1,op2}   
 
-        if DBG: print "     Looks like both are available to '%s' (%s)" \
+        if DBG: print "       Looks like both are available to '%s' (%s)" \
            % (self.name, where(451))
         if DBG: print ''
 
         # If can reach a->b directly, return a->b'
 
         (aprime,bprime) = (to_cgra(a),to_cgra(b))
-        print "     Ask cgra: can '%s' connect to '%s'? (%s)"\
-              % (aprime,bprime,where())
+        print "       Ask cgra: can '%s' connect to '%s'? (%s)"\
+              % (aprime,bprime,where(457))
 
         # rlist = all ports that a can reach in tile T
         rlist = cgra_info.reachable(to_cgra(a), T, DBG=0)
-        print "       %s can connect to %s" % (aprime,rlist)
+        print "         %s can connect to %s" % (aprime,rlist)
 
         bprime = to_cgra(b)
-        print "       Is '%s' in the list?" % bprime
+        print "         Is '%s' in the list?" % bprime
         if bprime in rlist:
-            if DBG: print '       YES'
+            if DBG: print '         YES'
             return ['%s -> %s' % (a,b)]
 
         if DBG: print "           NO"
@@ -815,6 +824,7 @@ def register_folding(DBG=9):
     '''
     Process all the reg->pe pairs
     Mark by setting reg src to e.g. 'add_x_y.op1'
+    Also: set nodes['add_x_y'].op1 = regname
     '''
     
     global nodes
@@ -833,6 +843,7 @@ def register_folding(DBG=9):
         pe = nodes[pe_name]
 
         # Fold it! By setting src to e.g. "add_x_y.op1"
+        # Also set nodes['add_x_y'].op1 = regname
         # route [pe, "op1"] means duh obvious right?
         op = pe.addop(reg_name) # "op1" or "op2"
         reg.src  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
@@ -898,7 +909,10 @@ def place(name, tileno, src, DBG=0):
 
 
     n.tileno = tileno
-    n.src = src
+    # n.src = src DOO
+    n.src = 'T%d_%s' % (tileno, src)
+
+
     n.placed = True
 
     Tname = "T%d_%s" % (tileno,src)
@@ -1335,11 +1349,7 @@ def eval_path(path, snode, dname, dtileno, DBG=0):
     if not ports_available(snode, path, DBG): return False
     if DBG:
         print "YES path from T%d to T%d is available\n" % (stileno,dtileno)
-        print "Can we attach nodes to path endpoints '%s' and '%s'?"\
-              % (path[0],path[-1])
-        print "1. Attach source node '%s' to path begin_port '%s'"\
-              % (sname, path[0])
-            
+
     # part 2 verify begin and end points
     final_path = can_connect_ends(path, snode, dname, dtileno, DBG)
     if not final_path:
@@ -1353,12 +1363,30 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     stileno = snode.tileno
     sname   = snode.name
 
-    # foreach port p in snode.src,snode.net
-    canon_src = 'T%d_%s' % (stileno, snode.src)
-    plist = [canon_src] + snode.net
+    if DBG: print "Can we attach nodes to path endpoints '%s' and '%s'?"\
+       % (path[0],path[-1])
 
     if DBG:
-        print "   Ports avail to '%s': %s" % (sname,plist)
+        print "1. Attach source node '%s' to path beginpoint '%s'"\
+              % (sname, path[0])
+
+    # foreach port p in snode.src,snode.net
+
+# DOO
+#     canon_src = 'T%d_%s' % (stileno, snode.src)
+#     plist = [canon_src] + snode.net
+
+    assert snode.src in snode.net
+    plist = sorted(snode.net)
+    print 'foo'
+    print plist
+
+
+    # FIXME remove redundancies in plist
+    # FIXME should only look at ports in same tile as beginpoint...RIGHT?
+
+    if DBG:
+        print "   Ports avail to source node '%s': %s" % (sname,plist)
         print "   Take each one in turn"
 
     for p in plist:
@@ -1367,32 +1395,47 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
         # (begin,middle,end) = CT.unpack_path(path)
 
         cbegin = can_connect_begin(snode, snode.src, path[0], DBG)
+
         if not cbegin:
             print "  Cannot connect '%s' to beginpoint '%s'?" % (p, path[0])
             continue
-        print '       Ready to connect beginpoint: %s (%s)', (cbegin, where())
+        print '   Ready to connect beginpoint: %s (%s)', (cbegin, where(1374))
+        break
 
-        cend = connect_endpoint(snode, path[-1], dname, dtileno)
-        if not cend:
-            print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
-            assert False, 'disaster could not find a path'
-            return False
+        if cbegin:
+            print '   Ready to connect beginpoint: %s (%s)', (cbegin, where(1374))
+            break
+        else:
+            print "  Cannot connect '%s' to beginpoint '%s'?" % (p, path[0])
+            print "  Try next port in the list?"
+            continue
 
-        print 'ready to connect endpoint! %s' % cend
+    #######################################
+    if DBG:
+        print "2. Attach path endpoint '%s' to dest node '%s' (%s)"\
+              % (path[-1], dname, where(1413))
 
-        # For now, return first path found
-        # FIXME for future, keep findin paths and return them all
-        print 'SUCCESS!  final path is:'
-        final_path = cbegin + path[1:-1] + cend
-        print final_path
+    cend = connect_endpoint(snode, path[-1], dname, dtileno)
+    if not cend:
+        print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
+        assert False, 'disaster could not find a path'
+        return False
 
-        # middle part was verified previously.
-        # looks like we're good to go!
-        
-        # For now, return first valid path.
-        # FIXME/TODO later will want to construct all paths
-        # (or at least hv vs.vh) and compare thetwo
-        return final_path
+    print 'ready to connect endpoint! %s' % cend
+
+    # For now, return first path found
+    # FIXME for future, keep findin paths and return them all
+    print 'SUCCESS!  final path is:'
+    final_path = cbegin + path[1:-1] + cend
+    print final_path
+
+    # middle part was verified previously.
+    # looks like we're good to go!
+
+    # For now, return first valid path.
+    # FIXME/TODO later will want to construct all paths
+    # (or at least hv vs.vh) and compare thetwo
+    return final_path
             
 
 def ports_available(snode, path, DBG=0):
@@ -1409,6 +1452,9 @@ def ports_available(snode, path, DBG=0):
             return False
 
     return True
+
+
+def connect_beginpoint(): print 1
 
 
 def connect_endpoint(snode, endpoint, dname, dtileno):
