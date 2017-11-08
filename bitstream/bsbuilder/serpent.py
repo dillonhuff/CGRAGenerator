@@ -333,9 +333,14 @@ class Node:
         self.op1 = False
         self.op2 = False
 
-        self.src = False  # E.g. T0_out_s0t0 or 'add_x_y.op1'
-        # DOO instead of src use in,out
-
+        self.input  = False  # E.g. T0_out_s0t0 or 'add_x_y.op1'
+        self.output = False
+        # EXAMPLES   input           output
+        # regpe      T0_op[12]       'REGPE'
+        # regreg     T0_out_s0t0     'REGREG'
+        # mem        T3_mem_in       T3_mem_out
+        # pe         T0_op[12]       T0_pe_out
+        # regsolo    T0_out_s0t0     T1_in_s2t0
 
         self.dests = []
         self.placed = False
@@ -366,7 +371,7 @@ class Node:
         print "  tileno= %s" % self.tileno
         print "  op1='%s'"   % self.op1
         print "  op2='%s'"   % self.op2
-        print "  src='%s'" % self.src
+        print "  src='%s'" % self.input
 
         # DOO
 #         print "  in= '%s'" % self.in
@@ -846,7 +851,7 @@ def register_folding(DBG=9):
         # Also set nodes['add_x_y'].op1 = regname
         # route [pe, "op1"] means duh obvious right?
         op = pe.addop(reg_name) # "op1" or "op2"
-        reg.src  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
+        reg.input  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
 
         # if DBG: print "Found foldable reg '%s'" % reg_name
         if DBG: print "#   Folded '%s' into pe '%s' as '%s'" % \
@@ -904,13 +909,13 @@ def place(name, tileno, src, DBG=0):
 
     n = nodes[name]
     if n.placed:
-        print "ERROR %s already placed at %s" % (name, n.src)
-        assert False, "ERROR %s already placed at %s" % (name, n.src)
+        print "ERROR %s already placed at %s" % (name, n.input)
+        assert False, "ERROR %s already placed at %s" % (name, n.input)
 
 
     n.tileno = tileno
-    # n.src = src DOO
-    n.src = 'T%d_%s' % (tileno, src)
+    # n.input = src DOO
+    n.input = 'T%d_%s' % (tileno, src)
 
 
     n.placed = True
@@ -983,12 +988,12 @@ def is_regop(regname):
     '''
     "regname" is a reg-pair if:
     - regname is the name of a reg node
-    - regname.src is assigned and is a pe
+    - regname.input is assigned and is a pe
     '''
     assert type(regname) == str
     if not is_reg(regname):         return False
 
-    reg_src = nodes[regname].src # E.g. "add_2_3.op1"
+    reg_src = nodes[regname].input # E.g. "add_2_3.op1"
     # print reg_src;
                 
     if is_pe(reg_src): return True
@@ -1052,7 +1057,7 @@ def process_nodes(sname, indent='# ', DBG=1):
         else:
             # was not placed before but is placed now
             assert is_placed(dname)
-            (t,loc) = (nodes[dname].tileno,nodes[dname].src)
+            (t,loc) = (nodes[dname].tileno,nodes[dname].input)
             print indent+"  Placed '%s' in tile %d at location '%s'" % (dname, t, loc)
 
         if was_routed:
@@ -1060,7 +1065,7 @@ def process_nodes(sname, indent='# ', DBG=1):
             assert is_routed(dname)
             print indent+"  ('%s' was already routed)" % dname
         else:
-            # (tileno,resource) = (nodes[dname].tileno, nodes[dname].src)
+            # (tileno,resource) = (nodes[dname].tileno, nodes[dname].input)
             # print indent+"  Placed '%s' at tile %d port '%s'" % (dname,tileno,resource)
             # print indent+"  Routed '%s -> %s'" % (sname,dname)
             print indent+"  Routed %s" % nodes[sname].route[dname]
@@ -1293,9 +1298,9 @@ def find_best_path(sname,dname,dtileno):
         # next:
         # trying to route sname/stileno to dname/dtileno
         # foreach path in connect_{hv,vh}connect(ptile,dtile)
-        #   foreach port in snode.src,snode.net
+        #   foreach port in snode.input,snode.net
         #     (begin,end) = (path[0],path[-1])
-        #     if src.canconnect(sname.src,begin) and src.canconnect(end,dname)
+        #     if src.canconnect(sname.input,begin) and src.canconnect(end,dname)
         #        paths.append (begin,path,end)
         # choose a path in paths
 
@@ -1370,13 +1375,13 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
         print "1. Attach source node '%s' to path beginpoint '%s'"\
               % (sname, path[0])
 
-    # foreach port p in snode.src,snode.net
+    # foreach port p in snode.input,snode.net
 
 # DOO
-#     canon_src = 'T%d_%s' % (stileno, snode.src)
+#     canon_src = 'T%d_%s' % (stileno, snode.input)
 #     plist = [canon_src] + snode.net
 
-    assert snode.src in snode.net
+    assert snode.input in snode.net
     plist = sorted(snode.net)
     print 'foo'
     print plist
@@ -1394,7 +1399,7 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
 
         # (begin,middle,end) = CT.unpack_path(path)
 
-        cbegin = can_connect_begin(snode, snode.src, path[0], DBG)
+        cbegin = can_connect_begin(snode, snode.input, path[0], DBG)
 
         if not cbegin:
             print "  Cannot connect '%s' to beginpoint '%s'?" % (p, path[0])
@@ -1480,11 +1485,11 @@ def connect_endpoint(snode, endpoint, dname, dtileno):
 
 def can_connect_begin(snode,src,begin,DBG):
     if DBG>1:
-        print "input src is '%s'" % snode.src
+        print "input src is '%s'" % snode.input
         print "path-begin is '%s'" % begin
         print "can connect as part of src net?"
 
-    cbegin = snode.connect(snode.src,begin,DBG=DBG)
+    cbegin = snode.connect(snode.input,begin,DBG=DBG)
     if not cbegin:
         if DBG>1: print 'oops no route to path begin'
         # break
@@ -1505,7 +1510,7 @@ def can_connect_end(snode, end,dstport,DBG=0):
 def is_folded_reg(node_name): is_regop(node_name)
 #     if not is_reg(node_name): return False
 #     reg = nodes[node_name]
-#     return is_pe(reg.src)
+#     return is_pe(reg.input)
 
 
 def place_and_route_test(sname,dname,indent='# ',DBG=1):
@@ -1513,8 +1518,8 @@ def place_and_route_test(sname,dname,indent='# ',DBG=1):
 
     # Test
     nodes[dname].tileno = 999
-    nodes[dname].src    = dname
-    nodes[sname].net.append(nodes[dname].src)
+    nodes[dname].input    = dname
+    nodes[sname].net.append(nodes[dname].input)
     return
 
 
@@ -1554,8 +1559,8 @@ def randomly_place(dname, DBG=0):
 
             # regop goes in same tile as target pe as op1 or op2
             tileno = nodes[pe].tileno
-            if   (re.search('op1$', nodes[dname].src)): op = 'op1'
-            elif (re.search('op2$', nodes[dname].src)): op = 'op2'
+            if   (re.search('op1$', nodes[dname].input)): op = 'op1'
+            elif (re.search('op2$', nodes[dname].input)): op = 'op2'
             else: assert(0)
                   
             place(dname,tileno,op)
