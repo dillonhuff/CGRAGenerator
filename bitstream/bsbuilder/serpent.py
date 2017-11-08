@@ -788,7 +788,7 @@ def dstports(name,tile):
             p.append(outport)
 
     print 'found destination ports', p
-    return p
+    return sorted(p)
 
 def test_dstports():
     dstports('mem_1', 8)
@@ -1375,50 +1375,15 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
         print "1. Attach source node '%s' to path beginpoint '%s'"\
               % (sname, path[0])
 
-    # foreach port p in snode.input,snode.net
-
-# DOO
-#     canon_src = 'T%d_%s' % (stileno, snode.input)
-#     plist = [canon_src] + snode.net
-
-    assert snode.input in snode.net
-    plist = sorted(snode.net)
-    print 'foo'
-    print plist
-
-
-    # FIXME remove redundancies in plist
-    # FIXME should only look at ports in same tile as beginpoint...RIGHT?
-
-    if DBG:
-        print "   Ports avail to source node '%s': %s" % (sname,plist)
-        print "   Take each one in turn"
-
-    for p in plist:
-        print "     Can '%s' connect to begin_port '%s'?" % (p, path[0])
-
-        # (begin,middle,end) = CT.unpack_path(path)
-
-        cbegin = can_connect_begin(snode, snode.input, path[0], DBG)
-
-        if not cbegin:
-            print "  Cannot connect '%s' to beginpoint '%s'?" % (p, path[0])
-            continue
-        print '   Ready to connect beginpoint: %s (%s)', (cbegin, where(1374))
-        break
-
-        if cbegin:
-            print '   Ready to connect beginpoint: %s (%s)', (cbegin, where(1374))
-            break
-        else:
-            print "  Cannot connect '%s' to beginpoint '%s'?" % (p, path[0])
-            print "  Try next port in the list?"
-            continue
+    cbegin = connect_beginpoint(snode, path[0],DBG)
+    if not cbegin:
+        print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
+        assert False, 'disaster could not find a path'
+        return False
 
     #######################################
-    if DBG:
-        print "2. Attach path endpoint '%s' to dest node '%s' (%s)"\
-              % (path[-1], dname, where(1413))
+    if DBG: print "2. Attach path endpoint '%s' to dest node '%s' (%s)"\
+       % (path[-1], dname, where(1413))
 
     cend = connect_endpoint(snode, path[-1], dname, dtileno)
     if not cend:
@@ -1459,8 +1424,41 @@ def ports_available(snode, path, DBG=0):
     return True
 
 
-def connect_beginpoint(): print 1
+def connect_beginpoint(snode, beginpoint, DBG=0):
+    stileno = snode.tileno
+    sname   = snode.name
 
+    # canon_src = 'T%d_%s' % (stileno, snode.input)
+    # plist = [canon_src] + snode.net
+
+    assert snode.input in snode.net
+    plist = sorted(snode.net)
+    print plist
+
+    # FIXME should only look at ports in same tile as beginpoint...RIGHT?
+    # FIXME verify no redundancies in plist
+
+    if DBG:
+        print "   Ports avail to source node '%s': %s" % (sname,plist)
+        print "   Take each one in turn"
+
+    for p in plist:
+        print "     Can '%s' connect to beginpoint '%s'?" % (p, beginpoint)
+
+        # (begin,middle,end) = CT.unpack_path(path)
+
+        cbegin = can_connect_begin(snode, snode.input, beginpoint, DBG)
+
+        if cbegin:
+            print '   Ready to connect beginpoint: %s (%s)', (cbegin, where(1374))
+            return cbegin
+
+        else:
+            print "  Cannot connect '%s' to beginpoint '%s'?" % (p, beginpoint)
+            print "  Try next port in the list?"
+            continue
+
+    return cbegin
 
 def connect_endpoint(snode, endpoint, dname, dtileno):
         # endpoint = path[-1]
