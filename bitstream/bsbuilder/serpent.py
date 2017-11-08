@@ -1413,7 +1413,7 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
         assert False, 'disaster could not find a path'
         return False
 
-    print 'ready to connect endpoint! %s' % cend
+    # print 'ready to connect endpoint! %s' % cend
 
     # For now, return first path found
     # FIXME for future, keep findin paths and return them all
@@ -1466,15 +1466,10 @@ def connect_beginpoint(snode, beginpoint, DBG=0):
         print "     Can '%s' connect to beginpoint '%s'?" % (p, beginpoint)
 
         cbegin = can_connect_begin(snode, snode.input, beginpoint, DBG)
-        if cbegin:
-            print '   Ready to connect beginpoint %s (%s)' \
-                  % (cbegin, where(1374))
-            print ''
-            return cbegin
+        if cbegin: return cbegin
         else:
             print "  Cannot connect '%s' to beginpoint '%s'?" % (p, beginpoint)
             print "  Try next port in the list?"
-            continue
 
     return False
 
@@ -1497,10 +1492,7 @@ def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
               % (endpoint, dstport)
 
         cend = can_connect_end(snode, endpoint, dstport,DBG)
-        if cend:
-            print '   Ready to connect endpoint %s (%s)' \
-                  % (cend, where(1501))
-            return cend
+        if cend: return cend
         else:
             print "  Cannot connect path endpoint '%s' to dest port '%s'" \
                   % (endpoint, dstport)
@@ -1509,29 +1501,17 @@ def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
     return False
 
 def can_connect_begin(snode,src,begin,DBG=0):
-    return can_connect(snode,src,begin,DBG)
-#     if DBG>1:
-#         print "input src is '%s'" % snode.input
-#         print "path-begin is '%s'" % begin
-#         print "can connect as part of src net?"
-# 
-#     cbegin = snode.connect(snode.input,begin,DBG=DBG)
-#     if not cbegin:
-#         if DBG>1: print 'oops no route to path begin'
-#         return False
-#     return cbegin
+    cbegin = can_connect(snode,src,begin,DBG)
+    if cbegin:
+        print '   Ready to connect beginpoint %s (%s)' % (cbegin, where(1509))
+        print ''
+    return cbegin
 
 def can_connect_end(snode, end,dstport,DBG=0):
-    return can_connect(snode, end,dstport,DBG)
-#     if DBG>1:
-#         print "dest port is '%s'" % dstport
-#         print "path-end is '%s'" % end
-#         print "can connect as part of src net?"
-#     cend = snode.connect(end,dstport,DBG-1)
-#     if not cend:
-#         if DBG>1: print 'oops no route from path end to dest node'
-#         return False
-#     return cend
+    cend = can_connect(snode, end,dstport,DBG)
+    if cend:
+        print '   Ready to connect endpoint %s (%s)' % (cend, where(1516))
+    return cend
 
 def can_connect(snode, p1, p2, DBG=0):
     # Can we connect ports p1 to p2 as part of 'snode' net?
