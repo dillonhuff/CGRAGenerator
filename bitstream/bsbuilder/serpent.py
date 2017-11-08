@@ -337,11 +337,11 @@ class Node:
         self.output = False
         # EXAMPLES   input           output
         # regpe      op1             'alu_3_2' (unplaced)
-        # regpe      T0_op1          'alu_3_2' (placed)
+        # regpe      T0_ops          'alu_3_2' (placed)
 
         # regreg     T0_out_s0t0     'reg_2_4'
         # mem        T3_mem_in       T3_mem_out
-        # pe         T0_op{1,2}      T0_pe_out
+        # pe         T0_ops          T0_pe_out
         # regsolo    T0_out_s0t0     T1_in_s2t0
 
         self.dests = []
@@ -373,12 +373,9 @@ class Node:
         print "  tileno= %s" % self.tileno
         print "  op1='%s'"   % self.op1
         print "  op2='%s'"   % self.op2
-        print "  src='%s'" % self.input
 
-        # DOO
-#         print "  in= '%s'" % self.in
-#         print "  out='%s'" % self.out
-
+        print "  in= '%s'" % self.input
+        print "  out='%s'" % self.output
 
         print "  placed= %s" % self.placed
         print "  dests=%s" % self.dests
@@ -745,11 +742,12 @@ def is_pe_tile(tileno):  return cgra_info.mem_or_pe(tileno) == 'pe'
 def is_mem_tile(tileno): return cgra_info.mem_or_pe(tileno) == 'mem'
 
 def initialize_node_INPUT():
-    src = INPUT_WIRE
+    input  = INPUT_WIRE_T
+    output = INPUT_WIRE_T
     tileno=0
 
     # Place 'name' in tile 'tileno' at location 'src'
-    place('INPUT', tileno, src)
+    place('INPUT', tileno, input, output)
 
     # Really?
     # assert INPUT.name == 'INPUT'
@@ -918,14 +916,25 @@ def register_folding(DBG=9):
 # 
 # def fold_regop_to_input(n,d): print 'its not plugged in yet'
 
-def place(name, tileno, src, DBG=0):
+def getboth(tileno, wirename):
+    parse = re.search('^T\d+_(.*)',wirename)
+    if parse: wirename = parse.group(1)
+    tname = 'T%d_%s' % (tileno,wirename)
+    return (wirename,tname)
+
+
+def place(name, tileno, input, output, DBG=0):
     '''
-    Place "name" in tile "tileno" at location "src"
-    where e.g. local name 'src' = 'pe_out' or 'out_s1t1'
+    Place "name" in tile "tileno"
+    where e.g. local name 'output' = 'pe_out' or 'out_s1t1'
     '''
 
-    if   is_pe(name):  assert src ==  'pe_out'
-    elif is_mem(name): assert src == 'mem_out'
+    (output,outputT) = getboth(tileno,output)
+    (input,inputT) = getboth(tileno,input)
+    
+
+    if   is_pe(name):  assert output ==  'pe_out'
+    elif is_mem(name): assert output == 'mem_out'
     # elif is_reg(name)...
 
     n = nodes[name]
@@ -933,28 +942,39 @@ def place(name, tileno, src, DBG=0):
         print "ERROR %s already placed at %s" % (name, n.input)
         assert False, "ERROR %s already placed at %s" % (name, n.input)
 
-
     n.tileno = tileno
-    # n.input = src DOO
-    n.input = 'T%d_%s' % (tileno, src)
-
-
     n.placed = True
 
-    Tname = "T%d_%s" % (tileno,src)
+    # n.input = 'T%d_%s' % (tileno, input)
+    # n.output = 'T%d_%s' % (tileno, output)
+
+    n.input = inputT
+    n.output = outputT
+
+    # Tname = "T%d_%s" % (tileno,output)
+    Tname = outputT
+
+
+
     # maybe def Tname(T,name): return "T%d_%s" % (tileno,name)
     n.net.append(Tname) # right?  RIGHT???
 
-    if not (src in resources[tileno]):
-        print "ERROR tile %d has no available resource '%s'" % (tileno,src)
-    assert src in resources[tileno]
+    # if not (output in resources[tileno]):
+    if not (output in resources[tileno]):
+        print "ERROR tile %d has no available resource '%s'" % (tileno,outlocal)
+    assert output in resources[tileno]
 
-    resources[tileno].remove(src)
-    assert src not in resources[tileno]
+    resources[tileno].remove(output)
+    assert output not in resources[tileno]
     
     if DBG: print "# Placed '%s' in tile %d at location '%s'" \
-       % (name, tileno, src)
-    return (0, src)
+       % (name, tileno, input)
+    return (0, input)
+
+def stripT(wirename):
+    print wirename
+    return re.search('^T\d+_(.*)',wirename).group(1)
+
 
 def add_route(sname, dname, tileno, src_port, dst_port, DBG=1):
     '''
@@ -1160,55 +1180,72 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         path = find_best_path(sname, dname, dtileno)
         
-        # Having found the final path,
-        # - place dname in dtileno
-        # - add all the path ports to the src net
-        # - what else?
+        print "# Having found the final path,"
+        print "# 1. place dname in dtileno"
+        print "# 2. Add the connection to src->dst route list"
+        print "# 3. add all the path ports to the src net"
+        print "# 4. what else?"
+        print ""
 
-        # - place dname in dtileno
-        if   is_pe(dname):  dsrc = 'pe_out'
-        elif is_mem(dname): dsrc = 'mem_out'
+        print "# 1. place dname in dtileno"
+        # d_in = path[-1] # right?  RIGHT???  Wrong :(
+        d_in = CT.allports(path)[-1]
+
+        if   is_pe(dname):  d_out = 'pe_out'
+        elif is_mem(dname): d_out = 'mem_out'
         else:
             assert False, 'what do we do with regs?? (see below)'
-
             # ANSWER: make sure reg dest is registered in REGISTERS etc.
 
-
-        place(dname, dtileno, dsrc)
         
-        # Add the connection to src->dst route list
-        nodes[sname].route[dname].append(path)
+        place(dname, dtileno, d_in, d_out, DBG=1)
+        print ""
+        
+        print "# 2. Add the connection to src node's src->dst route list"
+        nodes[sname].route[dname] = path
         if DBG: print "#   Added connection '%s' to route from '%s' to '%s'" % \
            (path, sname, dname)
         # nodes[sname].routed[dname] = True
         if DBG: print "#   Now node['%s'].route['%s'] = %s" % \
            (sname,dname,nodes[sname].route[dname])
+        pwhere(1186)
+        print ""
 
 
-        # - add all the path ports to the src net
-        # TODO don't add redundant ports maybe
+        print "# 3. add all the path ports to the src net"
         snode = nodes[sname]
         print "BEFORE: '%s' net is %s" % (sname, snode.net)
         for p in CT.allports(path):
             snode.net.append(p)
         print "AFTER: '%s' net is %s" % (sname, snode.net)
         
+        assert False, 'hey time to do this thing'
+        print "#4. Remove resources from the free list"
+        print resources[1]
+
+        print ''
+        pwhere(1198)
         print "HOORAY connected '%s' to '%s'" % (sname,dname)
+        if DBG:
+            print ''
+            nodes[sname].show()
+            print ''
+            nodes[dname].show()
+            print ''
 
+        print 666
+        if DBG: print "# Routefoo '%s -> %s' is now complete" % (sname,dname)
 
-        if DBG: nodes[sname].show()
-
-
+        # No.  Why?  No.
+        # Yes.  B/c 'is_routed' depends on finding name in net.
+        if DBG: print "# Add '%s' to '%s' net, to show that it's been routed"\
+           % (sname,dname)
         # uhhhh...is this a good idea?
         # aka finish_route(sname,dname)
         # '''Mark *route completed* by adding dname to sname netlist'''
         nodes[sname].net.append(dname)
-        
-        if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
-        if DBG: print "# Add '%s' to nodes['%s'].net"      % (sname,dname)
         if DBG: print "#   Now node['%s'].net = %s" % (sname,nodes[sname].net)
-
-
+        if DBG: print ''
 
 #         # BOOKMARK
 #         assert False, '\nBOOKMARK: routing it'
@@ -1221,18 +1258,18 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         # if DBG: print indent+"For now just place it randomly"
         # (tileno,resource) = randomly_place(dname)
-        (tileno,resource) = (dtileno, dsrc)
+        (tileno,resource) = (dtileno, d_out)
 
     else:
         (tileno,resource) = (-1, "already_placed")
 
     if not is_routed(sname,dname):
         assert False, 'cannot be placed without being routed...right??'
-        if DBG: print indent+"No route '%s -> %s'" % (sname,dname)
-        if DBG: print indent+"For now just mark it finished"
-        bogus_route = "%s -> %s BOGOSITY" % (sname,dname)
-        nodes[sname].route[dname].append(bogus_route)
-        finish_route(sname,dname)
+#         if DBG: print indent+"No route '%s -> %s'" % (sname,dname)
+#         if DBG: print indent+"For now just mark it finished"
+#         bogus_route = "%s -> %s BOGOSITY" % (sname,dname)
+#         nodes[sname].route[dname].append(bogus_route)
+#         finish_route(sname,dname)
 
     return (tileno,resource)
 
@@ -1246,7 +1283,8 @@ def place_pe_in_input_tile(dname):
 
     INPUT_TILE = 0; assert nodes['INPUT'].tileno == INPUT_TILE
 
-    place(dname, INPUT_TILE, 'pe_out')
+    place(dname, INPUT_TILE, 'T0_ops', 'T0_pe_out')
+    
     # add_route(sname, dname, INPUT_TILE, 'T0_in_s2t0', 'choose_op')
     add_route(sname, dname, INPUT_TILE, INPUT_WIRE_T, 'choose_op')
     finish_route(sname, dname)       
@@ -1388,8 +1426,6 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     stileno = snode.tileno
     sname   = snode.name
 
-    print 666
-    
     if DBG: print "Can we attach nodes to path endpoints '%s' and '%s'?"\
        % (path[0],path[-1])
 
@@ -1417,9 +1453,9 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
 
     # For now, return first path found
     # FIXME for future, keep findin paths and return them all
-    print 'SUCCESS!  final path is:'
     final_path = cbegin + path[1:-1] + cend
-    print final_path
+    print "SUCCESS! Final path from '%s' to '%s' is: %s\n" \
+          % (sname,dname,final_path)
 
     # middle part was verified previously.
     # looks like we're good to go!
@@ -1511,6 +1547,7 @@ def can_connect_end(snode, end,dstport,DBG=0):
     cend = can_connect(snode, end,dstport,DBG)
     if cend:
         print '   Ready to connect endpoint %s (%s)' % (cend, where(1516))
+        print ''
     return cend
 
 def can_connect(snode, p1, p2, DBG=0):
@@ -1584,7 +1621,7 @@ def randomly_place(dname, DBG=0):
             elif (re.search('op2$', nodes[dname].input)): op = 'op2'
             else: assert(0)
                   
-            place(dname,tileno,op)
+            place(dname,tileno,'XXX',op)
             return (tileno,op)
 
         elif  is_pe(dname): r='pe_out'
@@ -1605,7 +1642,7 @@ def randomly_place(dname, DBG=0):
             if DBG:
                 print "# Randomly assigning '%s' to tile %d resource '%s'" \
                       % (dname,tileno,r)
-            place(dname, tileno, r)
+            place(dname,tileno,'XXX',op)
             return (tileno,r)
 
 def is_placed(dname):
