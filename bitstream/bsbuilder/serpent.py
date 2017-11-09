@@ -232,7 +232,7 @@ def main(DBG=1):
         print ''
 
     print '########################################'
-    print '# serpent.py: constant folding'
+    print '# serpent.py: constant folding - do this LAST'
     constant_folding(DBG=1)
     print "# consts should be gone now"
 
@@ -354,6 +354,9 @@ class Node:
         self.net = []
         # self.processed = False
 
+    # NOBODY should alter net except via these functions:
+
+
     def type(self):
         if self.name[0] == 'm': return 'mem'
         else: return 'pe'
@@ -385,24 +388,22 @@ class Node:
 
     def is_routed(dest_name): return self.route[dest_name] != []
 
-    def is_avail(self, r, DBG=0):
+    def is_avail(self, rname, DBG=0):
         '''
-        Resource r in tile T is avail
+        Resource rname in tile T is avail
         if it is free and/or if it is already in mynet.
-        r should be of the form 'T%d_something'
+        rname should be of the form 'T%d_something'
         '''
-        # r must have embedded tileno, e.g. 'T1_in_s3t2' or 'T5_mem_out'
-        parse = re.search('^T(\d+)_(.*)', r)
-        if not parse: assert False
-        tileno = int(parse.group(1))
-        rname = parse.group(2)
+
+        # rname must have embedded tileno, e.g. 'T1_in_s3t2' or 'T5_mem_out'
+        (tileno,r) = parse_resource(rname)
 
         if DBG>2: pwhere(386)
         if DBG>2: print "Looking for '%s' in %s" % (r, self.net)
 
         # E.g. resources[T] = ['in_s0t0', 'in_s0t1', ...
         # Can't use a register unless we're specifically looking for a register
-        if r in REGISTERS:
+        if rname in REGISTERS:
             assert rname not in resources[tileno],\
                    "'%s' is a register: should not be in resources list!"
             # But it CAN be in the net list maybe...?
@@ -410,18 +411,19 @@ class Node:
             return False
             # assert r not in self.net, "'%s' is a register: should not be part of net list!"
 
+        if DBG>2: print "Looking for '%s' in %s" % (rname, self.net)
         if DBG>2: print "is_avail: looking for '%s' in '%s' nodenet" \
               % (rname, self.name)
-        if r in self.net:
+        if rname in self.net:
             print "       %-11s available in '%s' nodenet" \
-                  % (r, self.name)
+                  % (rname, self.name)
             return True
 
         if DBG>2: print "is_avail: looking for '%s' in tile %d resources %s" \
               % (rname, tileno, resources[tileno])
         if rname in resources[tileno]:
             print "       %-11s available in free list for tile %d"\
-                  % (r, tileno)
+                  % (rname, tileno)
             return True
 
         else:
@@ -519,21 +521,26 @@ class Node:
         print "no good"
         return False
             
+def addT(tileno, r):
+    '''Embed tileno in resource 'r' e.g. "mem_out" => "T3_mem_out"'''
+    return 'T' + str(tileno) + '_' + r
 
+def parse_resource(r):
+    '''
+    resource must be of the form "T0_in_s0t0" or "T3_mem_out"
+    returns tileno+remains e.g. parse_resource("T0_in_s0t0") = (0, 'in_s0t0')
+    '''
+    parse = re.search('^T(\d+)_(.*)', r)
+    if not parse: assert False
+    (tileno,resource) = (int(parse.group(1)), parse.group(2))
+    return (tileno,resource)
 
 def parsewire(w):
-    '''wire can be "T0_in_s0t0" or "out_s1t1"'''
-
+    '''wire MUST have embedded tileno e.g. "T0_in_s0t0"'''
     # Examples
     # "T0_in_s0t0" returns (0, 'in', 0, 0)
-    # "out_s1t1"   returns (-1, 'out', 1, 1)
-    # "T0_mem_out" returns (0, 'mem_out', -1, -1)
-    # "mem_out"    returns (-1, 'mem_out', -1, -1)
-
-    tileno = -1
-    parse = re.search('^T(\d+)_(.*)', w)
-    if parse:
-        (tileno,w) = (parse.group(1),parse.group(2))
+    # "T3_mem_out" returns (3, 'mem_out', -1, -1)
+    (tileno,w) = parse_resource(w)
 
     parse = re.search('(in|out)_s(\d+)t(\d+)', w)
     if not parse: return (tileno,w,-1,-1)
@@ -555,7 +562,7 @@ def prettyprint_dict(dictname, dict):
     
 
 def to_cgra(name, DBG=0):
-    # Valid names include
+    # Valid names include "T0_in_s0t0","T3_mem_out"
     # Valid combinations:       a               b
     #                     pe_out|mem_out      out_.*
     #                          in.*           out_.*
@@ -723,12 +730,15 @@ def init_tile_resources(DBG=0):
         for dir in ['in','out']:
             for side in range(4):
                 for track in range(5):
-                    port = "%s_s%dt%d" % (dir,side,track)
+                    port = "T%d_%s_s%dt%d" % (i, dir,side,track)
                     resources[i].append(port)
 
         # Tile-specific resources
-        if  is_mem_tile(i): resources[i].extend(['mem_in','mem_out'])
-        elif is_pe_tile(i): resources[i].extend(['op1','op2','pe_out'])
+        pfx = 'T' + str(i) + '_'
+        if  is_mem_tile(i):
+            resources[i].extend([pfx+'mem_in',pfx+'mem_out'])
+        elif is_pe_tile(i):
+            resources[i].extend([pfx+'op1',pfx+'op2',pfx+'pe_out'])
 
     # TODO/FIXME add memtile, pe-specific resources etc.
 
@@ -923,24 +933,24 @@ def getboth(tileno, wirename):
     return (wirename,tname)
 
 
-def place(name, tileno, input, output, DBG=0):
+def place(name, tileno, inputT, outputT, DBG=0):
     '''
     Place "name" in tile "tileno"
-    where e.g. local name 'output' = 'pe_out' or 'out_s1t1'
+    where e.g. 'output' = 'T2_pe_out' or 'T98_out_s1t1'
     '''
 
-    (output,outputT) = getboth(tileno,output)
-    (input,inputT) = getboth(tileno,input)
+#     (output,outputT) = getboth(tileno,output)
+#     (input,inputT) = getboth(tileno,input)
     
 
-    if   is_pe(name):  assert output ==  'pe_out'
-    elif is_mem(name): assert output == 'mem_out'
+    if   is_pe(name):  assert re.search('pe_out$',  outputT)
+    elif is_mem(name): assert re.search('mem_out$', outputT)
     # elif is_reg(name)...
 
     n = nodes[name]
     if n.placed:
-        print "ERROR %s already placed at %s" % (name, n.input)
-        assert False, "ERROR %s already placed at %s" % (name, n.input)
+        print "ERROR %s already placed at %s" % (name, n.inputT)
+        assert False, "ERROR %s already placed at %s" % (name, n.inputT)
 
     n.tileno = tileno
     n.placed = True
@@ -960,16 +970,16 @@ def place(name, tileno, input, output, DBG=0):
     n.net.append(Tname) # right?  RIGHT???
 
     # if not (output in resources[tileno]):
-    if not (output in resources[tileno]):
-        print "ERROR tile %d has no available resource '%s'" % (tileno,outlocal)
-    assert output in resources[tileno]
+    if not (outputT in resources[tileno]):
+        print "ERROR tile %d has no available resource '%s'" % (tileno,outputT)
+    assert outputT in resources[tileno]
 
-    resources[tileno].remove(output)
-    assert output not in resources[tileno]
+    resources[tileno].remove(outputT)
+    assert outputT not in resources[tileno]
     
     if DBG: print "# Placed '%s' in tile %d at location '%s'" \
-       % (name, tileno, input)
-    return (0, input)
+       % (name, tileno, inputT)
+    return (0, inputT)
 
 def stripT(wirename):
     print wirename
@@ -1147,14 +1157,14 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
     if sname=='INPUT' \
        and is_pe(dname) \
-       and ('pe_out' in resources[INPUT_TILENO]):
+       and ('T0_pe_out' in resources[INPUT_TILENO]):
 
         place_pe_in_input_tile(dname)
         return
 
     if sname=='INPUT' \
        and is_folded_reg(dname) \
-       and ('pe_out' in resources[INPUT_TILENO]):
+       and ('T0_pe_out' in resources[INPUT_TILENO]):
 
         place_folded_reg_in_input_tile(dname)
         assert False, "TODO put reg-pe folded pair in INPUT tile :("
@@ -1188,11 +1198,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         print ""
 
         print "# 1. place dname in dtileno"
+        print 999999999, dtileno
         # d_in = path[-1] # right?  RIGHT???  Wrong :(
         d_in = CT.allports(path)[-1]
 
-        if   is_pe(dname):  d_out = 'pe_out'
-        elif is_mem(dname): d_out = 'mem_out'
+        if   is_pe(dname):  d_out = addT(dtileno,'pe_out')
+        elif is_mem(dname): d_out = addT(dtileno, 'mem_out')
         else:
             assert False, 'what do we do with regs?? (see below)'
             # ANSWER: make sure reg dest is registered in REGISTERS etc.
@@ -1219,9 +1230,9 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             snode.net.append(p)
         print "AFTER: '%s' net is %s" % (sname, snode.net)
         
-        assert False, 'hey time to do this thing'
         print "#4. Remove resources from the free list"
-        print resources[1]
+#         assert False, 'hey time to do this thing'
+#         print resources[1]
 
         print ''
         pwhere(1198)
