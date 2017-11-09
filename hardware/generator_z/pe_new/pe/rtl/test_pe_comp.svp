@@ -137,12 +137,12 @@ logic                 cmpr_eq;
 localparam NUM_ADDERS = `$use_add`;
 localparam ADD_MSB = NUM_ADDERS - 1;
 
-logic [ADD_MSB:0][DATA_MSB:0] add_a    ;
-logic [ADD_MSB:0][DATA_MSB:0] add_b    ;
-logic [ADD_MSB:0]             add_c_in ;
+logic [DATA_MSB:0]  add_a     [ADD_MSB:0];
+logic [DATA_MSB:0]  add_b     [ADD_MSB:0];
+logic               add_c_in  [ADD_MSB:0];
 
-logic [ADD_MSB:0][DATA_MSB:0] add_res  ;
-logic [ADD_MSB:0]             add_c_out;
+logic [DATA_MSB:0]  add_res   [ADD_MSB:0];
+logic               add_c_out [ADD_MSB:0];
 
 
 genvar ggg;
