@@ -1302,6 +1302,16 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
     return (tileno,resource)
 
+def place_and_route_test(sname,dname,indent='# ',DBG=1):
+    if DBG: print indent+"  PNR '%s' -> '%s'" % (sname,dname)
+
+    # Test
+    nodes[dname].tileno = 999
+    nodes[dname].input    = dname
+    nodes[sname].net.append(nodes[dname].input)
+    return
+
+
 def place_pe_in_input_tile(dname):
     '''INPUT connects to pe 'dname'; place it in same node as INPUT'''
     sname = 'INPUT'
@@ -1598,16 +1608,6 @@ def is_folded_reg(node_name): is_regop(node_name)
 #     if not is_reg(node_name): return False
 #     reg = nodes[node_name]
 #     return is_pe(reg.input)
-
-
-def place_and_route_test(sname,dname,indent='# ',DBG=1):
-    if DBG: print indent+"  PNR '%s' -> '%s'" % (sname,dname)
-
-    # Test
-    nodes[dname].tileno = 999
-    nodes[dname].input    = dname
-    nodes[sname].net.append(nodes[dname].input)
-    return
 
 
 def randomly_place(dname, DBG=0):
