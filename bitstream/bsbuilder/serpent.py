@@ -46,6 +46,7 @@ GRID_HEIGHT = GRID_WIDTH
 
 # INPUT always comes in on bus 'T0_in_s2t0'
 INPUT_TILENO = 0
+INPUT_TILE   = INPUT_TILENO
 INPUT_WIRE   = 'in_s2t0'
 INPUT_WIRE_T = 'T0_in_s2t0'
 
@@ -935,44 +936,78 @@ def getboth(tileno, wirename):
 
 def place(name, tileno, input, output, DBG=0):
     '''
-    Place "name" in tile "tileno"
-    where e.g. 'output' = 'T2_pe_out' or 'T98_out_s1t1'
+    Place node "name" in tile "tileno"
+    with input 'input' and output 'output'
+    where e.g. 'input'  = 'T2_ops'    or 'T1_out_s0t1'
+    where e.g. 'output' = 'T2_pe_out' or 'T2_in_s2t1'
     '''
 
-    if   is_pe(name):  assert re.search('pe_out$',  output)
-    elif is_mem(name): assert re.search('mem_out$', output)
-    # elif is_reg(name)...
-
     n = nodes[name]
+#     n.place_node(tileno, input, output, DBG=DBG)
+    
+
+    if   is_pe(name):
+        assert re.search('ops$',     input)
+        assert re.search('pe_out$',  output)
+    elif is_mem(name):
+        assert re.search('mem_in$',  input)
+        assert re.search('mem_out$', output)
+    # elif is_reg(name)...
+    # assert input = .*_out_.*, output = .*_in_.* etc.
+
     if n.placed:
         print "ERROR %s already placed at %s" % (name, n.input)
         assert False, "ERROR %s already placed at %s" % (name, n.input)
 
     n.tileno = tileno
+    n.input  = input
+    n.output = output
     n.placed = True
 
-    # n.input = 'T%d_%s' % (tileno, input)
-    # n.output = 'T%d_%s' % (tileno, output)
-
-    n.input = input
-    n.output = output
-
-    # Tname = "T%d_%s" % (tileno,output)
-    Tname = output
+    # output is in our net, but input is not.  right?
+    n.net.append(output) # right?  RIGHT???
 
 
 
-    # maybe def Tname(T,name): return "T%d_%s" % (tileno,name)
-    n.net.append(Tname) # right?  RIGHT???
 
-    # if not (output in resources[tileno]):
-    if not (output in resources[tileno]):
-        print "ERROR tile %d has no available resource '%s'" % (tileno,output)
-    assert output in resources[tileno]
 
-    resources[tileno].remove(output)
-    assert output not in resources[tileno]
-    
+
+
+    # Placing the node does not remove its resources from the tile;
+    # that's a job for the router, yes?
+
+#     (itile,dummy) = parse_resource( input)
+#     (otile,dummy) = parse_resource(output)
+#     assert itile == tileno
+#     if DBG and (otile != itile): print \
+#        "# node's output is in a different tile; must be a register."
+# 
+#     print otile,tileno,output,input
+# 
+#     # Placing the node does not remove its resources from the tile;
+#     # that's a job for the router, yes?
+#     print 'foo'
+#     print itile, resources[itile]
+#     assert input in resources[itile],\
+#            "ERROR tile %d has no available resource '%s'" % (tileno,input)
+#     resources[itile].remove(input)
+# 
+# 
+#     assert output in resources[otile],\
+#            "ERROR tile %d has no available resource '%s'" % (tileno,output)
+# 
+#     print otile,tileno,output
+# 
+#     # note input==output for INPUT node only (bug?  feature?)
+#     if input == output:
+#         assert tileno == INPUT_TILENO, 'input should not equal outpu!?'
+#     else:
+#         resources[otile].remove(output)
+
+
+
+
+
     if DBG: print "# Placed '%s' in tile %d at location '%s'" \
        % (name, tileno, input)
     return (0, input)
