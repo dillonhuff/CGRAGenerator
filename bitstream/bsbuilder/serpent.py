@@ -431,6 +431,71 @@ class Node:
             print "  %-11s is not available to node '%s'" % (r, self.name)
             return False
 
+    def place(self,tileno,input,output,DBG=0):
+        '''
+        Place node "name" in tile "tileno"
+        with input 'input' and output 'output'
+        where e.g. 'input'  = 'T2_ops'    or 'T1_out_s0t1'
+        where e.g. 'output' = 'T2_pe_out' or 'T2_in_s2t1'
+        '''
+        name = self.name
+
+        if   is_pe(name):
+            assert re.search('ops$',     input)
+            assert re.search('pe_out$',  output)
+        elif is_mem(name):
+            assert re.search('mem_in$',  input)
+            assert re.search('mem_out$', output)
+        # elif is_reg(name)...
+        # assert input = .*_out_.*, output = .*_in_.* etc.
+
+        if self.placed:
+            print "ERROR %s already placed at %s" % (name, self.input)
+            assert False, "ERROR %s already placed at %s" % (name, self.input)
+
+        self.tileno = tileno
+        self.input  = input
+        self.output = output
+        self.placed = True
+
+        # output is in our net, but input is not.  right?
+        self.net.append(output) # right?  RIGHT???
+
+        if DBG: print "# Placed '%s' in tile %d at location '%s'" \
+           % (name, tileno, input)
+        return
+
+    # Placing the node does not remove its resources from the tile;
+    # that's a job for the router, yes?
+
+#     (itile,dummy) = parse_resource( input)
+#     (otile,dummy) = parse_resource(output)
+#     assert itile == tileno
+#     if DBG and (otile != itile): print \
+#        "# node's output is in a different tile; must be a register."
+# 
+#     print otile,tileno,output,input
+# 
+#     # Placing the node does not remove its resources from the tile;
+#     # that's a job for the router, yes?
+#     print 'foo'
+#     print itile, resources[itile]
+#     assert input in resources[itile],\
+#            "ERROR tile %d has no available resource '%s'" % (tileno,input)
+#     resources[itile].remove(input)
+# 
+# 
+#     assert output in resources[otile],\
+#            "ERROR tile %d has no available resource '%s'" % (tileno,output)
+# 
+#     print otile,tileno,output
+# 
+#     # note input==output for INPUT node only (bug?  feature?)
+#     if input == output:
+#         assert tileno == INPUT_TILENO, 'input should not equal outpu!?'
+#     else:
+#         resources[otile].remove(output)
+
     def connect(self,a,b,T=-1,DBG=88):
         '''
         In tile T, connect a to b if possible.
@@ -758,7 +823,8 @@ def initialize_node_INPUT():
     tileno=0
 
     # Place 'name' in tile 'tileno' at location 'src'
-    place('INPUT', tileno, input, output)
+    nodes['INPUT'].place(tileno, input, output)
+
 
     # Really?
     # assert INPUT.name == 'INPUT'
@@ -932,85 +998,6 @@ def getboth(tileno, wirename):
     if parse: wirename = parse.group(1)
     tname = 'T%d_%s' % (tileno,wirename)
     return (wirename,tname)
-
-
-def place(name, tileno, input, output, DBG=0):
-    '''
-    Place node "name" in tile "tileno"
-    with input 'input' and output 'output'
-    where e.g. 'input'  = 'T2_ops'    or 'T1_out_s0t1'
-    where e.g. 'output' = 'T2_pe_out' or 'T2_in_s2t1'
-    '''
-
-    n = nodes[name]
-#     n.place_node(tileno, input, output, DBG=DBG)
-    
-
-    if   is_pe(name):
-        assert re.search('ops$',     input)
-        assert re.search('pe_out$',  output)
-    elif is_mem(name):
-        assert re.search('mem_in$',  input)
-        assert re.search('mem_out$', output)
-    # elif is_reg(name)...
-    # assert input = .*_out_.*, output = .*_in_.* etc.
-
-    if n.placed:
-        print "ERROR %s already placed at %s" % (name, n.input)
-        assert False, "ERROR %s already placed at %s" % (name, n.input)
-
-    n.tileno = tileno
-    n.input  = input
-    n.output = output
-    n.placed = True
-
-    # output is in our net, but input is not.  right?
-    n.net.append(output) # right?  RIGHT???
-
-
-
-
-
-
-
-    # Placing the node does not remove its resources from the tile;
-    # that's a job for the router, yes?
-
-#     (itile,dummy) = parse_resource( input)
-#     (otile,dummy) = parse_resource(output)
-#     assert itile == tileno
-#     if DBG and (otile != itile): print \
-#        "# node's output is in a different tile; must be a register."
-# 
-#     print otile,tileno,output,input
-# 
-#     # Placing the node does not remove its resources from the tile;
-#     # that's a job for the router, yes?
-#     print 'foo'
-#     print itile, resources[itile]
-#     assert input in resources[itile],\
-#            "ERROR tile %d has no available resource '%s'" % (tileno,input)
-#     resources[itile].remove(input)
-# 
-# 
-#     assert output in resources[otile],\
-#            "ERROR tile %d has no available resource '%s'" % (tileno,output)
-# 
-#     print otile,tileno,output
-# 
-#     # note input==output for INPUT node only (bug?  feature?)
-#     if input == output:
-#         assert tileno == INPUT_TILENO, 'input should not equal outpu!?'
-#     else:
-#         resources[otile].remove(output)
-
-
-
-
-
-    if DBG: print "# Placed '%s' in tile %d at location '%s'" \
-       % (name, tileno, input)
-    return (0, input)
 
 def stripT(wirename):
     print wirename
@@ -1240,7 +1227,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             # ANSWER: make sure reg dest is registered in REGISTERS etc.
 
         
-        place(dname, dtileno, d_in, d_out, DBG=1)
+        nodes[dname].place(dtileno, d_in, d_out, DBG=1)
         print ""
         
         print "# 2. Add the connection to src node's src->dst route list"
@@ -1325,7 +1312,7 @@ def place_pe_in_input_tile(dname):
 
     INPUT_TILE = 0; assert nodes['INPUT'].tileno == INPUT_TILE
 
-    place(dname, INPUT_TILE, 'T0_ops', 'T0_pe_out')
+    nodes[dname].place(INPUT_TILE, 'T0_ops', 'T0_pe_out')
     
     # add_route(sname, dname, INPUT_TILE, 'T0_in_s2t0', 'choose_op')
     add_route(sname, dname, INPUT_TILE, INPUT_WIRE_T, 'choose_op')
@@ -1663,7 +1650,7 @@ def randomly_place(dname, DBG=0):
             elif (re.search('op2$', nodes[dname].input)): op = 'op2'
             else: assert(0)
                   
-            place(dname,tileno,'XXX',op)
+            nodes[dname].place(tileno,'XXX',op)
             return (tileno,op)
 
         elif  is_pe(dname): r='pe_out'
@@ -1684,7 +1671,7 @@ def randomly_place(dname, DBG=0):
             if DBG:
                 print "# Randomly assigning '%s' to tile %d resource '%s'" \
                       % (dname,tileno,r)
-            place(dname,tileno,'XXX',op)
+            nodes[dname].place(tileno,'XXX',op)
             return (tileno,r)
 
 def is_placed(dname):
