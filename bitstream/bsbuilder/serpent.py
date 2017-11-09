@@ -387,7 +387,8 @@ class Node:
         prettyprint_dict("  route ", self.route)
         print "  net= %s" % self.net
 
-    def is_routed(dest_name): return self.route[dest_name] != []
+    def is_placed(self): return self.tileno != -1
+    def is_routed(self,dest_name): return self.route[dest_name] != []
 
     def is_avail(self, rname, DBG=0):
         '''
@@ -1042,17 +1043,6 @@ def add_route(sname, dname, tileno, src_port, dst_port, DBG=1):
 
     if DBG: nodes[sname].show()
 
-def finish_route(sname,dname, DBG=0):
-    '''Mark *route completed* by adding dname to sname netlist'''
-    nodes[sname].net.append(dname)
-
-    if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
-    if DBG: print "# Add '%s' to nodes['%s'].net"      % (sname,dname)
-    if DBG: print "#   Now node['%s'].net = %s" % (sname,nodes[sname].net)
-    
-
-
-
 def is_regop(regname):
     '''
     "regname" is a reg-pair if:
@@ -1201,8 +1191,6 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         
         # FIXME will need an 'undo' for order[] list if dtileno ends up not used
 
-        # if dtileno==8: print 666
-
         # print 'dtileno/nearest is %d' % dtileno
         if DBG: pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
 
@@ -1263,18 +1251,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             print ''
 
         print 666
-        if DBG: print "# Routefoo '%s -> %s' is now complete" % (sname,dname)
-
-        # No.  Why?  No.
-        # Yes.  B/c 'is_routed' depends on finding name in net.
-        if DBG: print "# Add '%s' to '%s' net, to show that it's been routed"\
-           % (sname,dname)
-        # uhhhh...is this a good idea?
-        # aka finish_route(sname,dname)
-        # '''Mark *route completed* by adding dname to sname netlist'''
-        nodes[sname].net.append(dname)
-        if DBG: print "#   Now node['%s'].net = %s" % (sname,nodes[sname].net)
-        if DBG: print ''
+        if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
 
 #         # BOOKMARK
 #         assert False, '\nBOOKMARK: routing it'
@@ -1326,7 +1303,7 @@ def place_pe_in_input_tile(dname):
     
     # add_route(sname, dname, INPUT_TILE, 'T0_in_s2t0', 'choose_op')
     add_route(sname, dname, INPUT_TILE, INPUT_WIRE_T, 'choose_op')
-    finish_route(sname, dname)       
+    if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
     return
 
     # Long form:
@@ -1674,11 +1651,12 @@ def randomly_place(dname, DBG=0):
             nodes[dname].place(tileno,'XXX',op)
             return (tileno,r)
 
-def is_placed(dname):
-    return (nodes[dname].tileno != -1)
+def is_placed(nodename):
+    # return (nodes[dname].tileno != -1)
+    return nodes[nodename].is_placed()
 
 def is_routed(sname,dname):
-    return (dname in nodes[sname].net)
+    return nodes[sname].is_routed(dname)
 
 
 def test_connect():
