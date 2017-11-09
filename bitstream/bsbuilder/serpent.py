@@ -355,9 +355,6 @@ class Node:
         self.net = []
         # self.processed = False
 
-    # NOBODY should alter net except via these functions: BOOKMARK
-
-
     def type(self):
         if self.name[0] == 'm': return 'mem'
         else: return 'pe'
@@ -592,6 +589,7 @@ def addT(tileno, r):
     '''Embed tileno in resource 'r' e.g. "mem_out" => "T3_mem_out"'''
     return 'T' + str(tileno) + '_' + r
 
+# FIXME/TODO use CT.parse_resource(r) instead
 def parse_resource(r):
     '''
     resource must be of the form "T0_in_s0t0" or "T3_mem_out"
@@ -602,6 +600,7 @@ def parse_resource(r):
     (tileno,resource) = (int(parse.group(1)), parse.group(2))
     return (tileno,resource)
 
+# FIXME/TODO use CT.parsewire(w) instead
 def parsewire(w):
     '''wire MUST have embedded tileno e.g. "T0_in_s0t0"'''
     # Examples
@@ -1043,6 +1042,12 @@ def add_route(sname, dname, tileno, src_port, dst_port, DBG=1):
 
     if DBG: nodes[sname].show()
 
+# FIXME OH NOOOOOO too many names for the same thing?
+# ALSO; shouldn't this be a func in class Node???
+def is_regpe(node_name):      is_regop(node_name)
+def is_folded_reg(node_name): is_regop(node_name)
+
+
 def is_regop(regname):
     '''
     "regname" is a reg-pair if:
@@ -1051,13 +1056,24 @@ def is_regop(regname):
     - regname.output is a PE node
     '''
     assert type(regname) == str
-    if not is_reg(regname):         return False
+    if not is_reg(regname): return False
 
     reg_out = nodes[regname].output # E.g. "op1" or "T2_op1"
     # print reg_src;
                 
     if is_pe(reg_out): return True
     else:              return False
+
+def is_regreg(regname):
+    '''These dont exist yet (right?)'''
+    return False
+
+def is_regsolo(regname):
+    assert type(regname) == str
+    if not is_reg(regname):  return False
+    if is_regop(regname):    return False
+    if is_regreg(regname): return False
+    return True
 
 
 
@@ -1187,7 +1203,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         # Get nearest tile compatible with target node 'dname'
         # "Nearest" means closest to input tile (NW corner)
-        dtileno = get_nearest_tile(dname)
+        dtileno = get_nearest_tile(sname, dname)
         
         # FIXME will need an 'undo' for order[] list if dtileno ends up not used
 
@@ -1210,14 +1226,28 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         if   is_pe(dname):  d_out = addT(dtileno,'pe_out')
         elif is_mem(dname): d_out = addT(dtileno, 'mem_out')
+        elif is_regsolo(dname):
+            d_out = CT.find_neighbor(d_in, DBG=9)
+            # assert False
+
+            print "# Add reg's input wire to list of registers"
+            REGISTERS.append(path[-1])
+            print 'now registers is', REGISTERS
+        # elif is_regreg(dname):
+        # elif is_regop(dname):
         else:
             assert False, 'what do we do with regs?? (see below)'
             # ANSWER: make sure reg dest is registered in REGISTERS etc.
-
         
         nodes[dname].place(dtileno, d_in, d_out, DBG=1)
         print ""
         
+        print '# 1a. If regsolo, add name to REGISTERS for later'
+        if is_regsolo(dname):
+            nodes[dname].show()
+            print 'now what?'
+            print 'add reg to REGISTERS'
+
         print "# 2. Add the connection to src node's src->dst route list"
         nodes[sname].route[dname] = path
         if DBG: print "#   Added connection '%s' to route from '%s' to '%s'" % \
@@ -1228,7 +1258,6 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         pwhere(1186)
         print ""
 
-
         print "# 3. add all the path ports to the src net"
         snode = nodes[sname]
         print "BEFORE: '%s' net is %s" % (sname, snode.net)
@@ -1237,7 +1266,9 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         print "AFTER: '%s' net is %s" % (sname, snode.net)
         
         print "#4. Remove resources from the free list"
-#         assert False, 'hey time to do this thing'
+# BOOKMARK
+#         if is_regsolo(dname):
+#         assert False, 'hey time to do this release-resources thing'
 #         print resources[1]
 
         print ''
@@ -1252,6 +1283,13 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         print 666
         if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
+
+
+
+
+
+        if is_regsolo(dname): assert False,\
+           '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
 
 #         # BOOKMARK
 #         assert False, '\nBOOKMARK: routing it'
@@ -1326,9 +1364,10 @@ def place_folded_reg_in_input_tile(dname):
         assert False, "TODO put reg-pe folded pair in INPUT tile :("
 
 
-def get_nearest_tile(dname, DBG=0):
+def get_nearest_tile(sname, dname, DBG=0):
 
     DBG=1
+
     # Figure how to do the first placement INPUT -> mem_1 maybe
     # Use new connection thingies maybe
 
@@ -1339,9 +1378,16 @@ def get_nearest_tile(dname, DBG=0):
         print ''
 
     dtype = nodes[dname].type()
+    stileno = nodes[sname].tileno
+
+    # If dname is a reg node, maybe it can go in the same tile with sname?
+    # regsolo => not part of a regpe or regreg pair
+    if is_regsolo(dname) and not is_regop(sname):
+        print "okay we will try to put it in the same tile with", sname
+        return stileno
 
     # print "# i'm in tile %s" % packer.FMT.tileT(sname)
-    nearest = packer.find_nearest(0, dtype, DBG=0)
+    nearest = packer.find_nearest(stileno, dtype, DBG=0)
 
     # print 'foudn nearest tile', nearest
     assert nearest != -1
@@ -1386,6 +1432,15 @@ def find_best_path(sname,dname,dtileno):
             "Want to route from src tile %d ('%s') to dest tile %d ('%s')" \
             % (stileno, sname, dtileno, dname))
 
+        if dtileno == stileno:
+            # This can happen when e.g. we're trying to connect an ALU
+            # to a register, both in the same tile
+            # assert dest==reg if you wanta...
+
+            print 'src and dst in same tile; thats okay'
+            p = connect_endpoint(snode, snode.output, dname, dtileno, DBG=DBG)
+            return p
+
         # foreach path p in connect_{hv,vh}connect(ptile,dtile)
         # FIXME for now only looking at track 0(!)
         phv = CT.connect_tiles(stileno,dtileno,track=0,dir='hv',DBG=DBG-1)
@@ -1414,7 +1469,8 @@ def find_best_path(sname,dname,dtileno):
             # choose a path in paths
 
 
-
+# FIXME WHAY ISN'T ALL THIS CONNECT STUFF IN THE
+# CONNECT_TILES LIBRARY WHERE IT BELONGS!!?
 def eval_path(path, snode, dname, dtileno, DBG=0):
     # Given 'path' from src node 'snode' in stileno
     # to dst node 'dname' in possible dest tile 'dtileno',
@@ -1532,8 +1588,8 @@ def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
     # for regsolo it's every outport in the tile
     # for regpe it's op1 or op2
     dplist = dstports(dname,dtileno)
-    if DBG:
-        print "   Want to route endpoint to a dest port %s" % dplist
+#     if DBG:
+#         print "   Want to route endpoint to a dest port %s" % dplist
 
     if DBG:
         print "   In-ports avail to dest node '%s': %s" % (dname,dplist)
@@ -1577,14 +1633,6 @@ def can_connect(snode, p1, p2, DBG=0):
     return c
 
 
-
-
-# FIXME OH NOOOOOO
-def is_regpe(node_name):      is_regop(node_name)
-def is_folded_reg(node_name): is_regop(node_name)
-#     if not is_reg(node_name): return False
-#     reg = nodes[node_name]
-#     return is_pe(reg.input)
 
 
 def randomly_place(dname, DBG=0):

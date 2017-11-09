@@ -425,6 +425,108 @@ def parse_connection(c):
     return (inwire,outwire)
 
 
+def parse_resource(r):
+    '''
+    resource must be of the form "T0_in_s0t0" or "T3_mem_out"
+    returns tileno+remains e.g. parse_resource("T0_in_s0t0") = (0, 'in_s0t0')
+    '''
+    parse = re.search('^T(\d+)_(.*)', r)
+    if not parse: assert False
+    (tileno,resource) = (int(parse.group(1)), parse.group(2))
+    return (tileno,resource)
+
+def parsewire(w):
+    '''wire MUST have embedded tileno e.g. "T0_in_s0t0"'''
+    # Examples
+    # "T0_in_s0t0" returns (0, 'in', 0, 0)
+    # "T3_mem_out" returns (3, 'mem_out', -1, -1)
+    (tileno,w) = parse_resource(w)
+
+    parse = re.search('(in|out)_s(\d+)t(\d+)', w)
+    if not parse: return (tileno,w,-1,-1)
+
+    (dir,side,track) = (
+        parse.group(1), parse.group(2), parse.group(3))
+    return (int(tileno),dir,int(side),int(track))
+
+# lifted from bsview.py
+def find_neighbor(w, DBG=9):
+    '''E.g. find_neighbor_wire("T4_in_s1t1") => ("T5_out_s3t1")'''
+
+    # FIXME this can all be cleaned up...
+
+    if (0):
+        (tilefoo,wfoo) = (3, ("sb_wire_in1_s3t2", "out0_s1t2"))
+        (tilefoo,wfoo) = (1, ("in_s2t4"))
+        if (tileno == tilefoo) and (w in wfoo):
+            DBG=1; print "\nWant match for tile %d wire '%s'" % (tileno,w)
+
+    #     # find_neighbor_wire(4,"in_s1t1") => (5, "out_s3t1")
+
+    # find_neighbor_wire("T4_in_s1t1") => ("T5_out_s3t1")
+    # 
+    # parse = re.search("(in|out)([01])*_s([0-9]+)t([0-9]+)", w)
+    (tileno, dir, side, track) = parsewire(w)
+
+    # Only works for 'out' wires (HA!)
+    assert dir == 'out'
+
+    in_or_out = dir
+
+    # top_or_bottom = parse.group(2)  # 'None', '0' or '1'
+    top_or_bottom = side/4 # '0' or '1'
+
+    if (in_or_out=="out"): in_or_out="in"
+    else:                  in_or_out="out"
+
+    (r,c) = cgra_info.tileno2rc(tileno)
+
+    # Adjust for wire in bottom of a memtile
+    if (top_or_bottom == '1'): r = r + 1
+
+    if   (side==0): (r,c,side) = (r,c+1,side+2)
+    elif (side==1): (r,c,side) = (r+1,c,side+2)
+    elif (side==2): (r,c,side) = (r,c-1,side-2)
+    elif (side==3): (r,c,side) = (r-1,c,side-2)
+
+    # Yes, yes, I know
+    elif (side==4): (r,c,side) = (r,c+1,side+2)
+    elif (side==5): (r,c,side) = (r+1,c,side+2)
+    elif (side==6): (r,c,side) = (r,c-1,side-2)
+    elif (side==7): (r,c,side) = (r-1,c,side-2)
+
+    if (r < 0): return (False,False)
+    if (c < 0): return (False,False)
+
+    #   print (r,c,side)
+
+    nbr_tileno = cgra_info.rc2tileno(r,c)
+    # Note should return 'False' if (r,c) invalid
+    if DBG: print "Found nbr tile number '%s'" % str(nbr_tileno)
+
+    top_or_bottom = ''
+    if (cgra_info.tiletype(nbr_tileno) == "memory_tile"):
+        if DBG: print "HO found memory tile.  is it a top or a bottom :)"
+        # '0' means top, '1' means bottom
+        top_or_bottom = str(r % 2)
+        if DBG:
+            if (top_or_bottom): print " It's a bottom"
+            else              : print " You're the top!"
+
+    # adj_wire = "%s%s_s%dt%d" % (in_or_out, top_or_bottom, side, track)
+
+    nbr_wire = "T%s_%s%s_s%dt%d" \
+               % (nbr_tileno, in_or_out, top_or_bottom, side, track)
+
+    # if DBG: print "%s on tile %d matches %s on tile %d\n" % (w, tileno, nbr_wire, nbr_tileno)
+    if DBG: print "'%s' connects to neighbor '%s'\n" % (w, nbr_wire)
+
+    return nbr_wire
+
+
+
+if (DO_TEST): do_test()
+
 # MAYBE STILL NEED THIS (or maybe not)
 # def get_default_cgra_info_filename():
 #     '''
@@ -440,4 +542,3 @@ def parse_connection(c):
 #     if VERBOSE: print("Default cgra_info file is\n  %s" % cgra_filename)
 #     return cgra_filename
 
-if (DO_TEST): do_test()
