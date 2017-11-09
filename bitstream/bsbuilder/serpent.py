@@ -354,7 +354,7 @@ class Node:
         self.net = []
         # self.processed = False
 
-    # NOBODY should alter net except via these functions:
+    # NOBODY should alter net except via these functions: BOOKMARK
 
 
     def type(self):
@@ -933,24 +933,20 @@ def getboth(tileno, wirename):
     return (wirename,tname)
 
 
-def place(name, tileno, inputT, outputT, DBG=0):
+def place(name, tileno, input, output, DBG=0):
     '''
     Place "name" in tile "tileno"
     where e.g. 'output' = 'T2_pe_out' or 'T98_out_s1t1'
     '''
 
-#     (output,outputT) = getboth(tileno,output)
-#     (input,inputT) = getboth(tileno,input)
-    
-
-    if   is_pe(name):  assert re.search('pe_out$',  outputT)
-    elif is_mem(name): assert re.search('mem_out$', outputT)
+    if   is_pe(name):  assert re.search('pe_out$',  output)
+    elif is_mem(name): assert re.search('mem_out$', output)
     # elif is_reg(name)...
 
     n = nodes[name]
     if n.placed:
-        print "ERROR %s already placed at %s" % (name, n.inputT)
-        assert False, "ERROR %s already placed at %s" % (name, n.inputT)
+        print "ERROR %s already placed at %s" % (name, n.input)
+        assert False, "ERROR %s already placed at %s" % (name, n.input)
 
     n.tileno = tileno
     n.placed = True
@@ -958,11 +954,11 @@ def place(name, tileno, inputT, outputT, DBG=0):
     # n.input = 'T%d_%s' % (tileno, input)
     # n.output = 'T%d_%s' % (tileno, output)
 
-    n.input = inputT
-    n.output = outputT
+    n.input = input
+    n.output = output
 
     # Tname = "T%d_%s" % (tileno,output)
-    Tname = outputT
+    Tname = output
 
 
 
@@ -970,16 +966,16 @@ def place(name, tileno, inputT, outputT, DBG=0):
     n.net.append(Tname) # right?  RIGHT???
 
     # if not (output in resources[tileno]):
-    if not (outputT in resources[tileno]):
-        print "ERROR tile %d has no available resource '%s'" % (tileno,outputT)
-    assert outputT in resources[tileno]
+    if not (output in resources[tileno]):
+        print "ERROR tile %d has no available resource '%s'" % (tileno,output)
+    assert output in resources[tileno]
 
-    resources[tileno].remove(outputT)
-    assert outputT not in resources[tileno]
+    resources[tileno].remove(output)
+    assert output not in resources[tileno]
     
     if DBG: print "# Placed '%s' in tile %d at location '%s'" \
-       % (name, tileno, inputT)
-    return (0, inputT)
+       % (name, tileno, input)
+    return (0, input)
 
 def stripT(wirename):
     print wirename
