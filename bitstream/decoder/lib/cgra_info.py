@@ -69,8 +69,25 @@ def extract_field(dword, bith, bitl):
     E.g. extract_field(0x0000C000, 15,14) = 3
     '''
     DBG = 0
+
+    if bith < bitl:
+        print "# ERROR cgra_info.py: bith (%d) is less than bitl (%d) :(" % (bith,bitl)
+        print "# ERROR guess we crossed a register boundary!?"
+        print "# ERROR will try to recover gracefully ish"
+        return 0
+
     field_width = bith - bitl + 1
     field_mask  = 2**field_width - 1
+
+
+#     print ""
+#     print "fw",; print field_width
+#     print "fm",;print field_mask
+#     print "bh",;print bith
+#     print "bl",;print bitl
+
+
+
     mask = field_mask << bitl
     if DBG: print("    mux mask 0x%x = (0x%x << %d)" \
                   % (mask, field_mask, bitl))
@@ -327,6 +344,10 @@ def read_cgra_info(filename, grid='8x8', verbose=False):
         sys.stderr.write("WARNING will try using default '%s'\n" % filename)
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
         sys.stderr.write("WARNING loaded default '%s'\n\n" % filename)
+
+def ntiles():
+    '''How many tiles?'''
+    return len(CGRA.findall('tile')) # length = number of items in list
 
 def tileno2rc(tileno):
     '''
