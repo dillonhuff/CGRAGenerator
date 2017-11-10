@@ -1227,7 +1227,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         print "# 1. place dname in dtileno"
         print "# 2. Add the connection to src->dst route list"
         print "# 3. add all the path ports to the src net"
-        print "# 4. what else?"
+        print "# 4. Remove path resources from the free list"
         print ""
 
         print "# 1. place dname in dtileno"
@@ -1295,14 +1295,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         print 666
         if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
 
-
-
-
-
+        print 999999999
         if is_regsolo(dname):
+        if dname == 'reg_0_1':
             print '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
-            assert False,\
-                   '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
+            # assert False,\
+            #        '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
 
 
         # something like:
