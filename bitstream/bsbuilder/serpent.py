@@ -426,7 +426,7 @@ class Node:
             return True
 
         else:
-            print "  %-11s is not available to node '%s'" % (r, self.name)
+            print "  %-11s is not available to node '%s'" % (rname, self.name)
             return False
 
     def place(self,tileno,input,output,DBG=0):
@@ -805,7 +805,10 @@ def init_tile_resources(DBG=0):
     for i in range(ntiles):
         resources[i] = []
         for dir in ['in','out']:
-            for side in range(4):
+            # for side in range(4):
+            nsides = 4
+            if  is_mem_tile(i): nsides = 8
+            for side in range(nsides):
                 for track in range(5):
                     port = "T%d_%s_s%dt%d" % (i, dir,side,track)
                     resources[i].append(port)
@@ -820,7 +823,8 @@ def init_tile_resources(DBG=0):
     # TODO/FIXME add memtile, pe-specific resources etc.
 
     if DBG: print "Initialized %d tiles" % ntiles
-    print resources[0]
+    print 'PE: ', resources[0]
+    print 'MEM:', resources[3]
 
 # def is_pe_tile(tileno):  return re.search("^pe",  cgra_info.tiletype(tileno))
 # def is_mem_tile(tileno): return re.search("^mem", cgra_info.tiletype(tileno))
