@@ -595,10 +595,14 @@ def parse_resource(r):
     resource must be of the form "T0_in_s0t0" or "T3_mem_out"
     returns tileno+remains e.g. parse_resource("T0_in_s0t0") = (0, 'in_s0t0')
     '''
-    parse = re.search('^T(\d+)_(.*)', r)
-    if not parse: assert False
-    (tileno,resource) = (int(parse.group(1)), parse.group(2))
-    return (tileno,resource)
+    return CT.parse_resource(r)
+
+    #     parse = re.search('^T(\d+)_(.*)', r)
+    #     if not parse: assert False
+    #     (tileno,resource) = (int(parse.group(1)), parse.group(2))
+    #     return (tileno,resource)
+
+
 
 # FIXME/TODO use CT.parsewire(w) instead
 def parsewire(w):
@@ -606,13 +610,20 @@ def parsewire(w):
     # Examples
     # "T0_in_s0t0" returns (0, 'in', 0, 0)
     # "T3_mem_out" returns (3, 'mem_out', -1, -1)
-    (tileno,w) = parse_resource(w)
+    (a,b,c,d) = CT.parsewire(w)
+    #     return CT.parsewire(w)
 
+    (tileno,w) = parse_resource(w)
+    
     parse = re.search('(in|out)_s(\d+)t(\d+)', w)
     if not parse: return (tileno,w,-1,-1)
-
+    
     (dir,side,track) = (
         parse.group(1), parse.group(2), parse.group(3))
+    
+    assert (a,b,c,d) == (int(tileno),dir,int(side),int(track))
+    
+    
     return (int(tileno),dir,int(side),int(track))
 
 
@@ -1264,12 +1275,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         for p in CT.allports(path):
             snode.net.append(p)
         print "AFTER: '%s' net is %s" % (sname, snode.net)
+        print ''
         
-        print "#4. Remove resources from the free list"
-# BOOKMARK
-#         if is_regsolo(dname):
-#         assert False, 'hey time to do this release-resources thing'
-#         print resources[1]
+        print "# 4. Remove path resources from the free list"
+        unfree_resources(path,DBG=9)
+        #         assert False, 'hey hows that'
+        #         print resources[1]
 
         print ''
         pwhere(1198)
@@ -1288,12 +1299,11 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
 
 
-        if is_regsolo(dname): assert False,\
-           '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
+        if is_regsolo(dname):
+            print '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
+            assert False,\
+                   '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
 
-#         # BOOKMARK
-#         assert False, '\nBOOKMARK: routing it'
-#         assert False, '\nBOOKMARK: route it!'
 
         # something like:
         # - change packer to use cgra_info for rc2tileno/tileno2rc DONE maybe
@@ -1316,6 +1326,29 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 #         finish_route(sname,dname)
 
     return (tileno,resource)
+
+def squote(txt, f=''):
+    fmt = '%'+str(f)+'s'  # E.g. '%-13s' when f=-13
+    return fmt % ("'" + txt + "'")
+
+
+# '%-13s' % ("'" + w + "'")
+def sqw(w): return squote(w, -13)
+
+def unfree_resources(path,DBG=0):
+    '''Remove all path resources from free list(s)'''
+    for r in CT.allports(path):
+        (tileno,x) = CT.parse_resource(r)
+        if (r in resources[tileno]):
+            resources[tileno].remove(r)
+            if DBG: print "     %s removed from tile %d free list" \
+               % (sqw(r), tileno)
+            # print "  Before: %s" % resources[tileno]
+            # print "  After:  %s" % resources[tileno]
+        else:
+            if DBG: print "     %s not in tile %d free list" \
+               % (sqw(r), tileno)
+
 
 def place_and_route_test(sname,dname,indent='# ',DBG=1):
     if DBG: print indent+"  PNR '%s' -> '%s'" % (sname,dname)
