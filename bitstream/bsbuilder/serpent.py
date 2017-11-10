@@ -1292,13 +1292,11 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             nodes[dname].show()
             print ''
 
-        print 666
+        if dname == 'reg_0_1': print 666
         if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
 
-        print 999999999
-        if is_regsolo(dname):
         if dname == 'reg_0_1':
-            print '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
+            print 'GOT TWO ROUTES!  WOO AND HOO!'
             # assert False,\
             #        '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
 
