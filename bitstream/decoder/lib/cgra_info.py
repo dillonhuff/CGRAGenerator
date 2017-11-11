@@ -500,10 +500,13 @@ def reachable(rsrc, tileno=0, DBG=0):
 
     if DBG: print 'who can connect to', rsrc, 'in tile', tileno, '?'
 
-    return sb_reachable(rsrc,tileno, DBG)
-    return cb_reachable(rsrc,tileno, DBG)
+#     return sb_reachable(rsrc,tileno, DBG)
+#     # return cb_reachable(rsrc,tileno, DBG)
+# 
+# # FIXME why are there two of these??
+# def sb_reachable(rsrc, tileno=0, DBG=0):
 
-def sb_reachable(rsrc, tileno=0, DBG=0):
+
     tile = get_tile(tileno)
     assert tile != -1, '404 tile not found'
 
@@ -520,10 +523,50 @@ def sb_reachable(rsrc, tileno=0, DBG=0):
     sblist = search_muxes(tile, 'sb', rsrc, DBG-1)
     cblist = search_muxes(tile, 'cb', rsrc, DBG-1)
 
+
+
+    ################################################################
+    # FIXME Here's a painful hack
+    # Someimtes memtile wires look like this:
+    # {in,out}_0_BUS16_S2_T[0-4] (whoops!!)
+    # when they're supposed to look like this:
+    #             # {in,out}_0_BUS16_[023]_[0-4]
+    rsrc2 = False
+
+    parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', rsrc)
+    if parse:
+        if DBG: print '           # OH NO found ST wire name "%s"' % rsrc
+        dir = parse.group(1)
+        tb  = parse.group(2)
+        side  = parse.group(3)
+        track = parse.group(4)
+        rsrc2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
+
+    parse = re.search('^(in|out)_([01])_BUS16_(\d+)_(\d+)', rsrc)
+    if parse:
+        if DBG: print '           # OH NO found non-ST wire name "%s"' % rsrc
+        dir = parse.group(1)
+        tb  = parse.group(2)
+        side  = parse.group(3)
+        track = parse.group(4)
+        rsrc2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
+
+    if rsrc2:
+        if DBG: print "        # UGH must also check '%s'" % rsrc2
+        sblist = sblist+search_muxes(tile, 'sb', rsrc2, DBG-1)
+        cblist = cblist+search_muxes(tile, 'cb', rsrc2, DBG-1)
+        rsrc = '%s/%s' % (rsrc,rsrc2)
+    ################################################################
+
+
+
+    # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
+
     if DBG>2: print 'sb:', rsrc, 'can connect to', sblist
     if DBG>2: print 'cb:', rsrc, 'can connect to', cblist
 
-    if DBG: print rsrc, 'can connect to\n', sblist+cblist
+    if DBG: print "         %s can connect to %s" \
+       % (rsrc,sblist+cblist)
     if DBG: print ''
 
     return sblist+cblist

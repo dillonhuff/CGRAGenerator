@@ -20,7 +20,7 @@ def where(lno=0):
     if not lno: lno = frameinfo.lineno
     return '%s/%s' % (frameinfo.filename, lno)
 
-def pwhere(lno, txt=''):
+def pwhere(lno=0, txt=''):
     frameinfo = getframeinfo(currentframe().f_back)
     if not lno: lno = frameinfo.lineno
     info = '%s/%s' % (frameinfo.filename, lno)
@@ -536,10 +536,9 @@ class Node:
         (aprime,bprime) = (to_cgra(a),to_cgra(b))
         print "       Ask cgra: can '%s' connect to '%s'? (%s)"\
               % (aprime,bprime,where(457))
-
         # rlist = all ports that a can reach in tile T
         rlist = cgra_info.reachable(to_cgra(a), T, DBG=0)
-        print "         %s can connect to %s" % (aprime,rlist)
+        print "         %s can connect to %s (%s)" % (aprime,rlist,where(542))
 
         bprime = to_cgra(b)
         print "         Is '%s' in the list?" % bprime
@@ -571,7 +570,7 @@ class Node:
             return False
         print "maybe can connect intermediary"
         for r in rlist:
-            rprime = from_cgra(r, T)
+            rprime = from_cgra(r, T, DBG=1)
             print "maybe can connect intermediary '%s' -> '%s' -> '%s'"\
                   % (a,rprime,b)
             p1 = self.connect(a,rprime,T,DBG)
@@ -661,11 +660,45 @@ def to_cgra(name, DBG=0):
         if d == 'mem_out': newname = 'rdata'
 
     else:
-        assert s < 4, 'oops need more rewrites'
-        newname = '%s_BUS16_S%d_T%d' % (d,s,t)
-        if is_mem_tile(T):
-            newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
+        side = s
+        dnot = 'out';
+        if d == 'out': dnot = 'in'
 
+        if not is_mem_tile(T):
+            newname = '%s_BUS16_S%d_T%d' % (d,s,t)
+
+        else:
+            # must know if top or bottom
+            tb = 'top';
+            if s>3: tb='bottom'
+            if   (tb == 'top')    and (side == '1'):
+                newname = 'sb_wire_%s_1_BUS16_3_%d' % (dnot,t)
+            elif (tb == 'bottom') and (side == '3'):
+                newname = 'sb_wire_%s_1_BUS16_3_%d' % (d,t)
+            else:
+                # newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
+                # yes; sometimes; maybe; but better is:
+                newname = '%s_%d_BUS16_%d_%d' % (d,s/4,s%4,t)
+
+            # sample memtile wire names:
+            # {in,out}_0_BUS16_[023]_[0-4]
+            # {in,out}_1_BUS16_[012]_[0-4]
+            # 
+            # {in,out}_0_BUS16_S2_T[0-4] (whoops!!)
+            # 
+            # sb_wire_{in,out}_1_BUS16_3_[0-4]
+            # 
+            # sb_wire_in_1_BUS16_3_[0-4]
+            # > wire going from top to bottom (into side 3 (N) wrt bottom (1))
+            # > maps to out/side3 if row even (top)
+            # > or      in/ side1 if row odd (bottom)
+            # sb_wire_out_1_BUS16_3_[0-4]
+            # > wire going from bottom to top (out of side 3 (N) wrt bottom (1))
+            # > maps to in/ side3 if row even (top)
+            # > or      out/side1 if row odd (bottom)
+
+            #         if is_mem_tile(T):
+            #             newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
 
     if DBG: print "to_cgra: cgra name for '%s' is '%s'" % (name, newname)
     if DBG: print ''
@@ -673,42 +706,116 @@ def to_cgra(name, DBG=0):
     return newname
 
 
-def from_cgra(name, tileno):
-    print "converting", name
-    (dir,side,track) = parse_cgra_wirename(name)
-    print (dir,side,track)
+def from_cgra(name, tileno, DBG=0):
+    if DBG: print "converting", name
+    (dir,tb,side,track) = parse_cgra_wirename(name)
+    if DBG: print (dir,tb,side,track)
 
     if dir == -1:
         # not a wire
-        if name == 'data0':      newname = 'op1'
-        elif name == 'data1':      newname = 'op2'
-        elif name == 'pe_out_res': newname = 'pe_out'
-        
+        if   name == 'data0': newname = 'op1'
+        elif name == 'data1': newname = 'op2'
         elif name == 'wdata': newname = 'mem_in'
         elif name == 'rdata': newname = 'mem_out'
-        else: assert False, 'sb_wire or something?'
+        elif name == 'pe_out_res': newname = 'pe_out'
+        else:
+            pwhere()
+            print 'cannot decode', name
+            assert False, 'sb_wire or something?'
     else:
+        # uh...parse_wirename should do this?
+        # if tb=='bottom': side = side + 4
+        assert side < 8
         newname = '%s_s%st%s' % (dir,side,track)
 
-    print 'from_cgra: new name is', newname
-    print ''
+    if DBG: print 'from_cgra: new name is', newname
+    if DBG: print ''
     newname = 'T%d_%s' % (tileno, newname)
     return newname
 
-def parse_cgra_wirename(w):
+
+# FIXME move this to cgra_info.py
+# FIXME split into multiple funcs maybe
+# - fix it to read also in_0_... DONE
+# - move to cgra_infoline 533 FIXME/TODO
+def parse_cgra_wirename(w, DBG=0):
+    (dir,tb,side,track) = (-1,-1,-1,-1)
+    # rval = (-1,-1,-1)
+
+    # Look for most common case first, howbowda
     parse = re.search('(in|out)_BUS16_S(\d+)_T(\d+)', w)
-    print "in", w
-    rval = (-1,-1,-1)
     if (parse):
         print 'parsed'
-        (dir,side,track) = (parse.group(1), parse.group(2), parse.group(3))
+        (dir,side,track) = (parse.group(1), int(parse.group(2)), int(parse.group(3)))
         rval = (dir,side,track)
-    print 'out', rval
-    return rval
+        if DBG: print rval
+        return rval
+
+    # Crazy memtile wire non-ST
+    parse = re.search('^(in|out)_([01])_BUS16_(\d+)_(\d+)', w)
+    if parse:
+        if DBG: print '           # OH NO found non-ST wire name "%s"' % w
+        dir = parse.group(1)
+        tb  = parse.group(2)
+        side  = int(parse.group(3))
+        track = int(parse.group(4))
+        # w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
+        if tb=='0': tb = 'top'
+        else:
+            tb = 'bottom'
+            side = side + 4
+        rval = (dir,tb,side,track)
+        if DBG: print rval
+        return rval
+
+    # Crazy memtile wire sb_wire
+    parse = re.search('sb_wire_(in|out)_1_BUS16_(\d+)_(\d+)', w)
+    if parse:
+        if DBG: print '           # OH NO found stupid sb_wire "%s"' % w
+        dir = parse.group(1)
+        tb  = 'bottom'
+        side  = int(parse.group(2))+4
+        track = int(parse.group(3))
+        # w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
+        # if tb=='0': tb = 'top'
+        # else      : tb = 'bottom'
+        rval = (dir,tb,side,track)
+        if DBG: print rval
+        return rval
+
+
+    # Crazy memtile wire ST
+    parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', w)
+    if parse:
+        if DBG: print '           # OH NO found ST wire name "%s"' % w
+        dir = parse.group(1)
+        tb  = parse.group(2)
+        side  = int(parse.group(3))
+        track = int(parse.group(4))
+        # w2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
+        if tb=='0': tb = 'top'
+        else:
+            tb = 'bottom'
+            side = side + 4
+        rval = (dir,tb,side,track)
+        if DBG: print rval
+        return rval
+
+
+    
+    
+
+
+
+
+
+#     print 'out', rval
+#     return rval
+
+
 
 # List of output ports being used as registers
 REGISTERS = []
-
 
 # FIXME do the thing with the globals and the init-globals...
 nodes = {}
@@ -725,7 +832,21 @@ def build_nodes(DBG=0):
 
     global nodes
     nodes = {}
-    for line in sys.stdin:
+
+
+
+    # I will regret this one day...
+    filename = 'examples/build.171027/conv_bw_mapped.dot'
+    print filename
+    inputstream = open(filename);
+    input_lines = [] # for line in sys.stdin: input_lines.append(line)
+    for line in inputstream: input_lines.append(line)
+    inputstream.close()
+
+
+
+    # for line in sys.stdin:
+    for line in input_lines:
         line = line.strip()
 
         # Don't care about luts (for now)
@@ -1538,6 +1659,9 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
         print "1. Attach source node '%s' to path beginpoint '%s'"\
               % (sname, path[0])
 
+    assert snode.output in snode.net,\
+           "'%s' output '%s' is not in '%s' net!!?" % (sname, snode.input,sname)
+
     cbegin = connect_beginpoint(snode, path[0],DBG)
     if not cbegin:
         print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
@@ -1594,7 +1718,6 @@ def connect_beginpoint(snode, beginpoint, DBG=0):
     # canon_src = 'T%d_%s' % (stileno, snode.input)
     # plist = [canon_src] + snode.net
 
-    assert snode.input in snode.net
     plist = sorted(snode.net)
     # print plist
     # FIXME should only look at ports in same tile as beginpoint...RIGHT?
@@ -1606,7 +1729,10 @@ def connect_beginpoint(snode, beginpoint, DBG=0):
     for p in plist:
         print "     Can '%s' connect to beginpoint '%s'?" % (p, beginpoint)
 
-        cbegin = can_connect_begin(snode, snode.input, beginpoint, DBG)
+        # Who's the diiot?  I'm the diiot.
+        # cbegin = can_connect_begin(snode, snode.input, beginpoint, DBG)
+        cbegin = can_connect_begin(snode, snode.output, beginpoint, DBG)
+
         if cbegin: return cbegin
         else:
             print "  Cannot connect '%s' to beginpoint '%s'?" % (p, beginpoint)
