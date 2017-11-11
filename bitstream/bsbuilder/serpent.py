@@ -355,8 +355,8 @@ class Node:
         self.net = []
         # self.processed = False
 
-    def type(self):
-        if self.name[0] == 'm': return 'mem'
+    def tiletype(self):
+        if self.name[0:3] == 'mem': return 'mem'
         else: return 'pe'
 
     def addop(self, operand):
@@ -393,7 +393,6 @@ class Node:
         if it is free and/or if it is already in mynet.
         rname should be of the form 'T%d_something'
         '''
-
         # rname must have embedded tileno, e.g. 'T1_in_s3t2' or 'T5_mem_out'
         (tileno,r) = parse_resource(rname)
 
@@ -421,7 +420,7 @@ class Node:
         if DBG>2: print "is_avail: looking for '%s' in tile %d resources %s" \
               % (rname, tileno, resources[tileno])
         if rname in resources[tileno]:
-            print "       %-11s available in free list for tile %d"\
+            print "       %-11s is in free list for tile %d"\
                   % (rname, tileno)
             return True
 
@@ -1339,12 +1338,14 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         # Get nearest tile compatible with target node 'dname'
         # "Nearest" means closest to input tile (NW corner)
+        if dname == 'mul_47918_480_PE': print 666
         dtileno = get_nearest_tile(sname, dname)
         
         # FIXME will need an 'undo' for order[] list if dtileno ends up not used
 
         # print 'dtileno/nearest is %d' % dtileno
         if DBG: pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
+        if dtileno == 2: print 666
 
         path = find_best_path(sname, dname, dtileno)
         
@@ -1417,7 +1418,6 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             nodes[dname].show()
             print ''
 
-        if dname == 'reg_0_1': print 666
         if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
 
         if dname == 'reg_0_1':
@@ -1519,7 +1519,6 @@ def place_folded_reg_in_input_tile(dname):
 
 
 def get_nearest_tile(sname, dname, DBG=0):
-
     DBG=1
 
     # Figure how to do the first placement INPUT -> mem_1 maybe
@@ -1531,7 +1530,7 @@ def get_nearest_tile(sname, dname, DBG=0):
         packer.FMT.order()
         print ''
 
-    dtype = nodes[dname].type()
+    dtype = nodes[dname].tiletype()
     stileno = nodes[sname].tileno
 
     # If dname is a reg node, maybe it can go in the same tile with sname?
@@ -1542,6 +1541,7 @@ def get_nearest_tile(sname, dname, DBG=0):
 
     # print "# i'm in tile %s" % packer.FMT.tileT(sname)
     nearest = packer.find_nearest(stileno, dtype, DBG=0)
+    assert nodes[dname].tiletype() == cgra_info.mem_or_pe(nearest)
 
     # print 'foudn nearest tile', nearest
     assert nearest != -1
@@ -1551,7 +1551,7 @@ def get_nearest_tile(sname, dname, DBG=0):
 
     # print 'dname is type %s and...' % dtype,
     # print '"nearest" is type %s' % cgra_info.mem_or_pe(nearest)
-    assert nodes[dname].type() == cgra_info.mem_or_pe(nearest)
+    assert nodes[dname].tiletype() == cgra_info.mem_or_pe(nearest)
 
     if DBG:
         print "# order after get_nearest():"
