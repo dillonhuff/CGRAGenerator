@@ -537,21 +537,26 @@ def find_connectables(fan_dir, port, tileno, DBG=0):
 
     # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
 
-    rlist = search_muxes(fan_dir, tile, port, DBG-1)
-
     # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
     # Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and
-    # vice versa UGH yes it's a bug.
-    port2 = mem_alias(port)
-    if port2:
-        if DBG: print "        # UGH must also check '%s'" % port2
-        rlist = rlist+search_muxes(fan_dir, tile, port2, DBG-1)
-        port = '%s/%s' % (port,port2)
+    # vice versa UGH yes it's a bug.  oneworld() "fixes" it
+    port = oneworld(port)
+    rlist = search_muxes(fan_dir, tile, port, DBG-1)
+
+#     # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
+#     # Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and
+#     # vice versa UGH yes it's a bug.
+#     port2 = mem_alias(port)
+#     if port2:
+#         if DBG: print "        # UGH must also check '%s'" % port2
+#         rlist = rlist+search_muxes(fan_dir, tile, port2, DBG-1)
+#         port = '%s/%s' % (port,port2)
 
     return rlist
 
 
 def search_muxes(fan_dir, tile, port, DBG=0):
+    port = oneworld(port)
     if fan_dir == 'fan_out':
         sblist = find_sources(tile, 'sb', port, DBG)
         cblist = find_sources(tile, 'cb', port, DBG)
@@ -574,16 +579,18 @@ def find_sources(tile, box, rsrc, DBG=0):
     '''
     DBG = max(DBG,0)
     assert box in ['sb','cb']
+    rsrc = oneworld(rsrc)
     rlist = []
 
     for box in tile.iter(box):
         for mux in box.iter('mux'):
             for src in mux.iter('src'):
                 if DBG: print 'found src', src.text
-                if src.text == rsrc:
+                # if src.text == rsrc:
+                if oneworld(src.text) == rsrc:
                     snk = mux.attrib['snk']
                     if DBG: print 'found snk', snk
-                    rlist.append(snk)
+                    rlist.append(oneworld(snk))
     return rlist
 
     DBG=1
@@ -598,16 +605,19 @@ def find_sinks(tile, box, rdst, DBG=0):
     '''
     DBG = max(DBG,0)
     assert box in ['sb','cb']
+    rdst = oneworld(rdst)
     rlist = []
 
     for bb in tile.iter(box):
         for mux in bb.iter('mux'):
             # Look for sinks whose src is rdst
-            if mux.attrib['snk'] == rdst:
+            # if mux.attrib['snk'] == rdst:
+            # ow = oneworld(mux.attrib['snk'])
+            if oneworld(mux.attrib['snk']) == rdst:
                 if DBG: print 'found snk', mux.attrib['snk']
                 for src in mux.iter('src'):
                     if DBG: print 'found src', src.text
-                    rlist.append(src.text)
+                    rlist.append(oneworld(src.text))
     return rlist
 
      
@@ -617,26 +627,22 @@ def get_tile(tileno):
         if t == tileno: return tile
     return -1
 
-def mem_alias(w, DBG=0):
+def oneworld(w, DBG=0):
     '''
-    Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and
-    vice versa UGH yes it's a bug.
+    Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and vice vera.
+    UGH yes it is a bug.
+    This func converts all names to the canonical '...S1_T2' form
     '''
-    # FIXME Here's a painful hack
-    # Someimtes memtile wires look like this:
-    # {in,out}_0_BUS16_S2_T[0-4] (whoops!!)
-    # when they're supposed to look like this:
-    #             # {in,out}_0_BUS16_[023]_[0-4]
-    w2 = False
+    w2 = w # default
 
-    parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', w)
-    if parse:
-        if DBG: print '           # OH NO found ST wire name "%s"' % w
-        dir = parse.group(1)
-        tb  = parse.group(2)
-        side  = parse.group(3)
-        track = parse.group(4)
-        w2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
+#     parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', w)
+#     if parse:
+#         if DBG: print '           # OH NO found ST wire name "%s"' % w
+#         dir = parse.group(1)
+#         tb  = parse.group(2)
+#         side  = parse.group(3)
+#         track = parse.group(4)
+#         w2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
 
     parse = re.search('^(in|out)_([01])_BUS16_(\d+)_(\d+)', w)
     if parse:
@@ -648,6 +654,17 @@ def mem_alias(w, DBG=0):
         w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
 
     return w2
+
+# def mem_alias(w, DBG=0):
+#     '''
+#     Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and
+#     vice versa UGH yes it's a bug.
+#     '''
+#     # FIXME Here's a painful hack
+#     # Someimtes memtile wires look like this:
+#     # {in,out}_0_BUS16_S2_T[0-4] (whoops!!)
+#     # when they're supposed to look like this:
+#     #             # {in,out}_0_BUS16_[023]_[0-4]
 
 
 

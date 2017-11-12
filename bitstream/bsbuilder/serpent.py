@@ -589,13 +589,14 @@ class Node:
 #         breach = cgra_info.reachable(bprime, T, DBG=1)
 #         print "'%s'/'%s' can reach %s" % (b,bprime,breach)
         
-#         aprime = to_cgra(a, DBG=1)
-#         areach = FO # from just up there
-#         print "'%s'/'%s' can reach %s" % (a,aprime,areach)
-# 
-#         bprime = to_cgra(b, DBG=1)
-#         breach = cgra_info.reachable(bprime, T, DBG=1)
-#         print "'%s'/'%s' can reach %s" % (b,bprime,breach)
+        a_cgra = to_cgra(a, DBG-1)
+        areach = FO # from just up there
+        print "'%s'/'%s' can areach %s" % (a,aprime,areach)
+
+        b_cgra = to_cgra(b, DBG-1)
+        # breach = cgra_info.reachable(bprime, T, DBG=1)
+        breach = cgra_info.fan_in(to_cgra(b), T, DBG-1)
+        print "'%s'/'%s' can breached by %s" % (b,bprime,breach)
 
 
 
@@ -740,13 +741,13 @@ def to_cgra(name, DBG=0):
             tb = 'top';
             if s>3: tb='bottom'
             if   (tb == 'top')    and (side == '1'):
-                newname = 'sb_wire_%s_1_BUS16_3_%d' % (dnot,t)
+                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (dnot,t)
             elif (tb == 'bottom') and (side == '3'):
-                newname = 'sb_wire_%s_1_BUS16_3_%d' % (d,t)
+                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (d,t)
             else:
                 # newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
                 # yes; sometimes; maybe; but better is:
-                newname = '%s_%d_BUS16_%d_%d' % (d,s/4,s%4,t)
+                newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
 
             # sample memtile wire names:
             # {in,out}_0_BUS16_[023]_[0-4]
@@ -770,6 +771,8 @@ def to_cgra(name, DBG=0):
 
     if DBG: print "to_cgra: cgra name for '%s' is '%s'" % (name, newname)
     if DBG: print ''
+
+    assert newname == cgra_info.oneworld(newname)
 
     return newname
 
