@@ -493,7 +493,7 @@ def get_element(EE, TTTT):
                 if (fa == elemno): return feature
     return False
 
-def reachable(rsrc, tileno=0, DBG=0):
+def fan_out(rsrc, tileno=0, DBG=0):
 
     # list all resources in tile that are reachable from 'rsrc'
     # 'rsrc' can be one of: in*, pe_out_res, wdata, mem_out
@@ -520,10 +520,8 @@ def reachable(rsrc, tileno=0, DBG=0):
     if rsrc == 'mem_in':  rsrc = 'wdata'
 
     # if DBG: print 'found tile', tileno
-    # sblist = search_muxes(tile, 'sb', rsrc, DBG-1)
-    # cblist = search_muxes(tile, 'cb', rsrc, DBG-1)
-    sblist = search_muxes(tile, 'sb', rsrc, DBG-1)
-    cblist = search_muxes(tile, 'cb', rsrc, DBG-1)
+    sblist = find_sources(tile, 'sb', rsrc, DBG-1)
+    cblist = find_sources(tile, 'cb', rsrc, DBG-1)
 
 
 
@@ -555,8 +553,8 @@ def reachable(rsrc, tileno=0, DBG=0):
 
     if rsrc2:
         if DBG: print "        # UGH must also check '%s'" % rsrc2
-        sblist = sblist+search_muxes(tile, 'sb', rsrc2, DBG-1)
-        cblist = cblist+search_muxes(tile, 'cb', rsrc2, DBG-1)
+        sblist = sblist+find_sources(tile, 'sb', rsrc2, DBG-1)
+        cblist = cblist+find_sources(tile, 'cb', rsrc2, DBG-1)
         rsrc = '%s/%s' % (rsrc,rsrc2)
     ################################################################
 
@@ -573,7 +571,7 @@ def reachable(rsrc, tileno=0, DBG=0):
 
     return sblist+cblist
 
-def search_muxes(tile, box, rsrc, DBG=0):
+def find_sources(tile, box, rsrc, DBG=0):
     DBG = max(DBG,0)
     # 'box' is one of: ['sb','cb']
     assert box in ['sb','cb']

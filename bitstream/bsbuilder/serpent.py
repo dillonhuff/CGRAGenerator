@@ -97,15 +97,15 @@ def test_manhattan_distance_rc():
     manhattan_distance_rc(DBG=1)
     print ''
 
-def test_reachable():
+def test_fan_out():
     # S0 only connecst to four sides
-    cgra_info.reachable('in_BUS16_S0_T0', 0, DBG=1)
+    cgra_info.fan_out('in_BUS16_S0_T0', 0, DBG=1)
     
     # S2 can also connect to op1
-    cgra_info.reachable('in_BUS16_S2_T0', 0, DBG=1)
+    cgra_info.fan_out('in_BUS16_S2_T0', 0, DBG=1)
     
-    cgra_info.reachable('mem_out', 3, DBG=1)
-    cgra_info.reachable('pe_out_res', 0, DBG=1)
+    cgra_info.fan_out('mem_out', 3, DBG=1)
+    cgra_info.fan_out('pe_out_res', 0, DBG=1)
 
 # # FIXME combine with other manhattan thing above maybe
 # def manhattan_distance(src=[0,0], dst=[5,1]):
@@ -537,7 +537,7 @@ class Node:
         print "       Ask cgra: can '%s' connect to '%s'? (%s)"\
               % (aprime,bprime,where(457))
         # rlist = all ports that a can reach in tile T
-        rlist = cgra_info.reachable(to_cgra(a), T, DBG-1)
+        rlist = cgra_info.fan_out(to_cgra(a), T, DBG-1)
         print "         %s can connect to %s (%s)" % (aprime,rlist,where(542))
 
         bprime = to_cgra(b)
@@ -1930,12 +1930,12 @@ def test_connect():
     initialize_node_INPUT()
 
     print 'TEST: who can reach pe_out_res?'
-    rlist = cgra_info.reachable('pe_out_res', 0, DBG=1)
+    rlist = cgra_info.fan_out('pe_out_res', 0, DBG=1)
     print rlist
 
 
     print 'TEST: who can reach to_cgra(pe_out)?'
-    rlist = cgra_info.reachable(to_cgra('pe_out'), 0)
+    rlist = cgra_info.fan_out(to_cgra('pe_out'), 0)
     print 'boo'
     print rlist
 
@@ -1952,7 +1952,7 @@ def test_connect():
 DO_TEST=0
 if DO_TEST:
     test_manhattan_distance_rc()
-    test_reachable()
+    test_fan_out()
 
     print 'test the new stuff'
     test_connect()
