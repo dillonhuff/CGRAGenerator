@@ -601,66 +601,17 @@ class Node:
             p1 = '%s -> %s' % (a, from_cgra(middle, T))
             p2 = '%s -> %s' % (from_cgra(middle, T), b)
             pmiddle = [p1,p2]
-        else:
-            print "NO MIDDLE"
-
-
-
-
-        for r in rlist:
-            rprime = from_cgra(r, T, DBG=1)
-            print "maybe can connect intermediary '%s' -> '%s' -> '%s'"\
-                  % (a,rprime,b)
-
-            # FIXME this is terrible
-            trio = [a,rprime,b]
-            global ITRIED
-            if trio in ITRIED:
-                print "Already tried this"
-                continue
-            else:
-                ITRIED.append(trio)
-                print 'ITRIED', ITRIED
-
-
-#             print 'r is', r
-#             if (r in areach) and (r in breach):
-#                 print "MAYBE"
-#             else:
-#                 print "NO does not reach"
-#                 continue
-
-
-# in_0_BUS16_2_0
-# 'T17_out_s0t0' -> 'T17_in_s2t0' -> 'T17_mem_in'
-# out_0_BUS16_0_0 in_0_BUS16_2_0
-# 'in_0_BUS16_2_0' 'wdata'
-
-            p1 = self.connect(a,rprime,T,DBG)
-            if not p1: continue
-
-            print p1
-            all1 = CT.allports(p1)
-            assert all1[0] != all1[-1], str(all1)
-
-
-            p2 = self.connect(rprime,b,T,DBG)
-            if not p2: continue
-
-            print p2
-            all2 = CT.allports(p2)
-            assert all2[0] != all2[-1], str(all2)
-
-
-
 
             print "Found double connection.  What a day!"
             print "Remember quickfind was", middle, pmiddle
-            return p1+p2
+            return pmiddle
 
-        print "no good"
-        return False
+        else:
+            print "NO MIDDLE"
+            print "no good"
+            return False
             
+
 def addT(tileno, r):
     '''Embed tileno in resource 'r' e.g. "mem_out" => "T3_mem_out"'''
     return 'T' + str(tileno) + '_' + r
