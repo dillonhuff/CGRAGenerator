@@ -536,10 +536,15 @@ class Node:
         (aprime,bprime) = (to_cgra(a),to_cgra(b))
         print "       Ask cgra: can '%s' connect to '%s'? (%s)"\
               % (aprime,bprime,where(457))
+
         # rlist = all ports that a can reach in tile T
-        FI = cgra_info.fan_in (to_cgra(a), T, DBG-1)
+
+        # FI = cgra_info.fan_in (to_cgra(a), T, DBG-1)
+        # FO = cgra_info.fan_out(to_cgra(a), T, DBG-1)
+        # rlist = FI + FO
+
         FO = cgra_info.fan_out(to_cgra(a), T, DBG-1)
-        rlist = FI + FO
+        rlist = FO
 
         print "         %s can connect to %s (%s)" % (aprime,rlist,where(542))
 
@@ -584,6 +589,15 @@ class Node:
 #         breach = cgra_info.reachable(bprime, T, DBG=1)
 #         print "'%s'/'%s' can reach %s" % (b,bprime,breach)
         
+#         aprime = to_cgra(a, DBG=1)
+#         areach = FO # from just up there
+#         print "'%s'/'%s' can reach %s" % (a,aprime,areach)
+# 
+#         bprime = to_cgra(b, DBG=1)
+#         breach = cgra_info.reachable(bprime, T, DBG=1)
+#         print "'%s'/'%s' can reach %s" % (b,bprime,breach)
+
+
 
         for r in rlist:
             rprime = from_cgra(r, T, DBG=1)
