@@ -493,90 +493,77 @@ def get_element(EE, TTTT):
                 if (fa == elemno): return feature
     return False
 
-def fan_out(rsrc, tileno=0, DBG=0):
-
-    # list all resources in tile that are reachable from 'rsrc'
+def fan_out(rsrc, tileno, DBG=0):
+    # list all resources in tile that 'rsrc' can reach
     # 'rsrc' can be one of: in*, pe_out_res, wdata, mem_out
-
-    if DBG: print 'who can connect to', rsrc, 'in tile', tileno, '?'
-
-#     return sb_reachable(rsrc,tileno, DBG)
-#     # return cb_reachable(rsrc,tileno, DBG)
-# 
-# # FIXME why are there two of these??
-# def sb_reachable(rsrc, tileno=0, DBG=0):
-
-
-    tile = get_tile(tileno)
-    assert tile != -1, '404 tile not found'
-
-    # Note some resources are reachable from both sb and cb e.g.
-    # in_BUS16_S2_T0 can connect to
-    #   sb: ['out_BUS16_S0_T0', 'out_BUS16_S1_T0', 'out_BUS16_S3_T0']
-    #   cb: ['data0']
 
     # Rewrites:
     if rsrc == 'mem_out': rsrc = 'rdata'
     if rsrc == 'mem_in':  rsrc = 'wdata'
 
-    # if DBG: print 'found tile', tileno
-    rlist = find_connectables('fan_out', tile, rsrc, DBG-1)
+    if DBG: print 'who can be reached by', rsrc, 'in tile', tileno, '?'
+    rlist = find_connectables('fan_out', rsrc, tileno, DBG)
 
-    ################################################################
-    # FIXME Here's a painful hack
-    # Someimtes memtile wires look like this:
-    # {in,out}_0_BUS16_S2_T[0-4] (whoops!!)
-    # when they're supposed to look like this:
-    #             # {in,out}_0_BUS16_[023]_[0-4]
-    rsrc2 = False
-
-    parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', rsrc)
-    if parse:
-        if DBG: print '           # OH NO found ST wire name "%s"' % rsrc
-        dir = parse.group(1)
-        tb  = parse.group(2)
-        side  = parse.group(3)
-        track = parse.group(4)
-        rsrc2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
-
-    parse = re.search('^(in|out)_([01])_BUS16_(\d+)_(\d+)', rsrc)
-    if parse:
-        if DBG: print '           # OH NO found non-ST wire name "%s"' % rsrc
-        dir = parse.group(1)
-        tb  = parse.group(2)
-        side  = parse.group(3)
-        track = parse.group(4)
-        rsrc2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
-
-    if rsrc2:
-        if DBG: print "        # UGH must also check '%s'" % rsrc2
-        rlist = rlist+find_connectables('fan_out', tile, rsrc2, DBG-1)
-
-        rsrc = '%s/%s' % (rsrc,rsrc2)
-    ################################################################
-
-
-    # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
-
-    if DBG>2: print 'sb:', rsrc, 'can connect to', sblist
-    if DBG>2: print 'cb:', rsrc, 'can connect to', cblist
-
-    if DBG: print "         %s can connect to %s" \
-       % (rsrc,rlist)
+    if DBG: print "         %s can reach %s" % (rsrc,rlist)
     if DBG: print ''
 
     return rlist
 
 
-def find_connectables(fan_dir, tile, port, DBG=0):
+def fan_in(rdst, tileno, DBG=0):
+    # list all resources in tile that can reach 'rdst'
+
+    # # Rewrites:
+    # if rsrc == 'mem_out': rsrc = 'rdata'
+    # if rsrc == 'mem_in':  rsrc = 'wdata'
+
+    if DBG: print 'who can reach', rdst, 'in tile', tileno, '?'
+    rlist = find_connectables('fan_in', rdst, tileno, DBG)
+
+    if DBG: print "         %s can be reached by %s" % (rdst, rlist)
+    if DBG: print ''
+
+    return rlist
+
+
+def find_connectables(fan_dir, port, tileno, DBG=0):
+    # list all resources in tile that are reachable from 'port'
+    # either as source or sink depending on whether 'fan_dir'
+    # is 'fan_in' or 'fan_out'
+
+    tile = get_tile(tileno)
+    assert tile != -1, '404 tile not found'
+    # if DBG: print 'found tile', tileno
+
+    # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
+
+    rlist = search_muxes(fan_dir, tile, port, DBG-1)
+
+    # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
+    # Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and
+    # vice versa UGH yes it's a bug.
+    port2 = mem_alias(port)
+    if port2:
+        if DBG: print "        # UGH must also check '%s'" % port2
+        rlist = rlist+search_muxes(fan_dir, tile, port2, DBG-1)
+        port = '%s/%s' % (port,port2)
+
+    return rlist
+
+
+def search_muxes(fan_dir, tile, port, DBG=0):
     if fan_dir == 'fan_out':
-        sblist = find_sources(tile, 'sb', port, DBG=0)
-        cblist = find_sources(tile, 'cb', port, DBG=0)
+        sblist = find_sources(tile, 'sb', port, DBG)
+        cblist = find_sources(tile, 'cb', port, DBG)
     elif fan_dir == 'fan_in':
-        sblist = find_sinks(tile, 'sb', port, DBG=0)
-        cblist = find_sinks(tile, 'cb', port, DBG=0)
+        sblist = find_sinks(tile, 'sb', port, DBG)
+        cblist = find_sinks(tile, 'cb', port, DBG)
     else:
         assert False
+
+    if DBG>2: print 'sb:', port, 'can connect to', sblist
+    if DBG>2: print 'cb:', port, 'can connect to', cblist
+
     return sblist+cblist
 
 
@@ -613,11 +600,11 @@ def find_sinks(tile, box, rdst, DBG=0):
     assert box in ['sb','cb']
     rlist = []
 
-    for box in tile.iter(box):
-        for mux in box.iter('mux'):
+    for bb in tile.iter(box):
+        for mux in bb.iter('mux'):
             # Look for sinks whose src is rdst
-            if DBG: print 'found snk', mux.attrib['snk']
             if mux.attrib['snk'] == rdst:
+                if DBG: print 'found snk', mux.attrib['snk']
                 for src in mux.iter('src'):
                     if DBG: print 'found src', src.text
                     rlist.append(src.text)
@@ -629,6 +616,40 @@ def get_tile(tileno):
         t = int(tile.attrib['tile_addr'])
         if t == tileno: return tile
     return -1
+
+def mem_alias(w, DBG=0):
+    '''
+    Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and
+    vice versa UGH yes it's a bug.
+    '''
+    # FIXME Here's a painful hack
+    # Someimtes memtile wires look like this:
+    # {in,out}_0_BUS16_S2_T[0-4] (whoops!!)
+    # when they're supposed to look like this:
+    #             # {in,out}_0_BUS16_[023]_[0-4]
+    w2 = False
+
+    parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', w)
+    if parse:
+        if DBG: print '           # OH NO found ST wire name "%s"' % w
+        dir = parse.group(1)
+        tb  = parse.group(2)
+        side  = parse.group(3)
+        track = parse.group(4)
+        w2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
+
+    parse = re.search('^(in|out)_([01])_BUS16_(\d+)_(\d+)', w)
+    if parse:
+        if DBG: print '           # OH NO found non-ST wire name "%s"' % w
+        dir = parse.group(1)
+        tb  = parse.group(2)
+        side  = parse.group(3)
+        track = parse.group(4)
+        w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
+
+    return w2
+
+
 
 # def get_switchbox(EE,TTTT):
 #     '''

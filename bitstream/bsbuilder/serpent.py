@@ -537,7 +537,10 @@ class Node:
         print "       Ask cgra: can '%s' connect to '%s'? (%s)"\
               % (aprime,bprime,where(457))
         # rlist = all ports that a can reach in tile T
-        rlist = cgra_info.fan_out(to_cgra(a), T, DBG-1)
+        FI = cgra_info.fan_in (to_cgra(a), T, DBG-1)
+        FO = cgra_info.fan_out(to_cgra(a), T, DBG-1)
+        rlist = FI + FO
+
         print "         %s can connect to %s (%s)" % (aprime,rlist,where(542))
 
         bprime = to_cgra(b)
