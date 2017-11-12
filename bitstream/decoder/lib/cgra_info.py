@@ -520,10 +520,7 @@ def fan_out(rsrc, tileno=0, DBG=0):
     if rsrc == 'mem_in':  rsrc = 'wdata'
 
     # if DBG: print 'found tile', tileno
-    sblist = find_sources(tile, 'sb', rsrc, DBG-1)
-    cblist = find_sources(tile, 'cb', rsrc, DBG-1)
-
-
+    rlist = find_connectables('fan_out', tile, rsrc, DBG-1)
 
     ################################################################
     # FIXME Here's a painful hack
@@ -553,11 +550,10 @@ def fan_out(rsrc, tileno=0, DBG=0):
 
     if rsrc2:
         if DBG: print "        # UGH must also check '%s'" % rsrc2
-        sblist = sblist+find_sources(tile, 'sb', rsrc2, DBG-1)
-        cblist = cblist+find_sources(tile, 'cb', rsrc2, DBG-1)
+        rlist = rlist+find_connectables('fan_out', tile, rsrc2, DBG-1)
+
         rsrc = '%s/%s' % (rsrc,rsrc2)
     ################################################################
-
 
 
     # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
@@ -566,46 +562,67 @@ def fan_out(rsrc, tileno=0, DBG=0):
     if DBG>2: print 'cb:', rsrc, 'can connect to', cblist
 
     if DBG: print "         %s can connect to %s" \
-       % (rsrc,sblist+cblist)
+       % (rsrc,rlist)
     if DBG: print ''
 
+    return rlist
+
+
+def find_connectables(fan_dir, tile, port, DBG=0):
+    if fan_dir == 'fan_out':
+        sblist = find_sources(tile, 'sb', port, DBG=0)
+        cblist = find_sources(tile, 'cb', port, DBG=0)
+    elif fan_dir == 'fan_in':
+        sblist = find_sinks(tile, 'sb', port, DBG=0)
+        cblist = find_sinks(tile, 'cb', port, DBG=0)
+    else:
+        assert False
     return sblist+cblist
 
+
 def find_sources(tile, box, rsrc, DBG=0):
+    '''
+    Search all boxes of type 'box' to see what can source 'rsrc'
+    'box' can be one of: ['sb','cb']
+    '''
     DBG = max(DBG,0)
-    # 'box' is one of: ['sb','cb']
     assert box in ['sb','cb']
     rlist = []
 
-    # FIXME this needs a scrubbin i thinks
     for box in tile.iter(box):
         for mux in box.iter('mux'):
-            # FIXME this seems so wrong...
-            # 1. look for sources whose snk is rsrc
             for src in mux.iter('src'):
                 if DBG: print 'found src', src.text
                 if src.text == rsrc:
                     snk = mux.attrib['snk']
                     if DBG: print 'found snk', snk
                     rlist.append(snk)
-
-#             # 2. It goes both ways, yes?
-#             # Look for sinks whose src is rsrc
-#             if DBG: print 'found snk', mux.attrib['snk']
-#             if mux.attrib['snk'] == rsrc:
-#                 for src in mux.iter('src'):
-#                     if DBG: print 'found src', src.text
-#                     rlist.append(src.text)
-
-
     return rlist
 
     DBG=1
     if DBG: print rsrc, 'can connect to', rlist
     print ''
-        
-    assert False, 'under construction'
-    assert False, 'no such tile'
+     
+
+def find_sinks(tile, box, rdst, DBG=0):
+    '''
+    Search all boxes of type 'box' to see what can sink 'rdst'
+    'box' can be one of: ['sb','cb']
+    '''
+    DBG = max(DBG,0)
+    assert box in ['sb','cb']
+    rlist = []
+
+    for box in tile.iter(box):
+        for mux in box.iter('mux'):
+            # Look for sinks whose src is rdst
+            if DBG: print 'found snk', mux.attrib['snk']
+            if mux.attrib['snk'] == rdst:
+                for src in mux.iter('src'):
+                    if DBG: print 'found src', src.text
+                    rlist.append(src.text)
+    return rlist
+
      
 def get_tile(tileno):
     for tile in CGRA.findall('tile'):
