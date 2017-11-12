@@ -538,11 +538,6 @@ class Node:
               % (aprime,bprime,where(457))
 
         # rlist = all ports that a can reach in tile T
-
-        # FI = cgra_info.fan_in (to_cgra(a), T, DBG-1)
-        # FO = cgra_info.fan_out(to_cgra(a), T, DBG-1)
-        # rlist = FI + FO
-
         FO = cgra_info.fan_out(to_cgra(a), T, DBG-1)
         rlist = FO
 
@@ -581,15 +576,8 @@ class Node:
         print "maybe can connect '%s' to '%s' through an intermediary"\
               % (a,b)
         
-#         aprime = to_cgra(a, DBG=1)
-#         areach = cgra_info.reachable(aprime, T, DBG=1)
-#         print "'%s'/'%s' can reach %s" % (a,aprime,areach)
-# 
-#         bprime = to_cgra(b, DBG=1)
-#         breach = cgra_info.reachable(bprime, T, DBG=1)
-#         print "'%s'/'%s' can reach %s" % (b,bprime,breach)
-        
         a_cgra = to_cgra(a, DBG-1)
+        # areach = cgra_info.fan_out(to_cgra(a), T, DBG=9)
         areach = FO # from just up there
         print "'%s'/'%s' can areach %s" % (a,aprime,areach)
 
@@ -597,6 +585,25 @@ class Node:
         # breach = cgra_info.reachable(bprime, T, DBG=1)
         breach = cgra_info.fan_in(to_cgra(b), T, DBG-1)
         print "'%s'/'%s' can breached by %s" % (b,bprime,breach)
+
+
+        middle = False
+        for p in areach:
+            print p, breach
+            if p in breach:
+                print "WHOOP! There it is:", p
+                middle = p
+                break
+
+            #         if not middle: assert False
+        if middle:
+            print "Found double connection QUICKLY."
+            p1 = '%s -> %s' % (a, from_cgra(middle, T))
+            p2 = '%s -> %s' % (from_cgra(middle, T), b)
+            pmiddle = [p1,p2]
+        else:
+            print "NO MIDDLE"
+
 
 
 
@@ -648,6 +655,7 @@ class Node:
 
 
             print "Found double connection.  What a day!"
+            print "Remember quickfind was", middle, pmiddle
             return p1+p2
 
         print "no good"

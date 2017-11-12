@@ -585,6 +585,11 @@ def find_sources(tile, box, rsrc, DBG=0):
     for box in tile.iter(box):
         for mux in box.iter('mux'):
             for src in mux.iter('src'):
+
+                # (Unnecessary) optimization
+                if re.search('BUS1_', src.text): continue
+
+                owsrc = oneworld(src.text)
                 if DBG: print 'found src', src.text
                 # if src.text == rsrc:
                 if oneworld(src.text) == rsrc:
@@ -613,7 +618,12 @@ def find_sinks(tile, box, rdst, DBG=0):
             # Look for sinks whose src is rdst
             # if mux.attrib['snk'] == rdst:
             # ow = oneworld(mux.attrib['snk'])
-            if oneworld(mux.attrib['snk']) == rdst:
+            owsnk = oneworld(mux.attrib['snk'])
+
+            # (Unnecessary) optimization
+            if re.search('BUS1_', owsnk): continue
+
+            if owsnk == rdst:
                 if DBG: print 'found snk', mux.attrib['snk']
                 for src in mux.iter('src'):
                     if DBG: print 'found src', src.text
