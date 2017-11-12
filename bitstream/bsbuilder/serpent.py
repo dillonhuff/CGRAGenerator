@@ -321,6 +321,7 @@ def get_default_cgra_info_filename():
 # node["add1"] = (0,"node")
 # node["reg1"] = (0, "op1")
 
+ITRIED = []
 
         # Tile numbers for each node e.g.
         #  tile["mul_49119_492_PE"] = 14
@@ -536,7 +537,7 @@ class Node:
         print "       Ask cgra: can '%s' connect to '%s'? (%s)"\
               % (aprime,bprime,where(457))
         # rlist = all ports that a can reach in tile T
-        rlist = cgra_info.reachable(to_cgra(a), T, DBG=0)
+        rlist = cgra_info.reachable(to_cgra(a), T, DBG-1)
         print "         %s can connect to %s (%s)" % (aprime,rlist,where(542))
 
         bprime = to_cgra(b)
@@ -567,15 +568,66 @@ class Node:
         if not re.search('(op1|op2|mem_in)', b):
             print "Nope wrong kind of tile for intermediary..."
             return False
-        print "maybe can connect intermediary"
+
+        print 667
+        print "maybe can connect '%s' to '%s' through an intermediary"\
+              % (a,b)
+        
+#         aprime = to_cgra(a, DBG=1)
+#         areach = cgra_info.reachable(aprime, T, DBG=1)
+#         print "'%s'/'%s' can reach %s" % (a,aprime,areach)
+# 
+#         bprime = to_cgra(b, DBG=1)
+#         breach = cgra_info.reachable(bprime, T, DBG=1)
+#         print "'%s'/'%s' can reach %s" % (b,bprime,breach)
+        
+
         for r in rlist:
             rprime = from_cgra(r, T, DBG=1)
             print "maybe can connect intermediary '%s' -> '%s' -> '%s'"\
                   % (a,rprime,b)
+
+            # FIXME this is terrible
+            trio = [a,rprime,b]
+            global ITRIED
+            if trio in ITRIED:
+                print "Already tried this"
+                continue
+            else:
+                ITRIED.append(trio)
+                print 'ITRIED', ITRIED
+
+
+#             print 'r is', r
+#             if (r in areach) and (r in breach):
+#                 print "MAYBE"
+#             else:
+#                 print "NO does not reach"
+#                 continue
+
+
+# in_0_BUS16_2_0
+# 'T17_out_s0t0' -> 'T17_in_s2t0' -> 'T17_mem_in'
+# out_0_BUS16_0_0 in_0_BUS16_2_0
+# 'in_0_BUS16_2_0' 'wdata'
+
             p1 = self.connect(a,rprime,T,DBG)
             if not p1: continue
+
+            print p1
+            all1 = CT.allports(p1)
+            assert all1[0] != all1[-1], str(all1)
+
+
             p2 = self.connect(rprime,b,T,DBG)
             if not p2: continue
+
+            print p2
+            all2 = CT.allports(p2)
+            assert all2[0] != all2[-1], str(all2)
+
+
+
 
             print "Found double connection.  What a day!"
             return p1+p2
@@ -746,7 +798,7 @@ def parse_cgra_wirename(w, DBG=0):
     if (parse):
         print 'parsed'
         (dir,side,track) = (parse.group(1), int(parse.group(2)), int(parse.group(3)))
-        rval = (dir,side,track)
+        rval = (dir,tb,side,track)
         if DBG: print rval
         return rval
 
@@ -800,16 +852,13 @@ def parse_cgra_wirename(w, DBG=0):
         if DBG: print rval
         return rval
 
+    # Not a wire; maybe it's e.g. 'data1'
+    # print 'out', rval
+    rval = (-1,-1,-1,-1)
+    if DBG: print rval
+    return rval
 
-    
-    
 
-
-
-
-
-#     print 'out', rval
-#     return rval
 
 
 

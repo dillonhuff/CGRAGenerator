@@ -520,6 +520,8 @@ def reachable(rsrc, tileno=0, DBG=0):
     if rsrc == 'mem_in':  rsrc = 'wdata'
 
     # if DBG: print 'found tile', tileno
+    # sblist = search_muxes(tile, 'sb', rsrc, DBG-1)
+    # cblist = search_muxes(tile, 'cb', rsrc, DBG-1)
     sblist = search_muxes(tile, 'sb', rsrc, DBG-1)
     cblist = search_muxes(tile, 'cb', rsrc, DBG-1)
 
@@ -588,13 +590,16 @@ def search_muxes(tile, box, rsrc, DBG=0):
                     snk = mux.attrib['snk']
                     if DBG: print 'found snk', snk
                     rlist.append(snk)
-            # 2. It goes both ways, yes?
-            # Look for sinks whose src is rsrc
-            if DBG: print 'found snk', mux.attrib['snk']
-            if mux.attrib['snk'] == rsrc:
-                for src in mux.iter('src'):
-                    if DBG: print 'found src', src.text
-                    rlist.append(src.text)
+
+#             # 2. It goes both ways, yes?
+#             # Look for sinks whose src is rsrc
+#             if DBG: print 'found snk', mux.attrib['snk']
+#             if mux.attrib['snk'] == rsrc:
+#                 for src in mux.iter('src'):
+#                     if DBG: print 'found src', src.text
+#                     rlist.append(src.text)
+
+
     return rlist
 
     DBG=1
