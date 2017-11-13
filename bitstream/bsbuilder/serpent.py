@@ -375,6 +375,15 @@ class Node:
 
     def show(self):
         print "node='%s'" % self.name        
+
+        type = 'idunno'
+        if is_regsolo(self.name): type='regsolo'
+        elif is_regop(self.name): type = 'regop'
+        elif is_regreg(self.name): type = 'regreg'
+        # also: is_{const,mem,reg,pe,io}
+        # FIXME add the other types, make it a separate func
+        print "  type='%s'" % type
+
         print "  tileno= %s" % self.tileno
         print "  op1='%s'"   % self.op1
         print "  op2='%s'"   % self.op2
@@ -1343,6 +1352,7 @@ def process_nodes(sname, indent='# ', DBG=1):
 
             continue
 
+# FIXME        
 #         # NEVER HAPPENS because i dunno whatevs
 #         if sname == 'reg_2_2':
 #             print 777
@@ -1354,6 +1364,7 @@ def process_nodes(sname, indent='# ', DBG=1):
 
         print indent+"  Processing '%s' dest '%s'" % (sname,dname)
 
+# FIXME        
 #         # NEVER HAPPENS because i dunno whatevs
 #         if is_regop(sname):
 #             assert False, 'we already did this, why do it again?'
@@ -1362,13 +1373,23 @@ def process_nodes(sname, indent='# ', DBG=1):
 #         #   if alu and already placed twice, DONE
 #         #   else if already placed once DONE
 
+        rval = place_and_route(sname,dname,indent+'  ')
+        assert rval
 
-        place_and_route(sname,dname,indent+'  ')
+        if DBG: pnr_debug_info(was_placed,was_routed,indent,sname,dname)
 
-        if not DBG: continue
+        # Do this as a separate pass for breadth-first...
+        # process_nodes(dname, indent+'    ')
 
-        # Everything from here down is just debug info right?
-        # Not sure about these...!
+    # Recursively process each dest
+
+    for dname in sorted_schildren:
+        if dname in already_done: continue
+        process_nodes(dname, indent+'    ')
+
+
+def pnr_debug_info(was_placed,was_routed,indent,sname,dname):
+
         if was_placed:
             print indent+"  ('%s' was already placed)" % dname
             (t,loc) = (nodes[dname].tileno,nodes[dname].input)
@@ -1399,15 +1420,6 @@ def process_nodes(sname, indent='# ', DBG=1):
         #     print indent+"  Processed dest '%s'; now process children %s" % \
         #           (dname, dchildren)
 
-        # Do this as a separate pass for breadth-first...
-        # process_nodes(dname, indent+'    ')
-
-    # Recursively process each dest
-
-    for dname in sorted_schildren:
-        if dname in already_done: continue
-        process_nodes(dname, indent+'    ')
-
 
 def place_and_route(sname,dname,indent='# ',DBG=0):
 
@@ -1427,7 +1439,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
        and ('T0_pe_out' in resources[INPUT_TILENO]):
 
         place_pe_in_input_tile(dname)
-        return
+        return True
 
     if sname=='INPUT' \
        and is_folded_reg(dname) \
@@ -1435,11 +1447,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         place_folded_reg_in_input_tile(dname)
         assert False, "TODO put reg-pe folded pair in INPUT tile :("
-        return
+        return True
 
     # Does destination have a home?
     # if not is_placed(dname):
     if True:
+        #FIXME wtf with the 'if true' jazz
 
         DBG=1
         # print indent+"No home for '%s'"
@@ -1470,8 +1483,19 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             if path: break
             if track != trackrange[-1]:
                 print "could not find path on track %d, try next track" % track
+
         if not path:
-            assert False
+            if DBG:
+                print 666
+                pwhere(1489,
+                       'Tile %d no good; undo and try again:' % dtileno)
+            packer.unallocate(dtileno, DBG=0)
+            packer.EXCEPTIONS.append(dtileno)
+            rval = place_and_route(sname,dname,indent='# ',DBG=0)
+
+            # Restore EXCEPTIONS, return final result.
+            packer.EXCEPTIONS = []
+            return rval
 
         print "# Having found the final path,"
         print "# 1. place dname in dtileno"
@@ -1483,7 +1507,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         print ""
 
         print 999999999, dtileno
-        if dtileno == 15: print 666
+        # if dtileno == 15: print 666
         print "# 1. place dname in dtileno"
         d_in = CT.allports(path)[-1]
 
@@ -1566,7 +1590,6 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             # assert False,\
             #        '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
 
-
         # something like:
         # - change packer to use cgra_info for rc2tileno/tileno2rc DONE maybe
         # - set packer.order[] such that only mem tiles are valid (!= -1); 
@@ -1583,7 +1606,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         assert False, 'huh, this has still never happened i guess...'
 
         # assert False, 'cannot be placed without being routed...right??'
-        print 666
+        # print 666
         print 'Cannot be placed without being routed...right??'
         print 'Wrong, sure it can! alu with op1 routed but not yet op2, yes?'
         print 'Off to new territory...'
@@ -1595,7 +1618,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 #         nodes[sname].route[dname].append(bogus_route)
 #         finish_route(sname,dname)
 
-    return (tileno,resource)
+    # return (tileno,resource)
+    return True
+
+# END def place_and_route()
+########################################################################
+
 
 def squote(txt, f=''):
     fmt = '%'+str(f)+'s'  # E.g. '%-13s' when f=-13
@@ -1763,8 +1791,11 @@ def find_best_path(sname,dname,dtileno,track,DBG=1):
     if pvh==phv:
         if DBG>2: print "  NOTE path is a straight line"
 
+    which = 'pvh'
     for path in [pvh,phv]:
-
+        if DBG: pwhere(1325,
+                       "Evaluating %s path %s" % (which,path)); which = 'phv'
+        
         final_path = eval_path(path, snode, dname, dtileno, DBG)
         if final_path:
             # FIXME For now, use first path found
@@ -1785,7 +1816,6 @@ def eval_path(path, snode, dname, dtileno, DBG=0):
     # Given 'path' from src node 'snode' in stileno
     # to dst node 'dname' in possible dest tile 'dtileno',
     # see if path is valid
-    if DBG: pwhere(1325, "Evaluating path %s" % path)
     stileno = snode.tileno
     sname   = snode.name
 

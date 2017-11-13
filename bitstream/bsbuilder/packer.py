@@ -74,17 +74,25 @@ def init_globals(grid_width = 8, grid_height = 8, DBG=0):
     order = 64 * [-1]
     if DBG: print "# order:"; print '#', order, '\n'
    
-def is_free(tileno): return order[tileno] == -1
-# def is_free(tileno):
-#     # print order
-#     return order[tileno] == -1
+# If a tile didn't work out, you can uanllocate() it (see below),
+# add it to EXCEPTIONS list, and try again.
+EXCEPTIONS = []
+def is_free(tileno, DBG=0):
+    if tileno in EXCEPTIONS:
+        if DBG: print 'Cannot choose tile(s) %s\n' % EXCEPTIONS
+        return False
+
+    elif (order[tileno] == -1):
+        return True
+
+    else:
+        return False
 
 def ntiles_free():
     n = 0
     for i in range( len(order)):
         if order[i] == -1: n = n+1
     return n
-
 
 def tile_exists(tileno): return tileno >= 0 and tileno < NTILES
 
@@ -106,8 +114,13 @@ def allocate(tileno, DBG=0):
         FMT.order()
         print "# "
 
-    # print tileno,order
-    return n_allocated
+def unallocate(tileno, DBG=0):
+    order[tileno] = -1
+    if DBG>5:
+        print "# order after unallocate(%d):" % tileno
+        print "# "
+        FMT.order()
+
 
 def tileno2rc(tileno):
     if USE_CGRA_INFO: return cgra_info.tileno2rc(tileno)
