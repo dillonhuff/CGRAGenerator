@@ -1019,7 +1019,7 @@ def dstports(name,tile):
 
     if is_mem(name):  p = [T('mem_in')]
     elif is_pe(name): p = [T('op1'),T('op2')]
-    elif is_folded_reg(name): p = [T(nodes[regname].input)]
+    elif is_folded_reg(name): p = [T(nodes[name].input)]
     else:
         # 'name' is a register, I guess;
         # so return names of all outports in the tile
@@ -1207,8 +1207,8 @@ def add_route(sname, dname, tileno, src_port, dst_port, DBG=1):
 
 # FIXME OH NOOOOOO too many names for the same thing?
 # ALSO; shouldn't this be a func in class Node???
-def is_regpe(node_name):      is_regop(node_name)
-def is_folded_reg(node_name): is_regop(node_name)
+def is_regpe(node_name):      return is_regop(node_name)
+def is_folded_reg(node_name): return is_regop(node_name)
 
 
 def is_regop(regname):
@@ -1402,14 +1402,20 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         if   is_pe(dname):  d_out = addT(dtileno,'pe_out')
         elif is_mem(dname): d_out = addT(dtileno, 'mem_out')
         elif is_regsolo(dname):
+            print '# 1a. If regsolo, add name to REGISTERS for later'
             d_out = CT.find_neighbor(d_in, DBG=9)
             # assert False
 
             print "# Add reg's input wire to list of registers"
             REGISTERS.append(path[-1])
+            print 'added reg to REGISTERS'
             print 'now registers is', REGISTERS
-        # elif is_regreg(dname):
-        # elif is_regop(dname):
+        elif is_regop(dname):
+            print 'found a regop'
+            d_out = nodes[dname].output
+            # nodes[dname].show()
+        elif is_regreg(dname):
+            assert False, 'what do we do with regreg??'
         else:
             assert False, 'what do we do with regs?? (see below)'
             # ANSWER: make sure reg dest is registered in REGISTERS etc.
@@ -1417,11 +1423,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         nodes[dname].place(dtileno, d_in, d_out, DBG=1)
         print ""
         
-        print '# 1a. If regsolo, add name to REGISTERS for later'
-        if is_regsolo(dname):
-            nodes[dname].show()
-            print 'now what?'
-            print 'add reg to REGISTERS'
+        # DONE see above
+#         print '# 1a. If regsolo, add name to REGISTERS for later'
+#         if is_regsolo(dname):
+#             nodes[dname].show()
+#             print 'now what?'
+#             print 'add reg to REGISTERS'
 
         print "# 2. Add the connection to src node's src->dst route list"
         nodes[sname].route[dname] = path
