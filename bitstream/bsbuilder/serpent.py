@@ -321,8 +321,6 @@ def get_default_cgra_info_filename():
 # node["add1"] = (0,"node")
 # node["reg1"] = (0, "op1")
 
-ITRIED = []
-
         # Tile numbers for each node e.g.
         #  tile["mul_49119_492_PE"] = 14
 
@@ -330,6 +328,11 @@ class Node:
     def __init__(self, nodename):
         self.name = nodename
         self.tileno = -1 # Because 0 is a valid tile number, see?
+
+        # FIXME/TODO
+        # shouldn't have three fields op1/op2/input
+        # should just be op1/op2 where op2 is often 'NA'
+        # or maybe in1/in2/in3 etc.
 
         # FIXME are these used? are these useful?
         self.op1 = False
@@ -358,7 +361,7 @@ class Node:
 
     def tiletype(self):
         if self.name[0:3] == 'mem': return 'mem'
-        else: return 'pe'
+        else:                       return 'pe'
 
     def addop(self, operand):
         assert type(operand) == str
@@ -1077,13 +1080,66 @@ def constant_folding(DBG=0):
             print "#   Folded %s into %s as %s" % (kstr,pstr,op)
         if DBG>1: pe.show(); print ""
 
+# FIXME/TODO
+# shouldn't have three fields op1/op2/input
+# should just be op1/op2 where op2 is often 'NA'
 
+
+# UNPLACED REGOP REG
+# node='reg_2_2'
+#   tileno= -1
+#   op1='False'
+#   op2='False'
+#   in= 'op1'
+#   out='mul_45911_460_PE'
+#   placed= False
+#   dests=['mul_45911_460_PE']
+#   route ['mul_45911_460_PE'] = ['op1']
+#   net= []
+# 
+# PLACED REGOP REG
+# node='reg_2_2'
+#   tileno= 25
+#   op1='False'
+#   op2='False'
+#   in= 'T25_op1'
+#   out='mul_45911_460_PE'
+#   placed= True
+#   dests=['mul_45911_460_PE']
+#   route ['mul_45911_460_PE'] = ['op1']
+#   net= ['mul_45911_460_PE']
+# 
+# UNPLACED REGOP OP
+# node='mul_45911_460_PE'
+#   tileno= -1
+#   op1='reg_2_2'
+#   op2='False'
+#   in= 'False'
+#   out='False'
+#   placed= False
+#   dests=['add_457_460_461_PE']
+#   route ['add_457_460_461_PE'] = []
+#   net= []
+# 
+# PLACED REGOP OP
+# # Placed 'mul_45911_460_PE' in tile 25 at location 'n/a ops'
+# node='mul_45911_460_PE'
+#   tileno= 25
+#   op1='reg_2_2'
+#   op2='False'
+#   in= 'n/a ops'
+#   out='T25_pe_out'
+#   placed= True
+#   dests=['add_457_460_461_PE']
+#   route ['add_457_460_461_PE'] = []
+#   net= ['T25_pe_out']
 def register_folding(DBG=9):
     '''
     Process all the reg->pe pairs
     Mark by setting reg ouput to pe node e.g. 'add_x_y'
     And set input to operand e.g. 'op1'
     Also: set nodes['add_x_y'].op1 = regname
+    Also: sname->dname route must be non-None !!
     '''
     
     global nodes
@@ -1104,16 +1160,16 @@ def register_folding(DBG=9):
         # Fold it! By setting src to e.g. "add_x_y.op1"
         # Also set nodes['add_x_y'].op1 = regname
         # route [pe, "op1"] means duh obvious right?
+        # Also: sname->dname route must be non-None !!
         op = pe.addop(reg_name) # "op1" or "op2"
         # reg.input  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
         reg.input  = op       # E.g. "op1"
         reg.output = pe_name  # E.g. "add_x_y"
+        reg.route[pe_name] = [op]  
 
 #         # Fold it!
 #         reg.input  = 'REGPE'
 #         reg.output = pe_name       # E.g. "add_x_y"
-
-
 
         # if DBG: print "Found foldable reg '%s'" % reg_name
         if DBG: print "#   Folded '%s' into pe '%s' as '%s'" % \
@@ -1281,14 +1337,31 @@ def process_nodes(sname, indent='# ', DBG=1):
         # EXCEPT INPUT NODE destinations
         if was_placed and was_routed:
             print indent+"  (already processed '%s')" % dname
-            print indent+"  So what? must be alu with two inputs, yes?"
 
             # INPUT is a weird special case
-            if sname != 'INPUT':
-                already_done.append(dname)
-                continue
+            if sname != 'INPUT': already_done.append(dname)
+
+            continue
+
+#         # NEVER HAPPENS because i dunno whatevs
+#         if sname == 'reg_2_2':
+#             print 777
+#             print 669
+#             nodes[sname].show()
+#             print is_placed(dname)
+#             print is_routed(sname,dname)
+#             nodes[dname].show()
 
         print indent+"  Processing '%s' dest '%s'" % (sname,dname)
+
+#         # NEVER HAPPENS because i dunno whatevs
+#         if is_regop(sname):
+#             assert False, 'we already did this, why do it again?'
+# 
+#         # maybe rules should be:
+#         #   if alu and already placed twice, DONE
+#         #   else if already placed once DONE
+
 
         place_and_route(sname,dname,indent+'  ')
 
@@ -1399,9 +1472,11 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
                 print "could not find path on track %d, try next track" % track
         if not path:
             assert False
-        
+
         print "# Having found the final path,"
         print "# 1. place dname in dtileno"
+        print '# 1a. If regsolo, add name to REGISTERS for later'
+        print "# 1b. If regop, place (but don't route) assoc. pe"
         print "# 2. Add the connection to src->dst route list"
         print "# 3. add all the path ports to the src net"
         print "# 4. Remove path resources from the free list"
@@ -1423,17 +1498,25 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             REGISTERS.append(path[-1])
             print 'added reg to REGISTERS'
             print 'now registers is', REGISTERS
+
         elif is_regop(dname):
-            print 'found a regop'
+            print 7771
+            print "# 1b. If regop, place (but don't route) assoc. pe"
             d_out = nodes[dname].output
-            # nodes[dname].show()
+            # nodes[dname].show(); print ''
+            pname = nodes[dname].output
+            # nodes[pname].show(); print ''
+            nodes[pname].place(
+                dtileno, 'n/a ops', addT(dtileno,'pe_out'), DBG)
+            # nodes[pname].show(); print ''
+
         elif is_regreg(dname):
             assert False, 'what do we do with regreg??'
         else:
             assert False, 'what do we do with regs?? (see below)'
             # ANSWER: make sure reg dest is registered in REGISTERS etc.
         
-        nodes[dname].place(dtileno, d_in, d_out, DBG=1)
+        nodes[dname].place(dtileno, d_in, d_out, DBG)
         print ""
         
         # DONE see above
