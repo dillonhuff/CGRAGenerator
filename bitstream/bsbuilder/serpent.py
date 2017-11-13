@@ -232,11 +232,6 @@ def main(DBG=1):
         packer.FMT.order()
         print ''
 
-    print '########################################'
-    print '# serpent.py: constant folding - do this LAST'
-    constant_folding(DBG=1)
-    print "# consts should be gone now"
-
     print ''
     print '########################################'
     print '# serpent.py: register folding'
@@ -251,6 +246,11 @@ def main(DBG=1):
     print '######################################################'
     print '# serpent.py: Process remaining nodes, starting with INPUT'
     process_nodes('INPUT')
+
+    print '########################################'
+    print '# serpent.py: constant folding - do this LAST'
+    constant_folding(DBG=1)
+    print "# consts should be gone now"
 
     # TODO/FIXME Special treatment for OUTPUT?
     # note OUTPUT wire is always wire_m1_1_BUS16_S1_T0
@@ -439,7 +439,8 @@ class Node:
         name = self.name
 
         if   is_pe(name):
-            assert re.search('ops$',     input)
+            assert re.search('op.$',     input),\
+                   '\n\n\ninput should be "ops", is actually '+input
             assert re.search('pe_out$',  output)
         elif is_mem(name):
             assert re.search('mem_in$',  input)
@@ -572,7 +573,6 @@ class Node:
             print "Nope wrong kind of tile for intermediary..."
             return False
 
-        print 667
         print "maybe can connect '%s' to '%s' through an intermediary"\
               % (a,b)
         
@@ -1366,16 +1366,26 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         # Get nearest tile compatible with target node 'dname'
         # "Nearest" means closest to input tile (NW corner)
-        if dname == 'mul_47918_480_PE': print 666
         dtileno = get_nearest_tile(sname, dname)
         
         # FIXME will need an 'undo' for order[] list if dtileno ends up not used
 
         # print 'dtileno/nearest is %d' % dtileno
         if DBG: pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
-        if dtileno == 2: print 666
 
-        path = find_best_path(sname, dname, dtileno)
+        # If node is pe or mem, can try multiple tracks
+
+        if is_mem(sname): trackrange = range(5)
+        elif is_pe(sname): trackrange = range(5)
+        else: trackrange = [0]
+
+        for track in trackrange:
+            path = find_best_path(sname, dname, dtileno, track, DBG=1)
+            if path: break
+            if track != trackrange[-1]:
+                print "could not find path on track %d, try next track" % track
+        if not path:
+            assert False
         
         print "# Having found the final path,"
         print "# 1. place dname in dtileno"
@@ -1386,7 +1396,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         print "# 1. place dname in dtileno"
         print 999999999, dtileno
-        # d_in = path[-1] # right?  RIGHT???  Wrong :(
+        if dtileno == 2: print 666
         d_in = CT.allports(path)[-1]
 
         if   is_pe(dname):  d_out = addT(dtileno,'pe_out')
@@ -1594,61 +1604,68 @@ def get_nearest_tile(sname, dname, DBG=0):
 ########################################################################
 # BOOKMARK: scrub scrub scrub!  from here down
 
-def find_best_path(sname,dname,dtileno):
-        DBG=1
+def find_best_path(sname,dname,dtileno,track,DBG=1):
+    # DBG=1
 
-        # next:
-        # trying to route sname/stileno to dname/dtileno
-        # foreach path in connect_{hv,vh}connect(ptile,dtile)
-        #   foreach port in snode.input,snode.net
-        #     (begin,end) = (path[0],path[-1])
-        #     if src.canconnect(sname.input,begin) and src.canconnect(end,dname)
-        #        paths.append (begin,path,end)
-        # choose a path in paths
+    # next:
+    # trying to route sname/stileno to dname/dtileno
+    # foreach path in connect_{hv,vh}connect(ptile,dtile)
+    #   foreach port in snode.input,snode.net
+    #     (begin,end) = (path[0],path[-1])
+    #     if src.canconnect(sname.input,begin) and src.canconnect(end,dname)
+    #        paths.append (begin,path,end)
+    # choose a path in paths
 
-        # trying to route sname/stileno to dname/dtileno
-        snode = nodes[sname]
-        dnode = nodes[dname]
-        stileno = snode.tileno
-        pwhere(1289,\
-            "Want to route from src tile %d ('%s') to dest tile %d ('%s')" \
-            % (stileno, sname, dtileno, dname))
+    # trying to route sname/stileno to dname/dtileno
+    snode = nodes[sname]
+    dnode = nodes[dname]
+    stileno = snode.tileno
+    pwhere(1289,\
+        "Want to route from src tile %d ('%s') to dest tile %d ('%s')" \
+        % (stileno, sname, dtileno, dname))
 
-        if dtileno == stileno:
-            # This can happen when e.g. we're trying to connect an ALU
-            # to a register, both in the same tile
-            # assert dest==reg if you wanta...
+    nodes[sname].show()
 
-            print 'src and dst in same tile; thats okay'
-            p = connect_endpoint(snode, snode.output, dname, dtileno, DBG=DBG)
-            return p
+    # Want tileno associated with output;
+    # note for e.g. regsolo, input and output ports are in different tiles;
+    # want tileno associated with output...right?  Right!
+    stileno = int(re.search('^T(\d+)', snode.output).group(1))
 
-        # foreach path p in connect_{hv,vh}connect(ptile,dtile)
-        # FIXME for now only looking at track 0(!)
-        phv = CT.connect_tiles(stileno,dtileno,track=0,dir='hv',DBG=DBG-1)
-        if DBG>2: print '  Found path phv', phv
+    if dtileno == stileno:
+        # This can happen when e.g. we're trying to connect an ALU
+        # to a register, both in the same tile
+        # assert dest==reg if you wanta...
 
-        pvh = CT.connect_tiles(stileno,dtileno,track=0,dir='vh',DBG=DBG-1)
-        if DBG>2: print '  Found path pvh', pvh
+        print 'src and dst in same tile; thats okay'
+        p = connect_endpoint(snode, snode.output, dname, dtileno, DBG=DBG)
+        return p
 
-        # FIXME need a better way to determine if path is straight-line
+    # foreach path p in connect_{hv,vh}connect(ptile,dtile)
+    # FIXME for now only looking at track 0(!)
+    phv = CT.connect_tiles(stileno,dtileno,track,dir='hv',DBG=DBG-1)
+    if DBG>2: print '  Found path phv', phv
+
+    pvh = CT.connect_tiles(stileno,dtileno,track,dir='vh',DBG=DBG-1)
+    if DBG>2: print '  Found path pvh', pvh
+
+    # FIXME need a better way to determine if path is straight-line
+    if pvh==phv:
+        if DBG>2: print "  NOTE path is a straight line"
+
+    for path in [pvh,phv]:
+
+        final_path = eval_path(path, snode, dname, dtileno, DBG)
+        if final_path:
+            # FIXME For now, use first path found
+            # FIXME for future, keep findin paths and return them all
+            return final_path
+
         if pvh==phv:
-            if DBG>2: print "  NOTE path is a straight line"
+            # duh.  straight-line path
+            # don't do it twicet
+            break 
 
-        for path in [pvh,phv]:
-
-            final_path = eval_path(path, snode, dname, dtileno, DBG)
-            if final_path:
-                # FIXME For now, use first path found
-                # FIXME for future, keep findin paths and return them all
-                return final_path
-
-            if pvh==phv:
-                # duh.  straight-line path
-                # don't do it twicet
-                break 
-
-            # choose a path in paths
+        # choose a path in paths
 
 
 # FIXME WHAY ISN'T ALL THIS CONNECT STUFF IN THE
