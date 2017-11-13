@@ -1277,11 +1277,13 @@ def process_nodes(sname, indent='# ', DBG=1):
         # Skip nodes that have already been placed and routed
         # EXCEPT INPUT NODE destinations
         if was_placed and was_routed:
-            print indent+"  (already processed '%s')\n" % dname
+            print indent+"  (already processed '%s')" % dname
+            print indent+"  So what? must be alu with two inputs, yes?"
 
             # INPUT is a weird special case
-            if sname != 'INPUT': already_done.append(dname)
-            continue
+            if sname != 'INPUT':
+                already_done.append(dname)
+                continue
 
         print indent+"  Processing '%s' dest '%s'" % (sname,dname)
 
@@ -1293,6 +1295,8 @@ def process_nodes(sname, indent='# ', DBG=1):
         # Not sure about these...!
         if was_placed:
             print indent+"  ('%s' was already placed)" % dname
+            (t,loc) = (nodes[dname].tileno,nodes[dname].input)
+            print indent+"  Was placed '%s' in tile %d at location '%s'" % (dname, t, loc)
         else:
             # was not placed before but is placed now
             assert is_placed(dname)
@@ -1358,7 +1362,8 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         return
 
     # Does destination have a home?
-    if not is_placed(dname):
+    # if not is_placed(dname):
+    if True:
 
         DBG=1
         # print indent+"No home for '%s'"
@@ -1366,8 +1371,13 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         # Get nearest tile compatible with target node 'dname'
         # "Nearest" means closest to input tile (NW corner)
-        dtileno = get_nearest_tile(sname, dname)
-        
+        # dtileno = get_nearest_tile(sname, dname)
+        if not is_placed(dname):
+            dtileno = get_nearest_tile(sname, dname)
+        else:
+            dtileno = nodes[dname].tileno
+            print "Acutally it does have a home already, in tile %d" % dtileno
+
         # FIXME will need an 'undo' for order[] list if dtileno ends up not used
 
         # print 'dtileno/nearest is %d' % dtileno
@@ -1396,7 +1406,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         print "# 1. place dname in dtileno"
         print 999999999, dtileno
-        if dtileno == 2: print 666
+        # if dtileno == 2: print 666
         d_in = CT.allports(path)[-1]
 
         if   is_pe(dname):  d_out = addT(dtileno,'pe_out')
@@ -1484,7 +1494,15 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         (tileno,resource) = (-1, "already_placed")
 
     if not is_routed(sname,dname):
-        assert False, 'cannot be placed without being routed...right??'
+        assert False, 'huh, this has still never happened i guess...'
+
+        # assert False, 'cannot be placed without being routed...right??'
+        print 666
+        print 'Cannot be placed without being routed...right??'
+        print 'Wrong, sure it can! alu with op1 routed but not yet op2, yes?'
+        print 'Off to new territory...'
+
+
 #         if DBG: print indent+"No route '%s -> %s'" % (sname,dname)
 #         if DBG: print indent+"For now just mark it finished"
 #         bogus_route = "%s -> %s BOGOSITY" % (sname,dname)
