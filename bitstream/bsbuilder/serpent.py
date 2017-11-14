@@ -1330,34 +1330,25 @@ def process_nodes(sname, indent='# ', DBG=1):
 
         # Skip nodes that have already been placed and routed
         # EXCEPT INPUT NODE destinations
+
         if was_placed and was_routed:
-            print indent+"  (already processed '%s')" % dname
 
-            # INPUT is a weird special case
-            if sname != 'INPUT': already_done.append(dname)
+            if sname == 'INPUT':
+                # INPUT is a weird special case
+                if DBG: print 'INPUT still needs processing'
 
-            continue
+            # if sname is regop and dname is its dest,
+            # - keep processing
+            # - use special case in place_and_route to shortcut it
+            elif is_regop(sname) and nodes[sname].output == dname:
+                if DBG: print indent+'REGOP still needs processing'
 
-# FIXME        
-#         # NEVER HAPPENS because i dunno whatevs
-#         if sname == 'reg_2_2':
-#             print 777
-#             print 669
-#             nodes[sname].show()
-#             print is_placed(dname)
-#             print is_routed(sname,dname)
-#             nodes[dname].show()
+            else:
+                print indent+"  (already processed '%s')" % dname
+                already_done.append(dname)
+                continue
 
         print indent+"  Processing '%s' dest '%s'" % (sname,dname)
-
-# FIXME        
-#         # NEVER HAPPENS because i dunno whatevs
-#         if is_regop(sname):
-#             assert False, 'we already did this, why do it again?'
-# 
-#         # maybe rules should be:
-#         #   if alu and already placed twice, DONE
-#         #   else if already placed once DONE
 
         rval = place_and_route(sname,dname,indent+'  ')
         assert rval
@@ -1388,7 +1379,7 @@ def pnr_debug_info(was_placed,was_routed,indent,sname,dname):
 
         if was_routed:
             # was not placed before but is placed now
-            assert is_routed(dname)
+            assert is_routed(sname,dname)
             print indent+"  ('%s' was already routed)" % dname
         else:
             # (tileno,resource) = (nodes[dname].tileno, nodes[dname].input0)
@@ -1406,8 +1397,12 @@ def pnr_debug_info(was_placed,was_routed,indent,sname,dname):
         #     print indent+"  Processed dest '%s'; now process children %s" % \
         #           (dname, dchildren)
 
-
 def place_and_route(sname,dname,indent='# ',DBG=0):
+
+    if is_routed(sname,dname):
+        DBG=1
+        if DBG: print indent+"huh already been done"
+        return True
 
     if DBG: print indent+"PNR '%s' -> '%s'" % (sname,dname)
 
@@ -1508,15 +1503,15 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             REGISTERS.append(path[-1])
             print 'added reg to REGISTERS'
             print 'now registers is', REGISTERS
-#bookmark666
+
         elif is_regop(dname):
-            print 7771, d_in
+            # print 7771, dname, d_in
             print "# 1b. If regop, place (but don't route) assoc. pe"
             d_out = nodes[dname].output
             # nodes[dname].show(); print ''
             pname = nodes[dname].output
             # nodes[pname].show(); print ''
-            # nodes[pname].place(dtileno, d_in, addT(dtileno,'pe_out'), DBG)
+            nodes[pname].place(dtileno, d_in, addT(dtileno,'pe_out'), DBG)
             nodes[pname].place(dtileno, d_in+'(r)', addT(dtileno,'pe_out'), DBG)
             # nodes[pname].show(); print ''
 
@@ -1980,7 +1975,7 @@ def randomly_place(dname, DBG=0):
         if is_mem_tile(tileno): ttype='mem'
         else:                   ttype='pe'
         if dtype != ttype: continue
-#bookmark666
+
         if is_regop(dname):
             # regops come from register-folding optimization pass
             # They look like this:
