@@ -266,8 +266,6 @@ def final_output():
     for n in sorted(nodes):
         # print "  %-20s %s" % (n, nodes[n].dests)
         nodes[n].show()
-        assert nodes[n].op1 == False
-
 
     for nodename in sorted(nodes):
         node = nodes[nodename]
@@ -333,14 +331,6 @@ class Node:
         self.name = nodename
         self.tileno = -1 # Because 0 is a valid tile number, see?
 
-        # FIXME/TODO
-        # shouldn't have three fields op1/op2/input
-        # should just be op1/op2 where op2 is often 'NA'
-        # or maybe in1/in2/in3 etc.
-
-        # FIXME are these used? are these useful?
-        self.op1 = False
-
         # input/output EXAMPLES (FIXME needs update)
         #            input0/1         output
         # regpe      op1             'alu_3_2' (unplaced)
@@ -350,7 +340,7 @@ class Node:
         # mem        T3_mem_in       T3_mem_out
         # pe         T0_op[12]       T0_pe_out
         # regsolo    T0_out_s0t0     T1_in_s2t0
-        self.input0 = False  # E.g. T0_out_s0t0 or 'add_x_y.op1' FIXME
+        self.input0 = False  # E.g. T0_out_s0t0 or 'add_x_y'
         self.input1 = False
         self.output = False
 
@@ -390,8 +380,6 @@ class Node:
         print "  type='%s'" % type
 
         print "  tileno= %s" % self.tileno
-        print "  op1='%s'"   % self.op1
-
         print "  input0='%s'" % self.input0
         print "  input1='%s'" % self.input1
         print "  output='%s'" % self.output
@@ -1101,7 +1089,6 @@ def constant_folding(DBG=0):
 # node='reg_2_2'
 #   type='regsolo' ***
 #   tileno= -1
-#   op1='False'
 #   input0='False' ***
 #   input1='False'
 #   output='False'
@@ -1114,7 +1101,6 @@ def constant_folding(DBG=0):
 # node='reg_2_2'
 #   type='regop' ***
 #   tileno= -1
-#   op1='False'
 #   input0='op1' ***
 #   input1='False'
 #   output='mul_45911_460_PE'
@@ -1127,7 +1113,6 @@ def constant_folding(DBG=0):
 # node='mul_45911_460_PE'
 #   type='idunno'
 #   tileno= -1
-#   op1='False'
 #   input0='False' ***
 #   input1='False'
 #   output='False'
@@ -1140,7 +1125,6 @@ def constant_folding(DBG=0):
 # node='mul_45911_460_PE'
 #   type='idunno'
 #   tileno= -1
-#   op1='False'
 #   input0='reg_2_2' ***
 #   input1='False'
 #   output='False'
@@ -1173,19 +1157,14 @@ def register_folding(DBG=9):
         if not is_pe(pe_name):   continue
         pe = nodes[pe_name]
 
-        # Fold it! By setting src to e.g. "add_x_y.op1"
-        # Also set nodes['add_x_y'].op1 = regname
+        # Fold it! By setting output to e.g. "add_x_y"
+        # Also set nodes['add_x_y'].op1 = regname FIXME do we do this?
         # route [pe, "op1"] means duh obvious right?
         # Also: sname->dname route must be non-None !!
         op = pe.addop(reg_name) # "op1" or "op2"
-        # reg.input0  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
         reg.input0  = op       # E.g. "op1"
         reg.output = pe_name  # E.g. "add_x_y"
         reg.route[pe_name] = [op]  
-
-#         # Fold it!
-#         reg.input0  = 'REGPE'
-#         reg.output = pe_name       # E.g. "add_x_y"
 
         # if DBG: print "Found foldable reg '%s'" % reg_name
         if DBG: print "#   Folded '%s' into pe '%s' as '%s'" % \
@@ -2009,7 +1988,6 @@ def randomly_place(dname, DBG=0):
             # node='reg_2_2'
             #   type='regop' ***
             #   tileno= -1
-            #   op1='False'
             #   input0='op1' ***
             #   input1='False'
             #   output='mul_45911_460_PE'
