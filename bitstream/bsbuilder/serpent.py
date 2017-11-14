@@ -389,6 +389,7 @@ class Node:
         # print "  route=%s" % self.route
         prettyprint_dict("  route ", self.route)
         print "  net= %s" % self.net
+        print ''
 
     def is_placed(self): return self.tileno != -1
     def is_routed(self,dest_name): return self.route[dest_name] != []
@@ -460,8 +461,6 @@ class Node:
             print "ERROR %s already placed at %s" % (name, self.input0)
             # assert False, "ERROR %s already placed at %s" % (name, self.input0)
             print "NOPE! False alarm, it's okay, probably an alu with two inputs"
-
-
 
         self.tileno = tileno
         self.input0  = input
@@ -1514,6 +1513,20 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             nodes[pname].place(dtileno, d_in, addT(dtileno,'pe_out'), DBG)
             nodes[pname].place(dtileno, d_in+'(r)', addT(dtileno,'pe_out'), DBG)
             # nodes[pname].show(); print ''
+
+            # dnode.route[pname] is going to be e.g. ['op1']
+            # we'll need to change that to e.g. 'T10_op1' i.e. 'd_in'
+            dnode = nodes[dname]
+            # dnode.show()
+            # print dnode.route[pname]
+            assert \
+                   (dnode.route[pname] == ['op1']) or \
+                   (dnode.route[pname] == ['op2'])
+            print "# 1b. Set route to op"
+            dnode.route[pname] = [d_in]
+            # dnode.show()
+
+
 
         elif is_regreg(dname):
             assert False, 'what do we do with regreg??'
