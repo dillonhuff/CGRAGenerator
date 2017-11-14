@@ -272,6 +272,19 @@ def final_output():
         print nodename
         prettyprint_dict("  route ", node.route)
 
+    print '################################################################'
+    for sname in sorted(nodes):
+        src = nodes[sname]
+        for dname in src.dests:
+            dst = nodes[dname]
+            print '# %s::%s' % (sname,dname)
+            # prettyprint_dict("  route ", src.route)
+            # print '# %s' % src.route[dname]
+            for c in src.route[dname]: print c
+            print ''
+
+    print 'REGISTERS', REGISTERS
+
 
 
 
@@ -1398,6 +1411,8 @@ def pnr_debug_info(was_placed,was_routed,indent,sname,dname):
 
 def place_and_route(sname,dname,indent='# ',DBG=0):
 
+    global REGISTERS
+
     if is_routed(sname,dname):
         DBG=1
         if DBG: print indent+"huh already been done"
@@ -1499,7 +1514,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             # assert False
 
             print "# Add reg's input wire to list of registers"
-            REGISTERS.append(path[-1])
+
+
+            # REGISTERS.append(path[-1])
+            REGISTERS.append(d_in)
+
+
             print 'added reg to REGISTERS'
             print 'now registers is', REGISTERS
 
@@ -1513,6 +1533,13 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             nodes[pname].place(dtileno, d_in, addT(dtileno,'pe_out'), DBG)
             nodes[pname].place(dtileno, d_in+'(r)', addT(dtileno,'pe_out'), DBG)
             # nodes[pname].show(); print ''
+
+
+
+            REGISTERS.append(d_in)
+
+
+
 
             # dnode.route[pname] is going to be e.g. ['op1']
             # we'll need to change that to e.g. 'T10_op1' i.e. 'd_in'
