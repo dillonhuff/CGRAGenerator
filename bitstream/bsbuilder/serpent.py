@@ -255,7 +255,26 @@ def main(DBG=1):
     # TODO/FIXME Special treatment for OUTPUT?
     # note OUTPUT wire is always wire_m1_1_BUS16_S1_T0
 
+    print "########################################################"
+    print "# FINAL OUTPUT 666"
+    final_output()
     sys.exit(0)
+    
+
+def final_output():
+    print 'REGISTERS', REGISTERS
+    for n in sorted(nodes):
+        # print "  %-20s %s" % (n, nodes[n].dests)
+        nodes[n].show()
+        assert nodes[n].op1 == False
+
+
+    for nodename in sorted(nodes):
+        node = nodes[nodename]
+        print nodename
+        prettyprint_dict("  route ", node.route)
+
+
 
 
 def notes():
@@ -306,21 +325,6 @@ def get_default_cgra_info_filename():
     if VERBOSE: print("Default cgra_info file is\n  %s" % cgra_filename)
     return cgra_filename
 
-# Final result:
-# Tile 0: INPUT => reg1 => add 16 => reg1,reg2
-# tile[0].nodes = ["add1"]
-# tile[0].op1   = ["INPUT", "reg1"]
-# tile[0].op2   = ["const16_16"]
-# tile[0].out   = ["reg1", "reg2"]
-
-# Tile 1: two registers
-# tile[0].op1   = ["reg3"]
-# tile[0].out   = ["reg4", "reg5"]
-
-# Reverse lookup
-# node["add1"] = (0,"node")
-# node["reg1"] = (0, "op1")
-
         # Tile numbers for each node e.g.
         #  tile["mul_49119_492_PE"] = 14
 
@@ -336,18 +340,19 @@ class Node:
 
         # FIXME are these used? are these useful?
         self.op1 = False
-        self.op2 = False
 
-        self.input  = False  # E.g. T0_out_s0t0 or 'add_x_y.op1'
-        self.output = False
-        # EXAMPLES   input           output
+        # input/output EXAMPLES (FIXME needs update)
+        #            input0/1         output
         # regpe      op1             'alu_3_2' (unplaced)
-        # regpe      T0_ops          'alu_3_2' (placed)
+        # regpe      T0_op1          'alu_3_2' (placed)
 
         # regreg     T0_out_s0t0     'reg_2_4'
         # mem        T3_mem_in       T3_mem_out
-        # pe         T0_ops          T0_pe_out
+        # pe         T0_op[12]       T0_pe_out
         # regsolo    T0_out_s0t0     T1_in_s2t0
+        self.input0 = False  # E.g. T0_out_s0t0 or 'add_x_y.op1' FIXME
+        self.input1 = False
+        self.output = False
 
         self.dests = []
         self.placed = False
@@ -365,10 +370,10 @@ class Node:
 
     def addop(self, operand):
         assert type(operand) == str
-        if   not self.op1:
-            self.op1 = operand; return "op1"
-        elif not self.op2:
-            self.op2 = operand; return "op2"
+        if not self.input0:
+            self.input0 = operand; return "op1"
+        elif not self.input1:
+            self.input1 = operand; return "op2"
         else:
             print "ERROR my dance card she is full"
             return False
@@ -386,12 +391,12 @@ class Node:
 
         print "  tileno= %s" % self.tileno
         print "  op1='%s'"   % self.op1
-        print "  op2='%s'"   % self.op2
 
-        print "  in= '%s'" % self.input
-        print "  out='%s'" % self.output
+        print "  input0='%s'" % self.input0
+        print "  input1='%s'" % self.input1
+        print "  output='%s'" % self.output
 
-        print "  placed= %s" % self.placed
+        print "  placed= %s" % self.placed # FIXME needed/used?
         print "  dests=%s" % self.dests
         # print "  route=%s" % self.route
         prettyprint_dict("  route ", self.route)
@@ -445,14 +450,17 @@ class Node:
         '''
         Place node "name" in tile "tileno"
         with input 'input' and output 'output'
-        where e.g. 'input'  = 'T2_ops'    or 'T1_out_s0t1'
+        where e.g. 'input'  = 'T2_op1'    or 'T1_out_s0t1'
         where e.g. 'output' = 'T2_pe_out' or 'T2_in_s2t1'
         '''
         name = self.name
-
         if   is_pe(name):
-            assert re.search('op.$',     input),\
-                   '\n\n\ninput should be "ops", is actually '+input
+            if input==False and tileno==INPUT_TILE:
+                if DBG: print "# Placing PE in input tile"
+                if DBG: print "# well that's okay then"
+            else:
+                assert re.search('op[12]',     input),\
+                  '\n\n\ninput should be "op1/2", is actually '+input
             assert re.search('pe_out$',  output)
         elif is_mem(name):
             assert re.search('mem_in$',  input)
@@ -461,14 +469,14 @@ class Node:
         # assert input = .*_out_.*, output = .*_in_.* etc.
 
         if self.placed:
-            print "ERROR %s already placed at %s" % (name, self.input)
-            # assert False, "ERROR %s already placed at %s" % (name, self.input)
+            print "ERROR %s already placed at %s" % (name, self.input0)
+            # assert False, "ERROR %s already placed at %s" % (name, self.input0)
             print "NOPE! False alarm, it's okay, probably an alu with two inputs"
 
 
 
         self.tileno = tileno
-        self.input  = input
+        self.input0  = input
         self.output = output
         self.placed = True
 
@@ -1006,8 +1014,8 @@ def initialize_node_INPUT():
 
     # Really?
     # assert INPUT.name == 'INPUT'
-    # assert INPUT.op1 == False
-    # assert INPUT.op2 == False
+    # assert INPUT.input0 == False
+    # assert INPUT.input1 == False
     # assert INPUT.routed == False
 
 def is_const(nodename):  return nodename.find('const') == 0
@@ -1034,7 +1042,7 @@ def dstports(name,tile):
 
     if is_mem(name):  p = [T('mem_in')]
     elif is_pe(name): p = [T('op1'),T('op2')]
-    elif is_folded_reg(name): p = [T(nodes[name].input)]
+    elif is_folded_reg(name): p = [T(nodes[name].input0)]
     else:
         # 'name' is a register, I guess;
         # so return names of all outports in the tile
@@ -1051,7 +1059,7 @@ def dstports(name,tile):
 # Return pe input that contains the register
 # e.g. regpe_input('reg_2_3') = 'op1' (unplaced regpe) or
 # or   regpe_input('reg_2_3') = 'T6_op1' (placed regpe)
-def regpe_input(name): return nodes[name].input
+def regpe_input(name): return nodes[name].input0
 
 
 
@@ -1089,68 +1097,67 @@ def constant_folding(DBG=0):
             print "#   Folded %s into %s as %s" % (kstr,pstr,op)
         if DBG>1: pe.show(); print ""
 
-# FIXME/TODO
-# shouldn't have three fields op1/op2/input
-# should just be op1/op2 where op2 is often 'NA'
-
-
 # UNPLACED REGOP REG
 # node='reg_2_2'
+#   type='regsolo' ***
 #   tileno= -1
 #   op1='False'
-#   op2='False'
-#   in= 'op1'
-#   out='mul_45911_460_PE'
+#   input0='False' ***
+#   input1='False'
+#   output='False'
+#   placed= False
+#   dests=['mul_45911_460_PE']
+#   route ['mul_45911_460_PE'] = []
+#   net= []
+# 
+# PLACED REGOP REG
+# node='reg_2_2'
+#   type='regop' ***
+#   tileno= -1
+#   op1='False'
+#   input0='op1' ***
+#   input1='False'
+#   output='mul_45911_460_PE'
 #   placed= False
 #   dests=['mul_45911_460_PE']
 #   route ['mul_45911_460_PE'] = ['op1']
 #   net= []
 # 
-# PLACED REGOP REG
-# node='reg_2_2'
-#   tileno= 25
-#   op1='False'
-#   op2='False'
-#   in= 'T25_op1'
-#   out='mul_45911_460_PE'
-#   placed= True
-#   dests=['mul_45911_460_PE']
-#   route ['mul_45911_460_PE'] = ['op1']
-#   net= ['mul_45911_460_PE']
-# 
 # UNPLACED REGOP OP
 # node='mul_45911_460_PE'
+#   type='idunno'
 #   tileno= -1
-#   op1='reg_2_2'
-#   op2='False'
-#   in= 'False'
-#   out='False'
+#   op1='False'
+#   input0='False' ***
+#   input1='False'
+#   output='False'
 #   placed= False
 #   dests=['add_457_460_461_PE']
 #   route ['add_457_460_461_PE'] = []
 #   net= []
 # 
 # PLACED REGOP OP
-# # Placed 'mul_45911_460_PE' in tile 25 at location 'n/a ops'
 # node='mul_45911_460_PE'
-#   tileno= 25
-#   op1='reg_2_2'
-#   op2='False'
-#   in= 'n/a ops'
-#   out='T25_pe_out'
-#   placed= True
+#   type='idunno'
+#   tileno= -1
+#   op1='False'
+#   input0='reg_2_2' ***
+#   input1='False'
+#   output='False'
+#   placed= False
 #   dests=['add_457_460_461_PE']
 #   route ['add_457_460_461_PE'] = []
-#   net= ['T25_pe_out']
+#   net= []
+# 
 def register_folding(DBG=9):
     '''
     Process all the reg->pe pairs
     Mark by setting reg ouput to pe node e.g. 'add_x_y'
     And set input to operand e.g. 'op1'
-    Also: set nodes['add_x_y'].op1 = regname
+    Also: set nodes['add_x_y'].op1 = regname FIXME do we do this?
     Also: sname->dname route must be non-None !!
     '''
-    
+
     global nodes
     if DBG: print "# Process all the reg->pe pairs"
     for reg_name in nodes:
@@ -1171,13 +1178,13 @@ def register_folding(DBG=9):
         # route [pe, "op1"] means duh obvious right?
         # Also: sname->dname route must be non-None !!
         op = pe.addop(reg_name) # "op1" or "op2"
-        # reg.input  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
-        reg.input  = op       # E.g. "op1"
+        # reg.input0  = "%s.%s" % (pe_name, op) # E.g. "add_x_y.op1"
+        reg.input0  = op       # E.g. "op1"
         reg.output = pe_name  # E.g. "add_x_y"
         reg.route[pe_name] = [op]  
 
 #         # Fold it!
-#         reg.input  = 'REGPE'
+#         reg.input0  = 'REGPE'
 #         reg.output = pe_name       # E.g. "add_x_y"
 
         # if DBG: print "Found foldable reg '%s'" % reg_name
@@ -1283,7 +1290,7 @@ def is_regop(regname):
     '''
     "regname" is a reg-pair if:
     - regname is the name of a reg node AND
-    - regname.input is one of 'op1','op2' OR
+    - regname.input0 is one of 'op1','op2' OR
     - regname.output is a PE node
     '''
     assert type(regname) == str
@@ -1392,12 +1399,12 @@ def pnr_debug_info(was_placed,was_routed,indent,sname,dname):
 
         if was_placed:
             print indent+"  ('%s' was already placed)" % dname
-            (t,loc) = (nodes[dname].tileno,nodes[dname].input)
+            (t,loc) = (nodes[dname].tileno,nodes[dname].input0)
             print indent+"  Was placed '%s' in tile %d at location '%s'" % (dname, t, loc)
         else:
             # was not placed before but is placed now
             assert is_placed(dname)
-            (t,loc) = (nodes[dname].tileno,nodes[dname].input)
+            (t,loc) = (nodes[dname].tileno,nodes[dname].input0)
             print indent+"  Placed '%s' in tile %d at location '%s'" % (dname, t, loc)
 
         if was_routed:
@@ -1405,7 +1412,7 @@ def pnr_debug_info(was_placed,was_routed,indent,sname,dname):
             assert is_routed(dname)
             print indent+"  ('%s' was already routed)" % dname
         else:
-            # (tileno,resource) = (nodes[dname].tileno, nodes[dname].input)
+            # (tileno,resource) = (nodes[dname].tileno, nodes[dname].input0)
             # print indent+"  Placed '%s' at tile %d port '%s'" % (dname,tileno,resource)
             # print indent+"  Routed '%s -> %s'" % (sname,dname)
             print indent+"  Routed %s" % nodes[sname].route[dname]
@@ -1522,16 +1529,16 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             REGISTERS.append(path[-1])
             print 'added reg to REGISTERS'
             print 'now registers is', REGISTERS
-
+#bookmark666
         elif is_regop(dname):
-            print 7771
+            print 7771, d_in
             print "# 1b. If regop, place (but don't route) assoc. pe"
             d_out = nodes[dname].output
             # nodes[dname].show(); print ''
             pname = nodes[dname].output
             # nodes[pname].show(); print ''
-            nodes[pname].place(
-                dtileno, 'n/a ops', addT(dtileno,'pe_out'), DBG)
+            # nodes[pname].place(dtileno, d_in, addT(dtileno,'pe_out'), DBG)
+            nodes[pname].place(dtileno, d_in+'(r)', addT(dtileno,'pe_out'), DBG)
             # nodes[pname].show(); print ''
 
         elif is_regreg(dname):
@@ -1653,8 +1660,8 @@ def place_and_route_test(sname,dname,indent='# ',DBG=1):
 
     # Test
     nodes[dname].tileno = 999
-    nodes[dname].input    = dname
-    nodes[sname].net.append(nodes[dname].input)
+    nodes[dname].input0    = dname
+    nodes[sname].net.append(nodes[dname].input0)
     return
 
 
@@ -1667,9 +1674,8 @@ def place_pe_in_input_tile(dname):
     if DBG: print "Connecting '%s' to '%s'" % (sname,dname)
 
     INPUT_TILE = 0; assert nodes['INPUT'].tileno == INPUT_TILE
+    nodes[dname].place(INPUT_TILE, False, 'T0_pe_out')
 
-    nodes[dname].place(INPUT_TILE, 'T0_ops', 'T0_pe_out')
-    
     # add_route(sname, dname, INPUT_TILE, 'T0_in_s2t0', 'choose_op')
     add_route(sname, dname, INPUT_TILE, INPUT_WIRE_T, 'choose_op')
     if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
@@ -1749,9 +1755,9 @@ def find_best_path(sname,dname,dtileno,track,DBG=1):
     # next:
     # trying to route sname/stileno to dname/dtileno
     # foreach path in connect_{hv,vh}connect(ptile,dtile)
-    #   foreach port in snode.input,snode.net
+    #   foreach port in snode.input0,snode.net
     #     (begin,end) = (path[0],path[-1])
-    #     if src.canconnect(sname.input,begin) and src.canconnect(end,dname)
+    #     if src.canconnect(sname.input0,begin) and src.canconnect(end,dname)
     #        paths.append (begin,path,end)
     # choose a path in paths
 
@@ -1846,7 +1852,7 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
               % (sname, path[0])
 
     assert snode.output in snode.net,\
-           "'%s' output '%s' is not in '%s' net!!?" % (sname, snode.input,sname)
+           "'%s' output '%s' is not in '%s' net!!?" % (sname, snode.input0,sname)
 
     cbegin = connect_beginpoint(snode, path[0],DBG)
     if not cbegin:
@@ -1901,7 +1907,7 @@ def connect_beginpoint(snode, beginpoint, DBG=0):
     stileno = snode.tileno
     sname   = snode.name
 
-    # canon_src = 'T%d_%s' % (stileno, snode.input)
+    # canon_src = 'T%d_%s' % (stileno, snode.input0)
     # plist = [canon_src] + snode.net
 
     plist = sorted(snode.net)
@@ -1916,7 +1922,7 @@ def connect_beginpoint(snode, beginpoint, DBG=0):
         print "     Can '%s' connect to beginpoint '%s'?" % (p, beginpoint)
 
         # Who's the diiot?  I'm the diiot.
-        # cbegin = can_connect_begin(snode, snode.input, beginpoint, DBG)
+        # cbegin = can_connect_begin(snode, snode.input0, beginpoint, DBG)
         cbegin = can_connect_begin(snode, snode.output, beginpoint, DBG)
 
         if cbegin: return cbegin
@@ -1995,29 +2001,31 @@ def randomly_place(dname, DBG=0):
         if is_mem_tile(tileno): ttype='mem'
         else:                   ttype='pe'
         if dtype != ttype: continue
-
+#bookmark666
         if is_regop(dname):
             # regops come from register-folding optimization pass
             # They look like this:
             # 
             # node='reg_2_2'
+            #   type='regop' ***
             #   tileno= -1
             #   op1='False'
-            #   op2='False'
-            #   src='mul_45911_460_PE.op2'
+            #   input0='op1' ***
+            #   input1='False'
+            #   output='mul_45911_460_PE'
             #   placed= False
             #   dests=['mul_45911_460_PE']
-            #   route ['mul_45911_460_PE'] = []
+            #   route ['mul_45911_460_PE'] = ['op1']
             #   net= []
-
+            # 
             # Before placing regop, must first place target pe
             pe = nodes[dname].dests[0]
             if not is_placed(pe): randomly_place(pe)
 
             # regop goes in same tile as target pe as op1 or op2
             tileno = nodes[pe].tileno
-            if   (re.search('op1$', nodes[dname].input)): op = 'op1'
-            elif (re.search('op2$', nodes[dname].input)): op = 'op2'
+            if   (re.search('op1$', nodes[dname].input0)): op = 'op1'
+            elif (re.search('op2$', nodes[dname].input0)): op = 'op2'
             else: assert(0)
                   
             nodes[dname].place(tileno,'XXX',op)
