@@ -272,19 +272,74 @@ def final_output():
         print nodename
         prettyprint_dict("  route ", node.route)
 
+    # First the constants
     print '################################################################'
     for sname in sorted(nodes):
+        if is_const(sname):
+            dname = nodes[sname].dests[0]
+            # nodes[sname].show()
+            # nodes[dname].show()
+            print '# %s::%s %s' % (sname,dname,nodes[sname].output)
+    print ''
+
+    # Registers and ops
+    print '################################################################'
+    print 'REGISTERS', REGISTERS
+    print ''
+
+    print_oplist()
+
+    # Routing
+    print '################################################################'
+    for sname in sorted(nodes):
+        if is_const(sname): continue
         src = nodes[sname]
         for dname in src.dests:
             dst = nodes[dname]
             print '# %s::%s' % (sname,dname)
-            # prettyprint_dict("  route ", src.route)
-            # print '# %s' % src.route[dname]
-            for c in src.route[dname]: print c
+            for c in src.route[dname]: print mark_regs(c)
             print ''
 
-    print 'REGISTERS', REGISTERS
+def print_oplist():
+    oplist = range(cgra_info.ntiles())
+    for sname in sorted(nodes):
+        if is_const(sname): continue
+        src = nodes[sname]
+        if is_pe(sname):
+            addmul = sname[0:3]
+            op1 = optype(src.input0)
+            op2 = optype(src.input1)
+            opline = 'T%d_%s(%s,%s)' % (src.tileno, addmul, op1, op2)
+            opcomm = '# %s' % sname
+            oplist[src.tileno] = '%-26s %s' % (opline,opcomm)
 
+    # Print in tile order, 0 to 'ntiles'
+    for i in range(cgra_info.ntiles()):
+        if oplist[i] != i: print oplist[i]
+
+    print ''
+
+def optype(input):
+    '''
+    Where input is one of e.g. 'T32_op1', 'const32_32'
+    and where 'T32_op1' may or may not be in REGISTERS list.
+    Return 'reg', 'wire' or name of const e.g. 'const0_0'
+    '''
+    if is_const(input):                return input
+    elif re.search('op.\(r\)', input): return 'reg'
+    elif input in REGISTERS:           return 'reg'
+    else:                              return 'wire'
+
+def mark_regs(c):
+    '''
+    if e.g. c=="T0_in_s2t0 -> T0_out_s0t0" and "T0_out_s0t0" is a register,
+    mark it with an r e.g. return "T0_in_s2t0 -> T0_out_s0t0_R"
+    '''
+    rhs = re.search('(\S+)$', c).group(1)
+    # print c,rhs
+    # if rhs in REGISTERS: c = c+ '_R'
+    if rhs in REGISTERS: c = c+ ' (r)'
+    return c
 
 
 
@@ -476,7 +531,16 @@ class Node:
             print "NOPE! False alarm, it's okay, probably an alu with two inputs"
 
         self.tileno = tileno
-        self.input0  = input
+
+        # self.input0  = input
+        # FIXME this is maybe not great...
+        if input:
+            if   re.search('op1', input): self.input0 = input
+            elif re.search('op2', input): self.input1 = input
+            else:
+                assert not is_pe(self.name), input
+                self.input0 = input
+        
         self.output = output
         self.placed = True
 
@@ -1091,6 +1155,17 @@ def constant_folding(DBG=0):
 
         op = pe.addop(k.name)
 
+        # 'input0' is the integer value of theconstant
+        kval = re.search('const(\d+)', k.name).group(1)
+        k.input0 = int(kval)
+
+        k.placed = True
+        k.tileno = pe.tileno
+        o = 'T%d_%s' % (pe.tileno,op)
+        k.output = o
+        kroute = '%s -> %s' % (k.name, o)
+        k.route[pe.name] = [kroute]
+
         if DBG:
             kstr = '%-14s' % ("'" + k.name + "'")
             pstr = '%-20s' % ("'" + pe.name + "'")
@@ -1380,14 +1455,14 @@ def process_nodes(sname, indent='# ', DBG=1):
 def pnr_debug_info(was_placed,was_routed,indent,sname,dname):
 
         if was_placed:
-            print indent+"  ('%s' was already placed)" % dname
-            (t,loc) = (nodes[dname].tileno,nodes[dname].input0)
-            print indent+"  Was placed '%s' in tile %d at location '%s'" % (dname, t, loc)
+            print indent+"  ('%s' was already placed in tile %d)" \
+                  % (dname, nodes[dname].tileno)
         else:
             # was not placed before but is placed now
             assert is_placed(dname)
             (t,loc) = (nodes[dname].tileno,nodes[dname].input0)
-            print indent+"  Placed '%s' in tile %d at location '%s'" % (dname, t, loc)
+            print indent+"  Placed '%s' in tile %d at location '%s'" \
+                  % (dname, t, loc)
 
         if was_routed:
             # was not placed before but is placed now
