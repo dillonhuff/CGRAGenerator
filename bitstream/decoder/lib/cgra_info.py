@@ -665,6 +665,223 @@ def oneworld(w, DBG=0):
 
     return w2
 
+
+def parse_resource(r):
+    '''
+    resource must be of the form "T0_in_s0t0" or "T3_mem_out"
+    returns tileno+remains e.g. parse_resource("T0_in_s0t0") = (0, 'in_s0t0')
+    '''
+    parse = re.search('^T(\d+)_(.*)', r)
+    if not parse: assert False
+    (tileno,resource) = (int(parse.group(1)), parse.group(2))
+    return (tileno,resource)
+
+
+def parse_canon(w):
+    '''wire MUST have embedded tileno e.g. "T0_in_s0t0"'''
+    # Examples
+    # "T0_in_s0t0" returns (0, 'in', 0, 0)
+    # "T3_mem_out" returns (3, 'mem_out', -1, -1)
+    (tileno,w) = parse_resource(w)
+
+    parse = re.search('(in|out)_s(\d+)t(\d+)', w)
+    if not parse: return (tileno,w,-1,-1)
+
+    (dir,side,track) = (
+        parse.group(1), parse.group(2), parse.group(3))
+    return (int(tileno),dir,int(side),int(track))
+
+
+def canon2cgra(name, DBG=0):
+    '''
+    Converts canonical wirename to cgra wirename, e.g.
+    in_s1t2    => in_BUS16_S1_T2
+    T0_in_s1t2 => in_BUS16_S1_T2
+    in_s5t2    => in_2_BUS16_S1_T2
+    T3_in_s1t2 => sb_wire_in_1_S3_T2  (if T3 is a mem tile)
+    T3_out_s7t2=> sb_wire_out_1_S3_T2 (if T3 is a mem tile)
+    '''
+
+
+    if DBG>1: print "converting", name
+
+    # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'
+    (T,d,side,t) = parse_canon(name)
+    # assert T != -1
+    if DBG>1: print (T,d,s,t)
+    if side == -1:
+        # not a wire; name is returned as 'd'
+        if d == 'op1'   :  newname = 'data0'
+        if d == 'op2'   :  newname = 'data1'
+        if d == 'pe_out':  newname = 'pe_out_res'
+
+        if d == 'mem_in':  newname = 'wdata'
+        if d == 'mem_out': newname = 'rdata'
+
+    else:
+        dnot = 'out';
+        if d == 'out': dnot = 'in'
+
+        # if not is_mem_tile(T):
+        if mem_or_pe(T) != 'mem':
+            newname = '%s_BUS16_S%d_T%d' % (d,side,t)
+
+        else:
+            # must know if top or bottom
+            tb = 'top';
+            if side>3: tb='bottom'
+            if   (tb == 'top')    and (side == '1'):
+                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (dnot,t)
+            elif (tb == 'bottom') and (side == '7'):
+                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (d,t)
+            else:
+                # newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
+                # yes; sometimes; maybe; but better is:
+                newname = '%s_%d_BUS16_S%d_T%d' % (d,side/4,side%4,t)
+
+    if DBG: print "to_cgra: cgra name for '%s' is '%s'" % (name, newname)
+    if DBG: print ''
+
+    assert newname == oneworld(newname)
+    return newname
+
+            # sample memtile wire names:
+            # {in,out}_0_BUS16_[023]_[0-4]
+            # {in,out}_1_BUS16_[012]_[0-4]
+            # 
+            # {in,out}_0_BUS16_S2_T[0-4] (whoops!!)
+            # 
+            # sb_wire_{in,out}_1_BUS16_3_[0-4]
+            # 
+            # sb_wire_in_1_BUS16_3_[0-4]
+            # > wire going from top to bottom (into side 3 (N) wrt bottom (1))
+            # > maps to out/side3 if row even (top)
+            # > or      in/ side1 if row odd (bottom)
+            # sb_wire_out_1_BUS16_3_[0-4]
+            # > wire going from bottom to top (out of side 3 (N) wrt bottom (1))
+            # > maps to in/ side3 if row even (top)
+            # > or      out/side1 if row odd (bottom)
+
+            #         if is_mem_tile(T):
+            #             newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
+
+
+
+# FIXME split into multiple funcs maybe
+# - fix it to read also in_0_... DONE
+def parse_cgra_wirename(w, DBG=0):
+    (dir,tb,side,track) = (-1,-1,-1,-1)
+    # rval = (-1,-1,-1)
+
+    # Look for most common case first, howbowda
+    parse = re.search('(in|out)_BUS16_S(\d+)_T(\d+)', w)
+    if (parse):
+        print 'parsed'
+        (dir,side,track) = (parse.group(1), int(parse.group(2)), int(parse.group(3)))
+        rval = (dir,tb,side,track)
+        if DBG: print rval
+        return rval
+
+    # Crazy memtile wire non-ST
+    parse = re.search('^(in|out)_([01])_BUS16_(\d+)_(\d+)', w)
+    if parse:
+        if DBG: print '           # OH NO found non-ST wire name "%s"' % w
+        dir = parse.group(1)
+        tb  = parse.group(2)
+        side  = int(parse.group(3))
+        track = int(parse.group(4))
+        # w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
+        if tb=='0': tb = 'top'
+        else:
+            tb = 'bottom'
+            side = side + 4
+        rval = (dir,tb,side,track)
+        if DBG: print rval
+        return rval
+
+    # Crazy memtile wire sb_wire
+    parse = re.search('sb_wire_(in|out)_1_BUS16_(\d+)_(\d+)', w)
+    if parse:
+        if DBG: print '           # OH NO found stupid sb_wire "%s"' % w
+        dir = parse.group(1)
+        tb  = 'bottom'
+        side  = int(parse.group(2))+4
+        track = int(parse.group(3))
+        # w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
+        # if tb=='0': tb = 'top'
+        # else      : tb = 'bottom'
+        rval = (dir,tb,side,track)
+        if DBG: print rval
+        return rval
+
+
+    # Crazy memtile wire ST
+    parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', w)
+    if parse:
+        if DBG: print '           # OH NO found ST wire name "%s"' % w
+        dir = parse.group(1)
+        tb  = parse.group(2)
+        side  = int(parse.group(3))
+        track = int(parse.group(4))
+        # w2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
+        if tb=='0': tb = 'top'
+        else:
+            tb = 'bottom'
+            side = side + 4
+        rval = (dir,tb,side,track)
+        if DBG: print rval
+        return rval
+
+    # Not a wire; maybe it's e.g. 'data1'
+    # print 'out', rval
+    rval = (-1,-1,-1,-1)
+    if DBG: print rval
+    return rval
+
+def cgra2canon(name, tileno=-1, DBG=0):
+    '''
+    Converts cgra wirename to canonical wirename, e.g.
+    in_BUS16_S1_T2 =>     in_s1t2     (if tileno = -1)
+    in_BUS16_S1_T2 =>     T12_in_s1t2 (if tileno = 12)
+    in_2_BUS16_S1_T2 =>   in_s5t2   
+    sb_wire_in_1_S3_T2 => in_s1t2
+    sb_wire_out_1_S3_T2=> out_s7t2
+    '''
+    if DBG: print "converting", name
+    (dir,tb,side,track) = parse_cgra_wirename(name)
+    if DBG: print (dir,tb,side,track)
+
+    if dir == -1:
+        # not a wire
+        if   name == 'data0': newname = 'op1'
+        elif name == 'data1': newname = 'op2'
+        elif name == 'wdata': newname = 'mem_in'
+        elif name == 'rdata': newname = 'mem_out'
+        elif name == 'pe_out_res': newname = 'pe_out'
+        else:
+            pwhere()
+            print 'cannot decode', name
+            assert False, 'sb_wire or something?'
+    else:
+        # uh...parse_wirename should do this?
+        # if tb=='bottom': side = side + 4
+        assert side < 8
+        newname = '%s_s%st%s' % (dir,side,track)
+
+    if tileno != -1:
+        newname = 'T%d_%s' % (tileno, newname)
+
+    if DBG: print 'from_cgra: new name is', newname
+    if DBG: print ''
+    return newname
+
+
+
+
+
+
+
+
 # def mem_alias(w, DBG=0):
 #     '''
 #     Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and

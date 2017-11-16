@@ -619,7 +619,12 @@ class Node:
            % (self.name, where(451))
         if DBG: print ''
 
-        # If can reach a->b directly, return a->b'
+
+
+        ################################################################
+        # BOOKMARK
+        # This should be a cgra_info function e.g.
+        # can_connect_within_tile(src,snk)
 
         (aprime,bprime) = (to_cgra(a),to_cgra(b))
         print "       Ask cgra: can '%s' connect to '%s'? (%s)"\
@@ -638,6 +643,19 @@ class Node:
             return ['%s -> %s' % (a,b)]
 
         if DBG: print "           NO"
+        ################################################################
+
+
+
+
+
+
+
+
+
+
+
+
         print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
         print "maybe can connect through intermediary?"
         # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
@@ -711,35 +729,6 @@ def parse_resource(r):
     '''
     return CT.parse_resource(r)
 
-    #     parse = re.search('^T(\d+)_(.*)', r)
-    #     if not parse: assert False
-    #     (tileno,resource) = (int(parse.group(1)), parse.group(2))
-    #     return (tileno,resource)
-
-
-
-# FIXME/TODO use CT.parsewire(w) instead
-def parsewire(w):
-    '''wire MUST have embedded tileno e.g. "T0_in_s0t0"'''
-    # Examples
-    # "T0_in_s0t0" returns (0, 'in', 0, 0)
-    # "T3_mem_out" returns (3, 'mem_out', -1, -1)
-    (a,b,c,d) = CT.parsewire(w)
-    #     return CT.parsewire(w)
-
-    (tileno,w) = parse_resource(w)
-    
-    parse = re.search('(in|out)_s(\d+)t(\d+)', w)
-    if not parse: return (tileno,w,-1,-1)
-    
-    (dir,side,track) = (
-        parse.group(1), parse.group(2), parse.group(3))
-    
-    assert (a,b,c,d) == (int(tileno),dir,int(side),int(track))
-    
-    
-    return (int(tileno),dir,int(side),int(track))
-
 
 
 def prettyprint_dict(dictname, dict):
@@ -754,179 +743,13 @@ def prettyprint_dict(dictname, dict):
 
 def to_cgra(name, DBG=0):
     # Valid names include "T0_in_s0t0","T3_mem_out"
-    # Valid combinations:       a               b
-    #                     pe_out|mem_out      out_.*
-    #                          in.*           out_.*
-    #                          in.*      {mem_in,op1,op2}   
-
-    if DBG>1: print "converting", name
-
-    # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'
-    (T,d,s,t) = parsewire(name)
-    # assert T != -1
-    if DBG>1: print (T,d,s,t)
-    if s == -1:
-        # not a wire; name is returned as 'd'
-        if d == 'op1'   :  newname = 'data0'
-        if d == 'op2'   :  newname = 'data1'
-        if d == 'pe_out':  newname = 'pe_out_res'
-
-        if d == 'mem_in':  newname = 'wdata'
-        if d == 'mem_out': newname = 'rdata'
-
-    else:
-        side = s
-        dnot = 'out';
-        if d == 'out': dnot = 'in'
-
-        if not is_mem_tile(T):
-            newname = '%s_BUS16_S%d_T%d' % (d,s,t)
-
-        else:
-            # must know if top or bottom
-            tb = 'top';
-            if s>3: tb='bottom'
-            if   (tb == 'top')    and (side == '1'):
-                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (dnot,t)
-            elif (tb == 'bottom') and (side == '3'):
-                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (d,t)
-            else:
-                # newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
-                # yes; sometimes; maybe; but better is:
-                newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
-
-            # sample memtile wire names:
-            # {in,out}_0_BUS16_[023]_[0-4]
-            # {in,out}_1_BUS16_[012]_[0-4]
-            # 
-            # {in,out}_0_BUS16_S2_T[0-4] (whoops!!)
-            # 
-            # sb_wire_{in,out}_1_BUS16_3_[0-4]
-            # 
-            # sb_wire_in_1_BUS16_3_[0-4]
-            # > wire going from top to bottom (into side 3 (N) wrt bottom (1))
-            # > maps to out/side3 if row even (top)
-            # > or      in/ side1 if row odd (bottom)
-            # sb_wire_out_1_BUS16_3_[0-4]
-            # > wire going from bottom to top (out of side 3 (N) wrt bottom (1))
-            # > maps to in/ side3 if row even (top)
-            # > or      out/side1 if row odd (bottom)
-
-            #         if is_mem_tile(T):
-            #             newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
-
-    if DBG: print "to_cgra: cgra name for '%s' is '%s'" % (name, newname)
-    if DBG: print ''
-
-    assert newname == cgra_info.oneworld(newname)
-
-    return newname
-
+    return cgra_info.canon2cgra(name, DBG)
 
 def from_cgra(name, tileno, DBG=0):
-    if DBG: print "converting", name
-    (dir,tb,side,track) = parse_cgra_wirename(name)
-    if DBG: print (dir,tb,side,track)
+    return cgra_info.cgra2canon(name, tileno, DBG)
 
-    if dir == -1:
-        # not a wire
-        if   name == 'data0': newname = 'op1'
-        elif name == 'data1': newname = 'op2'
-        elif name == 'wdata': newname = 'mem_in'
-        elif name == 'rdata': newname = 'mem_out'
-        elif name == 'pe_out_res': newname = 'pe_out'
-        else:
-            pwhere()
-            print 'cannot decode', name
-            assert False, 'sb_wire or something?'
-    else:
-        # uh...parse_wirename should do this?
-        # if tb=='bottom': side = side + 4
-        assert side < 8
-        newname = '%s_s%st%s' % (dir,side,track)
-
-    if DBG: print 'from_cgra: new name is', newname
-    if DBG: print ''
-    newname = 'T%d_%s' % (tileno, newname)
-    return newname
-
-
-# FIXME move this to cgra_info.py
-# FIXME split into multiple funcs maybe
-# - fix it to read also in_0_... DONE
-# - move to cgra_infoline 533 FIXME/TODO
 def parse_cgra_wirename(w, DBG=0):
-    (dir,tb,side,track) = (-1,-1,-1,-1)
-    # rval = (-1,-1,-1)
-
-    # Look for most common case first, howbowda
-    parse = re.search('(in|out)_BUS16_S(\d+)_T(\d+)', w)
-    if (parse):
-        print 'parsed'
-        (dir,side,track) = (parse.group(1), int(parse.group(2)), int(parse.group(3)))
-        rval = (dir,tb,side,track)
-        if DBG: print rval
-        return rval
-
-    # Crazy memtile wire non-ST
-    parse = re.search('^(in|out)_([01])_BUS16_(\d+)_(\d+)', w)
-    if parse:
-        if DBG: print '           # OH NO found non-ST wire name "%s"' % w
-        dir = parse.group(1)
-        tb  = parse.group(2)
-        side  = int(parse.group(3))
-        track = int(parse.group(4))
-        # w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
-        if tb=='0': tb = 'top'
-        else:
-            tb = 'bottom'
-            side = side + 4
-        rval = (dir,tb,side,track)
-        if DBG: print rval
-        return rval
-
-    # Crazy memtile wire sb_wire
-    parse = re.search('sb_wire_(in|out)_1_BUS16_(\d+)_(\d+)', w)
-    if parse:
-        if DBG: print '           # OH NO found stupid sb_wire "%s"' % w
-        dir = parse.group(1)
-        tb  = 'bottom'
-        side  = int(parse.group(2))+4
-        track = int(parse.group(3))
-        # w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
-        # if tb=='0': tb = 'top'
-        # else      : tb = 'bottom'
-        rval = (dir,tb,side,track)
-        if DBG: print rval
-        return rval
-
-
-    # Crazy memtile wire ST
-    parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', w)
-    if parse:
-        if DBG: print '           # OH NO found ST wire name "%s"' % w
-        dir = parse.group(1)
-        tb  = parse.group(2)
-        side  = int(parse.group(3))
-        track = int(parse.group(4))
-        # w2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
-        if tb=='0': tb = 'top'
-        else:
-            tb = 'bottom'
-            side = side + 4
-        rval = (dir,tb,side,track)
-        if DBG: print rval
-        return rval
-
-    # Not a wire; maybe it's e.g. 'data1'
-    # print 'out', rval
-    rval = (-1,-1,-1,-1)
-    if DBG: print rval
-    return rval
-
-
-
-
+    return cgra_info.parse_cgra_wirename(w, DBG)
 
 # List of output ports being used as registers
 REGISTERS = []
@@ -2225,8 +2048,8 @@ main()
 # 
 #         # 'a' inwire can connect to any wire not on same side
 #         if re.search('^T\d+_out', b):
-#             (Ta,da,sa,ta) = parsewire(a)
-#             (Tb,db,sb,tb) = parsewire(b)
+#             (Ta,da,sa,ta) = CT.parsewire(a)
+#             (Tb,db,sb,tb) = CT.parsewire(b)
 #             return not (sa == sb)
 # 
 #         # b is one of ['mem_in','op1','op2'] (mem_in == wdata maybe)
@@ -2235,8 +2058,8 @@ main()
 # 
 # 
 # 
-#         (Ta,da,sa,ta) = parsewire(a)
-#         (Tb,db,sb,tb) = parsewire(b)
+#         (Ta,da,sa,ta) = CT.parsewire(a)
+#         (Tb,db,sb,tb) = CT.parsewire(b)
 #         assert Ta == Tb
 # 
 

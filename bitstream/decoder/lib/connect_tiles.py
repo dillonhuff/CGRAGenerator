@@ -430,24 +430,16 @@ def parse_resource(r):
     resource must be of the form "T0_in_s0t0" or "T3_mem_out"
     returns tileno+remains e.g. parse_resource("T0_in_s0t0") = (0, 'in_s0t0')
     '''
-    parse = re.search('^T(\d+)_(.*)', r)
-    if not parse: assert False
-    (tileno,resource) = (int(parse.group(1)), parse.group(2))
-    return (tileno,resource)
+    return cgra_info.parse_resource(r)
+
 
 def parsewire(w):
     '''wire MUST have embedded tileno e.g. "T0_in_s0t0"'''
     # Examples
     # "T0_in_s0t0" returns (0, 'in', 0, 0)
     # "T3_mem_out" returns (3, 'mem_out', -1, -1)
-    (tileno,w) = parse_resource(w)
+    return cgra_info.parse_canon(w)
 
-    parse = re.search('(in|out)_s(\d+)t(\d+)', w)
-    if not parse: return (tileno,w,-1,-1)
-
-    (dir,side,track) = (
-        parse.group(1), parse.group(2), parse.group(3))
-    return (int(tileno),dir,int(side),int(track))
 
 # lifted from bsview.py
 def find_neighbor(w, DBG=9):
