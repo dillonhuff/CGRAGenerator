@@ -488,15 +488,13 @@ class Node:
         if DBG>2: print "is_avail: looking for '%s' in '%s' nodenet" \
               % (rname, self.name)
         if rname in self.net:
-            print "       %-11s available in '%s' nodenet" \
-                  % (rname, self.name)
+            # print "       %-11s available in '%s' nodenet" \'] % (rname, self.name)
             return True
 
         if DBG>2: print "is_avail: looking for '%s' in tile %d resources %s" \
               % (rname, tileno, resources[tileno])
         if rname in resources[tileno]:
-            print "       %-11s is in free list for tile %d"\
-                  % (rname, tileno)
+            # print "       %-11s is in free list for tile %d" % (rname, tileno)
             return True
 
         else:
@@ -564,7 +562,6 @@ class Node:
 # 
 #     # Placing the node does not remove its resources from the tile;
 #     # that's a job for the router, yes?
-#     print 'foo'
 #     print itile, resources[itile]
 #     assert input in resources[itile],\
 #            "ERROR tile %d has no available resource '%s'" % (tileno,input)
@@ -615,13 +612,11 @@ class Node:
         #                          in.*           out_.*
         #                          in.*      {mem_in,op1,op2}   
 
-        if DBG: print "       Looks like both are available to '%s' (%s)" \
-           % (self.name, where(451))
-        if DBG: print ''
+        if DBG: print "       Looks like both are available to '%s' (%s)\n" % (self.name, where(451))
 
         # print "       Ask cgra: can '%s' connect to '%s'? (%s)" % (a,b,where(457))
 
-        if cgra_info.can_connect_within_tile(T, a, b, DBG):
+        if cgra_info.connect_within_tile(T, a, b, DBG):
             if DBG: print '         YES'
             return ['%s -> %s' % (a,b)]
         else:
@@ -1203,8 +1198,6 @@ def process_nodes(sname, indent='# ', DBG=1):
         else: print "ERROR What is '%s'?" % dname
 
     sorted_schildren = otherchilds + regchilds
-    #print 'FOO', sorted_schildren
-
     # Place and route all dests
 
     already_done = []

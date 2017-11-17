@@ -575,6 +575,125 @@ def search_muxes(fan_dir, tile, port, DBG=0):
     return sblist+cblist
 
 
+def find_mux(tile, src, snk, DBG=0):
+    '''Find the mux that connects "src" to "snk" in "tile"'''
+    DBG = max(DBG,0)
+    rlist = []
+    src = oneworld(src)
+    snk = oneworld(snk)
+    for box in ['sb','cb']:
+        for bb in tile.iter(box):
+            for mux in bb.iter('mux'):
+
+                # Can't do single-bit wires (yet)
+                if re.search('_BUS1_', mux.attrib['snk']): continue
+
+                # Look for sinks whose src is rdst
+                # if mux.attrib['snk'] == rdst:
+                # ow = oneworld(mux.attrib['snk'])
+                # owsnk = cgra2canon(mux.attrib['snk'], DBG=9)
+                owsnk = oneworld(mux.attrib['snk'])
+                if owsnk == snk:
+                    if DBG: print 'found snk', mux.attrib['snk']
+                    for msrc in mux.iter('src'):
+                        # print msrc.text
+                        owsrc = oneworld(msrc.text)
+                        # print src, owsrc
+                        if src == owsrc:
+                            return get_encoding(tile,bb,mux,msrc,DBG-1)
+
+    return False
+
+def get_encoding(tile,box,mux,msrc,DBG=0):
+    parms={}
+
+    parms['tileno'] = int(tile.attrib['tile_addr'])
+    parms['fa']     = int(box.attrib['feature_address'])
+    parms['sel']    = int(msrc.attrib['sel'])
+
+    # want sb/cb item 'sel_width':
+    # <cb feature_address='4' bus='BUS1'>
+    #     <sel_width>4</sel_width>
+    assert box[0].tag == 'sel_width'
+    parms['sw'] = int(box[0].text)
+    # print '  ', box[0].tag, '=', sw
+
+    (configh,configl,configr) = (-1,-1,-1)
+    if box.tag=='sb':
+        parms['configh']= int(mux.attrib['configh'])
+        parms['configl']= int(mux.attrib['configl'])
+        parms['configr']= int(mux.attrib['configr'])
+    else:
+        parms['configh']= -1
+        parms['configl']= -1
+        parms['configr']= -1
+    
+    if DBG:
+        print 'found src', msrc.text
+        print "  tile",            parms['tileno']
+        print "  feature address", parms['fa']
+        print '  sel',             parms['sel']
+        print '  sel_width',       parms['sw']
+        print '  configh', parms['configh']
+        print '  configl', parms['configl']
+        print '  configr', parms['configr']
+
+    return parms
+
+
+def encode_parms(parms, DBG=0):
+
+    if DBG:
+        print "  tileno",          parms['tileno']
+        print "  feature address", parms['fa']
+        print '  sel',             parms['sel']
+        print '  sel_width',       parms['sw']
+        print '  configh', parms['configh']
+        print '  configl', parms['configl']
+        print '  configr', parms['configr']
+        print ''
+
+        tileno   = parms['tileno']
+        fa       = parms['fa'] # feature_address
+        sel      = parms['sel']
+        sw       = parms['sw'] # sel_width
+        configh  = parms['configh']
+        configl  = parms['configl']
+        configr  = parms['configr']
+
+    if configh == -1: configh=0
+    if configl == -1: configl=0
+    if configr == -1: configr=0
+
+    # First encode the select field
+    regh = configh/32
+    regl = configl/32
+    assert regh==regl, 'select field crossed reg boundary!'
+
+    addr = '%02X%02X%04X' % (regh, fa, tileno)
+    addr = int(addr,16)
+    if DBG: print 'select address is %08X' % addr
+
+    # mask = (1<< (1+configh-configl)) - 1
+    mask = (1 << sw) - 1
+    if DBG: print 'select mask is    0x%X' % mask
+    assert sel < 2**sw, 'select exceeds mask size!'
+
+    data = sel << configl
+    if DBG: print 'select data is    %08X\n' % data
+
+
+    regr = configr/32
+    raddr = '%02X%02X%04X' % (regr, fa, tileno)
+    raddr = int(raddr,16)
+    if DBG: print 'reg address is %08X' % raddr
+
+    rdata = 1 << configr
+    if DBG: print 'reg data is    %08X\n' % data
+
+    return (addr,data,raddr,rdata)
+
+
 def find_sources(tile, box, rsrc, DBG=0):
     '''
     Search all boxes of type 'box' to see what can source 'rsrc'
@@ -776,6 +895,9 @@ def parse_cgra_wirename(w, DBG=0):
     (dir,tb,side,track) = (-1,-1,-1,-1)
     # rval = (-1,-1,-1)
 
+    assert not re.search('_BUS1_', w),\
+           'Oops cannot handle single-bit wires (yet)'
+        
     # Look for most common case first, howbowda
     parse = re.search('(in|out)_BUS16_S(\d+)_T(\d+)', w)
     if (parse):
@@ -862,8 +984,7 @@ def cgra2canon(name, tileno=-1, DBG=0):
         elif name == 'rdata': newname = 'mem_out'
         elif name == 'pe_out_res': newname = 'pe_out'
         else:
-            pwhere()
-            print 'cannot decode', name
+            print 'cannot decode "%s"' % name
             assert False, 'sb_wire or something?'
     else:
         # uh...parse_wirename should do this?
@@ -879,7 +1000,7 @@ def cgra2canon(name, tileno=-1, DBG=0):
     return newname
 
 
-def can_connect_within_tile(tileno, src, snk, DBG):
+def connect_within_tile(tileno, src, snk, DBG):
     '''
     Given two wires (src,snk) e.g.
       in_0_BUS16_S3_T0,wdata
@@ -891,31 +1012,50 @@ def can_connect_within_tile(tileno, src, snk, DBG):
     also, return the bit pattern for connecting them.
     '''
 
+
     # BOOKMARK
-    # also, return the bit pattern for connecting them.
+    # Return (addr,data,regaddr,regdata)
+    # (addr,data) for the connection
+    # (regaddr,regdata) for registering the sink (if applicable)
+
+    # FIXME DO WE STILL NEED SEARCH_MUXES()??
+    # #     port = oneworld(port)
+    # #     rlist = search_muxes(fan_dir, tile, port, DBG-1)
+
+    tile = get_tile(tileno)
+    assert tile != -1, '404 tile not found'
+    print '666'
+
+    # FIXME maybe canon2cgra(0 should be done in find_mux()...
+    parms = find_mux(tile,canon2cgra(src),canon2cgra(snk), DBG)
+
+    if parms == False: return False
+    else:
+        encode_parms(parms, DBG=9)
+        return True
 
 
-    ################################################################
-    # FIXME this needs cleaning terribly
-    # (aprime,bprime) = (to_cgra(a),to_cgra(b))
-    (a,b) = (src,snk)
-    (aprime,bprime) = (canon2cgra(a),canon2cgra(b))
-
-    # print "       Can '%s' connect to '%s'?" % (aprime,bprime)
-
-    # rlist = all ports that a can reach in tile T
-    # FO = cgra_info.fan_out(to_cgra(a), T, DBG-1)
-    FO = fan_out(aprime, tileno, DBG-1)
-    rlist = FO
-
-    print "         %s can connect to %s" % (aprime,rlist)
-
-    # bprime = to_cgra(b)
-    # bprime = canon2cgra(b)
-
-    print "         Is '%s' in the list?" % bprime
-    if bprime in rlist: return True
-    else              : return False
+#     ################################################################
+#     # FIXME this needs cleaning terribly
+#     # (aprime,bprime) = (to_cgra(a),to_cgra(b))
+#     (a,b) = (src,snk)
+#     (aprime,bprime) = (canon2cgra(a),canon2cgra(b))
+# 
+#     # print "       Can '%s' connect to '%s'?" % (aprime,bprime)
+# 
+#     # rlist = all ports that a can reach in tile T
+#     # FO = cgra_info.fan_out(to_cgra(a), T, DBG-1)
+#     FO = fan_out(aprime, tileno, DBG-1)
+#     rlist = FO
+# 
+#     print "         %s can connect to %s" % (aprime,rlist)
+# 
+#     # bprime = to_cgra(b)
+#     # bprime = canon2cgra(b)
+# 
+#     print "         Is '%s' in the list?" % bprime
+#     if bprime in rlist: return True
+#     else              : return False
 
 
 
