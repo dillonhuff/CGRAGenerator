@@ -619,43 +619,14 @@ class Node:
            % (self.name, where(451))
         if DBG: print ''
 
+        # print "       Ask cgra: can '%s' connect to '%s'? (%s)" % (a,b,where(457))
 
-
-        ################################################################
-        # BOOKMARK
-        # This should be a cgra_info function e.g.
-        # can_connect_within_tile(src,snk)
-
-        (aprime,bprime) = (to_cgra(a),to_cgra(b))
-        print "       Ask cgra: can '%s' connect to '%s'? (%s)"\
-              % (aprime,bprime,where(457))
-
-        # rlist = all ports that a can reach in tile T
-        FO = cgra_info.fan_out(to_cgra(a), T, DBG-1)
-        rlist = FO
-
-        print "         %s can connect to %s (%s)" % (aprime,rlist,where(542))
-
-        bprime = to_cgra(b)
-        print "         Is '%s' in the list?" % bprime
-        if bprime in rlist:
+        if cgra_info.can_connect_within_tile(T, a, b, DBG):
             if DBG: print '         YES'
             return ['%s -> %s' % (a,b)]
-
-        if DBG: print "           NO"
-        ################################################################
-
-
-
-
-
-
-
-
-
-
-
-
+        else:
+            if DBG: print "           NO"
+        
         print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
         print "maybe can connect through intermediary?"
         # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
@@ -681,9 +652,13 @@ class Node:
         print "maybe can connect '%s' to '%s' through an intermediary"\
               % (a,b)
         
-        a_cgra = to_cgra(a, DBG-1)
+        # a_cgra = to_cgra(a, DBG-1)
+        # aprime = a_cgra
+        (aprime,bprime) = (cgra_info.canon2cgra(a),cgra_info.canon2cgra(b))
+
+        # areach = FO # from just up there
         # areach = cgra_info.fan_out(to_cgra(a), T, DBG=9)
-        areach = FO # from just up there
+        areach = cgra_info.fan_out(aprime, T, DBG-1)
         print "'%s'/'%s' can areach %s" % (a,aprime,areach)
 
         b_cgra = to_cgra(b, DBG-1)

@@ -494,6 +494,8 @@ def get_element(EE, TTTT):
     return False
 
 def fan_out(rsrc, tileno, DBG=0):
+    DBG = max(0,DBG)
+
     # list all resources in tile that 'rsrc' can reach
     # 'rsrc' can be one of: in*, pe_out_res, wdata, mem_out
 
@@ -556,6 +558,7 @@ def find_connectables(fan_dir, port, tileno, DBG=0):
 
 
 def search_muxes(fan_dir, tile, port, DBG=0):
+    DBG = max(0,DBG)
     port = oneworld(port)
     if fan_dir == 'fan_out':
         sblist = find_sources(tile, 'sb', port, DBG)
@@ -876,9 +879,43 @@ def cgra2canon(name, tileno=-1, DBG=0):
     return newname
 
 
+def can_connect_within_tile(tileno, src, snk, DBG):
+    '''
+    Given two wires (src,snk) e.g.
+      in_0_BUS16_S3_T0,wdata
+      in_BUS16_S0_T0,  data0
+      in_BUS16_S2_T0,  out_BUS16_S1_T0
+      pe_out_res,      out_BUS16_S3_T1
+      rdata,           out_0_BUS16_S0_T0
+    return True or False according to whether src can connect to snk
+    also, return the bit pattern for connecting them.
+    '''
+
+    # BOOKMARK
+    # also, return the bit pattern for connecting them.
 
 
+    ################################################################
+    # FIXME this needs cleaning terribly
+    # (aprime,bprime) = (to_cgra(a),to_cgra(b))
+    (a,b) = (src,snk)
+    (aprime,bprime) = (canon2cgra(a),canon2cgra(b))
 
+    # print "       Can '%s' connect to '%s'?" % (aprime,bprime)
+
+    # rlist = all ports that a can reach in tile T
+    # FO = cgra_info.fan_out(to_cgra(a), T, DBG-1)
+    FO = fan_out(aprime, tileno, DBG-1)
+    rlist = FO
+
+    print "         %s can connect to %s" % (aprime,rlist)
+
+    # bprime = to_cgra(b)
+    # bprime = canon2cgra(b)
+
+    print "         Is '%s' in the list?" % bprime
+    if bprime in rlist: return True
+    else              : return False
 
 
 
