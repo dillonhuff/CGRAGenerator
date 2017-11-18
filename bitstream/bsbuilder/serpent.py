@@ -612,15 +612,15 @@ class Node:
         #                          in.*           out_.*
         #                          in.*      {mem_in,op1,op2}   
 
-        if DBG: print "       Looks like both are available to '%s' (%s)\n" % (self.name, where(451))
+        if DBG>1: print "       Looks like both are available to '%s' (%s)\n" % (self.name, where(451))
 
         # print "       Ask cgra: can '%s' connect to '%s'? (%s)" % (a,b,where(457))
 
-        if cgra_info.connect_within_tile(T, a, b, DBG):
-            if DBG: print '         YES'
+        if cgra_info.connect_within_tile(T, a, b, DBG-1):
+            if DBG: print '     YES'
             return ['%s -> %s' % (a,b)]
         else:
-            if DBG: print "           NO"
+            if DBG: print "     NO"
         
         print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
         print "maybe can connect through intermediary?"
