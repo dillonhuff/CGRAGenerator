@@ -429,16 +429,18 @@ def rc2tileno(row,col):
     print "ERROR Cannot find tile corresponding to row %d col %d in cgra_info" \
           % (row,col)
 
+
 def tiletype(tileno):
     # print "Looking for type of tile %d" % tileno
     for tile in CGRA.findall('tile'):
-        t = int(tile.attrib['tile_addr'])
-        if (t == tileno):
+        t = tile.attrib['tile_addr']
+        if (t == str(tileno)):
             return tile.attrib['type']
 
-    print "ERROR Cannot find tile %d in cgra_info" % tileno
-    print "ERROR Could not find type for tile %d" % tileno
-    sys.exit(-1)
+    err = ("\n\nERROR Cannot find tile %d in cgra_info\n" % tileno)\
+          + ("ERROR Could not find type for tile %d" % tileno)
+    assert False, err
+
 
 def mem_or_pe(tileno):
     type = tiletype(tileno)
@@ -451,6 +453,8 @@ def mem_or_pe(tileno):
     else:
         assert False, 'unknown tile type'
         return 'unknown'
+
+def is_mem(tileno): return (mem_or_pe(tileno)=='mem')
 
 def tile_exists(tileno):
     for tile in CGRA.findall('tile'):
@@ -828,7 +832,7 @@ def parse_resource(r):
     returns tileno+remains e.g. parse_resource("T0_in_s0t0") = (0, 'in_s0t0')
     '''
     parse = re.search('^T(\d+)_(.*)', r)
-    if not parse: assert False
+    if not parse: assert False, r
     (tileno,resource) = (int(parse.group(1)), parse.group(2))
     return (tileno,resource)
 
@@ -848,6 +852,75 @@ def parse_canon(w):
     return (int(tileno),dir,int(side),int(track))
 
 
+def test_canon2global():
+    vectors = [
+        [ 'T0_out_s0t0', 'wire_0_0_BUS16_S0_T0'],
+        [ 'T0_in_s3t3', 'wire_m1_0_BUS16_S1_T3'],
+        [ 'T0_in_s1t0',  'wire_1_0_BUS16_S3_T0'],
+
+        # T10 is pe at 1,2; 1,3 is lower-half mem
+        ['T10_in_s0t5',  'wire_1_3_BUS16_S2_T5'],
+
+        [ 'T3_in_s2t5',  'wire_0_2_BUS16_S0_T5'],
+        [ 'T3_in_s6t5',  'wire_1_2_BUS16_S0_T5'],
+        ]
+
+    for v in vectors:
+        print 'Want:', v[0],v[1]
+        c2g = canon2global(v[0])
+        print 'Got: ', v[0], c2g, '\n'
+        assert c2g == v[1], 'c2g(%s) != %s' % (v[0],v[1])
+    return
+
+
+def canon2global(name, DBG=0):
+    '''
+    Converts canonical wirename to global wirename, e.g.
+    T0_out_s0t0 =>  wire_0_0_BUS16_S0_T0
+    T0_in_s3t0  => wire_m1_0_BUS16_S0_T0
+    T0_in_s1t0 =>   wire_1_0_BUS16_S3_T0
+    '''
+    (tileno,dir,side,track) = parse_canon(name)
+    (r,c) = tileno2rc(tileno)
+
+    if dir=='out':
+        if side>=4: r = r+1 # Right? RIGHT??
+        gname = 'wire_%d_%d_BUS16_S%d_T%d' % (r,c,side,track)
+    else:
+        assert dir=='in'
+
+        if   side%4==0: c = c + 1 # Coming in from the right
+        elif side%4==1: r = r + 1 # Coming in from the bottom
+        elif side%4==2: c = c - 1 # Coming in from the left
+        elif side%4==3: r = r - 1 # Coming in from the top
+
+        if side>=4: r = r+1 # Right? RIGHT??
+        
+        # side  adj    side adj
+        #  0     2      4    2
+        #  1     3      5    3
+        #  2     0      6    0
+        #  3     1      7    1
+        adj_side = (side+2)%4 # print side,adj_side
+
+        # Take care of the case where outwrie goes into bottom of a mem tile
+        if (r>0) and (c>0) and (r%2==1):
+            adj_tile = rc2tileno(r,c) # print adj_tile, type(adj_tile)
+            # if is_mem(adj_tile): adj_side = adj_side+4 # No, never!
+
+        if c<0: c = 'm1'
+        if r<0: r = 'm1'
+
+        gname = 'wire_%s_%s_BUS16_S%d_T%d' % (str(r),str(c),adj_side,track)
+    return gname
+
+    # INPUT  tile  2 (0,2) / out_BUS16_S1_T0 / wire_0_2_BUS16_S1_T0
+    # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+    # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+    # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+    # OUTPUT tile 15 (2,1) / in_BUS16_S2_T4 / wire_2_0_BUS16_S0_T4
+    # OUTPUT tile 15 (2,1) / in_BUS16_S2_T4 / wire_2_0_BUS16_S0_T4
+
 def canon2cgra(name, DBG=0):
     '''
     Converts canonical wirename to cgra wirename, e.g.
@@ -857,8 +930,6 @@ def canon2cgra(name, DBG=0):
     T3_in_s1t2 => sb_wire_in_1_S3_T2  (if T3 is a mem tile)
     T3_out_s7t2=> sb_wire_out_1_S3_T2 (if T3 is a mem tile)
     '''
-
-
     if DBG>1: print "converting", name
 
     # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'

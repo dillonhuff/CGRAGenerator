@@ -258,6 +258,11 @@ def main(DBG=1):
     print "########################################################"
     print "# FINAL OUTPUT"
     final_output()
+
+    # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+    # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+    print_io_info()
+
     sys.exit(0)
     
 
@@ -299,6 +304,42 @@ def final_output():
             print '# %s::%s' % (sname,dname)
             for c in src.route[dname]: print mark_regs(c)
             print ''
+
+def print_io_info(DBG=0):
+    # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+    # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+    inode = nodes['INPUT'];  
+    onode = nodes['OUTPUT']; 
+    if DBG:
+        inode.show()
+        onode.show()
+
+    # cgra_info.test_canon2global()
+
+    iwire = inode.input0
+    owire = onode.output
+
+    if DBG>1:
+        print "# local name for input wire is '%s'" % iwire
+
+    ig = cgra_info.canon2global(iwire)
+    og = cgra_info.canon2global(owire)
+
+    if DBG>1: print iwire, ig
+    if DBG>1: print owire, og
+
+    def p(io, t, w, wg):
+        # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+        # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+        (r,c) = cgra_info.tileno2rc(t)
+        wc    = cgra_info.canon2cgra(w)
+        print '# %-6s tile %2d (%d,%d) / %s / %s' % (io, t, r,c, wc, wg)
+
+    p('INPUT',  inode.tileno, iwire, ig)
+    p('OUTPUT', onode.tileno, owire, og)
+    # assert False
+    exit()
+
 
 def print_oplist():
     oplist = range(cgra_info.ntiles())
@@ -1095,6 +1136,10 @@ def register_folding(DBG=9):
 #     if DBG: print "No pe candidates found for input folding\n"
 # 
 # def fold_regop_to_input(n,d): print 'its not plugged in yet'
+
+def parseT(wirename):
+    '''E.g. parseT("T4_in_s2t4") = (4, "in_s2t4")'''
+    return cgra_info.parse_resource(wirename)
 
 def getboth(tileno, wirename):
     parse = re.search('^T\d+_(.*)',wirename)
