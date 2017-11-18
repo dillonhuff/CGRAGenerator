@@ -256,7 +256,7 @@ def main(DBG=1):
     # note OUTPUT wire is always wire_m1_1_BUS16_S1_T0
 
     print "########################################################"
-    print "# FINAL OUTPUT 666"
+    print "# FINAL OUTPUT"
     final_output()
     sys.exit(0)
     
@@ -702,8 +702,14 @@ def parse_resource(r):
 
 
 def prettyprint_dict(dictname, dict):
+    # So dumb.  But pretty maybe?
+    maxlen = 0
     for d in sorted(dict):
-        print "%s%-20s = %s" % (dictname, [d], dict[d])
+        maxlen = max(maxlen, len(str([d])))
+    fmt = "%%s%%-%ds = %%s" % maxlen
+    for d in sorted(dict):
+        # print "%s%-20s = %s" % (dictname, [d], dict[d])
+        print fmt % (dictname, [d], dict[d])
     
 
 # def reachable(a,b):
@@ -1195,7 +1201,9 @@ def process_nodes(sname, indent='# ', DBG=1):
         elif is_mem(dname): otherchilds.append(dname)
         elif is_regop(dname): otherchilds.append(dname)
         elif is_reg(dname):   regchilds.append(dname)
-        else: print "ERROR What is '%s'?" % dname
+        elif dname=='OUTPUT': otherchilds.append(dname)
+        else:
+            print "ERROR What is '%s'?" % dname
 
     sorted_schildren = otherchilds + regchilds
     # Place and route all dests
@@ -1319,6 +1327,10 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # print indent+"No home for '%s'"
         if DBG: print indent+"No home for '%s'" % dname
 
+        if dname=='OUTPUT':
+            process_output(sname,dname)
+            return True
+
         # Get nearest tile compatible with target node 'dname'
         # "Nearest" means closest to input tile (NW corner)
         # dtileno = get_nearest_tile(sname, dname)
@@ -1347,7 +1359,6 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         if not path:
             if DBG:
-                print 666
                 pwhere(1489,
                        'Tile %d no good; undo and try again:' % dtileno)
             packer.unallocate(dtileno, DBG=0)
@@ -1511,6 +1522,55 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 # END def place_and_route()
 ########################################################################
 
+def process_output(sname,dname, DBG=1):
+    snode = nodes[sname]
+    dnode = nodes[dname]
+    src = snode.output
+
+    if DBG>1:
+        snode.show()
+        dnode.show()
+
+    if DBG:
+        print ''
+        print "1. Route from '%s' output '%s' to any avail outport in tile %d"\
+              % (sname, src, snode.tileno)
+
+    t = snode.tileno
+    if DBG>1: print "\n# Tile %d free list: %s" % (t, resources[t])
+
+    # if 'src' is an outport, just use that
+    if re.search('T\d+_out_', src): outwire = src
+
+    # else choose first avail outwire
+    else:
+        for w in resources[t]:
+            if re.search('T\d+_out_', w):
+                if DBG: print "#  - Found candidate '%s'.  Will it connect?" % w
+                if cgra_info.connect_within_tile(t, src, w, DBG=0):
+                    if DBG: print '#  - YES'
+                    outwire = w
+                    break
+                else:
+                    if DBG: print "#  - NO, keep looking."
+
+    if DBG: print ''
+
+    snode.route['OUTPUT'] = ['%s -> %s' % (src,outwire)]
+    snode.net.append(outwire)
+    if DBG: snode.show()
+
+    dnode.type = 'OUTPUT'
+    dnode.tileno = snode.tileno
+    dnode.input0 = outwire
+    dnode.input1 = False
+    dnode.output = outwire
+    dnode.placed = True
+    dnode.net = [src,outwire]
+    if DBG: dnode.show()
+
+    return
+    
 
 def squote(txt, f=''):
     fmt = '%'+str(f)+'s'  # E.g. '%-13s' when f=-13

@@ -1059,8 +1059,11 @@ def connect_within_tile(tileno, src, snk, DBG):
     tile = get_tile(tileno)
     assert tile != -1, '404 tile not found'
 
+    src_cgra = canon2cgra(src)
+    snk_cgra = canon2cgra(snk)
+
     # FIXME maybe canon2cgra(0 should be done in find_mux()...
-    parms = find_mux(tile,canon2cgra(src),canon2cgra(snk), DBG)
+    parms = find_mux(tile, src_cgra, snk_cgra, DBG)
 
     if parms == False: return False
     else:
