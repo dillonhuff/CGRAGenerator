@@ -596,15 +596,14 @@ def find_mux(tile, src, snk, DBG=0):
                 if owsnk == snk:
                     if DBG: print 'found snk', mux.attrib['snk']
                     for msrc in mux.iter('src'):
-                        # print msrc.text
                         owsrc = oneworld(msrc.text)
-                        # print src, owsrc
                         if src == owsrc:
                             return get_encoding(tile,bb,mux,msrc,DBG-1)
 
     return False
 
 def get_encoding(tile,box,mux,msrc,DBG=0):
+    DBG = max(DBG,0)
     parms={}
 
     parms['tileno'] = int(tile.attrib['tile_addr'])
@@ -642,7 +641,7 @@ def get_encoding(tile,box,mux,msrc,DBG=0):
 
 
 def encode_parms(parms, DBG=0):
-
+    DBG = max(DBG,0)
     if DBG:
         print "  tileno",          parms['tileno']
         print "  feature address", parms['fa']
@@ -653,13 +652,13 @@ def encode_parms(parms, DBG=0):
         print '  configr', parms['configr']
         print ''
 
-        tileno   = parms['tileno']
-        fa       = parms['fa'] # feature_address
-        sel      = parms['sel']
-        sw       = parms['sw'] # sel_width
-        configh  = parms['configh']
-        configl  = parms['configl']
-        configr  = parms['configr']
+    tileno   = parms['tileno']
+    fa       = parms['fa'] # feature_address
+    sel      = parms['sel']
+    sw       = parms['sw'] # sel_width
+    configh  = parms['configh']
+    configl  = parms['configl']
+    configr  = parms['configr']
 
     if configh == -1: configh=0
     if configl == -1: configl=0
@@ -679,19 +678,54 @@ def encode_parms(parms, DBG=0):
     if DBG: print 'select mask is    0x%X' % mask
     assert sel < 2**sw, 'select exceeds mask size!'
 
-    data = sel << configl
+    data = sel << (configl%32)
     if DBG: print 'select data is    %08X\n' % data
-
 
     regr = configr/32
     raddr = '%02X%02X%04X' % (regr, fa, tileno)
     raddr = int(raddr,16)
     if DBG: print 'reg address is %08X' % raddr
 
-    rdata = 1 << configr
+    rdata = 1 << (configr%32)
     if DBG: print 'reg data is    %08X\n' % data
 
     return (addr,data,raddr,rdata)
+
+
+def gen_comment_conn(configh,configl,tileno,sel,src,snk):
+    # Stupid comment
+    # data[(21, 20)] : @ tile (2, 2) connect wire 2 (in_BUS16_S3_T0) to out_BUS16_S2_T0
+
+    # data[(21, 20)]
+    data = 'data[(%d, %d)]' % (configh,configl)
+
+    # tile (2, 2)
+    tile = 'tile (%d, %d)' % tileno2rc(tileno)
+
+    # wire 2 (in_BUS16_S3_T0)
+    w1 = 'wire %d (%s)' % (sel,src)
+
+    # out_BUS16_S2_T0
+    w2 = snk
+
+    c = '%s : @ %s connect %s to %s' % (data,tile,w1,w2)
+    # print c
+    return c
+
+
+def gen_comment_latch(configr,tileno,outwire):
+    # Stupid comment
+    # data[(14, 14)] : @ tile (4, 0) latch output wire out_BUS16_S1_T1
+
+    # data[(21, 20)]
+    data = 'data[(%d, %d)]' % (configr,configr)
+
+    # tile (2, 2)
+    tile = 'tile (%d, %d)' % tileno2rc(tileno)
+
+    c = '%s : @ %s latch output wire %s' % (data,tile,outwire)
+    # print c
+    return c
 
 
 def find_sources(tile, box, rsrc, DBG=0):
@@ -1024,15 +1058,32 @@ def connect_within_tile(tileno, src, snk, DBG):
 
     tile = get_tile(tileno)
     assert tile != -1, '404 tile not found'
-    print '666'
 
     # FIXME maybe canon2cgra(0 should be done in find_mux()...
     parms = find_mux(tile,canon2cgra(src),canon2cgra(snk), DBG)
 
     if parms == False: return False
     else:
-        encode_parms(parms, DBG=9)
-        return True
+        ep = encode_parms(parms, DBG)
+
+        # Stupid comment
+        # data[(21, 20)] : @ tile (2, 2) connect wire 2 (in_BUS16_S3_T0) to out_BUS16_S2_T0
+        c = gen_comment_conn(
+            parms['configh'],
+            parms['configl'],
+            tileno,
+            parms['sel'],
+            canon2cgra(src),
+            canon2cgra(snk))
+
+        # Stupid comment
+        # data[(14, 14)] : @ tile (4, 0) latch output wire out_BUS16_S1_T1
+        cr = gen_comment_latch(
+            parms['configr'],
+            tileno,
+            canon2cgra(snk))
+
+        return ep + (c,cr)
 
 
 #     ################################################################
