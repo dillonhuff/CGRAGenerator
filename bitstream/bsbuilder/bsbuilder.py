@@ -7,9 +7,6 @@ import re;
 sys.path.append("../decoder")
 from lib import cgra_info
 
-
-# Sort test(s)
-
 def bs_addr_sort(addr):
     '''Bitstream address looks like this: RRFFTTTT;
     but want to sort tile first, then feature, then reg, e.g.
@@ -22,7 +19,18 @@ def bs_addr_sort(addr):
         print '%s: RR=%s, FF=%s, TTTT=%s' % (addr, RR,FF,TTTT)
     return TTTT+FF+RR
 
+def bs_comment_sort(comment):
+    '''
+    Sorted comments should look like this:
+      # data[(13, 12)] : @ tile (0, 0) connect ...
+      # data[(3, 2)] : @ tile (0, 0) connect ...
+      # data[(1, 0)] : @ tile (0, 0) connect ...
+    '''
+    sortkey = re.search('^\D+(\d+)', comment).group(1)
+    return (0 - int(sortkey))
 
+
+# Sort test(s)
 def test_bs_addr_sort():
     tmp = {}
     for i in (
@@ -83,7 +91,7 @@ opb = {}
 
 def main():
 
-    DBG=9
+    DBG=1
     process_args()
 
     # Read the input, store to 'input_lines' tuple
@@ -120,19 +128,17 @@ def main():
         if parse:
             tileno = int(parse.group(1))
             line = parse.group(2)
-            print '# tile%02d  %s' % (tileno,line)
+            if DBG>2: print '# tile%02d  %s' % (tileno,line)
 
         # mul(wire,const15_15)
         # add(wire,wire) 
         # mul(reg,const13_13$1)
 
-        if bs_op(tileno,line):
-            print ''
+        if bs_op(tileno,line,DBG-1):
             print ''
             continue
 
-        if bs_connection(tileno, line):
-            print ''
+        if bs_connection(tileno, line, DBG-1):
             print ''
             continue
 
@@ -140,15 +146,10 @@ def main():
         print ''
         continue
 
-
-
-
-
-
-
-
-
-
+        ################################################################
+        # This is the old stuff.
+        # SKIP IT for now anyways
+        
         # "tile=7" (also: "tile7" or "tile=7" or "TILE 7" ...)
         # (tile) = myparse(line, "\s+tile\s+([0-9]+)")
         if parse_tile_decl(line):
@@ -177,15 +178,18 @@ def main():
         else:
             print "ERROR I can't do that yet."
             sys.exit(1)
+        ################################################################
             
-    return
     emit_bitstream()
+    return
 
 
 
-def bs_connection(tileno, line):
+def bs_connection(tileno, line, DBG=0):
+    DBG= max(0,DBG)
     # E.g. line = 'in_s2t0 -> T0_out_s0t0 (r)'
     # or   line = 'T1_in_s2t0 -> T1_out_s0t0/r'
+    # or   line = 'T25_out_s2t0 -> T25_op1 (r)'
 
     parse = re.search('(\w+)\s*->\s*(\w+)[^r]*(r)*', line)
     if not parse: return False
@@ -199,19 +203,25 @@ def bs_connection(tileno, line):
 
     (t,lhs) = striptile(lhs); assert t == -1 or t == tileno, 'wrong tile!?'
     (t,rhs) = striptile(rhs); assert t == -1 or t == tileno, 'wrong tile!?'
-    print "# lhs '%s', rhs '%s', reg '%s'" % (lhs,rhs,reg)
+    if DBG>1: print "# lhs '%s', rhs '%s', reg '%s'" % (lhs,rhs,reg)
 
     # Connect lhs to rhs
     
+    Tlhs = "T%d_%s" % (tileno,lhs)
+    Trhs = "T%d_%s" % (tileno,rhs)
+    cwt = cgra_info.connect_within_tile(tileno, Tlhs, Trhs, DBG-1)
+    (addr,data,ra,rd,comm,rcomm) = cwt
 
+    # print 'sel %08X %08X' % (addr,data)
+    # print '# ', comm, '\n'
+    addbs(addr, data, comm)
 
-    # process reg is one exists
-
-
-
-    assert False, 'BOOKMARK'
-
-
+    # process reg if one exists
+    # (note registered ops are taken care of elsewheres)
+    if reg=='r' and not rhs[0:2]=='op':
+        # print 'reg %08X %08X' % (ra,rd)
+        # print '# ', rcomm, '\n'
+        addbs(ra, rd, rcomm)
 
     return True
 
@@ -410,7 +420,7 @@ def parse_pe_out(line,tilestr):
 
 
 def emit_bitstream():
-    DBG=1
+    DBG=0
     print "# FINAL PASS: EMIT BITSTREAM"
     print "#----------------------------------------------------------------"
     for addr in sorted(bitstream.iterkeys(), key=bs_addr_sort):
@@ -419,40 +429,37 @@ def emit_bitstream():
             print "# " + addr, bitstream[addr]
             print ""
 
-        # If addr indicates an op, then merge in operands a, b
-        insert_operands(addr)
+        # We don't do this no more (i think)
+        # # If addr indicates an op, then merge in operands a, b
+        # insert_operands(addr)
+
         data = merge_data(addr)
         if (data == "ERROR"): sys.exit(1)
 
         # print data, type(data)
         print "%s %08X" % (addr,data)
-        for c in bscomment[addr]: print "# " + c
+
+        for c in sorted(bscomment[addr], key=bs_comment_sort): print "# " + c
         print ""
 
-
-        # Merge all the data into one
-#         mdata = 0
-#         for d in bitstream[addr]:
-            
         
-
-        
-def insert_operands(addr, DBG=1):
-    # If addr indicates an op, then merge in operands a, b
-    (is_op, tilestr) = myparse(addr, "(....)(....)")
-    if is_op == "FF00":
-        tileno = int(tilestr,16)
-        wra = opa[tileno]+'_a' # 'wire_a' or 'reg_a'
-        wrb = opb[tileno]+'_b' # 'wire_b' or 'reg_b'
-        bitstream[addr].append(op_data[wra])
-        bitstream[addr].append(op_data[wrb])
-        if DBG:
-            print "# Found a op.  Adding operands to merge-list..."
-
-            print "# opa = %7s = %s" % (wra, op_data[wra])
-            print "# opb = %7s = %s" % (wrb, op_data[wrb])
-            print "# " + addr, bitstream[addr]
-            print ""
+# We don't do this no more (i think)
+# def insert_operands(addr, DBG=1):
+#     # If addr indicates an op, then merge in operands a, b
+#     (is_op, tilestr) = myparse(addr, "(....)(....)")
+#     if is_op == "FF00":
+#         tileno = int(tilestr,16)
+#         wra = opa[tileno]+'_a' # 'wire_a' or 'reg_a'
+#         wrb = opb[tileno]+'_b' # 'wire_b' or 'reg_b'
+#         bitstream[addr].append(op_data[wra])
+#         bitstream[addr].append(op_data[wrb])
+#         if DBG:
+#             print "# Found a op.  Adding operands to merge-list..."
+# 
+#             print "# opa = %7s = %s" % (wra, op_data[wra])
+#             print "# opb = %7s = %s" % (wrb, op_data[wrb])
+#             print "# " + addr, bitstream[addr]
+#             print ""
 
 
 
@@ -514,7 +521,7 @@ op_data['wire_b'] = (2 << 12)
 op_data['reg_a']  = (0 << 14)
 op_data['wire_a'] = (2 << 14)
 
-def bs_op(tileno, line):
+def bs_op(tileno, line, DBG=0):
     # IN:
     # mul(wire,const15_15)
     # add(wire,wire) 
@@ -532,7 +539,7 @@ def bs_op(tileno, line):
     opname = parse.group(1)       # 'mul'
     op1    = parse.group(2)+"_a"  # 'reg_a' or 'wire_a' or 'const19_19$1_a'
     op2    = parse.group(3)+"_b"
-    print '# tile%02d  %s %s %s' % (tileno,opname,op1,op2)
+    if DBG>1: print '# tile%02d  %s %s %s' % (tileno,opname,op1,op2)
 
     op1 = bs_const(tileno, op1, 'op1')
     op2 = bs_const(tileno, op2, 'op2')
@@ -543,7 +550,7 @@ def bs_op(tileno, line):
     data = op_data[opname] | op_data[op1] | op_data[op2] 
 
     # Address for a PE is reg 'FF' + elem '00' + tileno e.g. '0001'
-    addr = "FF00%04d" % tileno
+    addr = "FF00%04X" % tileno
     
     # data[(4, 0)] : op = mul
     # data[(13, 13)] : read from reg `b`
@@ -632,25 +639,34 @@ def bs_const(tileno,op,operand):
 # cb_config = {}; cb_annote = {}
 # sb_config = {}; sb_annote = {}
 def addbs(addr,data, comment=''):
+    if type(addr) == int: addr = "%08X" % addr
     data = '%08X' % data
 
-    try:
-        bitstream[addr].append(data)
-        bscomment[addr].append(comment)
+    try: bitstream[addr]
     except:
         bitstream[addr] = []
-        bitstream[addr].append(data)
         bscomment[addr] = []
-        bscomment[addr].append(comment)
+
+    # Watch for redundant info
+    for d in bitstream[addr]:
+        if d == data:
+            print '# '
+            print "# WARNING redundant instruction, this was already done (and/or it's the default)"
+            print "# %s %s" % (addr,data),
+            print ":: bs['%s'] = %s" % (addr, bitstream[addr])
+            return
+
+    bitstream[addr].append(data)
+
+    if type(comment)==str: comment = [comment]
+    bscomment[addr] = bscomment[addr] + comment
 
     print '# '
     print "# %s %s" % (addr,data),
     print ":: bs['%s'] = %s" % (addr, bitstream[addr])
 
     # if comment != '': print "# " + comment
-    if type(comment)==str: comment = [comment]
-    for c in comment:
-        print "# " + c
+    for c in comment: print "# " + c
 
     # Howzabout a quick error check on cb, sb elements
     feature = int(addr[2:4],16)
@@ -661,8 +677,6 @@ def addbs(addr,data, comment=''):
         valid = merge_data(addr) # Just for the error check
         if valid == "ERROR":
             print "ERROR This connection collides with a previous one"
-
-
 
 
 def merge_data(addr, DBG=0):
