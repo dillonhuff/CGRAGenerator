@@ -98,6 +98,8 @@ def main():
     input_lines = [] # for line in sys.stdin: input_lines.append(line)
     for line in sys.stdin: input_lines.append(line)
 
+    io_info = []
+
     tileno = -1
     for line in input_lines:
         # line = line.strip().lower() might be a step too far...
@@ -106,6 +108,15 @@ def main():
         # Skip blank lines
         if re.search("^\s*$", line):
             print ""
+            continue
+
+        # Save I/O info for later
+        # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+        # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+        if re.search('^# (IN|OUT)PUT\s+tile', line):
+            print line
+            io_info.append(line)
+            if DBG>1: print 'IO_INFO', io_info
             continue
 
         # Skip comments
@@ -142,8 +153,6 @@ def main():
             print ''
             continue
 
-
-        print ''
         continue
 
         ################################################################
@@ -180,7 +189,13 @@ def main():
             sys.exit(1)
         ################################################################
             
+    print ''
     emit_bitstream()
+
+    # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+    # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+    for i in io_info: print i
+
     return
 
 

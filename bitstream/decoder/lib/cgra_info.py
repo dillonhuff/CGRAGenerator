@@ -621,14 +621,13 @@ def get_encoding(tile,box,mux,msrc,DBG=0):
     parms['sw'] = int(box[0].text)
     # print '  ', box[0].tag, '=', sw
 
-    (configh,configl,configr) = (-1,-1,-1)
     if box.tag=='sb':
         parms['configh']= int(mux.attrib['configh'])
         parms['configl']= int(mux.attrib['configl'])
         parms['configr']= int(mux.attrib['configr'])
     else:
-        parms['configh']= -1
-        parms['configl']= -1
+        parms['configh']= (parms['sw'] - 1)
+        parms['configl']= 0
         parms['configr']= -1
     
     if DBG:
