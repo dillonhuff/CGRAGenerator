@@ -132,22 +132,29 @@ def main():
 
         if DBG: print "# "+line
 
-
-        # T4_mul(wire,const15_15)
-        # Strip off the tile number
+        # T4_mul(wire,const15_15) or T3_mem_64
+        # Strip off the tile number, leaving e.g. 'mul(wire,const15_15)' or 'mem_64'
         parse = re.search("^T(\d+)_(.*)", line)
         if parse:
             tileno = int(parse.group(1))
             line = parse.group(2)
             if DBG>2: print '# tile%02d  %s' % (tileno,line)
 
+
         # mul(wire,const15_15)
         # add(wire,wire) 
         # mul(reg,const13_13$1)
-
         if bs_op(tileno,line,DBG-1):
             print ''
             continue
+
+
+        # T3_mem_64    # mem_1 fifo_depth=64 => 'mem_64'
+        # T17_mem_64   # mem_2 fifo_depth=64 => 'mem_64'
+        if bs_mem(tileno,line,DBG-1):
+            print ''
+            continue
+
 
         if bs_connection(tileno, line, DBG-1):
             print ''
@@ -541,6 +548,38 @@ op_data['wire_b']  = (2 << 18)
 op_data['reg_b']   = (3 << 18)
 
 
+def bs_mem(tileno, line, DBG=0):
+    # IN:
+    # mem_64
+
+    # OUT (see e.g. ../examples/bw1000.bsa)
+    # 00040003 00000204
+    # data[(1, 0)] : mode = linebuffer
+    # data[(2, 2)] : tile_en = 1
+    # data[(15, 3)] : fifo_depth = 64
+    # data[(18, 16)] : almost_full_count = 0
+    # data[(19, 19)] : chain_enable = 0
+
+    parse = re.search('mem_(\d+)', line)
+    if not parse: return False
+
+    fd = int(parse.group(1))
+    # print '666foo found mem w/fd=%s' % fd
+
+    addr = 0x00040000 | tileno
+    data = 0x00000004 | (fd<<3)
+    comment = [
+        "data[(1, 0)] : mode = linebuffer",
+        "data[(2, 2)] : tile_en = 1",
+        "data[(15, 3)] : fifo_depth = %d" % fd,
+        "data[(18, 16)] : almost_full_count = 0",
+        "data[(19, 19)] : chain_enable = 0",
+        ]
+    addbs(addr, data, comment)
+    return True
+
+
+
 def bs_op(tileno, line, DBG=0):
     # IN:
     # mul(wire,const15_15)
@@ -586,7 +625,6 @@ def bs_op(tileno, line, DBG=0):
         "data[(17, 16)]: data0: %s" % regtranslate(op1),
         "data[(19, 18)]: data1: %s" % regtranslate(op2),
         ]
-
     addbs(addr, data, comment)
     return True
 
