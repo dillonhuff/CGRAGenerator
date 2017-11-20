@@ -3227,38 +3227,78 @@ def process_decoded_bitstream(bs):
         if re.search("REG_", line):
             if DBG: print "OOOOF it's a REG line"
 
-        # NEW
-        # data[(13, 12)] : op_b_in: REG_CONST
-        # data[(15, 14)] : op_a_in: REG_BYPASS
-        
-        # OLD
-        # data[(13, 13)] : read from reg `b`
-        # data[(15, 15)] : read from wire `a`
 
-        parse = re.search(".* op_(.)_in: REG_CONST", line)
-        if (parse):
-            if DBG: print "BEFORE: " + line
-            line = "# data[(13, 13)] : read from reg `%s`" % parse.group(1)
-            if DBG: print "AFTER:  " + line
+        # prior regime
+        if (0):
+            # NEW
+            # data[(13, 12)] : op_b_in: REG_CONST
+            # data[(15, 14)] : op_a_in: REG_BYPASS
+
+            # OLD
+            # data[(13, 13)] : read from reg `b`
+            # data[(15, 15)] : read from wire `a`
+
+            parse = re.search(".* op_(.)_in: REG_CONST", line)
+            if (parse):
+                if DBG: print "BEFORE: " + line
+                line = "# data[(13, 13)] : read from reg `%s`" % parse.group(1)
+                if DBG: print "AFTER:  " + line
 
 
-        parse = re.search(".* op_(.)_in: REG_BYPASS", line)
-        if (parse):
-            if DBG: print "BEFORE: " + line
-            line = "# data[(13, 13)] : read from wire `%s`" % parse.group(1)
-            if DBG: print "AFTER:  " + line
+            parse = re.search(".* op_(.)_in: REG_BYPASS", line)
+            if (parse):
+                if DBG: print "BEFORE: " + line
+                line = "# data[(13, 13)] : read from wire `%s`" % parse.group(1)
+                if DBG: print "AFTER:  " + line
 
-        # New regime uses "op_a_in" and 'op_b_in" instead of just a and b
-        line = re.sub("op_a_in", "a", line)
-        line = re.sub("op_b_in", "b", line)
+        # newer regime
+        if (1):
+            # NEW...
+            # data[(19, 18)]: data1: REG_CONST
+            # data[(17, 16)]: data0: REG_DELAY
+            # data[(19, 18)]: data1: REG_BYPASS
+            
+            # ...must be backtranslated to OLD
+            # data[(13, 13)] : read from reg `b`
+            # data[(13, 13)] : read from reg `a`
+            # data[(15, 15)] : read from wire `b`
+
+            # parse = re.search(".* op_(.)_in: REG_CONST", line)
+            parse = re.search(".*: data([01]): REG_(CONST|DELAY)", line)
+            if (parse):
+                if parse.group(1) == '0': r='a'
+                else: r='b'
+
+                if DBG: print "BEFORE: " + line
+                line = "# data[(13, 13)] : read from reg `%s`" % r
+                if DBG: print "AFTER:  " + line
+
+
+            # parse = re.search(".* op_(.)_in: REG_BYPASS", line)
+            parse = re.search(".*: data([01]): REG_BYPASS", line)
+            if (parse):
+                if parse.group(1) == '0': r='a'
+                else: r='b'
+                if DBG: print "BEFORE: " + line
+                line = "# data[(13, 13)] : read from wire `%s`" % r
+                if DBG: print "AFTER:  " + line
+
+        # prior regime
+        if (0):
+            # New regime uses "op_a_in" and 'op_b_in" instead of just a and b
+            line = re.sub("op_a_in", "a", line)
+            line = re.sub("op_b_in", "b", line)
+
+        # newer regime
+        if (1):
+            # Newer new regime uses 'data0' and 'data1' instead of a and b
+            print 666
+            line = re.sub("data0", "a", line)
+            line = re.sub("data1", "b", line)
+
 
         # New regime uses "alu_op" instead of just "op" maybe
         line = re.sub("alu_op", "op", line)
-
-
-
-
-
 
         # "to a" => "to wireA", "to b" => "to wireB"
         # FIXME so egregious!!!
@@ -3352,6 +3392,13 @@ def process_decoded_bitstream(bs):
         # Gather op info for later emission (see above)
         # E.g. if input line is "# data[(4, 0)] : op = mul"
         # Then opname = "MUL"
+
+        # OLD: 'data[(4, 0)] : op = mul'
+        # NEW: 'data[(4, 0)] : alu_op = mul'
+        # 
+        # parse = re.search(" (alu_)*op = (\S+)", line)
+        # This is taken care of in the rewrites ( I think)
+
         parse = re.search(" op = (\S+)", line)
         if (parse):
             opname = parse.group(1).upper()

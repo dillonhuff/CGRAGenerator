@@ -528,13 +528,18 @@ op_data = {} # dictionary
 op_data['add'] = 0x00000000
 op_data['mul'] = 0x0000000B
 
-# B mode bits are 12,13
-op_data['reg_b']  = (0 << 12)
-op_data['wire_b'] = (2 << 12)
 
-# A mode bits are 14,15
-op_data['reg_a']  = (0 << 14)
-op_data['wire_a'] = (2 << 14)
+# REG_CONST = 0; REG_DELAY = 3; REG_BYPASS = 2
+# A (data0) mode bits are 16,17
+op_data['const_a'] = (0 << 16)
+op_data['wire_a']  = (2 << 16)
+op_data['reg_a']   = (3 << 16)
+
+# B (data1) mode bits are 18,19
+op_data['const_b'] = (0 << 18)
+op_data['wire_b']  = (2 << 18)
+op_data['reg_b']   = (3 << 18)
+
 
 def bs_op(tileno, line, DBG=0):
     # IN:
@@ -542,11 +547,11 @@ def bs_op(tileno, line, DBG=0):
     # add(wire,wire) 
     # mul(reg,const13_13$1)
 
-    # OUT:
-    # FF000001 0000800B
-    # # data[(4, 0)] : op = mul
-    # # data[(13, 13)] : read from reg `b`
-    # # data[(15, 15)] : read from wire `a`
+    # OUT (../examples/bw1000.bsa):
+    # FF000001 0003 000B
+    # data[(4, 0)] : alu_op = mul
+    # data[(17, 16)] : data0: REG_DELAY
+    # data[(19, 18)] : data1: REG_CONST
 
     parse = re.search('(add|mul)\s*\(\s*(\S+)\s*,\s*(\S+)\s*\)', line)
     if not parse: return False
@@ -556,35 +561,49 @@ def bs_op(tileno, line, DBG=0):
     op2    = parse.group(3)+"_b"
     if DBG>1: print '# tile%02d  %s %s %s' % (tileno,opname,op1,op2)
 
+    # If op is a const, returns 'const_a' or 'const_b'
     op1 = bs_const(tileno, op1, 'op1')
     op2 = bs_const(tileno, op2, 'op2')
 
-    assert op1=='reg_a' or op1=='wire_a',op1
-    assert op2=='reg_b' or op2=='wire_b',op2
+    assert op1=='reg_a' or op1=='wire_a' or op1=='const_a',op1
+    assert op2=='reg_b' or op2=='wire_b' or op2=='const_b',op2
 
     data = op_data[opname] | op_data[op1] | op_data[op2] 
 
     # Address for a PE is reg 'FF' + elem '00' + tileno e.g. '0001'
     addr = "FF00%04X" % tileno
     
-    # data[(4, 0)] : op = mul
-    # data[(13, 13)] : read from reg `b`
-    # data[(15, 15)] : read from wire `a`
+    # data[(4, 0)] : alu_op = mul
+    # data[(17, 16)] : data0: REG_DELAY
+    # data[(19, 18)] : data1: REG_CONST
 
-    # "reg_a" => "reg 'a'"
-    op1 = re.sub(r'_([ab])', r" '\1'", op1)
-    comment = op1
+#     # "reg_a" => "reg 'a'"
+#     op1 = re.sub(r'_([ab])', r" '\1'", op1)
+#     # comment = op1
+
     comment = [
-        "data[(4, 0)] : op = %s" % opname,
-        "data[(13, 13)]: read from %s" % op2,
-        "data[(15, 15)]: read from %s" % op1,
+        "data[(4, 0)] : alu_op = %s" % opname,
+        "data[(17, 16)]: data0: %s" % regtranslate(op1),
+        "data[(19, 18)]: data1: %s" % regtranslate(op2),
         ]
 
     addbs(addr, data, comment)
     return True
 
+def regtranslate(op):
+    if op[0:3]=='reg': return 'REG_DELAY'
+    if op[0:3]=='wir': return 'REG_BYPASS'
+    if op[0:3]=='con': return 'REG_CONST'
+
+
+
 def bs_const(tileno,op,operand):
-    '''Where const = e.g. "const13_13$1" and operand= "op1"'''
+    '''
+    Where const = e.g. "const13_13$1" and operand= "op1"
+    If 'op' not a const, return 'op' unchanged.
+    If 'op' is a const, process it and return
+    'const_a' or 'const_b' as appropriate.
+    '''
 
     if op[0:5] != 'const': return op
     
@@ -610,16 +629,16 @@ def bs_const(tileno,op,operand):
     # Address for a const is reg 'F0' + elem '00' + tileno e.g. '0008'
     # (op2 constant is 'F1' instead of 'F0')
     if operand=='op1':
-        reg = 'reg_a'
+        const = 'const_a'
         addr = "F000%04x" % tileno
-        comment = "data[(15, 0)]=2 : init `a` reg with const `%d`" % k
+        comment = "data[(15, 0)] : init `data0` reg with const `%d`" % k
     else:
-        reg = 'reg_b'
+        const = 'const_b'
         addr = "F100%04x" % tileno
-        comment = "data[(15, 0)]=2 : init `b` reg with const `%d`" % k
+        comment = "data[(15, 0)] : init `data1` reg with const `%d`" % k
 
     addbs(addr, data, comment)
-    return reg
+    return const
     # return "%s %s %s" % (addr, data, comment)
 
 #     comment = line
@@ -855,39 +874,6 @@ def find_sb16():
                 
 
 main()
-
-
-
-# print '''
-# NEXT:
-# - sort bs by index
-# - emit each bs_addr data, merging where appropriate
-# - when feature = '00' (pe), remember to merge in the operands
-# '''
-# 
-
-# THE TRASH
-#     # find_mux_deets('pe_out_res', 'out_BUS16_S2_T0')
-#     connectbus('pe_out_res', 'out_BUS16_S2_T0')
-
-
-#     sys.exit(0)
-
-
-# def bs_op(tileno,opname,op1,op2):
-#     # FF000001 0000800B
-#     # # data[(4, 0)] : op = mul
-#     # # data[(13, 13)] : read from reg `b`
-#     # # data[(15, 15)] : read from wire `a`
-#     # print "# Found op '%s'" % op
-# 
-#     # Address for a PE is reg 'FF' + elem '00' + tileno e.g. '0001'
-#     hextile = int(str(tileno), 16)
-#     addr = "FF00" + hextile
-
-
-
-
 
 
 

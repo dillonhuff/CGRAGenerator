@@ -36,7 +36,8 @@ if DBG:
     print "INSTANCES"
     for k in instances:
         # print "%s - %s" % (k, instances[k])
-        try:    print "%-12s %s" % (k, instances[k]['configargs'])
+        # try:    print "%-12s %s" % (k, instances[k]['configargs'])
+        try:    print "%-12s %s" % (k, instances[k]['modargs'])
         except: print "%-12s %s" % (k, "N/A")
 
 def uniquify(nodename):
@@ -131,7 +132,6 @@ def to_or_from(nodename):
     print "FOO I don't know what '%s' is" % nodename
     return "unknown"
 
-DBG=0
 if DBG: print "CONNECTIONS"
 for k in connections:
     # print k
@@ -139,6 +139,17 @@ for k in connections:
 
     u0 = uniquify(k[0])
     u1 = uniquify(k[1])
+
+    # "lb_p4_clamped_stencil_update_stream$mem_1$cgramem":{
+    #   "genref":"cgralib.Mem",
+    #   "genargs":{"depth":["Int",1024], "width":["Int",16]},
+    #   "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",64], ...
+    try:
+        fifo_depth = instances[u1]['modargs']['fifo_depth'][1]
+        # print "*** %-12s %s" % (u1, fifo_depth)
+        fdcomment = ' # fifo_depth %s' % fifo_depth
+    except:
+        fdcomment = ''
 
     # Turn "PE_U70.data.out, PE_U8.data.in.1" into "PE_U70, PE_U8"
     from_node = u0
@@ -156,8 +167,10 @@ for k in connections:
 #         innode = outnode
 #         outnode = "OUTPUT"
 
-    print '    "%s" -> "%s";' % (from_node, to_node)
     # print "  %s" % instances[innode]['configargs']
+
+    # print '    "%s" -> "%s";' % (from_node, to_node)
+    print '    "%s" -> "%s";%s' % (from_node, to_node, fdcomment)
 
     if DBG: print ""
 

@@ -2,6 +2,12 @@
 
 set VERBOSE
 
+if ($?SERPENT_HACK) then
+    echo "WARNING USING SERPENT HACK"
+    echo "WARNING USING SERPENT HACK"
+    echo "WARNING USING SERPENT HACK"
+endif
+
 # Build a tmp space for intermediate files
 set tmpdir = deleteme
 if (! -e $tmpdir) then
@@ -289,176 +295,213 @@ else
 endif
 
 
-
-#------------------------------------------------------------------------
-# BSB HACK
-echo BSB $config
-unset bsb_hack
-
-if ("$config" == "/nobackup/steveri/github/CGRAGenerator/bitstream/bsbuilder/pw2_bsb.bs") set bsb_hack
-
-if ($?bsb_hack) then
-  echo ""
-  echo "BSB HACK"
-  echo "BSB HACK"
-  echo "BSB HACK"
-  echo "bsb hack because config = pw2_bsb.bs"
-  echo ""
-endif
-if ($?VERBOSE) echo run.csh line 337 ish
-#------------------------------------------------------------------------
+if ($?SERPENT_HACK) goto SERPENT_HACK
 
 
-########################################################################
-# Now process bitstream file $config
+  #------------------------------------------------------------------------
+  # BSB HACK
+  echo BSB $config
+  unset bsb_hack
+
+  if ("$config" == "/nobackup/steveri/github/CGRAGenerator/bitstream/bsbuilder/pw2_bsb.bs") set bsb_hack
+
+  if ($?bsb_hack) then
+    echo ""
+    echo "BSB HACK"
+    echo "BSB HACK"
+    echo "BSB HACK"
+    echo "bsb hack because config = pw2_bsb.bs"
+    echo ""
+  endif
+  if ($?VERBOSE) echo run.csh line 337 ish
+  #------------------------------------------------------------------------
 
 
-if (! $?bsb_hack) then
+  ########################################################################
+  # Now process bitstream file $config
 
-  # Verify that embedded IO info exists (skip if using bsbuilder)
 
-  unset embedded_io
-  grep "FFFFFFFF" $config > /dev/null && set embedded_io
-  if (! $?embedded_io) then
-    echo "ERROR run.csh: Bitstream appears NOT to have embedded I/O information."
-    echo "ERROR run.csh: We don't support that no more."
-    exit -1
-  else if ($?VERBOSE) then
-    echo
-    echo "Bitstream appears to have embedded i/o information (as it should)."
-    echo "Will strip out IO hack from '$config'"
-    echo
+  if (! $?bsb_hack) then
+
+    # Verify that embedded IO info exists (skip if using bsbuilder)
+
+    unset embedded_io
+    grep "FFFFFFFF" $config > /dev/null && set embedded_io
+    if (! $?embedded_io) then
+      echo "ERROR run.csh: Bitstream appears NOT to have embedded I/O information."
+      echo "ERROR run.csh: We don't support that no more."
+      exit -1
+    else if ($?VERBOSE) then
+      echo
+      echo "Bitstream appears to have embedded i/o information (as it should)."
+      echo "Will strip out IO hack from '$config'"
+      echo
+    endif
+
   endif
 
-endif
+
+  # Nowadays decoder needs cgra_info to work correctly
+  set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
+  # pwd; ls -l $cgra_info
+
+  set decoded = $tmpdir/{$config:t}.decoded
+  if (-e $decoded) rm $decoded
+
+  # Why?  Leftover debug stuff I guess?
+  # # Possible locations for pnr stuff
+  # ls ../../.. | grep -i smt
 
 
-# Nowadays decoder needs cgra_info to work correctly
-set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
-# pwd; ls -l $cgra_info
-
-set decoded = $tmpdir/{$config:t}.decoded
-if (-e $decoded) rm $decoded
-
-# Why?  Leftover debug stuff I guess?
-# # Possible locations for pnr stuff
-# ls ../../.. | grep -i smt
-
-
-# echo \
-# ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
-# ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
-# 
-# NOTE -v is messy and should be avoided unless you're trying to debg things.
-echo           run.csh: decode.py -cgra $cgra_info $config
-set VERBOSE
-if ($?VERBOSE) then
-  ../../bitstream/decoder/decode.py -cgra $cgra_info $config | tee $decoded || exit -1
-else
-  ../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded || exit -1
-endif
-unset VERBOSE
-
-
-# Show IO info derived from bitstream
-if ($?VERBOSE) then
-  echo; sed -n '/O Summary/,$p' $decoded; echo
-else
-  echo; sed -n '/O Summary/,$p' $decoded | grep PUT | sort; echo
-endif
-
-
-# Clean bitstream (strip out comments and hacked-in IO info)
-set newbs = $decoded.bs
-if (-e $newbs) rm $newbs
-
-##############################################################################
-unset LUT_HACK
-if ($?LUT_HACK) then
-  echo
-  echo '  LUT hack'
-  echo '  LUT hack'
-  echo '  LUT hack'
-  echo '  Temporarily stripping out LUT code...'
-  echo ''
-  set lut_hack_en = "^FF00.... 00000080"
-  set lut_hack_ld = "^0000.... ........"
-
-  cat $decoded \
-    | egrep -v "$lut_hack_en" \
-    | egrep -v "$lut_hack_ld" \
-    > $tmpdir/lut_hack
-
-  echo diff $decoded $tmpdir/lut_hack
-  diff $decoded $tmpdir/lut_hack | grep -v d
-  echo ""
-
-  mv $tmpdir/lut_hack $decoded 
-endif
-##############################################################################
-
-
-
-# grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
-cat $decoded \
-  | egrep -v '^F000.... FFFFFFFF' \
-  | egrep -v '^F100.... FFFFFFFF' \
-  | egrep -v '^FF00.... 000000F0' \
-  | egrep -v '^FF00.... 000000FF' \
-  > $tmpdir/decode2
-
-
-# This is small and SHOULD NOT BE OPTIONAL!
-# Meh.  Now it's optional.
-if ($?VERBOSE) then
-  echo diff $decoded $tmpdir/decode2
-  diff $decoded $tmpdir/decode2 | grep -v d
-endif
-
-
-if (! $?bsb_hack) then
-
-  # Another useful test
-  set ndiff = `diff $decoded $tmpdir/decode2 | grep -v d | wc -l`
-  if ("$ndiff" == "5") then
-    if ($?VERBOSE) echo "run.csh: Five lines of diff.  That's good!"
+  # echo \
+  # ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
+  # ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
+  # 
+  # NOTE -v is messy and should be avoided unless you're trying to debg things.
+  echo           run.csh: decode.py -cgra $cgra_info $config
+  set VERBOSE
+  if ($?VERBOSE) then
+    ../../bitstream/decoder/decode.py -cgra $cgra_info $config | tee $decoded || exit -1
   else
-    echo "ERROR run.csh: Looks like we messed up the IO"
-    exit -1
+    ../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded || exit -1
+  endif
+  unset VERBOSE
+
+
+  # Show IO info derived from bitstream
+  if ($?VERBOSE) then
+    echo; sed -n '/O Summary/,$p' $decoded; echo
+  else
+    echo; sed -n '/O Summary/,$p' $decoded | grep PUT | sort; echo
   endif
 
-endif
+
+  # Clean bitstream (strip out comments and hacked-in IO info)
+  set newbs = $decoded.bs
+  if (-e $newbs) rm $newbs
+
+  ##############################################################################
+  unset LUT_HACK
+  if ($?LUT_HACK) then
+    echo
+    echo '  LUT hack'
+    echo '  LUT hack'
+    echo '  LUT hack'
+    echo '  Temporarily stripping out LUT code...'
+    echo ''
+    set lut_hack_en = "^FF00.... 00000080"
+    set lut_hack_ld = "^0000.... ........"
+
+    cat $decoded \
+      | egrep -v "$lut_hack_en" \
+      | egrep -v "$lut_hack_ld" \
+      > $tmpdir/lut_hack
+
+    echo diff $decoded $tmpdir/lut_hack
+    diff $decoded $tmpdir/lut_hack | grep -v d
+    echo ""
+
+    mv $tmpdir/lut_hack $decoded 
+  endif
+  ##############################################################################
 
 
-# Strip out comments from decoded bitstream
-cat $tmpdir/decode2\
-  | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
-  > $newbs
 
-set config = $newbs
+  # grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
+  cat $decoded \
+    | egrep -v '^F000.... FFFFFFFF' \
+    | egrep -v '^F100.... FFFFFFFF' \
+    | egrep -v '^FF00.... 000000F0' \
+    | egrep -v '^FF00.... 000000FF' \
+    > $tmpdir/decode2
+
+
+  # This is small and SHOULD NOT BE OPTIONAL!
+  # Meh.  Now it's optional.
+  if ($?VERBOSE) then
+    echo diff $decoded $tmpdir/decode2
+    diff $decoded $tmpdir/decode2 | grep -v d
+  endif
+
+
+  if (! $?bsb_hack) then
+
+    # Another useful test
+    set ndiff = `diff $decoded $tmpdir/decode2 | grep -v d | wc -l`
+    if ("$ndiff" == "5") then
+      if ($?VERBOSE) echo "run.csh: Five lines of diff.  That's good!"
+    else
+      echo "ERROR run.csh: Looks like we messed up the IO"
+      exit -1
+    endif
+
+  endif
+
+
+  # Strip out comments from decoded bitstream
+  cat $tmpdir/decode2\
+    | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
+    > $newbs
+
+  set config = $newbs
+
+
+  # This is what we're looking for:
+  #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
+  #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
+  #     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
+  set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
+  set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
+
+  if ($?bsb_hack) then
+
+    set inwires  = wire_0_m1_BUS16_S0_T0
+    set outwires = wire_0_0_BUS16_S2_T0;
+
+    echo ""
+    echo "BSB HACK"
+    echo "BSB HACK"
+    echo "BSB HACK"
+    echo "For now only works with (input,output)='$inwires,$outwires'"
+    echo ""
+
+  endif
+
+
+SERPENT_HACK:
+if ($?SERPENT_HACK) then
+  echo 'Continuing with serpent hack...'
+  set VERBOSE
+
+#           @CGRAGenerator/testdir/bsa_verify.csh $(QVSWITCH) \
+#                 build/$*_annotated \
+#                 -cgra $(filter %.txt, $?)
+# 
+
+  grep . $config > /tmp/tmpconfig$$
+  set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
+  ../../testdir/bsa_verify.csh -v /tmp/tmpconfig$$ -cgra $cgra_info
+  # exit
 
 
 
-# This is what we're looking for:
-#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
-#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
-#     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
-set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
-set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
+  set decoded = $config
+  set inwires =  `egrep '^# INPUT  tile' $decoded | awk '{print $NF}'`
+  set outwires = `egrep '^# OUTPUT tile' $decoded | awk '{print $NF}'`
 
-if ($?bsb_hack) then
+  grep -v '#' $config | grep . > /tmp/tmpconfig$$
+  set config = /tmp/tmpconfig$$
 
-  set inwires  = wire_0_m1_BUS16_S0_T0
-  set outwires = wire_0_0_BUS16_S2_T0;
+  if ($?VERBOSE) then
+    echo
+    head $config
+    echo ...
+    tail $config
+    echo
+    echo inwires $inwires
+    echo outwires $outwires
+  endif
 
-  echo ""
-  echo "BSB HACK"
-  echo "BSB HACK"
-  echo "BSB HACK"
-  echo "For now only works with (input,output)='$inwires,$outwires'"
-  echo ""
-
-endif
 
 if ($?VERBOSE) then
     echo ""
