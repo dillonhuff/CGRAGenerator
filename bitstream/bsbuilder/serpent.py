@@ -216,7 +216,7 @@ def main(DBG=1):
     print ''
 
     print '######################################################'
-    print '# serpent.py: Initialize node and tile data structures'
+    print '# serpent.py: Read input, initialize node and tile data structures'
     init_tile_resources(DBG=1)
     build_nodes(DBG=1)
     assert not nodes['INPUT'].placed
@@ -278,7 +278,9 @@ def final_output():
         prettyprint_dict("  route ", node.route)
 
     # First the constants
+    print ''
     print '################################################################'
+    print '# CONSTANTS'
     for sname in sorted(nodes):
         if is_const(sname):
             dname = nodes[sname].dests[0]
@@ -292,7 +294,13 @@ def final_output():
     print 'REGISTERS', REGISTERS
     print ''
 
+    print '################################################################'
+    print '# PE tiles'
     print_oplist()
+
+    print '################################################################'
+    print '# MEM tiles'
+    print_memlist()
 
     # Routing
     print '################################################################'
@@ -359,6 +367,27 @@ def print_oplist():
         if oplist[i] != i: print oplist[i]
 
     print ''
+
+
+def print_memlist():
+    # E.g. prints
+    #     'T3_mem_64    # mem_1 fifo_depth=64'
+    #     'T17_mem_64   # mem_2 fifo_depth=64'
+    memlist = range(cgra_info.ntiles())
+    for sname in sorted(nodes):
+        if is_const(sname): continue
+        src = nodes[sname]
+        if is_mem(sname):
+            opline = 'T%d_mem_%d' % (src.tileno, src.fifo_depth)
+            opcomm = '# %s fifo_depth=%d' % (sname, src.fifo_depth)
+            memlist[src.tileno] = '%-12s %s' % (opline,opcomm)
+
+    # Print in tile order, 0 to 'ntiles'
+    for i in range(cgra_info.ntiles()):
+        if memlist[i] != i: print memlist[i]
+
+    print ''
+
 
 def optype(input):
     '''
@@ -437,8 +466,9 @@ def get_default_cgra_info_filename():
 
 class Node:
     def __init__(self, nodename):
-        self.name = nodename
-        self.tileno = -1 # Because 0 is a valid tile number, see?
+        self.name       = nodename
+        self.tileno     = -1 # Because 0 is a valid tile number, see?
+        self.fifo_depth = -1
 
         # input/output EXAMPLES (FIXME needs update)
         #            input0/1         output
@@ -498,6 +528,10 @@ class Node:
         # print "  route=%s" % self.route
         prettyprint_dict("  route ", self.route)
         print "  net= %s" % self.net
+
+        if self.fifo_depth != -1:
+            print "  fifo_depth= %d" % self.fifo_depth
+
         print ''
 
     def is_placed(self): return self.tileno != -1
@@ -806,6 +840,10 @@ def build_nodes(DBG=0):
         # Don't care about luts (for now)
         if re.search("wen_lut", line): continue
 
+
+        # E.g.     '"INPUT" -> "lb_p4_clamped_stencil_update_stream$mem_1$cgramem"; # fifo_depth 64'
+        # Becomes: '"INPUT" -> "mem_1"; # fifo_depth 64'
+
         line = re.sub('lb_p4_clamped_stencil_update_stream\$', "", line)
         line = re.sub("\$cgramem", "", line)
         if DBG>1: print "# ", line
@@ -823,11 +861,31 @@ def build_nodes(DBG=0):
         nodes[lhs].dests.append(rhs)
         # print nodes[rhs].dests
 
+        # Uhhhh...if rhs node is a mem, there should be a fifo_depth comment
+        process_fifo_depth(rhs,line)
+
     if DBG:
         print ''
         print "Found nodes and destinations:"
         for n in sorted(nodes): print "  %-20s %s" % (n, nodes[n].dests)
         print ""
+
+
+# Uhhhh...if rhs node is a mem, there should be a fifo_depth comment, e.g.
+def process_fifo_depth(nodename, line):
+    '''
+    Look for something like
+        "INPUT" -> "mem_1"; # fifo_depth 64
+    and add fifo_depth to "mem_1" node info
+    '''
+    if nodename[0:3] != 'mem': return
+
+    fd = re.search('fifo_depth\s+(\d+)$', line).group(1)
+    nodes[nodename].fifo_depth = int(fd)
+
+    # print ''
+    # print "666foo", nodename, line
+    # nodes[nodename].show()
 
 
 def addnode(nodename):
