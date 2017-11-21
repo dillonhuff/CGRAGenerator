@@ -2767,7 +2767,8 @@ def initialize_tile_list(w, h):
 
 
 def DOT_print_connection(t1, w1, t2, w2):
-    print "  FOO T%s '%s' connects to T%s '%s'" % (t1, w1, t2, w2)
+    print "  FOO 'T%s_%s' connects to 'T%s_%s'" % (t1, w1, t2, w2)
+    print ''
 
 def DOT_trace_wire(tileno, portname):
     DBG=0
@@ -2811,15 +2812,24 @@ def DOT_trace_wire(tileno, portname):
     # outputs and 2) only trace BACK from the sbwire, never forward
 
     # Treat "wireA" "wireB" and "pe_out" as outputs e.g. look for internal connections
+    #     is_output = re.search('^out', portname) \
+    #                 or re.search('^wire', portname) \
+    #                 or re.search('sb_wire', portname) \
+    #                 or (portname == 'pe_out')
+
     is_output = re.search('^out', portname) \
-                or re.search('^wire', portname) \
-                or re.search('sb_wire', portname) \
                 or (portname == 'pe_out')
 
+
     if is_input:
-        if DBG: print "  FOO '%s' is a input; find neighbor output" % portname
+        if DBG: print "  FOO 'T%d_%s' is a input; find neighbor output" % (tileno,portname)
         (adj_tileno,adj_wire) = find_matching_wire(tileno, portname)
-        if (adj_wire):
+        if adj_wire=='INPUT':
+            # print '  FOO hey its a input'
+            return (tileno, 'INPUT')
+
+        elif (adj_wire):
+            # Continue tracing until find something interesting...
             if DBG: DOT_print_connection(tileno, portname, adj_tileno,adj_wire)
             return DOT_trace_wire(adj_tileno,adj_wire)
 
@@ -2952,6 +2962,8 @@ def DOT_build_graph():
     DOT_STREAM.close()
 
 def DOT_build_dots(tileno, connection):
+    DBG=0
+    if DBG: print "\nprocessing connection '%s' in tile %d" % (connection, tileno)
 
     # This: Tile  4, 'pe_out <= INPUT(wireA,wireB)'
     # Should turn into: "self.in"->"T4_pe_out"
@@ -3292,7 +3304,6 @@ def process_decoded_bitstream(bs):
         # newer regime
         if (1):
             # Newer new regime uses 'data0' and 'data1' instead of a and b
-            print 666
             line = re.sub("data0", "a", line)
             line = re.sub("data1", "b", line)
 
@@ -3717,8 +3728,12 @@ def find_matching_wire(tileno, w):
     elif (side==3): (r,c,side) = (r-1,c,side-2)
 
 
-    if (r < 0): return (False,False)
-    if (c < 0): return (False,False)
+    # if (r < 0): return (False,False)
+    # if (c < 0): return (False,False)
+
+    if (r < 0) or (c < 0):
+        if in_or_out == 'out': return (-1,'INPUT')
+        else                : return (-1,'OUTPUT')
 
     #   print (r,c,side)
 
