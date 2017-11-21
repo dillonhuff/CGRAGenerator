@@ -70,12 +70,12 @@ if ("$type" == "bsa") then
   # Using config file 'CGRAGenerator/testdir/graphcompare/examples/cgra_info.txt'
   # Xlib:  extension "RANDR" missing on display "neva-2:9".
 
-  if ($?yakky) echo Building '$outfile'...
+  if ($?yakky) echo Building "$outfile"...
   $viz/bsview.py -cgra_info $cgra_info $infile -dot $outfile\
     |& grep . | grep -v GtkWarning | grep -v gtk.Warning | grep -v RANDR\
     | grep -v 'Using config'
 
-  if ($?yakky) echo Applying input hack to '$outfile'...
+  if ($?yakky) echo Applying input hack to "$outfile"...
   set tmp = /tmp/tmp.convert2dot.$$
   mv $outfile $tmp
   $scripthome/fix_input_hack.csh $tmp > $outfile
