@@ -46,29 +46,56 @@ def uniquify(nodename):
     if parse: nodename = parse.group(1)
 
     # Now turn e.g.
-    #    "PE_U70" -> "PE_U70_mul"
-    #    "Const_U112" -> "const999"
+    #    "add_335_343_344_PE" -> "add_335_343_344"
 
     # Sample PE node:
-    # instances["PE_U8"] = 
-    # {u'configargs': {u'op': u'add'}, u'genargs': {u'numin': 2, u'width': 16}, u'genref': u'cgralib.PE'}
-    parse = re.search("^PE", nodename)
+    #   "add_335_343_344_PE":{
+    #     "genref":"cgralib.PE",
+    #     "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
+    #     "modargs":{"alu_op":["String","add"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],0], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],0]}
+    #   },
+
+    #    "add_335_343_344_PE" -> "add_335_343_344"
+    parse = re.search("(.*)_PE", nodename)
     if parse:
         # print "FOO", ; print nodename
         # print "FOO", ; print instances[nodename]
-        nodename = "%s_%s" % (nodename, instances[nodename]['configargs']['op'])
+        nodename = "%s" % parse.group(1)
         return nodename
     
-    # Sample const node:
-    # instances["Const_U112"] = 
-    # {u'configargs': {u'value': 999}, u'genargs': {u'width': 16}, u'genref': u'cgralib.Const'}
+#     # Sample const node:
+#     #           "const7__338":{
+#     #             "genref":"coreir.const",
+#     #             "genargs":{"width":["Int",16]},
+#     #             "modargs":{"value":[["BitVector",16],7]}
+#     #           },
+# 
+#     parse = re.search("^const", nodename)
+#     if parse:
+#         # print "FOO", ; print nodename
+#         # print "FOO", ; print instances[nodename]
+# 
+#         # nodename = "const%s" % (instances[nodename]['modargs']['value'][1])
+#         # NOPE!  Need unique const nodes e.g. trouble if 'const7_334'
+#         # and 'const7_448' both collapse to 'const7' :(
+# 
+#         return nodename
 
-    parse = re.search("^Const", nodename)
+
+    # Memory nodes
+    #     "lb_p4_clamped_stencil_update_stream$mem_1$cgramem" => "mem_1"
+
+    parse = re.search("^lb.*[$](mem_\d+)[$]cgramem", nodename)
     if parse:
-        # print "FOO", ; print nodename
-        # print "FOO", ; print instances[nodename]
-        nodename = "const%s" % (instances[nodename]['configargs']['value'])
+        nodename = parse.group(1)
         return nodename
+
+    # "lb_p4_clamped_stencil_update_stream_wen_lut_bitPE" => "wen_lut"
+    parse = re.search("wen_lut", nodename)
+    if parse:
+        nodename = 'wen_lut'
+        return nodename
+
 
     # Inputs and outputs BEFORE:
     #   io16in_U0 -> PE_U48_mul
@@ -105,9 +132,9 @@ def to_or_from(nodename):
     #   lb_conv1_2_stencil_update_stream$mem_1.wdata
     #   lb_conv1_2_stencil_update_stream$reg_0_1.out
 
-#     # Special cases for i/o nodes: up is down and down is up
-#     if re.search("io16in.*\.out$", nodename): return "from"
-#     if re.search("io16.*\.in$",    nodename): return "to"
+    #     # Special cases for i/o nodes: up is down and down is up
+    #     if re.search("io16in.*\.out$", nodename): return "from"
+    #     if re.search("io16.*\.in$",    nodename): return "to"
 
     parse = re.search("\.out$", nodename)
     if parse:
@@ -128,6 +155,7 @@ def to_or_from(nodename):
 
     if re.search("\.wdata$", nodename): return "to"
     if re.search("\.rdata$", nodename): return "from"
+    if re.search("\.wen$", nodename): return "to"
 
     print "FOO I don't know what '%s' is" % nodename
     return "unknown"
@@ -144,9 +172,11 @@ for k in connections:
     #   "genref":"cgralib.Mem",
     #   "genargs":{"depth":["Int",1024], "width":["Int",16]},
     #   "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",64], ...
+    # Insert a fifo_depth comment
+    # (for some reason, node name has a '.wdata' on the end)
     try:
-        fifo_depth = instances[u1]['modargs']['fifo_depth'][1]
-        # print "*** %-12s %s" % (u1, fifo_depth)
+        k1 = re.search('(.*).wdata', k[1]).group(1)
+        fifo_depth = instances[k1]['modargs']['fifo_depth'][1]
         fdcomment = ' # fifo_depth %s' % fifo_depth
     except:
         fdcomment = ''
@@ -167,7 +197,7 @@ for k in connections:
 #         innode = outnode
 #         outnode = "OUTPUT"
 
-    # print "  %s" % instances[innode]['configargs']
+    # print "  %s" % instances[innode]['modargs']
 
     # print '    "%s" -> "%s";' % (from_node, to_node)
     print '    "%s" -> "%s";%s' % (from_node, to_node, fdcomment)
@@ -190,82 +220,62 @@ print_trailer()
 
 # json file looks like this:
 # 
-# {"top": "global.DesignTop",
+# {"top":"global.DesignTop",
 # "namespaces":{
 #   "global":{
 #     "modules":{
 #       "DesignTop":{
 #         "type":["Record",{
-#           "out":["Array",16,"Bit"],
-#           "in":["Array",1,["Array",16,"BitIn"]]
+#           "in":["Array",1,["Array",16,"BitIn"]],
+#           "out":["Array",16,"Bit"]
 #         }],
 #         "instances":{
-#           "Const_U100":{
-#             "genref":"cgralib.Const",
-#             "genargs":{"width":16},
-#             "configargs":{"value":999}
-#           },
-# ...
-#           "PE_U12":{
+#           "add_335_339_340_PE":{
 #             "genref":"cgralib.PE",
-#             "genargs":{"numin":2, "width":16},
-#             "configargs":{"op":"add"}
+#             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
+#             "modargs":{"alu_op":["String","add"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],0], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],0]}
+#           },
+#           "add_335_343_344_PE":{
+#             "genref":"cgralib.PE",
+#             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
+#             "modargs":{"alu_op":["String","add"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],0], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],0]}
+#           },
+#           "const0__334":{
+#             "genref":"coreir.const",
+#             "genargs":{"width":["Int",16]},
+#             "modargs":{"value":[["BitVector",16],0]}
 #           },
 # ...
-#           "io16in_U0":{
+#           "io16_out":{
 #             "genref":"cgralib.IO",
-#             "genargs":{"width":16},
-#             "configargs":{"mode":"i"}
+#             "genargs":{"width":["Int",16]},
+#             "modargs":{"mode":["String","o"]}
 #           },
-#           "lb_conv1_2_stencil_update_stream$mem_1":{
+#           "io16in_in_0":{
+#             "genref":"cgralib.IO",
+#             "genargs":{"width":["Int",16]},
+#             "modargs":{"mode":["String","i"]}
+#           },
+#           "lb_p4_clamped_stencil_update_stream$mem_1$cgramem":{
 #             "genref":"cgralib.Mem",
-#             "genargs":{"depth":258, "width":16},
-#             "configargs":{"mode":"linebuffer"}
+#             "genargs":{"depth":["Int",1024], "width":["Int",16]},
+#             "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",10], "mode":["String","linebuffer"]}
 #           },
-#           "lb_conv1_2_stencil_update_stream$mem_2":{
-#             "genref":"cgralib.Mem",
-#             "genargs":{"depth":258, "width":16},
-#             "configargs":{"mode":"linebuffer"}
-#           },
-#           "lb_conv1_2_stencil_update_stream$reg_0_1":{
-#             "genref":"cgralib.Reg",
-#             "genargs":{"width":16}
+#           "lb_p4_clamped_stencil_update_stream_wen_lut_bitPE":{
+#             "genref":"cgralib.PE",
+#             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+#             "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],1]}
 #           },
 # ...
 #         "connections":[
-#           ["PE_U8.data.in.1","PE_U70.data.out"],
-#           ["PE_U72.data.in.1","Const_U112.out"],
-#           ["PE_U72.data.in.0","lb_conv1_2_stencil_update_stream$reg_0_1.out"],
-#           ["PE_U70.data.in.0","lb_conv1_2_stencil_update_stream$mem_1.rdata"],
-#           ["PE_U68.data.in.1","Const_U104.out"],
-#           ["PE_U68.data.in.0","lb_repeat_edge_2_stencil_update_stream$reg_0_1.out"],
-#           ["PE_U66.data.in.1","Const_U82.out"],
-#           ["PE_U66.data.in.0","lb_conv1_2_stencil_update_stream$reg_2_1.out"],
-#           ["PE_U64.data.in.1","Const_U84.out"],
-#           ["PE_U64.data.in.0","lb_repeat_edge_2_stencil_update_stream$reg_1_2.out"],
-#           ["PE_U62.data.in.1","Const_U74.out"],
-#           ["PE_U62.data.in.0","lb_repeat_edge_2_stencil_update_stream$reg_1_1.out"],
-#           ["PE_U60.data.in.1","Const_U86.out"],
-#           ["PE_U60.data.in.0","lb_repeat_edge_2_stencil_update_stream$reg_2_1.out"],
-#           ["PE_U6.data.in.1","PE_U58.data.out"],
-#           ["PE_U6.data.in.0","PE_U36.data.out"],
-#           ["PE_U58.data.in.1","Const_U106.out"],
-#           ["PE_U36.data.in.1","PE_U54.data.out"],
-#           ["PE_U36.data.in.0","PE_U18.data.out"],
-#           ["PE_U12.data.in.0","PE_U10.data.out"],
-#           ["PE_U10.data.in.1","PE_U52.data.out"],
-#           ["PE_U10.data.in.0","PE_U8.data.out"],
-#           ["PE_U4.data.out","io16_U1.in"],
-#           ["PE_U16.data.out","lb_conv1_2_stencil_update_stream$reg_0_1.in"],
-#           ["PE_U16.data.out","lb_conv1_2_stencil_update_stream$mem_1.wdata"],
-#           ["lb_repeat_edge_2_stencil_update_stream$reg_2_2.in","lb_repeat_edge_2_stencil_update_stream$reg_2_1.out"],
-#           ["lb_repeat_edge_2_stencil_update_stream$reg_2_1.in","lb_repeat_edge_2_stencil_update_stream$mem_2.rdata"],
-#           ["lb_conv1_2_stencil_update_stream$reg_1_2.in","lb_conv1_2_stencil_update_stream$reg_1_1.out"],
-#           ["lb_conv1_2_stencil_update_stream$reg_1_1.in","lb_conv1_2_stencil_update_stream$mem_1.rdata"],
-#           ["lb_conv1_2_stencil_update_stream$reg_0_2.in","lb_conv1_2_stencil_update_stream$reg_0_1.out"],
-#           ["lb_conv1_2_stencil_update_stream$mem_2.wdata","lb_conv1_2_stencil_update_stream$mem_1.rdata"]
-#         ]
-#       },
-# 
-# 
-# 
+#           ["const0__334.out","add_335_339_340_PE.data.in.0"],
+#           ["const7__338.out","mul_337_338_339_PE.data.in.1"],
+#           ["const7__338$1.out","mul_342_338_343_PE.data.in.1"],
+#           ["io16_out.in","add_335_343_344_PE.data.out"],
+#           ["io16in_in_0.out","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wdata"],
+#           ["io16in_in_0.out","mul_342_338_343_PE.data.in.0"],
+#           ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.rdata","mul_337_338_339_PE.data.in.0"],
+#           ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wen","lb_p4_clamped_stencil_update_stream_wen_lut_bitPE.bit.out"],
+#           ["add_335_339_340_PE.data.out","add_335_343_344_PE.data.in.0"],
+#           ["mul_337_338_339_PE.data.out","add_335_339_340_PE.data.in.1"],
+#           ["mul_342_338_343_PE.data.out","add_335_343_344_PE.data.in.1"]

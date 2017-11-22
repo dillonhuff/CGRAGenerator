@@ -883,8 +883,13 @@ def get_connection_type(c):
         print ""
 
 
+    elif c=='wdata': type = 'pe_in'
+    elif c=='rdata': type = 'pe_out'
+
     # elif (c == "wen" or c == 'wdata'):
-    elif c in ("wen", 'wdata', 'rdata'):
+    # elif c in ("wen", 'wdata', 'rdata'):
+    elif c in ("wen"):
+        print c
         type = "pe_in"
         print "ERROR Don't know what to do with '%s' (yet)" % c
         print "Will attempt recovery; modeling '%s' as '%s'" % (c,type)
@@ -3214,7 +3219,8 @@ def process_decoded_bitstream(bs):
         elif   re.search("op = output",  line):
             (operand['A'],operand['B']) = ('wire','wire')
 
-        elif re.search("mem_out",     line): tile[tileno].label = "MEM"
+        # elif re.search("mem_out",     line): tile[tileno].label = "MEM"
+        elif re.search("rdata",     line): tile[tileno].label = "MEM"
 
         # Transformations
         # < "# data[(1, 0)] : connect wire 3 (pe_out_res) to out_BUS16_S0_T0"

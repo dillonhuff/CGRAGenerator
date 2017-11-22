@@ -501,7 +501,7 @@ if ($?SERPENT_HACK) then
     echo inwires $inwires
     echo outwires $outwires
   endif
-
+endif
 
 if ($?VERBOSE) then
     echo ""

@@ -1,12 +1,17 @@
 #!/usr/bin/python
 
-import sys;
-import re;
+import sys
+import re
+import os
 
-# from ../decoder/lib import cgra_info
-sys.path.append("../decoder")
+# Import cgra_info via relative path
+mypath = os.path.realpath(__file__)
+mydir  = os.path.dirname(mypath)
+decoder_path = mydir+"/../decoder"
+sys.path.insert(0, decoder_path)
 from lib import cgra_info
 from lib import connect_tiles as CT
+
 
 import traceback # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
 def show_trace(nlines=100):
@@ -49,6 +54,57 @@ INPUT_TILENO = 0
 INPUT_TILE   = INPUT_TILENO
 INPUT_WIRE   = 'in_s2t0'
 INPUT_WIRE_T = 'T0_in_s2t0'
+
+# Set this to True if a PE has been placed in the INPUT tile
+# FIXME is this the best way to do this!!?
+INPUT_OCCUPIED = False
+
+VERBOSE = False
+dot_filename = False
+bsb_filename = False
+def process_args():
+    # Get name of this script
+    scriptname = sys.argv[0]
+    scriptname_tail = scriptname
+    parse = re.search('([/].*$)', scriptname)
+    parse = re.search('([^/]+$)', scriptname)
+    if (parse): scriptname_tail = parse.group(1)
+    args = sys.argv[1:] # shift
+
+    usage = '''
+Place and route indicated "dot" file.  Output is in "bsb" format.
+Examples:
+   %s pointwise_mapped.dot
+   %s -v pointwise_mapped.dot
+   %s pointwise_mapped.dot -o pointwise.bsb
+   %s pointwise_mapped.dot -o pointwise.bsb -cgra cgra_info.txt 
+   %s --help
+''' % (scriptname_tail, scriptname_tail, scriptname_tail, scriptname_tail, scriptname_tail)
+
+    # Load cgra_info
+    cgra_filename = get_default_cgra_info_filename()
+
+    # if (len(args) < 1): print usage; sys.exit(-1);
+
+    global VERBOSE
+    global bsb_filename
+    global dot_filename
+    while (len(args) > 0):
+        if   (args[0] == '--help'): print usage; sys.exit(0);
+        elif (args[0] == '-v'):    VERBOSE = True
+        elif (args[0] == '-cgra' or args[0] == '-cgra_info'):
+            cgra_filename = args[1]
+            args = args[1:];
+        elif (args[0] == '-o'):
+            bsb_filename = args[1]
+            args = args[1:];
+
+        else:
+            dot_filename = args[0];
+        args = args[1:]
+
+    cgra_info.read_cgra_info(cgra_filename, verbose=VERBOSE)
+
 
 def nearest_mem_tile(node='INPUT', exclude = [], DBG=1):
     '''
@@ -201,6 +257,8 @@ def main(DBG=1):
     # sys.exit(0)
     # notes()
 
+    process_args()
+
     print '######################################################'
     print '# serpent.py: Read cgra info'
     cgra_filename = get_default_cgra_info_filename()
@@ -255,31 +313,36 @@ def main(DBG=1):
     # TODO/FIXME Special treatment for OUTPUT?
     # note OUTPUT wire is always wire_m1_1_BUS16_S1_T0
 
-    print "########################################################"
-    print "# FINAL OUTPUT"
-    final_output()
+    if bsb_filename: note = 'see file "%s"' % bsb_filename
+    else:            note = ''
 
-    # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
-    # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
-    print_io_info()
+    print "########################################################"
+    print "# FINAL OUTPUT", note
+    final_output()
 
     sys.exit(0)
     
 
-def final_output():
-    print 'REGISTERS', REGISTERS
-    for n in sorted(nodes):
-        # print "  %-20s %s" % (n, nodes[n].dests)
-        nodes[n].show()
+def final_output(DBG=0):
 
-    for nodename in sorted(nodes):
-        node = nodes[nodename]
-        print nodename
-        prettyprint_dict("  route ", node.route)
+    # Redirect stdout to bsb_filename if such exists
+    if bsb_filename:
+        save_stdout = sys.stdout
+        sys.stdout = open(bsb_filename, 'w')
+
+    if DBG:
+        print '# REGISTERS', REGISTERS
+        for n in sorted(nodes):
+            # print "  %-20s %s" % (n, nodes[n].dests)
+            nodes[n].show()
+
+        for nodename in sorted(nodes):
+            node = nodes[nodename]
+            print nodename
+            prettyprint_dict("  route ", node.route)
 
     # First the constants
     print ''
-    print '################################################################'
     print '# CONSTANTS'
     for sname in sorted(nodes):
         if is_const(sname):
@@ -290,28 +353,39 @@ def final_output():
     print ''
 
     # Registers and ops
-    print '################################################################'
-    print 'REGISTERS', REGISTERS
+    print '# REGISTERS', REGISTERS
     print ''
 
-    print '################################################################'
     print '# PE tiles'
     print_oplist()
 
-    print '################################################################'
     print '# MEM tiles'
     print_memlist()
 
     # Routing
-    print '################################################################'
+    print '# ROUTING'
+    print ''
     for sname in sorted(nodes):
         if is_const(sname): continue
         src = nodes[sname]
         for dname in src.dests:
             dst = nodes[dname]
             print '# %s::%s' % (sname,dname)
-            for c in src.route[dname]: print mark_regs(c)
+
+            if is_regop(sname):
+                r = src.route[dname][0]
+                print '#', mark_regs(r), '\n'
+                break
+
+            for c in src.route[dname]:
+                print mark_regs(c)
+
             print ''
+
+    # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+    # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+    print_io_info()
+
 
 def print_io_info(DBG=0):
     # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
@@ -599,9 +673,9 @@ class Node:
         # assert input = .*_out_.*, output = .*_in_.* etc.
 
         if self.placed:
-            print "ERROR %s already placed at %s" % (name, self.input0)
+            print "#   WARNING %s already placed at %s" % (name, self.input0)
             # assert False, "ERROR %s already placed at %s" % (name, self.input0)
-            print "NOPE! False alarm, it's okay, probably an alu with two inputs"
+            print "#   It's okay, probably an alu with two inputs"
 
         self.tileno = tileno
 
@@ -821,11 +895,11 @@ def build_nodes(DBG=0):
     global nodes
     nodes = {}
 
+    # filename = 'examples/build.171027/conv_bw_mapped.dot'
+    # filename = 'examples/build.171027/pointwise_mapped.dot'
+    filename = dot_filename
 
-
-    # I will regret this one day...
-    filename = 'examples/build.171027/conv_bw_mapped.dot'
-    print filename
+    if DBG: print filename
     inputstream = open(filename);
     input_lines = [] # for line in sys.stdin: input_lines.append(line)
     for line in inputstream: input_lines.append(line)
@@ -1406,19 +1480,22 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
     # we'll put the PE in same tile with INPUT.
     # Note what if it's a reg-folded PE?
 
+    global INPUT_OCCUPIED
     if sname=='INPUT' \
        and is_pe(dname) \
-       and ('T0_pe_out' in resources[INPUT_TILENO]):
-
+       and ('T0_pe_out' in resources[INPUT_TILENO])\
+       and not INPUT_OCCUPIED:
         place_pe_in_input_tile(dname)
+        INPUT_OCCUPIED = True
         return True
 
     if sname=='INPUT' \
        and is_folded_reg(dname) \
-       and ('T0_pe_out' in resources[INPUT_TILENO]):
-
+       and ('T0_pe_out' in resources[INPUT_TILENO])\
+       and not INPUT_OCCUPIED:
         place_folded_reg_in_input_tile(dname)
-        assert False, "TODO put reg-pe folded pair in INPUT tile :("
+        # assert False, "TODO put reg-pe folded pair in INPUT tile :("
+        INPUT_OCCUPIED = True
         return True
 
     # Does destination have a home?
@@ -1504,36 +1581,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             print 'now registers is', REGISTERS
 
         elif is_regop(dname):
-            # print 7771, dname, d_in
-            print "# 1b. If regop, place (but don't route) assoc. pe"
-            d_out = nodes[dname].output
-            # nodes[dname].show(); print ''
-            pname = nodes[dname].output
-            # nodes[pname].show(); print ''
-            nodes[pname].place(dtileno, d_in, addT(dtileno,'pe_out'), DBG)
-            nodes[pname].place(dtileno, d_in+'(r)', addT(dtileno,'pe_out'), DBG)
-            # nodes[pname].show(); print ''
-
-
-
-            REGISTERS.append(d_in)
-
-
-
-
-            # dnode.route[pname] is going to be e.g. ['op1']
-            # we'll need to change that to e.g. 'T10_op1' i.e. 'd_in'
-            dnode = nodes[dname]
-            # dnode.show()
-            # print dnode.route[pname]
-            assert \
-                   (dnode.route[pname] == ['op1']) or \
-                   (dnode.route[pname] == ['op2'])
-            print "# 1b. Set route to op"
-            dnode.route[pname] = [d_in]
-            # dnode.show()
-
-
+            d_out = place_regop_op(dname, dtileno, d_in, DBG)
 
         elif is_regreg(dname):
             assert False, 'what do we do with regreg??'
@@ -1710,15 +1758,16 @@ def place_and_route_test(sname,dname,indent='# ',DBG=1):
 
 def place_pe_in_input_tile(dname):
     '''INPUT connects to pe 'dname'; place it in same node as INPUT'''
-    sname = 'INPUT'
-
     DBG=1
-    if DBG: print "# Place input-connected PE '%s' in INPUT tile" % dname
-    if DBG: print "Connecting '%s' to '%s'" % (sname,dname)
+    sname = 'INPUT'
+    if DBG:
+        print "# Place input-connected PE '%s' in INPUT tile" % dname
+        print "Connecting '%s' to '%s'" % (sname,dname)
 
-    INPUT_TILE = 0; assert nodes['INPUT'].tileno == INPUT_TILE
-    nodes[dname].place(INPUT_TILE, False, 'T0_pe_out')
+    assert nodes['INPUT'].tileno == INPUT_TILE
+    nodes[dname].place(INPUT_TILE, input=False, output='T0_pe_out')
 
+    # INPUT_WIRE_T = 'T0_in_s2t0'
     # add_route(sname, dname, INPUT_TILE, 'T0_in_s2t0', 'choose_op')
     add_route(sname, dname, INPUT_TILE, INPUT_WIRE_T, 'choose_op')
     if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
@@ -1740,8 +1789,109 @@ def place_pe_in_input_tile(dname):
 
 
 def place_folded_reg_in_input_tile(dname):
-        print "TODO put reg-pe folded pair in INPUT tile :("
-        assert False, "TODO put reg-pe folded pair in INPUT tile :("
+    assert False, 'Note this routine has never been tried in combat and will probably fail...'
+
+    DBG=1
+    sname = 'INPUT'
+    if DBG:
+        print "# Put reg-pe folded pair '%s' in INPUT tile " % dname
+        print "Connecting '%s' to '%s'" % (sname,dname)
+        nodes[sname].show()
+        nodes[dname].show()
+        pname = nodes[dname].output
+        nodes[pname].show()
+        # print "TODO put reg-pe folded pair in INPUT tile :("
+        # assert False, "TODO put reg-pe folded pair in INPUT tile :("
+
+    assert nodes['INPUT'].tileno == INPUT_TILE
+
+    dnode = nodes[dname] # The register, e.g. 'reg_op_1'
+    
+    dtileno = INPUT_TILENO
+    d_in = 'T%d_%s' % (dtileno,dnode.input0) # E.g. 'T0_op1'
+    d_out = place_regop_op(dname, dtileno, d_in, DBG=9)
+    nodes[dname].place(dtileno, d_in, d_out, DBG)
+
+    # A lot of this is duplicated from place() :(
+
+    print "# 2. Add the connection to src node's src->dst route list"
+    path = '%s -> %s' % (INPUT_WIRE_T, d_in)
+    path = [path]
+    nodes[sname].route[dname] = path
+    if DBG: print "#   Added connection '%s' to route from '%s' to '%s'" % \
+       (path, sname, dname)
+    # nodes[sname].routed[dname] = True
+    if DBG: print "#   Now node['%s'].route['%s'] = %s" % \
+       (sname,dname,nodes[sname].route[dname])
+    pwhere(1186)
+    print ""
+
+    # Note input goes to reg-mul_307 AND mul_312 !
+
+    print "# 3. add all the path ports to the src net"
+    snode = nodes[sname]
+    print "BEFORE: '%s' net is %s" % (sname, snode.net)
+    for p in CT.allports(path):
+        snode.net.append(p)
+    print "AFTER: '%s' net is %s" % (sname, snode.net)
+    print ''
+
+    print "# 4. Remove path resources from the free list"
+    unfree_resources(path,DBG=9)
+    #         assert False, 'hey hows that'
+    #         print resources[1]
+
+    print ''
+    pwhere(1198)
+    print "HOORAY connected '%s' to '%s'" % (sname,dname)
+    if DBG:
+        print ''
+        nodes[sname].show()
+        print ''
+        nodes[dname].show()
+        print ''
+
+    if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
+
+    if dname == 'reg_0_1':
+        print 'GOT TWO ROUTES!  WOO AND HOO!'
+        # assert False,\
+        #        '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
+
+    return
+
+def place_regop_op(dname, dtileno, d_in, DBG):
+    DBG=9
+
+    # d_in is last port in path leading up to dtileno;
+    # Should be something like 'T25_op1'
+    if DBG>2: print 7771, dname, d_in
+    
+    print "# 1b. If regop, place (but don't route) assoc. pe"
+    d_out = nodes[dname].output
+    if DBG>2: nodes[dname].show(); print ''
+    
+    pname = nodes[dname].output
+    if DBG>2: nodes[pname].show(); print ''
+    
+    nodes[pname].place(dtileno, d_in, addT(dtileno,'pe_out'), DBG)
+    nodes[pname].place(dtileno, d_in+'(r)', addT(dtileno,'pe_out'), DBG)
+    if DBG>2: nodes[pname].show(); print ''
+
+    REGISTERS.append(d_in)
+
+    # dnode.route[pname] is going to be e.g. ['op1']
+    # we'll need to change that to e.g. 'T10_op1' i.e. 'd_in'
+    dnode = nodes[dname]
+    if DBG>2: dnode.show()
+    if DBG>2: print dnode.route[pname]
+    assert \
+           (dnode.route[pname] == ['op1']) or \
+           (dnode.route[pname] == ['op2'])
+    print "# 1b. Set route to op"
+    dnode.route[pname] = [d_in]
+    if DBG>2: dnode.show()
+    return d_out
 
 
 def get_nearest_tile(sname, dname, DBG=0):
@@ -1790,7 +1940,7 @@ def get_nearest_tile(sname, dname, DBG=0):
 ########################################################################
 ########################################################################
 ########################################################################
-# BOOKMARK: scrub scrub scrub!  from here down
+# scrub scrub scrub!  from here down
 
 def find_best_path(sname,dname,dtileno,track,DBG=1):
     # DBG=1
@@ -1982,12 +2132,13 @@ def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
     # for regsolo it's every outport in the tile
     # for regpe it's op1 or op2
     dplist = dstports(dname,dtileno)
-#     if DBG:
-#         print "   Want to route endpoint to a dest port %s" % dplist
-
     if DBG:
         print "   In-ports avail to dest node '%s': %s" % (dname,dplist)
         print "   Take each one in turn"
+
+        #     # NOPE this does not help at all :(
+        #     # If endpoint is on side 0 or 3, choose op2 preferentially over op1 and vice versa
+        #     dplist = sort_dplist(endpoint,dplist)
 
     for dstport in dplist:
         print "     Can path endpoint '%s' connect to dest port '%s'?" \
@@ -2001,6 +2152,33 @@ def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
             print "  Try next port in the list?"
 
     return False
+
+# NOPE
+# def sort_dplist(endpoint, dplist, DBG=9):
+#     # E.g. endpoint='T2_in_20t0' and dplist = ['T2_op1', 'T2_op2']
+#     # If endpoint is on side 0 or 2, choose op2 preferentially over op1 and vice versa
+# 
+#     (T,d,side,t) = cgra_info.parse_canon(endpoint)
+#     if DBG:
+#         print '666 Sorting dplist %s' % dplist
+#         print '  I think endpoint is on side %d' % side
+#         print '  That means we preferentially choose op%d' % (2-side%2)
+# 
+#     op1 = 'T%d_op1' % T
+#     op2 = 'T%d_op2' % T
+# 
+#     newlist = []
+#     if   (side%2==0) and (op2 in dplist): newlist = [op2]
+#     elif (side%2==1) and (op1 in dplist): newlist = [op1]
+#         
+#     for dp in dplist:
+#         if dp not in newlist: newlist.append(dp)
+# 
+#     if DBG:
+#         print 'Sorted list is %s\n' % newlist
+# 
+#     return newlist
+
 
 def can_connect_begin(snode,src,begin,DBG=0):
     cbegin = can_connect(snode,src,begin,DBG)
@@ -2029,70 +2207,70 @@ def can_connect(snode, p1, p2, DBG=0):
 
 
 
-def randomly_place(dname, DBG=0):
-    '''
-    Assign dname to any random available resource
-    Well maybe not completely random.
-    Assign mem to mem tiles ONLY using resource 'mem_out'
-    '''
-    if is_mem(dname): dtype='mem'
-    else:             dtype='pe'
-
-    ntiles = len(resources) # len(list) = length (number of items in) list
-    for tileno in range(ntiles):
-
-        if is_mem_tile(tileno): ttype='mem'
-        else:                   ttype='pe'
-        if dtype != ttype: continue
-
-        if is_regop(dname):
-            # regops come from register-folding optimization pass
-            # They look like this:
-            # 
-            # node='reg_2_2'
-            #   type='regop' ***
-            #   tileno= -1
-            #   input0='op1' ***
-            #   input1='False'
-            #   output='mul_45911_460_PE'
-            #   placed= False
-            #   dests=['mul_45911_460_PE']
-            #   route ['mul_45911_460_PE'] = ['op1']
-            #   net= []
-            # 
-            # Before placing regop, must first place target pe
-            pe = nodes[dname].dests[0]
-            if not is_placed(pe): randomly_place(pe)
-
-            # regop goes in same tile as target pe as op1 or op2
-            tileno = nodes[pe].tileno
-            if   (re.search('op1$', nodes[dname].input0)): op = 'op1'
-            elif (re.search('op2$', nodes[dname].input0)): op = 'op2'
-            else: assert(0)
-                  
-            nodes[dname].place(tileno,'XXX',op)
-            return (tileno,op)
-
-        elif  is_pe(dname): r='pe_out'
-        elif is_mem(dname): r='mem_out'
-        else:
-            # It's an unassigned register, yes?
-            # Although maybe could be double-register pair someday.
-            # Randomly choose the first outport you find
-            # (technically should be out-port but oh well
-
-            regex = re.compile('^out')
-            outs = filter(regex.match, resources[tileno])
-            if outs == []: continue
-            else:          r = outs[0]
-        
-        if r not in resources[tileno]: continue
-        else:
-            if DBG:
-                print "# Randomly assigning '%s' to tile %d resource '%s'" \
-                      % (dname,tileno,r)
-            nodes[dname].place(tileno,'XXX',op)
-            return (tileno,r)
+# def randomly_place(dname, DBG=0):
+#     '''
+#     Assign dname to any random available resource
+#     Well maybe not completely random.
+#     Assign mem to mem tiles ONLY using resource 'mem_out'
+#     '''
+#     if is_mem(dname): dtype='mem'
+#     else:             dtype='pe'
+# 
+#     ntiles = len(resources) # len(list) = length (number of items in) list
+#     for tileno in range(ntiles):
+# 
+#         if is_mem_tile(tileno): ttype='mem'
+#         else:                   ttype='pe'
+#         if dtype != ttype: continue
+# 
+#         if is_regop(dname):
+#             # regops come from register-folding optimization pass
+#             # They look like this:
+#             # 
+#             # node='reg_2_2'
+#             #   type='regop' ***
+#             #   tileno= -1
+#             #   input0='op1' ***
+#             #   input1='False'
+#             #   output='mul_45911_460_PE'
+#             #   placed= False
+#             #   dests=['mul_45911_460_PE']
+#             #   route ['mul_45911_460_PE'] = ['op1']
+#             #   net= []
+#             # 
+#             # Before placing regop, must first place target pe
+#             pe = nodes[dname].dests[0]
+#             if not is_placed(pe): randomly_place(pe)
+# 
+#             # regop goes in same tile as target pe as op1 or op2
+#             tileno = nodes[pe].tileno
+#             if   (re.search('op1$', nodes[dname].input0)): op = 'op1'
+#             elif (re.search('op2$', nodes[dname].input0)): op = 'op2'
+#             else: assert(0)
+#                   
+#             nodes[dname].place(tileno,'XXX',op)
+#             return (tileno,op)
+# 
+#         elif  is_pe(dname): r='pe_out'
+#         elif is_mem(dname): r='mem_out'
+#         else:
+#             # It's an unassigned register, yes?
+#             # Although maybe could be double-register pair someday.
+#             # Randomly choose the first outport you find
+#             # (technically should be out-port but oh well
+# 
+#             regex = re.compile('^out')
+#             outs = filter(regex.match, resources[tileno])
+#             if outs == []: continue
+#             else:          r = outs[0]
+#         
+#         if r not in resources[tileno]: continue
+#         else:
+#             if DBG:
+#                 print "# Randomly assigning '%s' to tile %d resource '%s'" \
+#                       % (dname,tileno,r)
+#             nodes[dname].place(tileno,'XXX',op)
+#             return (tileno,r)
 
 def is_placed(nodename):
     # return (nodes[dname].tileno != -1)

@@ -1,11 +1,16 @@
 #!/usr/bin/python
 
-import sys;
-import re;
+import sys
+import re
+import os
 
-# from ../decoder/lib import cgra_info
-sys.path.append("../decoder")
+# Import cgra_info via relative path
+mypath = os.path.realpath(__file__)
+mydir  = os.path.dirname(mypath)
+decoder_path = mydir+"/../decoder"
+sys.path.insert(0, decoder_path)
 from lib import cgra_info
+
 
 def bs_addr_sort(addr):
     '''Bitstream address looks like this: RRFFTTTT;
@@ -27,7 +32,10 @@ def bs_comment_sort(comment):
       # data[(1, 0)] : @ tile (0, 0) connect ...
     '''
     sortkey = re.search('^\D+(\d+)', comment).group(1)
-    return (0 - int(sortkey))
+
+    # return (0 - int(sortkey))
+    # Ugh okay for compatibility have to do it the dumb way.
+    return int(sortkey)
 
 
 # Sort test(s)
