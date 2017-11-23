@@ -37,6 +37,14 @@ pw_gray_8x8:
 	CONFIG="-config ../../bitstream/examples/pwv2.bs"
 
 test_all:
+	make test_standalone
+	make test_serpent
+
+test_serpent:
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh
+	../bitstream/bsbuilder/testdir/test_bitstreams.csh
+
+test_standalone:
 	pwd; ls
 	./writelog.csh log1 -init TEST SUMMARY BEGIN `date`
 	make hackdiff_test | tee $(TEMPDIR)/hackdiff_test.log
