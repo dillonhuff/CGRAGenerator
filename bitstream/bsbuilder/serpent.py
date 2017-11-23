@@ -1942,6 +1942,10 @@ def get_nearest_tile(sname, dname, DBG=0):
 ########################################################################
 # scrub scrub scrub!  from here down
 
+# FIXME this is bad.  very very...bad
+global ENDPOINT_MUST_BE_FREE
+ENDPOINT_MUST_BE_FREE = False
+
 def find_best_path(sname,dname,dtileno,track,DBG=1):
     # DBG=1
 
@@ -1975,7 +1979,12 @@ def find_best_path(sname,dname,dtileno,track,DBG=1):
         # assert dest==reg if you wanta...
 
         print 'src and dst in same tile; thats okay'
+        print 'BUT must make sure we choose a free port'
+        # FIXME this is bad
+        global ENDPOINT_MUST_BE_FREE
+        ENDPOINT_MUST_BE_FREE = True
         p = connect_endpoint(snode, snode.output, dname, dtileno, DBG=DBG)
+        ENDPOINT_MUST_BE_FREE = False
         return p
 
     # foreach path p in connect_{hv,vh}connect(ptile,dtile)
@@ -2141,8 +2150,14 @@ def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
         #     dplist = sort_dplist(endpoint,dplist)
 
     for dstport in dplist:
+
         print "     Can path endpoint '%s' connect to dest port '%s'?" \
               % (endpoint, dstport)
+
+        global ENDPOINT_MUST_BE_FREE
+        if ENDPOINT_MUST_BE_FREE and (dstport not in resources[dtileno]):
+            print "     - OOP its being used by someone else, try another one\n"
+            continue
 
         cend = can_connect_end(snode, endpoint, dstport,DBG)
         if cend: return cend

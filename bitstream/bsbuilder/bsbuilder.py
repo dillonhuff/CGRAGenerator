@@ -676,11 +676,11 @@ def bs_const(tileno,op,operand):
     # (op2 constant is 'F1' instead of 'F0')
     if operand=='op1':
         const = 'const_a'
-        addr = "F000%04x" % tileno
+        addr = "F000%04X" % tileno
         comment = "data[(15, 0)] : init `data0` reg with const `%d`" % k
     else:
         const = 'const_b'
-        addr = "F100%04x" % tileno
+        addr = "F100%04X" % tileno
         comment = "data[(15, 0)] : init `data1` reg with const `%d`" % k
 
     addbs(addr, data, comment)
@@ -734,7 +734,10 @@ def addbs(addr,data, comment=''):
             print "# WARNING redundant instruction, this was already done (and/or it's the default)"
             print "# %s %s" % (addr,data),
             print ":: bs['%s'] = %s" % (addr, bitstream[addr])
-            return
+
+            # BUT!  Still want a comment :(
+            if data != '00000000': return
+
 
     bitstream[addr].append(data)
 
