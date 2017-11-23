@@ -337,17 +337,48 @@ def sb_decode(sb,RR,DDDDDDDD):
 global CGRA
 CGRA = False
 
+CGRA_FILENAME_TOP = "CGRAGenerator/hardware/generator_z/top/cgra_info.txt"
+def get_generated_cgra_info_filename():
+    import os
+    mydir = os.path.dirname(os.path.realpath(__file__))
+    print mydir
+    parse = re.search('^(.*/)CGRAGenerator', mydir)
+    if not parse:
+        return ''
+    else:
+        gendir = parse.group(1)
+        return gendir + CGRA_FILENAME_TOP
+
+CGRA_FILENAME_LOCAL = "cgra_info_8x8.txt"
+def get_local_cgra_info_filename():
+    import os
+    mydir = os.path.dirname(os.path.realpath(__file__))
+    return mydir + "/" + CGRA_FILENAME_LOCAL
+
+def get_default_cgra_info_filename():
+    f = get_generated_cgra_info_filename()
+    if f == '':
+        f = get_local_cgra_info_filename()
+    return f
+
 def read_cgra_info(filename='', grid='8x8', verbose=False):
     # https://docs.python.org/3/library/xml.etree.elementtree.html
-
     # Default config file is e.g. 'cgra_info_8x8.txt' in this directory
     import os
     mydir = os.path.dirname(os.path.realpath(__file__))
-    default_filename = mydir + "/cgra_info_" + grid + ".txt"
+
+#     default_filename = get_default_cgra_info_filename()
+
     if (filename == ''):
-        filename = default_filename
         sys.stdout.flush()
-        sys.stderr.write("WARNING using default cgra_info file\n  '%s'\n\n" % filename)
+        sys.stderr.write("WARNING No cgra_info file was specified\n")
+        sys.stderr.write("WARNING Looking for generated cgra_info.txt %s\n")
+        sys.stdout.flush()
+        filename = get_generated_cgra_info_filename()
+        if filename != '':
+            sys.stderr.write("WARNING Found '%s'" % filename)
+        else:
+            sys.stderr.write("WARNING Could not find generated info; will default to local copy")
         sys.stderr.flush()
 
     # If cannot open indicated config file (or if config file is blank), try default file
@@ -358,11 +389,11 @@ def read_cgra_info(filename='', grid='8x8', verbose=False):
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
         return
     except:
-        sys.stderr.write("WARNING could not open cgra_info file '%s'\n" % filename)
-        filename = default_filename
-        sys.stderr.write("WARNING will try using default '%s'\n" % filename)
+        sys.stderr.write("WARNING Could not open cgra_info file '%s'\n" % filename)
+        filename = get_local_cgra_info_filename()
+        sys.stderr.write("WARNING Will try using local copy '%s'\n" % filename)
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
-        sys.stderr.write("WARNING loaded default '%s'\n\n" % filename)
+        sys.stderr.write("WARNING Loaded local copy '%s'\n\n" % filename)
 
 def load_check():
     # if not CGRA:

@@ -81,7 +81,8 @@ Examples:
    %s --help
 ''' % (scriptname_tail, scriptname_tail, scriptname_tail, scriptname_tail, scriptname_tail)
 
-    # Load cgra_info
+    # Will need cgra_info
+    global cgra_filename
     cgra_filename = get_default_cgra_info_filename()
 
     # if (len(args) < 1): print usage; sys.exit(-1);
@@ -102,8 +103,6 @@ Examples:
         else:
             dot_filename = args[0];
         args = args[1:]
-
-    cgra_info.read_cgra_info(cgra_filename, verbose=VERBOSE)
 
 
 def nearest_mem_tile(node='INPUT', exclude = [], DBG=1):
@@ -149,7 +148,7 @@ def manhattan_distance_rc(src=[0,0], dst=[5,1], DBG=0):
         print '# %s-> %s ->%s' % (a,b,c)
             
 def test_manhattan_distance_rc():
-    cgra_info.read_cgra_info()
+    cgra_info.read_cgra_info(verbose=True)
     manhattan_distance_rc(DBG=1)
     print ''
 
@@ -257,12 +256,12 @@ def main(DBG=1):
     # sys.exit(0)
     # notes()
 
+    global cgra_filename
     process_args()
 
     print '######################################################'
     print '# serpent.py: Read cgra info'
-    cgra_filename = get_default_cgra_info_filename()
-    cgra_info.read_cgra_info(cgra_filename)
+    cgra_info.read_cgra_info(cgra_filename, verbose=True)
 
     print '######################################################'
     print '# serpent.py: Initialize the packer'
@@ -522,21 +521,8 @@ def test_connect_tiles():
 
 # Maybe this should be part of cgra library, yes?
 def get_default_cgra_info_filename():
-    '''
-    Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
-    '''
-    import os
-    mydir = os.path.dirname(os.path.realpath(__file__))
-    cgra_filename = mydir + "../decoder/examples/cgra_info.txt"
+    return cgra_info.get_default_cgra_info_filename()
 
-    VERBOSE=0
-    # global verbose #(implied because use before def)
-    if VERBOSE: print("I think I am here:\n  %s" % mydir)
-    if VERBOSE: print("Default cgra_info file is\n  %s" % cgra_filename)
-    return cgra_filename
-
-        # Tile numbers for each node e.g.
-        #  tile["mul_49119_492_PE"] = 14
 
 class Node:
     def __init__(self, nodename):
@@ -2299,7 +2285,7 @@ def test_connect():
 
     print '######################################################'
     print '# serpent.py: Read cgra info'
-    cgra_info.read_cgra_info()
+    cgra_info.read_cgra_info(verbose=True)
 
 
     print '######################################################'
