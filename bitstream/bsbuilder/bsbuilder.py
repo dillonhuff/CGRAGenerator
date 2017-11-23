@@ -802,19 +802,22 @@ def myparse(line, regexp):
 
 
 
+# see cgra_info.get_default_cgra_info_filename() instead
+# def get_default_cgra_info_filename():
+#     '''
+#     Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
+#     '''
+#     import os
+#     mydir = os.path.dirname(os.path.realpath(__file__))
+#     cgra_filename = mydir + "../decoder/examples/cgra_info.txt"
+# 
+#     # global verbose #(implied because use before def)
+#     if VERBOSE: print("I think I am here:\n  %s" % mydir)
+#     if VERBOSE: print("Default cgra_info file is\n  %s" % cgra_filename)
+#     return cgra_filename
 
-def get_default_cgra_info_filename():
-    '''
-    Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
-    '''
-    import os
-    mydir = os.path.dirname(os.path.realpath(__file__))
-    cgra_filename = mydir + "../decoder/examples/cgra_info.txt"
 
-    # global verbose #(implied because use before def)
-    if VERBOSE: print("I think I am here:\n  %s" % mydir)
-    if VERBOSE: print("Default cgra_info file is\n  %s" % cgra_filename)
-    return cgra_filename
+
 
 def process_args():
 
@@ -835,11 +838,12 @@ Usage:
 ''' % (scriptname_tail, scriptname_tail)
 
     # Load cgra_info
-    cgra_filename = get_default_cgra_info_filename()
+    cgra_filename = cgra_info.get_default_cgra_info_filename()
 
     # if (len(args) < 1): print usage; sys.exit(-1);
 
     global VERBOSE
+    # cgra_filename = get_default_cgra_info_filename()
     while (len(args) > 0):
         if   (args[0] == '--help'): print usage; sys.exit(0);
         elif (args[0] == '-v'):    VERBOSE = True

@@ -385,7 +385,7 @@ def read_cgra_info(filename='', grid='8x8', verbose=False):
     global CGRA
     import xml.etree.ElementTree
     try:
-        if verbose: sys.stderr.write("Using config file '%s'\n\n" % filename)
+        if verbose: sys.stdout.write("Using config file '%s'\n\n" % filename)
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
         return
     except:

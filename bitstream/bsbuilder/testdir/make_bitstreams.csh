@@ -15,35 +15,68 @@ set bmarks = (conv_1_2)
 set bmarks = (pointwise conv_2_1 conv_3_1 conv_bw)
 set bmarks = (pointwise conv_1_2 conv_2_1 conv_3_1 conv_bw)
 
+set tmp = /tmp/mb$$
+mkdir $tmp
 
+echo "set tmp = $tmp"
+echo 'set gen = CGRAGenerator'
+echo 'cd $gen/bitstream/bsbuilder'
+echo 'alias json2dot $gen/testdir/graphcompare/json2dot.py'
+echo ''
 
+set t = '$tmp'
 foreach b ($bmarks)
+  set result = 'PASSED'
   echo "------------------------------------------------------------------------"
   echo "PROCESSING $b"
 
   set map_json = examples/${b}_mapped.json
-  set map_dot  =   tmpdir/${b}_mapped.dot
-  set bsb      =   tmpdir/${b}.bsb
-  set bsa      =   tmpdir/${b}.bsa
+  set map_dot  =   ${b}_mapped.dot
+  set bsb      =   ${b}.bsb
+  set bsa      =   ${b}.bsa
 
-  json2dot < $map_json > $map_dot
+  echo "  json2dot < $map_json > $t/$map_dot"
+  json2dot < $map_json > $tmp/$map_dot
 
-  echo "../serpent.py $map_dot -o $bsb > tmpdir/$b.log.serpent"
-  ../serpent.py $map_dot -o $bsb > tmpdir/$b.log.serpent
-  echo ''
-  echo '========================================================================'
-  echo "BSB FILE $bsb"
-  echo '========================================================================'
-  cat $bsb
-  echo ''
-  echo ''
-  echo ''
-  echo "../bsbuilder.py < $bsb > $bsa"
-  ../bsbuilder.py < $bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $bsa
-  echo ''
-  echo '========================================================================'
-  echo "BSA FILE $bsa"
-  echo '========================================================================'
-  cat $bsa
-  echo ''
+  echo "  cmp examples/$map_dot $t/$map_dot"
+  cmp examples/$map_dot $tmp/$map_dot || set result = 'FAILED'
+  echo ""
+
+
+  echo "  ../serpent.py $t/$map_dot -o $t/$bsb > \$t/$b.log.serpent"
+  ../serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent
+
+  echo "  cmp examples/$bsb $tmp/$bsb"
+  cmp examples/$bsb $tmp/$bsb || set result = 'FAILED'
+  echo ""
+
+  if ($?VERBOSE) then
+    echo ''
+    echo '========================================================================'
+    echo "BSB FILE $bsb"
+    echo '========================================================================'
+    cat $bsb
+    echo ''
+    echo ''
+    echo ''
+  endif
+
+  echo "  ../bsbuilder.py < $tmp/$bsb > $tmp/$bsa"
+  ../bsbuilder.py < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $tmp/$bsa
+
+  echo "  cmp examples/$bsa $tmp/$bsa"
+  cmp examples/$bsa $tmp/$bsa || set result = 'FAILED'
+
+  if ($?VERBOSE) then
+    echo ''
+    echo '========================================================================'
+    echo "BSA FILE $bsa"
+    echo '========================================================================'
+    cat $bsa
+    echo ''
+  endif
+
+  echo "TEST $b $result"
+  echo ""
+
 end
