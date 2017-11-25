@@ -1,22 +1,25 @@
 #!/bin/csh -f
 
+if (! -d $1) then
+  echo 'Where should I put the bsa output files?'
+  echo "Example: $0:t /tmp/build42/"
+  exit -1
+endif
+set tmp = $1
+
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
 cd $scriptpath
 
 # Script is maybe in $gen/bitstream/bsbuilder/testdir
 set gen = `(cd ../../..; pwd)`
-# echo $gen
 alias json2dot $gen/testdir/graphcompare/json2dot.py
 
 
-# Do them in order
+# Do benchmarks in order
 set bmarks = (conv_1_2)
 set bmarks = (pointwise conv_2_1 conv_3_1 conv_bw)
 set bmarks = (pointwise conv_1_2 conv_2_1 conv_3_1 conv_bw)
-
-set tmp = /tmp/mb$$
-mkdir $tmp
 
 echo "set tmp = $tmp"
 echo 'set gen = CGRAGenerator'
@@ -80,3 +83,7 @@ foreach b ($bmarks)
   echo ""
 
 end
+
+# Clean up
+# No! Not my job!
+# /bin/rm -rf $tmp
