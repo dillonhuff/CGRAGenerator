@@ -298,6 +298,13 @@ set ctail = $config:t
 set croot = $ctail:r
 set config_io = $tmpdir/${croot}io
 
+# Are you kidding me
+which run-injectio.csh
+echo $path
+set path = ($path .)
+which run-injectio.csh
+ls -l run-injectio.csh
+
 # Use decoder to produce an annotated bitstream WITH I/O COMMENTS
 echo "run.csh: run-injectio $config -o $config_io"
 run-injectio.csh $VSWITCH $config -o $config_io
