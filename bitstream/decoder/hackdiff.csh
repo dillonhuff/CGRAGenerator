@@ -80,6 +80,7 @@ if (! $?VERBOSE) /bin/rm /tmp/tmp$$.{bsa,bsd}
 
 if ($?FAIL) then
   echo 'hackdiff FAILED (ignore for now i will fix later)'
+  echo ''
   # FIXME reinstate the exit -1?
   # exit -1
   exit 0
