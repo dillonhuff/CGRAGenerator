@@ -7,3 +7,5 @@
 ./test_cmpr.svp
 ./test_mult_add.svp
 ./test_opt_reg.svp
+./test_simple_shift.svp
+./test_shifter.svp

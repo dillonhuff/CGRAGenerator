@@ -37,7 +37,7 @@ pw_gray_8x8:
 	CONFIG="-config ../../bitstream/examples/pwv2.bs"
 
 test_all:
-	make hackdiff_test |& tee $(TEMPDIR)/hackdiff_test.log
+	make hackdiff_test 2>&1 | tee $(TEMPDIR)/hackdiff_test.log
 	make test_standalone
 	make test_serpent
 
