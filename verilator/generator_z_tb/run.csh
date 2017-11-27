@@ -238,10 +238,8 @@ endif
 ##############################################################################
 
 
-
-
-
-if ($?VERBOSE) then
+# if ($?VERBOSE) then
+if (1) then
   # Backslashes line up better when printed...
   echo "Running with the following switches:"
   echo "$0 top_tb.cpp \"
@@ -268,6 +266,10 @@ set nclocks = "-nclocks $nclocks"
 
 # which verilator
 
+if   ($?VERBOSE) set VSWITCH = '-v'
+if (! $?VERBOSE) set VSWITCH = '-q'
+
+##############################################################################
 # By default, we assume generate has already been done.
 # Otherwise, user must set "-gen" to make it happen here.
 
@@ -275,189 +277,55 @@ echo
 # if (! $?GENERATE) then
 if ("$GENERATE" == "-nogen") then
   echo "No generate!"
-
 else
-  # Build CGRA 
-  if ($?VERBOSE) echo "Building CGRA because you asked for it with '-gen'..."
-
-  if ($?VERBOSE) then
-    ../../bin/generate.csh -v || exit -1
-  else
-    ../../bin/generate.csh -q || exit -1
-  endif
-
+  echo "Building CGRA because you asked for it with '-gen'..."
+  ../../bin/generate.csh $VSWITCH || exit -1
 endif
-
-
-
-#------------------------------------------------------------------------
-# BSB HACK
-echo BSB $config
-unset bsb_hack
-
-if ("$config" == "/nobackup/steveri/github/CGRAGenerator/bitstream/bsbuilder/pw2_bsb.bs") set bsb_hack
-
-if ($?bsb_hack) then
-  echo ""
-  echo "BSB HACK"
-  echo "BSB HACK"
-  echo "BSB HACK"
-  echo "bsb hack because config = pw2_bsb.bs"
-  echo ""
-endif
-if ($?VERBOSE) echo run.csh line 337 ish
-#------------------------------------------------------------------------
-
-
-########################################################################
-# Now process bitstream file $config
-
-
-if (! $?bsb_hack) then
-
-  # Verify that embedded IO info exists (skip if using bsbuilder)
-
-  unset embedded_io
-  grep "FFFFFFFF" $config > /dev/null && set embedded_io
-  if (! $?embedded_io) then
-    echo "ERROR run.csh: Bitstream appears NOT to have embedded I/O information."
-    echo "ERROR run.csh: We don't support that no more."
-    exit -1
-  else if ($?VERBOSE) then
-    echo
-    echo "Bitstream appears to have embedded i/o information (as it should)."
-    echo "Will strip out IO hack from '$config'"
-    echo
-  endif
-
-endif
-
-
-# Nowadays decoder needs cgra_info to work correctly
-set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
-# pwd; ls -l $cgra_info
-
-set decoded = $tmpdir/{$config:t}.decoded
-if (-e $decoded) rm $decoded
-
-# Why?  Leftover debug stuff I guess?
-# # Possible locations for pnr stuff
-# ls ../../.. | grep -i smt
-
-
-# echo \
-# ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config
-# ../../bitstream/decoder/decode.py -v -cgra $cgra_info $config > $decoded
-# 
-# NOTE -v is messy and should be avoided unless you're trying to debg things.
-echo           run.csh: decode.py -cgra $cgra_info $config
-set VERBOSE
-if ($?VERBOSE) then
-  ../../bitstream/decoder/decode.py -cgra $cgra_info $config | tee $decoded || exit -1
-else
-  ../../bitstream/decoder/decode.py -cgra $cgra_info $config > $decoded || exit -1
-endif
-unset VERBOSE
-
-
-# Show IO info derived from bitstream
-if ($?VERBOSE) then
-  echo; sed -n '/O Summary/,$p' $decoded; echo
-else
-  echo; sed -n '/O Summary/,$p' $decoded | grep PUT | sort; echo
-endif
-
-
-# Clean bitstream (strip out comments and hacked-in IO info)
-set newbs = $decoded.bs
-if (-e $newbs) rm $newbs
 
 ##############################################################################
+# Remove LUT commands from bitstream (I guess we don't do this no more)
+# Which is good because it's probably *so busted*
 unset LUT_HACK
 if ($?LUT_HACK) then
-  echo
-  echo '  LUT hack'
-  echo '  LUT hack'
-  echo '  LUT hack'
-  echo '  Temporarily stripping out LUT code...'
-  echo ''
-  set lut_hack_en = "^FF00.... 00000080"
-  set lut_hack_ld = "^0000.... ........"
-
-  cat $decoded \
-    | egrep -v "$lut_hack_en" \
-    | egrep -v "$lut_hack_ld" \
-    > $tmpdir/lut_hack
-
-  echo diff $decoded $tmpdir/lut_hack
-  diff $decoded $tmpdir/lut_hack | grep -v d
-  echo ""
-
-  mv $tmpdir/lut_hack $decoded 
-endif
-##############################################################################
-
-
-
-# grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
-cat $decoded \
-  | egrep -v '^F000.... FFFFFFFF' \
-  | egrep -v '^F100.... FFFFFFFF' \
-  | egrep -v '^FF00.... 000000F0' \
-  | egrep -v '^FF00.... 000000FF' \
-  > $tmpdir/decode2
-
-
-# This is small and SHOULD NOT BE OPTIONAL!
-# Meh.  Now it's optional.
-if ($?VERBOSE) then
-  echo diff $decoded $tmpdir/decode2
-  diff $decoded $tmpdir/decode2 | grep -v d
+  echo "run.csh: ./run-luthack.csh $config"
+  ./run-luthack.csh $config
 endif
 
+########################################################################
+# Now process bitstream file $config for IO information
 
-if (! $?bsb_hack) then
+set ctail = $config:t
+set croot = $ctail:r
+set config_io = $tmpdir/${croot}io
 
-  # Another useful test
-  set ndiff = `diff $decoded $tmpdir/decode2 | grep -v d | wc -l`
-  if ("$ndiff" == "5") then
-    if ($?VERBOSE) echo "run.csh: Five lines of diff.  That's good!"
-  else
-    echo "ERROR run.csh: Looks like we messed up the IO"
-    exit -1
-  endif
+# Are you kidding me
+which run-injectio.csh
+echo $path
+set path = ($path .)
+which run-injectio.csh
+ls -l run-injectio.csh
 
-endif
+# Use decoder to produce an annotated bitstream WITH I/O COMMENTS
+echo "run.csh: run-injectio $config -o $config_io"
+run-injectio.csh $VSWITCH $config -o $config_io
 
-
-# Strip out comments from decoded bitstream
-cat $tmpdir/decode2\
-  | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
-  > $newbs
-
-set config = $newbs
-
-
-
-# This is what we're looking for:
+# Find IO wires.  This is what we're looking for:
 #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
 #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
 #     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
-set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
-set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
 
-if ($?bsb_hack) then
+set inwires =  `egrep '^# INPUT  tile' $config_io | awk '{print $NF}'`
+set outwires = `egrep '^# OUTPUT tile' $config_io | awk '{print $NF}'`
 
-  set inwires  = wire_0_m1_BUS16_S0_T0
-  set outwires = wire_0_0_BUS16_S2_T0;
+# Clean up config file for verilator use
+grep -v '#' $config_io | grep . > /tmp/tmpconfig$$
+set config = /tmp/tmpconfig$$
 
-  echo ""
-  echo "BSB HACK"
-  echo "BSB HACK"
-  echo "BSB HACK"
-  echo "For now only works with (input,output)='$inwires,$outwires'"
-  echo ""
-
+if ($?VERBOSE) then
+  echo
+  head $config
+  echo ...
+  tail $config
 endif
 
 if ($?VERBOSE) then
@@ -485,13 +353,18 @@ if (! -e $vdir) then
   exit -1
 endif
 
+##################################################################################
 # echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
-#     echo
-#     echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
-#     echo
 
+    # E.g. bname = 'pointwise/gray_small'
+    set iname = $input:t; set iname = $iname:r
+    set bname = $config:t; set bname = "$bname:r/$iname:r"
 
+    echo ''
+    echo BENCHMARK $bname
     echo "run.csh: Inserting IO wirenames into verilog top module '$vdir/top.v'..."
+    echo "inwire '$inwires', outwire '$outwires'"
+
     ./run-wirehack.csh \
         -inwires "$inwires" \
         -outwires "$outwires" \
@@ -500,6 +373,7 @@ endif
     if ($?VERBOSE) cat $tmpdir/wirehack.log
 
 # echo END top.v manipulation
+##################################################################################
 
 echo ''
 echo '------------------------------------------------------------------------'
@@ -627,7 +501,6 @@ echo "run.csh: Build the simulator..."
   if ($?VERBOSE) then
     cat $tmpdir/make_vtop.log; echo
   endif
-
 
 echo '------------------------------------------------------------------------'
 echo "run.csh: Run the simulator..."

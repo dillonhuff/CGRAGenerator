@@ -1,14 +1,16 @@
 #!/usr/bin/python
 
-import sys;
-import re;
+import sys
+import re
+import os
 
-# from ../decoder/lib import cgra_info
-sys.path.append("../decoder")
+# Import cgra_info via relative path
+mypath = os.path.realpath(__file__)
+mydir  = os.path.dirname(mypath)
+decoder_path = mydir+"/../decoder"
+sys.path.insert(0, decoder_path)
 from lib import cgra_info
 
-
-# Sort test(s)
 
 def bs_addr_sort(addr):
     '''Bitstream address looks like this: RRFFTTTT;
@@ -22,7 +24,21 @@ def bs_addr_sort(addr):
         print '%s: RR=%s, FF=%s, TTTT=%s' % (addr, RR,FF,TTTT)
     return TTTT+FF+RR
 
+def bs_comment_sort(comment):
+    '''
+    Sorted comments should look like this:
+      # data[(13, 12)] : @ tile (0, 0) connect ...
+      # data[(3, 2)] : @ tile (0, 0) connect ...
+      # data[(1, 0)] : @ tile (0, 0) connect ...
+    '''
+    sortkey = re.search('^\D+(\d+)', comment).group(1)
 
+    # return (0 - int(sortkey))
+    # Ugh okay for compatibility have to do it the dumb way.
+    return int(sortkey)
+
+
+# Sort test(s)
 def test_bs_addr_sort():
     tmp = {}
     for i in (
@@ -70,29 +86,45 @@ opb = {}
 #   2=>b
 #   out=>s0
 
+# Sample input:
+# 
+# T4_mul(wire,const15_15)    # mul_47515_476_PE
+# T8_add(wire,wire)          # add_457_476_477_PE
+# T10_mul(reg,const13_13$1)  # mul_48313_484_PE
+# 
+# T0_in_s2t0 -> T0_out_s0t0 (r)
+# T1_in_s2t0 -> T1_out_s0t0
+# T2_in_s2t0 -> T2_out_s0t0
+# T3_in_s2t0 -> T3_mem_in
+
 def main():
 
+    DBG=1
     process_args()
-
-#     print cgra_info.tileno2rc(7)
-# 
-#     # find_mux_deets('pe_out_res', 'out_BUS16_S2_T0')
-#     connectbus('pe_out_res', 'out_BUS16_S2_T0')
-
-
-#     sys.exit(0)
-
 
     # Read the input, store to 'input_lines' tuple
     input_lines = [] # for line in sys.stdin: input_lines.append(line)
     for line in sys.stdin: input_lines.append(line)
 
+    io_info = []
+
+    tileno = -1
     for line in input_lines:
-        line = line.strip().lower()
+        # line = line.strip().lower() might be a step too far...
+        line = line.strip()
 
         # Skip blank lines
         if re.search("^\s*$", line):
             print ""
+            continue
+
+        # Save I/O info for later
+        # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+        # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+        if re.search('^# (IN|OUT)PUT\s+tile', line):
+            print line
+            io_info.append(line)
+            if DBG>1: print 'IO_INFO', io_info
             continue
 
         # Skip comments
@@ -101,9 +133,47 @@ def main():
             print "#"+line
             continue
 
-        DBG=0
+        # T4_mul(wire,const15_15)    # mul_47515_476_PE
+        # Remove inline comments
+        parse = re.search("^(.*\S)\s*#", line)
+        if parse: line = parse.group(1)
+
         if DBG: print "# "+line
 
+        # T4_mul(wire,const15_15) or T3_mem_64
+        # Strip off the tile number, leaving e.g. 'mul(wire,const15_15)' or 'mem_64'
+        parse = re.search("^T(\d+)_(.*)", line)
+        if parse:
+            tileno = int(parse.group(1))
+            line = parse.group(2)
+            if DBG>2: print '# tile%02d  %s' % (tileno,line)
+
+
+        # mul(wire,const15_15)
+        # add(wire,wire) 
+        # mul(reg,const13_13$1)
+        if bs_op(tileno,line,DBG-1):
+            print ''
+            continue
+
+
+        # T3_mem_64    # mem_1 fifo_depth=64 => 'mem_64'
+        # T17_mem_64   # mem_2 fifo_depth=64 => 'mem_64'
+        if bs_mem(tileno,line,DBG-1):
+            print ''
+            continue
+
+
+        if bs_connection(tileno, line, DBG-1):
+            print ''
+            continue
+
+        continue
+
+        ################################################################
+        # This is the old stuff.
+        # SKIP IT for now anyways
+        
         # "tile=7" (also: "tile7" or "tile=7" or "TILE 7" ...)
         # (tile) = myparse(line, "\s+tile\s+([0-9]+)")
         if parse_tile_decl(line):
@@ -132,8 +202,80 @@ def main():
         else:
             print "ERROR I can't do that yet."
             sys.exit(1)
+        ################################################################
             
+    print ''
     emit_bitstream()
+
+    # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
+    # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
+    for i in io_info: print i
+
+    return
+
+
+
+def bs_connection(tileno, line, DBG=0):
+    DBG= max(0,DBG)
+    # E.g. line = 'in_s2t0 -> T0_out_s0t0 (r)'
+    # or   line = 'T1_in_s2t0 -> T1_out_s0t0/r'
+    # or   line = 'T25_out_s2t0 -> T25_op1 (r)'
+
+    parse = re.search('(\w+)\s*->\s*(\w+)[^r]*(r)*', line)
+    if not parse: return False
+
+    # print 'Found a connections'
+
+    lhs = parse.group(1)
+    rhs = parse.group(2)
+    reg = parse.group(3)
+    assert reg=='r' or reg==None
+
+    (t,lhs) = striptile(lhs); assert t == -1 or t == tileno, 'wrong tile!?'
+    (t,rhs) = striptile(rhs); assert t == -1 or t == tileno, 'wrong tile!?'
+    if DBG>1: print "# lhs '%s', rhs '%s', reg '%s'" % (lhs,rhs,reg)
+
+    # Connect lhs to rhs
+    
+    Tlhs = "T%d_%s" % (tileno,lhs)
+    Trhs = "T%d_%s" % (tileno,rhs)
+    cwt = cgra_info.connect_within_tile(tileno, Tlhs, Trhs, DBG-1)
+    (addr,data,ra,rd,comm,rcomm) = cwt
+
+    # print 'sel %08X %08X' % (addr,data)
+    # print '# ', comm, '\n'
+    addbs(addr, data, comm)
+
+    # process reg if one exists
+    # (note registered ops are taken care of elsewheres)
+    if reg=='r' and not rhs[0:2]=='op':
+        # print 'reg %08X %08X' % (ra,rd)
+        # print '# ', rcomm, '\n'
+        addbs(ra, rd, rcomm)
+
+    return True
+
+
+def striptile(r):
+    '''
+    Given a resource name 'r' e.g. one of
+        T0_in_s2t0
+        in_s2t0
+        T24_add(wire,wire)
+    strip off the leading tilenumber 'T24' if one exists and return
+    (tileno,stripped_name)
+    If no leading tilenumber then tileno = -1
+    '''
+    # Strip off the tile number, if one exists
+    parse = re.search("^T(\d+)_(.*)", r)
+    if not parse: return(-1, r)
+
+    tileno = int(parse.group(1))
+    r      = parse.group(2)
+    return(tileno,r)
+
+
+
 
 def parse_tile_decl(line):
         # "tile=7" (also: "tile7" or "tile=7" or "TILE 7" ...)
@@ -157,32 +299,40 @@ def parse_tile_decl(line):
 
 
 
-def parse_op(line,tilestr):
-        # "op=mul" or "op MUL"
-        (op) = myparse(line, "\s*op\W+(\w+)")
-        if op:
-            tileno = int(tilestr,16)
-            # FF000001 0000800B
-            # # data[(4, 0)] : op = mul
-            # # data[(13, 13)] : read from reg `b`
-            # # data[(15, 15)] : read from wire `a`
-            # print "# Found op '%s'" % op
-            
-            # An op needs operands.  Default is "wire" for both
-            # operands 'a' and 'b' unless/until something overrides
-            if not opa[tileno]: set_opa(tileno, 'wire')
-            if not opb[tileno]: set_opb(tileno, 'wire')
-
-            # Sample comment:
-            # 00020007 00000005 # data=5 => op=mul
 
 
-            # FIXME should probably be "op_reg + op_feat + tilestr" instead
-            addr = "FF00" + tilestr
-            data = op_data[op]
-            addbs(addr, data, line)
-            return True
-        else: return False
+
+
+
+
+
+
+# def parse_op(line,tilestr):
+#         # "op=mul" or "op MUL"
+#         (op) = myparse(line, "\s*op\W+(\w+)")
+#         if op:
+#             tileno = int(tilestr,16)
+#             # FF000001 0000800B
+#             # # data[(4, 0)] : op = mul
+#             # # data[(13, 13)] : read from reg `b`
+#             # # data[(15, 15)] : read from wire `a`
+#             # print "# Found op '%s'" % op
+#             
+#             # An op needs operands.  Default is "wire" for both
+#             # operands 'a' and 'b' unless/until something overrides
+#             if not opa[tileno]: set_opa(tileno, 'wire')
+#             if not opb[tileno]: set_opb(tileno, 'wire')
+# 
+#             # Sample comment:
+#             # 00020007 00000005 # data=5 => op=mul
+# 
+# 
+#             # FIXME should probably be "op_reg + op_feat + tilestr" instead
+#             addr = "FF00" + tilestr
+#             data = op_data[op]
+#             addbs(addr, data, line)
+#             return True
+#         else: return False
         
 def parse_opa(line, tilestr):
         # "in_s3=>a" or "in_s3 -> a" or "in_s3 => wire a" or "in_s3 => reg a"
@@ -241,38 +391,37 @@ def parse_connection(line,tilestr):
             
 
 
-def parse_const(line, tilestr):
-        # Konstants: "2=>b"
-        (k,operand) = myparse(line,"(\d+)[^ab]+([ab])")
-        if (k):
-            DBG=0
-            if DBG: print "# Found constant '%s' assigned to operand '%s'" % (k, operand)
-
-            # A
-            # F0000008 00000002 # data[(15, 0)]=2 : init `a` reg with const `2`
-            # FF000008 0000000B # data[(15,15)]=0 : read from reg `a`
-            # 
-            # or B
-            # F1000008 00000002 # data[(15, 0)]=2 : init `b` reg with const `2`
-            # FF000008 0000000B # data[(13,13)]=0 : read from reg `b`
-                                 
-            comment = line
-            tileno = int(tilestr,16)
-            if (operand=='a'):
-                addr = "F000"+tilestr; opa[tileno] = 'reg'
-                # print "# Remember opa[%04X] = %s" % (tileno, opa[tileno])
-                comment = "# Remember opa[%04X] = %s" % (tileno, opa[tileno])
-            else:
-                addr = "F100"+tilestr; opb[tileno] = 'reg'
-                # print "# Remember opb[%04X] = %s" % (tileno, opb[tileno])
-                comment = "# Remember opb[%04X] = %s" % (tileno, opb[tileno])
-            
-            data = "%08X" % int(k)
-            addbs(addr, data, line+"\n"+comment)
-            return True
-
-        else: return False
-
+# def parse_const(line, tilestr):
+#         # Konstants: "2=>b"
+#         (k,operand) = myparse(line,"(\d+)[^ab]+([ab])")
+#         if (k):
+#             DBG=0
+#             if DBG: print "# Found constant '%s' assigned to operand '%s'" % (k, operand)
+# 
+#             # A
+#             # F0000008 00000002 # data[(15, 0)]=2 : init `a` reg with const `2`
+#             # FF000008 0000000B # data[(15,15)]=0 : read from reg `a`
+#             # 
+#             # or B
+#             # F1000008 00000002 # data[(15, 0)]=2 : init `b` reg with const `2`
+#             # FF000008 0000000B # data[(13,13)]=0 : read from reg `b`
+#                                  
+#             comment = line
+#             tileno = int(tilestr,16)
+#             if (operand=='a'):
+#                 addr = "F000"+tilestr; opa[tileno] = 'reg'
+#                 # print "# Remember opa[%04X] = %s" % (tileno, opa[tileno])
+#                 comment = "# Remember opa[%04X] = %s" % (tileno, opa[tileno])
+#             else:
+#                 addr = "F100"+tilestr; opb[tileno] = 'reg'
+#                 # print "# Remember opb[%04X] = %s" % (tileno, opb[tileno])
+#                 comment = "# Remember opb[%04X] = %s" % (tileno, opb[tileno])
+#             
+#             data = "%08X" % int(k)
+#             addbs(addr, data, line+"\n"+comment)
+#             return True
+# 
+#         else: return False
 
 def parse_pe_out(line,tilestr):
         # Given a line that looks like that below, build bitstream info
@@ -301,7 +450,7 @@ def parse_pe_out(line,tilestr):
 
 
 def emit_bitstream():
-    DBG=1
+    DBG=0
     print "# FINAL PASS: EMIT BITSTREAM"
     print "#----------------------------------------------------------------"
     for addr in sorted(bitstream.iterkeys(), key=bs_addr_sort):
@@ -310,40 +459,37 @@ def emit_bitstream():
             print "# " + addr, bitstream[addr]
             print ""
 
-        # If addr indicates an op, then merge in operands a, b
-        insert_operands(addr)
+        # We don't do this no more (i think)
+        # # If addr indicates an op, then merge in operands a, b
+        # insert_operands(addr)
+
         data = merge_data(addr)
         if (data == "ERROR"): sys.exit(1)
 
         # print data, type(data)
         print "%s %08X" % (addr,data)
-        for c in bscomment[addr]: print "# " + c
+
+        for c in sorted(bscomment[addr], key=bs_comment_sort): print "# " + c
         print ""
 
-
-        # Merge all the data into one
-#         mdata = 0
-#         for d in bitstream[addr]:
-            
         
-
-        
-def insert_operands(addr, DBG=1):
-    # If addr indicates an op, then merge in operands a, b
-    (is_op, tilestr) = myparse(addr, "(....)(....)")
-    if is_op == "FF00":
-        tileno = int(tilestr,16)
-        wra = opa[tileno]+'_a' # 'wire_a' or 'reg_a'
-        wrb = opb[tileno]+'_b' # 'wire_b' or 'reg_b'
-        bitstream[addr].append(op_data[wra])
-        bitstream[addr].append(op_data[wrb])
-        if DBG:
-            print "# Found a op.  Adding operands to merge-list..."
-
-            print "# opa = %7s = %s" % (wra, op_data[wra])
-            print "# opb = %7s = %s" % (wrb, op_data[wrb])
-            print "# " + addr, bitstream[addr]
-            print ""
+# We don't do this no more (i think)
+# def insert_operands(addr, DBG=1):
+#     # If addr indicates an op, then merge in operands a, b
+#     (is_op, tilestr) = myparse(addr, "(....)(....)")
+#     if is_op == "FF00":
+#         tileno = int(tilestr,16)
+#         wra = opa[tileno]+'_a' # 'wire_a' or 'reg_a'
+#         wrb = opb[tileno]+'_b' # 'wire_b' or 'reg_b'
+#         bitstream[addr].append(op_data[wra])
+#         bitstream[addr].append(op_data[wrb])
+#         if DBG:
+#             print "# Found a op.  Adding operands to merge-list..."
+# 
+#             print "# opa = %7s = %s" % (wra, op_data[wra])
+#             print "# opb = %7s = %s" % (wrb, op_data[wrb])
+#             print "# " + addr, bitstream[addr]
+#             print ""
 
 
 
@@ -381,16 +527,186 @@ def set_opb(tileno, wr):
 
 
 
+
+# op_data = {} # dictionary
+# op_data['mul'] = "0000000B"
+# 
+# # B mode bits are 12,13
+# op_data['reg_b']  = "%08X" % (0 << 12)
+# op_data['wire_b'] = "%08X" % (2 << 12)
+# 
+# # A mode bits are 14,15
+# op_data['reg_a']  = "%08X" % (0 << 14)
+# op_data['wire_a'] = "%08X" % (2 << 14)
+
 op_data = {} # dictionary
-op_data['mul'] = "0000000B"
+op_data['add'] = 0x00000000
+op_data['mul'] = 0x0000000B
 
-# B mode bits are 12,13
-op_data['reg_b']  = "%08X" % (0 << 12)
-op_data['wire_b'] = "%08X" % (2 << 12)
 
-# A mode bits are 14,15
-op_data['reg_a']  = "%08X" % (0 << 14)
-op_data['wire_a'] = "%08X" % (2 << 14)
+# REG_CONST = 0; REG_DELAY = 3; REG_BYPASS = 2
+# A (data0) mode bits are 16,17
+op_data['const_a'] = (0 << 16)
+op_data['wire_a']  = (2 << 16)
+op_data['reg_a']   = (3 << 16)
+
+# B (data1) mode bits are 18,19
+op_data['const_b'] = (0 << 18)
+op_data['wire_b']  = (2 << 18)
+op_data['reg_b']   = (3 << 18)
+
+
+def bs_mem(tileno, line, DBG=0):
+    # IN:
+    # mem_64
+
+    # OUT (see e.g. ../examples/bw1000.bsa)
+    # 00040003 00000204
+    # data[(1, 0)] : mode = linebuffer
+    # data[(2, 2)] : tile_en = 1
+    # data[(15, 3)] : fifo_depth = 64
+    # data[(18, 16)] : almost_full_count = 0
+    # data[(19, 19)] : chain_enable = 0
+
+    parse = re.search('mem_(\d+)', line)
+    if not parse: return False
+
+    fd = int(parse.group(1))
+    # print '666foo found mem w/fd=%s' % fd
+
+    addr = 0x00040000 | tileno
+    data = 0x00000004 | (fd<<3)
+    comment = [
+        "data[(1, 0)] : mode = linebuffer",
+        "data[(2, 2)] : tile_en = 1",
+        "data[(15, 3)] : fifo_depth = %d" % fd,
+        "data[(18, 16)] : almost_full_count = 0",
+        "data[(19, 19)] : chain_enable = 0",
+        ]
+    addbs(addr, data, comment)
+    return True
+
+
+
+def bs_op(tileno, line, DBG=0):
+    # IN:
+    # mul(wire,const15_15)
+    # add(wire,wire) 
+    # mul(reg,const13_13$1)
+
+    # OUT (../examples/bw1000.bsa):
+    # FF000001 0003 000B
+    # data[(4, 0)] : alu_op = mul
+    # data[(17, 16)] : data0: REG_DELAY
+    # data[(19, 18)] : data1: REG_CONST
+
+    parse = re.search('(add|mul)\s*\(\s*(\S+)\s*,\s*(\S+)\s*\)', line)
+    if not parse: return False
+
+    opname = parse.group(1)       # 'mul'
+    op1    = parse.group(2)+"_a"  # 'reg_a' or 'wire_a' or 'const19_19$1_a'
+    op2    = parse.group(3)+"_b"
+    if DBG>1: print '# tile%02d  %s %s %s' % (tileno,opname,op1,op2)
+
+    # If op is a const, returns 'const_a' or 'const_b'
+    op1 = bs_const(tileno, op1, 'op1')
+    op2 = bs_const(tileno, op2, 'op2')
+
+    assert op1=='reg_a' or op1=='wire_a' or op1=='const_a',op1
+    assert op2=='reg_b' or op2=='wire_b' or op2=='const_b',op2
+
+    data = op_data[opname] | op_data[op1] | op_data[op2] 
+
+    # Address for a PE is reg 'FF' + elem '00' + tileno e.g. '0001'
+    addr = "FF00%04X" % tileno
+    
+    # data[(4, 0)] : alu_op = mul
+    # data[(17, 16)] : data0: REG_DELAY
+    # data[(19, 18)] : data1: REG_CONST
+
+#     # "reg_a" => "reg 'a'"
+#     op1 = re.sub(r'_([ab])', r" '\1'", op1)
+#     # comment = op1
+
+    comment = [
+        "data[(4, 0)] : alu_op = %s" % opname,
+        "data[(17, 16)]: data0: %s" % regtranslate(op1),
+        "data[(19, 18)]: data1: %s" % regtranslate(op2),
+        ]
+    addbs(addr, data, comment)
+    return True
+
+def regtranslate(op):
+    if op[0:3]=='reg': return 'REG_DELAY'
+    if op[0:3]=='wir': return 'REG_BYPASS'
+    if op[0:3]=='con': return 'REG_CONST'
+
+
+
+def bs_const(tileno,op,operand):
+    '''
+    Where const = e.g. "const13_13$1" and operand= "op1"
+    If 'op' not a const, return 'op' unchanged.
+    If 'op' is a const, process it and return
+    'const_a' or 'const_b' as appropriate.
+    '''
+
+    if op[0:5] != 'const': return op
+    
+    const = op
+
+    DBG=0
+    if DBG: print "# Found constant '%s' assigned to operand '%s'" \
+              % (const, operand)
+
+    # OP1
+    # F0000008 00000002 # data[(15, 0)]=2 : init `a` reg with const `2`
+    # FF000008 0000000B # data[(15,15)]=0 : read from reg `a`
+    # 
+    # or OP2
+    # F1000008 00000002 # data[(15, 0)]=2 : init `b` reg with const `2`
+    # FF000008 0000000B # data[(13,13)]=0 : read from reg `b`
+
+    # Parse the constant e.g. 'const13_13$1' == 13
+    k = int(re.search('const(\d+)', const).group(1))
+    #data = "%08X" % k
+    data = k
+    
+    # Address for a const is reg 'F0' + elem '00' + tileno e.g. '0008'
+    # (op2 constant is 'F1' instead of 'F0')
+    if operand=='op1':
+        const = 'const_a'
+        addr = "F000%04X" % tileno
+        comment = "data[(15, 0)] : init `data0` reg with const `%d`" % k
+    else:
+        const = 'const_b'
+        addr = "F100%04X" % tileno
+        comment = "data[(15, 0)] : init `data1` reg with const `%d`" % k
+
+    addbs(addr, data, comment)
+    return const
+    # return "%s %s %s" % (addr, data, comment)
+
+#     comment = line
+#     tileno = int(tilestr,16)
+#     if (operand=='a'):
+#         addr = "F000"+tilestr; opa[tileno] = 'reg'
+#         # print "# Remember opa[%04X] = %s" % (tileno, opa[tileno])
+#         comment = "# Remember opa[%04X] = %s" % (tileno, opa[tileno])
+#     else:
+#         addr = "F100"+tilestr; opb[tileno] = 'reg'
+#         # print "# Remember opb[%04X] = %s" % (tileno, opb[tileno])
+#         comment = "# Remember opb[%04X] = %s" % (tileno, opb[tileno])
+# 
+#     data = "%08X" % int(k)
+#     addbs(addr, data, line+"\n"+comment)
+#     return True
+# 
+# 
+
+
+
+
 
 
 
@@ -403,19 +719,37 @@ op_data['wire_a'] = "%08X" % (2 << 14)
 # cb_config = {}; cb_annote = {}
 # sb_config = {}; sb_annote = {}
 def addbs(addr,data, comment=''):
-    try:
-        bitstream[addr].append(data)
-        bscomment[addr].append(comment)
+    if type(addr) == int: addr = "%08X" % addr
+    data = '%08X' % data
+
+    try: bitstream[addr]
     except:
         bitstream[addr] = []
-        bitstream[addr].append(data)
         bscomment[addr] = []
-        bscomment[addr].append(comment)
 
-    if comment != '': print "# " + comment
+    # Watch for redundant info
+    for d in bitstream[addr]:
+        if d == data:
+            print '# '
+            print "# WARNING redundant instruction, this was already done (and/or it's the default)"
+            print "# %s %s" % (addr,data),
+            print ":: bs['%s'] = %s" % (addr, bitstream[addr])
 
+            # BUT!  Still want a comment :(
+            if data != '00000000': return
+
+
+    bitstream[addr].append(data)
+
+    if type(comment)==str: comment = [comment]
+    bscomment[addr] = bscomment[addr] + comment
+
+    print '# '
     print "# %s %s" % (addr,data),
     print ":: bs['%s'] = %s" % (addr, bitstream[addr])
+
+    # if comment != '': print "# " + comment
+    for c in comment: print "# " + c
 
     # Howzabout a quick error check on cb, sb elements
     feature = int(addr[2:4],16)
@@ -426,7 +760,6 @@ def addbs(addr,data, comment=''):
         valid = merge_data(addr) # Just for the error check
         if valid == "ERROR":
             print "ERROR This connection collides with a previous one"
-    print ""
 
 
 def merge_data(addr, DBG=0):
@@ -469,51 +802,51 @@ def myparse(line, regexp):
 
 
 
+# see cgra_info.get_default_cgra_info_filename() instead
+# def get_default_cgra_info_filename():
+#     '''
+#     Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
+#     '''
+#     import os
+#     mydir = os.path.dirname(os.path.realpath(__file__))
+#     cgra_filename = mydir + "../decoder/examples/cgra_info.txt"
+# 
+#     # global verbose #(implied because use before def)
+#     if VERBOSE: print("I think I am here:\n  %s" % mydir)
+#     if VERBOSE: print("Default cgra_info file is\n  %s" % cgra_filename)
+#     return cgra_filename
 
-def get_default_cgra_info_filename():
-    '''
-    Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
-    '''
-    import os
-    mydir = os.path.dirname(os.path.realpath(__file__))
-    cgra_filename = mydir + "../decoder/examples/cgra_info.txt"
 
-    # global verbose #(implied because use before def)
-    if VERBOSE: print("I think I am here:\n  %s" % mydir)
-    if VERBOSE: print("Default cgra_info file is\n  %s" % cgra_filename)
-    return cgra_filename
+
 
 def process_args():
 
-    scriptname = sys.argv[0];
-    args = sys.argv[1:];
-
-
+    # Get name of this script
+    scriptname = sys.argv[0]
     scriptname_tail = scriptname
     parse = re.search('([/].*$)', scriptname)
     parse = re.search('([^/]+$)', scriptname)
     if (parse): scriptname_tail = parse.group(1)
+    args = sys.argv[1:] # shift
 
+    # --help
     usage = '''
 Decodes/annotates the indicated bitstream file
 Usage:
-   %s [ -v ] <bitstream-file> -cgra <cgra_info_file>
+   %s [ -v ] <bsb-file> -cgra <cgra_info_file>
    %s --help
 ''' % (scriptname_tail, scriptname_tail)
 
-    # sbdefaults = True;
-    cgra_filename = get_default_cgra_info_filename()
+    # Load cgra_info
+    cgra_filename = cgra_info.get_default_cgra_info_filename()
 
-    # if (len(args) < 1):       print usage; sys.exit(-1);
+    # if (len(args) < 1): print usage; sys.exit(-1);
 
     global VERBOSE
+    # cgra_filename = get_default_cgra_info_filename()
     while (len(args) > 0):
-        if (args[0] == '--help'): print usage; sys.exit(0);
-        # global VERBOSE # this causes problems/errors
-        # if   (args[0] == '-nodefaults'): sbdefaults = False
-        if   (args[0] == '-v'):    VERBOSE = True
-        elif (args[0] == '-4x4'): print 'WARNING switch "-4x4" not used'
-        elif (args[0] == '-8x8'): print 'WARNING switch "-8x8" not used'
+        if   (args[0] == '--help'): print usage; sys.exit(0);
+        elif (args[0] == '-v'):    VERBOSE = True
         elif (args[0] == '-cgra' or args[0] == '-cgra_info'):
             cgra_filename = args[1]
             args = args[1:];
@@ -521,10 +854,13 @@ Usage:
             bitstream_filename = args[0];
         args = args[1:]
 
-    # read_cgra_info() does this...
-    # if VERBOSE: print("Using uh cgra_info file %s" % cgra_filename)
-    # if VERBOSE: print("and VERBOSE is '%s'" % str(VERBOSE))
     cgra_info.read_cgra_info(cgra_filename, verbose=VERBOSE)
+
+
+
+
+
+
 
 
 
@@ -594,10 +930,3 @@ main()
 
 
 
-# print '''
-# NEXT:
-# - sort bs by index
-# - emit each bs_addr data, merging where appropriate
-# - when feature = '00' (pe), remember to merge in the operands
-# '''
-# 

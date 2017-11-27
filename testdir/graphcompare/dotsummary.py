@@ -29,7 +29,7 @@ for line in sys.stdin:
     # else: print " FOO %s" % parse.group(1)
 
     DBG=0
-    if DBG: print line
+    if DBG: print "LINE '%s'" % line
 
     # '"T1_0x0000" -> "T1_ADD" -> "T10_out_s3t2_latch";'
     # becomes
@@ -37,9 +37,10 @@ for line in sys.stdin:
 
     line1 = re.sub('[-">;]', '', line)
     line1 = re.sub('\s+', ' ', line1)
+    line1 = re.sub('\s+$', '', line1)
     if DBG and (line != line1):
-        print "\nFOO< %s"   % line
-        print   "FOO> %s\n" % line1
+        print "\nFOO< '%s'"   % line
+        print   "FOO> '%s'\n" % line1
 
     # 'T1_0x0000 T1_ADD T10_out_s3t2_latch'
     # becomes list
@@ -135,8 +136,8 @@ rewrite_bsa = (
 rewrite_map = (
     # Rewrite-rules for map files
 
-    # PE_U10_add  => add
-    # PE_U38_mul  => mul
+    # add_335_339_340  => add
+    # mul_337_338_339  => mul
     # const0      => const0
     # const999    => const999
     
@@ -144,7 +145,8 @@ rewrite_map = (
     # lb_conv1_2_stencil_update_stream$mem_2    => mem
     # lb_conv1_2_stencil_update_stream$reg_0_1  => latch
 
-    ('^PE_.*_', ''),
+    ('^add.*', 'add'),
+    ('^mul.*', 'mul'),
     ('.*[$]mem.*', 'mem'),
     ('.*[$]reg.*', 'reg')
 )

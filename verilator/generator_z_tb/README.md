@@ -1,3 +1,15 @@
+11/24/2017
+To run travis test can do e.g.:
+
+  % ( cd $gen/testdir ; make test_all ) | & tee test_all.log | less
+
+where $gen == CGRAGenerator/ repository path
+
+
+
+
+
+==============================================================================
 06/10/2017
 
 8x8 matrix successfully doubles the parrot.

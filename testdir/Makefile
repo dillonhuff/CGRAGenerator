@@ -18,7 +18,7 @@ else
 endif
 # $(warning OUTPUT = "$(OUTPUT)")
 
-TEMPDIR := $(shell mktemp -d)
+TEMPDIR := $(shell mktemp -d /tmp/gentest-XXX)
 
 # gray_small_4x4:
 # 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
@@ -37,33 +37,34 @@ pw_gray_8x8:
 	CONFIG="-config ../../bitstream/examples/pwv2.bs"
 
 test_all:
-	pwd; ls
-	./writelog.csh log1 -init TEST SUMMARY BEGIN `date`
-	make hackdiff_test | tee $(TEMPDIR)/hackdiff_test.log
+	make hackdiff_test 2>&1 | tee $(TEMPDIR)/hackdiff_test.log
+	make test_standalone
+	make test_serpent
 
-#         # Note the '| tee' masks any errors that might have occurred :(
-# 	make TEMPDIR=$(TEMPDIR) test_4x4_gray_small
-# 	make TEMPDIR=$(TEMPDIR) test_8x8_gray_small
-# 	make TEMPDIR=$(TEMPDIR) test_4x4_gray
-# 	make TEMPDIR=$(TEMPDIR) test_8x8_gray
-
-	make pw_gray_small_8x8
-	make pw_gray_8x8
-# 	# make gray_small_4x4
-# 	# make gray_4x4
-
+        # Read standalone test result(s) from 'log1'
 	@echo ""
-	@echo SUMMARY OF TEST RESULTS
+	@echo SUMMARY OF STANDALONE TEST RESULTS
 	@echo ==================================================
-#	cat $(TEMPDIR)/test_summary.txt
 	./writelog.csh log1 -print
 
-# 	@egrep '^00014'                \
-# 	  $(TEMPDIR)/hackdiff_test.log \
-# 	  $(TEMPDIR)/test_4x4_gray_small.log \
-# 	  $(TEMPDIR)/test_8x8_gray_small.log \
-# 	  $(TEMPDIR)/test_4x4_gray.log       \
-# 	  $(TEMPDIR)/test_8x8_gray.log
+        # Summary of hackdiff results
+	egrep ^hackdiff $(TEMPDIR)/hackdiff_test.log
+
+
+test_serpent:
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR)
+	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR)
+#	FIXME Who will delete TEMPDIR?
+
+test_standalone:
+	pwd; ls
+	./writelog.csh log1 -init TEST SUMMARY BEGIN `date`
+
+        # Note: Results go to 'log1'
+	make pw_gray_small_8x8
+#	make pw_gray_8x8
+# 	# make gray_small_4x4
+# 	# make gray_4x4
 
 # Probably want to restore the more-challenging conv_bw test, once smoke has cleared.
 # hackdiff_test:
@@ -74,11 +75,9 @@ test_all:
 
 hackdiff_test:
 	cd ../bitstream; \
-	decoder/hackdiff.csh -v \
-	  examples/pw351.bs examples/pw351.bsa \
+	decoder/hackdiff.csh \
+	  examples/bw1000.bs examples/bw1000.bsa \
 	  -cgra examples/cgra_configs/cgra_info_new.txt
-
-
 
 
 

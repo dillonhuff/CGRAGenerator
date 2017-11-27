@@ -1,0 +1,20 @@
+digraph Diagram {
+  node [shape=box]; # Comment
+    "const0_0" -> "add_340_343_344";
+    "const3_3" -> "mul_3423_343";
+    "const5_5" -> "mul_3465_347";
+    "const7_7" -> "mul_3507_351";
+    "add_340_351_352" -> "OUTPUT";
+    "INPUT" -> "mem_1"; # fifo_depth 10
+    "INPUT" -> "mul_3507_351";
+    "mem_1" -> "mem_2"; # fifo_depth 10
+    "mem_1" -> "mul_3465_347";
+    "wen_lut" -> "mem_1";
+    "mem_2" -> "mul_3423_343";
+    "wen_lut" -> "mem_2";
+    "add_340_343_344" -> "add_340_347_348";
+    "add_340_347_348" -> "add_340_351_352";
+    "mul_3423_343" -> "add_340_343_344";
+    "mul_3465_347" -> "add_340_347_348";
+    "mul_3507_351" -> "add_340_351_352";
+}

@@ -883,8 +883,13 @@ def get_connection_type(c):
         print ""
 
 
+    elif c=='wdata': type = 'pe_in'
+    elif c=='rdata': type = 'pe_out'
+
     # elif (c == "wen" or c == 'wdata'):
-    elif c in ("wen", 'wdata', 'rdata'):
+    # elif c in ("wen", 'wdata', 'rdata'):
+    elif c in ("wen"):
+        print c
         type = "pe_in"
         print "ERROR Don't know what to do with '%s' (yet)" % c
         print "Will attempt recovery; modeling '%s' as '%s'" % (c,type)
@@ -2767,7 +2772,8 @@ def initialize_tile_list(w, h):
 
 
 def DOT_print_connection(t1, w1, t2, w2):
-    print "  FOO T%s '%s' connects to T%s '%s'" % (t1, w1, t2, w2)
+    print "  FOO 'T%s_%s' connects to 'T%s_%s'" % (t1, w1, t2, w2)
+    print ''
 
 def DOT_trace_wire(tileno, portname):
     DBG=0
@@ -2811,15 +2817,24 @@ def DOT_trace_wire(tileno, portname):
     # outputs and 2) only trace BACK from the sbwire, never forward
 
     # Treat "wireA" "wireB" and "pe_out" as outputs e.g. look for internal connections
+    #     is_output = re.search('^out', portname) \
+    #                 or re.search('^wire', portname) \
+    #                 or re.search('sb_wire', portname) \
+    #                 or (portname == 'pe_out')
+
     is_output = re.search('^out', portname) \
-                or re.search('^wire', portname) \
-                or re.search('sb_wire', portname) \
                 or (portname == 'pe_out')
 
+
     if is_input:
-        if DBG: print "  FOO '%s' is a input; find neighbor output" % portname
+        if DBG: print "  FOO 'T%d_%s' is a input; find neighbor output" % (tileno,portname)
         (adj_tileno,adj_wire) = find_matching_wire(tileno, portname)
-        if (adj_wire):
+        if adj_wire=='INPUT':
+            # print '  FOO hey its a input'
+            return (tileno, 'INPUT')
+
+        elif (adj_wire):
+            # Continue tracing until find something interesting...
             if DBG: DOT_print_connection(tileno, portname, adj_tileno,adj_wire)
             return DOT_trace_wire(adj_tileno,adj_wire)
 
@@ -2952,6 +2967,8 @@ def DOT_build_graph():
     DOT_STREAM.close()
 
 def DOT_build_dots(tileno, connection):
+    DBG=0
+    if DBG: print "\nprocessing connection '%s' in tile %d" % (connection, tileno)
 
     # This: Tile  4, 'pe_out <= INPUT(wireA,wireB)'
     # Should turn into: "self.in"->"T4_pe_out"
@@ -3202,7 +3219,8 @@ def process_decoded_bitstream(bs):
         elif   re.search("op = output",  line):
             (operand['A'],operand['B']) = ('wire','wire')
 
-        elif re.search("mem_out",     line): tile[tileno].label = "MEM"
+        # elif re.search("mem_out",     line): tile[tileno].label = "MEM"
+        elif re.search("rdata",     line): tile[tileno].label = "MEM"
 
         # Transformations
         # < "# data[(1, 0)] : connect wire 3 (pe_out_res) to out_BUS16_S0_T0"
@@ -3227,38 +3245,77 @@ def process_decoded_bitstream(bs):
         if re.search("REG_", line):
             if DBG: print "OOOOF it's a REG line"
 
-        # NEW
-        # data[(13, 12)] : op_b_in: REG_CONST
-        # data[(15, 14)] : op_a_in: REG_BYPASS
-        
-        # OLD
-        # data[(13, 13)] : read from reg `b`
-        # data[(15, 15)] : read from wire `a`
 
-        parse = re.search(".* op_(.)_in: REG_CONST", line)
-        if (parse):
-            if DBG: print "BEFORE: " + line
-            line = "# data[(13, 13)] : read from reg `%s`" % parse.group(1)
-            if DBG: print "AFTER:  " + line
+        # prior regime
+        if (0):
+            # NEW
+            # data[(13, 12)] : op_b_in: REG_CONST
+            # data[(15, 14)] : op_a_in: REG_BYPASS
+
+            # OLD
+            # data[(13, 13)] : read from reg `b`
+            # data[(15, 15)] : read from wire `a`
+
+            parse = re.search(".* op_(.)_in: REG_CONST", line)
+            if (parse):
+                if DBG: print "BEFORE: " + line
+                line = "# data[(13, 13)] : read from reg `%s`" % parse.group(1)
+                if DBG: print "AFTER:  " + line
 
 
-        parse = re.search(".* op_(.)_in: REG_BYPASS", line)
-        if (parse):
-            if DBG: print "BEFORE: " + line
-            line = "# data[(13, 13)] : read from wire `%s`" % parse.group(1)
-            if DBG: print "AFTER:  " + line
+            parse = re.search(".* op_(.)_in: REG_BYPASS", line)
+            if (parse):
+                if DBG: print "BEFORE: " + line
+                line = "# data[(13, 13)] : read from wire `%s`" % parse.group(1)
+                if DBG: print "AFTER:  " + line
 
-        # New regime uses "op_a_in" and 'op_b_in" instead of just a and b
-        line = re.sub("op_a_in", "a", line)
-        line = re.sub("op_b_in", "b", line)
+        # newer regime
+        if (1):
+            # NEW...
+            # data[(19, 18)]: data1: REG_CONST
+            # data[(17, 16)]: data0: REG_DELAY
+            # data[(19, 18)]: data1: REG_BYPASS
+            
+            # ...must be backtranslated to OLD
+            # data[(13, 13)] : read from reg `b`
+            # data[(13, 13)] : read from reg `a`
+            # data[(15, 15)] : read from wire `b`
+
+            # parse = re.search(".* op_(.)_in: REG_CONST", line)
+            parse = re.search(".*: data([01]): REG_(CONST|DELAY)", line)
+            if (parse):
+                if parse.group(1) == '0': r='a'
+                else: r='b'
+
+                if DBG: print "BEFORE: " + line
+                line = "# data[(13, 13)] : read from reg `%s`" % r
+                if DBG: print "AFTER:  " + line
+
+
+            # parse = re.search(".* op_(.)_in: REG_BYPASS", line)
+            parse = re.search(".*: data([01]): REG_BYPASS", line)
+            if (parse):
+                if parse.group(1) == '0': r='a'
+                else: r='b'
+                if DBG: print "BEFORE: " + line
+                line = "# data[(13, 13)] : read from wire `%s`" % r
+                if DBG: print "AFTER:  " + line
+
+        # prior regime
+        if (0):
+            # New regime uses "op_a_in" and 'op_b_in" instead of just a and b
+            line = re.sub("op_a_in", "a", line)
+            line = re.sub("op_b_in", "b", line)
+
+        # newer regime
+        if (1):
+            # Newer new regime uses 'data0' and 'data1' instead of a and b
+            line = re.sub("data0", "a", line)
+            line = re.sub("data1", "b", line)
+
 
         # New regime uses "alu_op" instead of just "op" maybe
         line = re.sub("alu_op", "op", line)
-
-
-
-
-
 
         # "to a" => "to wireA", "to b" => "to wireB"
         # FIXME so egregious!!!
@@ -3352,6 +3409,13 @@ def process_decoded_bitstream(bs):
         # Gather op info for later emission (see above)
         # E.g. if input line is "# data[(4, 0)] : op = mul"
         # Then opname = "MUL"
+
+        # OLD: 'data[(4, 0)] : op = mul'
+        # NEW: 'data[(4, 0)] : alu_op = mul'
+        # 
+        # parse = re.search(" (alu_)*op = (\S+)", line)
+        # This is taken care of in the rewrites ( I think)
+
         parse = re.search(" op = (\S+)", line)
         if (parse):
             opname = parse.group(1).upper()
@@ -3670,8 +3734,12 @@ def find_matching_wire(tileno, w):
     elif (side==3): (r,c,side) = (r-1,c,side-2)
 
 
-    if (r < 0): return (False,False)
-    if (c < 0): return (False,False)
+    # if (r < 0): return (False,False)
+    # if (c < 0): return (False,False)
+
+    if (r < 0) or (c < 0):
+        if in_or_out == 'out': return (-1,'INPUT')
+        else                : return (-1,'OUTPUT')
 
     #   print (r,c,side)
 

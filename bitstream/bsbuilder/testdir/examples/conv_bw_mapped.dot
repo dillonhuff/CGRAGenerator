@@ -1,0 +1,50 @@
+digraph Diagram {
+  node [shape=box]; # Comment
+    "const0_0" -> "add_457_460_461";
+    "const11_11" -> "mul_45911_460";
+    "const12_12" -> "mul_47112_472";
+    "const13_13$1" -> "mul_48313_484";
+    "const14_14" -> "mul_46314_464";
+    "const15_15" -> "mul_47515_476";
+    "const16_16" -> "mul_48716_488";
+    "const17_17" -> "mul_46717_468";
+    "const18_18" -> "mul_47918_480";
+    "const19_19" -> "mul_49119_492";
+    "add_457_492_493" -> "OUTPUT";
+    "INPUT" -> "mem_1"; # fifo_depth 64
+    "INPUT" -> "lb_p4_clamped_stencil_update_stream$reg_0_1";
+    "INPUT" -> "mul_49119_492";
+    "mem_1" -> "mem_2"; # fifo_depth 64
+    "mem_1" -> "lb_p4_clamped_stencil_update_stream$reg_1_1";
+    "mem_1" -> "mul_47918_480";
+    "wen_lut" -> "mem_1";
+    "mem_2" -> "lb_p4_clamped_stencil_update_stream$reg_2_1";
+    "mem_2" -> "mul_46717_468";
+    "wen_lut" -> "mem_2";
+    "lb_p4_clamped_stencil_update_stream$reg_0_1" -> "lb_p4_clamped_stencil_update_stream$reg_0_2";
+    "lb_p4_clamped_stencil_update_stream$reg_0_1" -> "mul_48716_488";
+    "lb_p4_clamped_stencil_update_stream$reg_0_2" -> "mul_48313_484";
+    "lb_p4_clamped_stencil_update_stream$reg_1_1" -> "lb_p4_clamped_stencil_update_stream$reg_1_2";
+    "lb_p4_clamped_stencil_update_stream$reg_1_1" -> "mul_47515_476";
+    "lb_p4_clamped_stencil_update_stream$reg_1_2" -> "mul_47112_472";
+    "lb_p4_clamped_stencil_update_stream$reg_2_1" -> "lb_p4_clamped_stencil_update_stream$reg_2_2";
+    "lb_p4_clamped_stencil_update_stream$reg_2_1" -> "mul_46314_464";
+    "lb_p4_clamped_stencil_update_stream$reg_2_2" -> "mul_45911_460";
+    "add_457_460_461" -> "add_457_464_465";
+    "add_457_464_465" -> "add_457_468_469";
+    "add_457_468_469" -> "add_457_472_473";
+    "add_457_472_473" -> "add_457_476_477";
+    "add_457_476_477" -> "add_457_480_481";
+    "add_457_480_481" -> "add_457_484_485";
+    "add_457_484_485" -> "add_457_488_489";
+    "add_457_488_489" -> "add_457_492_493";
+    "mul_45911_460" -> "add_457_460_461";
+    "mul_46314_464" -> "add_457_464_465";
+    "mul_46717_468" -> "add_457_468_469";
+    "mul_47112_472" -> "add_457_472_473";
+    "mul_47515_476" -> "add_457_476_477";
+    "mul_47918_480" -> "add_457_480_481";
+    "mul_48313_484" -> "add_457_484_485";
+    "mul_48716_488" -> "add_457_488_489";
+    "mul_49119_492" -> "add_457_492_493";
+}

@@ -346,10 +346,11 @@ int main(int argc, char **argv, char **env) {
 
                 if (feof(input_file)) {
                     if (final_delay_so_far == delay_out) {
-                        printf("\nINFO Simulation ran for %d cycles\n\n", i);
+                        printf("\nINFO Simulation ran for %d cycles (349)\n\n", i);
                         if (input_file)       { fclose(input_file ); }
                         if (output_file)      { fclose(output_file); }
                         if (config_data_file) { fclose(config_data_file); }
+                        CLOSETRACE // YES!
                         exit(0);
                     } // (input_filename == NULL) {} else {
                     else {
@@ -442,24 +443,24 @@ int main(int argc, char **argv, char **env) {
         // FIXME/TODO maybe build a "close_all_and_exit" subroutine and call it before exit(s)
         if (input_filename != NULL) {
             if (feof(input_file)) {
-                printf("\n\nINFO Simulation ran for %d cycles\n\n", i);
+                printf("\n\nINFO Simulation ran for %d cycles (446)\n\n", i);
                 // fclose(input_file);
                 // if (output_file) { fclose(output_file); }
                 if (input_file)       { fclose(input_file ); }
                 if (output_file)      { fclose(output_file); }
                 if (config_data_file) { fclose(config_data_file); }
-                // CLOSETRACE // why not? FIXME: tell my why not and/or put it in and see what happens...
+                CLOSETRACE
                 exit(0);
             }
         }
     } // for (i)
 
     if (Verilated::gotFinish()) {
-        printf("\n\nINFO Simulation ran for %d cycles\n\n", NCLOCKS);
+        printf("\n\nINFO Simulation ran for %d cycles (459)\n\n", NCLOCKS);
         if (input_file)       { fclose(input_file ); }
         if (output_file)      { fclose(output_file); }
         if (config_data_file) { fclose(config_data_file); }
-        // CLOSETRACE // why not? FIXME: tell my why not and/or put it in and see what happens...
+        CLOSETRACE
         exit(0);
     }
     CLOSETRACE

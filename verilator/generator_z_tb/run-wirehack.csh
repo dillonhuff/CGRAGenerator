@@ -130,3 +130,6 @@ echo Changes to top.v:  ; echo
 echo To see all changes in context, try:
 echo "  diff --side-by-side -W 100 $tmpdir/top.v.orig $vtop | less"
 echo
+
+# Clean up
+/bin/rm -rf $tmpdir
