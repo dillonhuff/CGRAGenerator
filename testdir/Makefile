@@ -46,6 +46,9 @@ test_all:
 	@echo ==================================================
 	./writelog.csh log1 -print
 
+        # Summary of hackdiff results
+	egrep ^hackdiff $(TEMPDIR)/hackdiff_test.log
+
 
 test_serpent:
 	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR)
@@ -72,11 +75,9 @@ test_standalone:
 
 hackdiff_test:
 	cd ../bitstream; \
-	decoder/hackdiff.csh -v \
+	decoder/hackdiff.csh \
 	  examples/pw351.bs examples/pw351.bsa \
 	  -cgra examples/cgra_configs/cgra_info_new.txt
-
-
 
 
 
