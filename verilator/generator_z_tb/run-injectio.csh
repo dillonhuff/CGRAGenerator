@@ -70,11 +70,11 @@ else
 
     # NOTE decode.py -v is messy and should be avoided unless you're trying to debug
     echo "run-injectio: decode.py -cgra $cgra_info $config (after stripping comments)"
-    ../../bitstream/decoder/decode.py -cgra $cgra_info $tmpfile.0 > $tmpfile.1
+    ../../bitstream/decoder/decode.py -cgra $cgra_info $tmpfile.0 > $tmpfile.1 || exit -1
 
     # Returns a CLEAN bitstream with no bitstream-embedded I/O,
     # plus just two I/O comments at the end
-    run-stripio.csh $VSWITCH $tmpfile.1 -o $config_io
+    run-stripio.csh $VSWITCH $tmpfile.1 -o $config_io || exit -1
     /bin/rm $tmpfile.*
 endif
 

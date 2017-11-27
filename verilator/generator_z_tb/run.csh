@@ -305,7 +305,7 @@ set path = ($path .)
 
 # Use decoder to produce an annotated bitstream WITH I/O COMMENTS
 echo "run.csh: run-injectio.csh $config -o $config_io"
-run-injectio.csh $VSWITCH $config -o $config_io
+run-injectio.csh $VSWITCH $config -o $config_io || exit -1
 
 # Find IO wires.  This is what we're looking for:
 #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
