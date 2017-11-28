@@ -29,8 +29,11 @@ TEMPDIR := $(shell mktemp -d /tmp/gentest-XXX)
 # 	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
 
 pw_gray_small_8x8:
+# 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
+#	CONFIG="-config ../../bitstream/examples/pwv2.bs"
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
-	CONFIG="-config ../../bitstream/examples/pwv2.bs"
+	CONFIG="-config ../../bitstream/examples/pw1009.bsa"
+
 
 pw_gray_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
@@ -57,7 +60,7 @@ test_serpent:
 #	FIXME Who will delete TEMPDIR?
 
 test_standalone:
-	pwd; ls
+# 	pwd; ls
 	./writelog.csh log1 -init TEST SUMMARY BEGIN `date`
 
         # Note: Results go to 'log1'
