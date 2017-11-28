@@ -18,7 +18,7 @@ MAIN:
   if ("$map_json:e" != 'json') goto USAGE
   if ("$2" != "-cgra_info") goto USAGE
   set cgra = $3
-  if ("$cgra:t" != "cgra_info.txt") goto USAGE
+  # if ("$cgra:t" != "cgra_info.txt") goto USAGE
   if ("$4" != '-o') goto USAGE
   set bsa_out = $5
 
