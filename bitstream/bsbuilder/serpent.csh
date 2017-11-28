@@ -24,10 +24,11 @@ MAIN:
 
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
-cd $scriptpath
+# cd $scriptpath
 
 # Script is maybe in $gen/bitstream/bsbuilder
 set gen = `(cd ../..; pwd)`
+set bin = $gen/bitstream/bsbuilder
 alias json2dot $gen/testdir/graphcompare/json2dot.py
 
 set tmp = `mktemp -d /tmp/serpent-XXX`
@@ -38,7 +39,6 @@ set tmp = `mktemp -d /tmp/serpent-XXX`
 # echo 'alias json2dot $gen/testdir/graphcompare/json2dot.py'
 # echo ''
 
-set t = '$tmp'
 set b = $map_json:t
 set b = $b:r
 set b = `echo $b | sed 's/_mapped//'`
@@ -46,11 +46,11 @@ set map_dot = ${b}_mapped.dot
 set bsb      =   ${b}.bsb
 
 
-  echo "  json2dot < $map_json > $t/$map_dot"
+  echo "  json2dot < $map_json > $tmp/$map_dot"
   json2dot < $map_json > $tmp/$map_dot
 
-  echo "  ./serpent.py $t/$map_dot -o $t/$bsb > \$t/$b.log.serpent"
-  ./serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent
+  echo "  serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent"
+  $bin/serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent
 
   unset VERBOSE
   if ($?VERBOSE) then
@@ -64,8 +64,8 @@ set bsb      =   ${b}.bsb
     echo ''
   endif
 
-  echo "  ./bsbuilder.py < $tmp/$bsb > $bsa_out"
-  ./bsbuilder.py < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $bsa_out
+  echo "  bsbuilder.py < $tmp/$bsb > $bsa_out"
+  $bin/bsbuilder.py < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $bsa_out
 
   if ($?VERBOSE) then
     echo ''
