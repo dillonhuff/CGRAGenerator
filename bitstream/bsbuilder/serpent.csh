@@ -27,7 +27,7 @@ set scriptpath = $scriptpath:h
 # cd $scriptpath
 
 # Script is maybe in $gen/bitstream/bsbuilder
-set gen = `(cd ../..; pwd)`
+set gen = `(cd $scriptpath/../..; pwd)`
 set bin = $gen/bitstream/bsbuilder
 alias json2dot $gen/testdir/graphcompare/json2dot.py
 
