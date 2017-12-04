@@ -71,9 +71,11 @@ foreach b ($bmarks)
   endif
 
   echo "  ../bsbuilder.py < $tmp/$bsb > $tmp/$bsa"
-  ../bsbuilder.py < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $tmp/$bsa || exit -1
+  # ../bsbuilder.py -v < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $tmp/$bsa || exit -1
+  ../bsbuilder.py < $tmp/$bsb > $tmp/$bsa || exit -1
 
   echo "  cmp examples/$bsa $tmp/$bsa"
+  ls -l examples/$bsa $tmp/$bsa
   cmp examples/$bsa $tmp/$bsa || set result = 'FAILED'
 
   if ($?VERBOSE) then

@@ -795,10 +795,11 @@ def addbs(addr,data, comment=''):
     # Watch for redundant info
     for d in bitstream[addr]:
         if d == data:
-            print '# '
-            print "# WARNING redundant instruction, this was already done (and/or it's the default)"
-            print "# %s %s" % (addr,data),
-            print ":: bs['%s'] = %s" % (addr, bitstream[addr])
+            if VERBOSE:
+                print '# '
+                print "# WARNING redundant instruction, this was already done (and/or it's the default)"
+                print "# %s %s" % (addr,data),
+                print ":: bs['%s'] = %s" % (addr, bitstream[addr])
 
             # BUT!  Still want a comment :(
             if data != '00000000': return
@@ -916,6 +917,7 @@ Usage:
     while (len(args) > 0):
         if   (args[0] == '--help'): print usage; sys.exit(0);
         elif (args[0] == '-v'):    VERBOSE = True
+        elif (args[0] == '-q'):    VERBOSE = False
         elif (args[0] == '-cgra' or args[0] == '-cgra_info'):
             cgra_filename = args[1]
             args = args[1:];
