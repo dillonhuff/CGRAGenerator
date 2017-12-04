@@ -341,7 +341,7 @@ CGRA_FILENAME_TOP = "CGRAGenerator/hardware/generator_z/top/cgra_info.txt"
 def get_generated_cgra_info_filename():
     import os
     mydir = os.path.dirname(os.path.realpath(__file__))
-    print mydir
+    # print mydir
     parse = re.search('^(.*/)CGRAGenerator', mydir)
     if not parse:
         return ''
