@@ -88,6 +88,8 @@ foreach b ($bmarks)
   echo "TEST $b $result"
   echo ""
 
+  if ($result == "FAILED") exit -1
+
 end
 
 # Clean up
