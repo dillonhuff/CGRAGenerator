@@ -231,9 +231,11 @@ def preprocess(input_lines, DBG=0):
         line = line.strip()
         if DBG: print "LINE0", line
 
-        # Turn 't0_in_s2t0' into 'T0_in_s2t0'
-        line1 = re.sub(r't(\d+)_', r'T\1_', line)
-        if DBG: print "LINE1", line1
+        # Maybe this is a bad road
+        # # Turn 't0_in_s2t0' into 'T0_in_s2t0'
+        # line1 = re.sub(r't(\d+)_(in|out)', r'T\1_', line)
+        # if DBG: print "LINE1", line1
+        line1 = line
 
         # Turn 'a -> b -> c' into 'a -> b', 'b -> c'
         nodes = re.split('\s*->\s*', line1)

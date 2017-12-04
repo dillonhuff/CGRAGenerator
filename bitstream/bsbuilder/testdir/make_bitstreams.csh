@@ -1,5 +1,11 @@
 #!/bin/csh -f
 
+if ($#argv == 0) then
+  echo 'Where should I put the bsa output files?'
+  echo "Example: $0:t /tmp/build42/"
+  exit -1
+endif
+
 if (! -d $1) then
   echo 'Where should I put the bsa output files?'
   echo "Example: $0:t /tmp/build42/"
