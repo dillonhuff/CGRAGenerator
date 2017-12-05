@@ -1,6 +1,5 @@
 #!/bin/csh -f
 
-set echo
 if (! -d $1) then
   echo 'Where are the test.bsa input files?'
   echo "Example: $0:t /tmp/build42/"
@@ -9,7 +8,7 @@ endif
 set tmpdir = $1
 
 # Oops maybe tmpdir must be a full path
-set tmpdir = `(cd tmpdir; pwd)`
+set tmpdir = `(cd $tmpdir; pwd)`
 
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
