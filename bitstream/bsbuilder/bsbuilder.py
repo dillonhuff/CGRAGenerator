@@ -304,7 +304,8 @@ def bs_connection(tileno, line, DBG=0):
     
     Tlhs = "T%d_%s" % (tileno,lhs)
     Trhs = "T%d_%s" % (tileno,rhs)
-    cwt = cgra_info.connect_within_tile(tileno, Tlhs, Trhs, DBG-1)
+    cwt = cgra_info.connect_within_tile(tileno, Tlhs, Trhs, DBG=1)
+    if not cwt: sys.exit(-1)
     (addr,data,ra,rd,comm,rcomm) = cwt
 
     # print 'sel %08X %08X' % (addr,data)

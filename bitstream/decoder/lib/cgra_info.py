@@ -635,17 +635,21 @@ def find_mux(tile, src, snk, DBG=0):
                         if src == owsrc:
                             return get_encoding(tile,bb,mux,msrc,DBG-1)
 
-    sys.stderr.write("\n\nCannot connect '%s' to '%s'\n\n" % (src,snk))
+    if DBG:
+        # Provide helpful messages about why we failed
+        sys.stderr.write("\n\nCannot connect '%s' to '%s'\n\n" % (src,snk))
 
-    rlist = find_sources(tile, 'sb', src) + find_sources(tile, 'cb', src)
-    rlist = '\n    '.join(rlist)
-    sys.stderr.write("%s can connect to\n    %s\n\n" % (src, rlist))
+        rlist = find_sources(tile, 'sb', src) + find_sources(tile, 'cb', src)
+        rlist = '\n    '.join(rlist)
+        sys.stderr.write("%s can connect to\n    %s\n\n" % (src, rlist))
 
-    rlist = find_sinks(tile, 'sb', snk) + find_sinks(tile, 'cb', snk)
-    rlist = '\n    '.join(rlist)
-    sys.stderr.write("%s can connect to\n    %s\n" % (snk, rlist))
+        rlist = find_sinks(tile, 'sb', snk) + find_sinks(tile, 'cb', snk)
+        rlist = '\n    '.join(rlist)
+        sys.stderr.write("%s can connect to\n    %s\n" % (snk, rlist))
 
-    sys.exit(-1)
+    # Note find_mux must be allowed to fail gracefully
+    # as that e.g. triggers a retry in the serpent PNR
+    # sys.exit(-1)
     return False
 
 def get_encoding(tile,box,mux,msrc,DBG=0):
