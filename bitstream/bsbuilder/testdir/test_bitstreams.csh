@@ -7,6 +7,8 @@ if (! -d $1) then
 endif
 set tmpdir = $1
 
+# Oops maybe tmpdir must be a full path
+set tmpdir = `(cd tmpdir; pwd)`
 
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
