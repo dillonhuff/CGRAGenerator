@@ -16,6 +16,8 @@
 //; my $is_msb    = parameter(Name=>'is_msb', val=> 0, List=>[1, 0], doc=>'1 - MSB in 32b mode, 0 - LSB result');
 //; my $en_double = parameter(Name=>'en_double', val=> 0, List=>[1, 0], doc=>'1 - 32b supported, 0 - No 32b support');
 //;
+//; my $get_carry = parameter(Name=>'get_carry', val=> 1, List=>[1, 0], doc=>'1 - output carry, 0 - No carry');
+//;
 //; my $debug     = $self->parameter(name=>'debug', val=> 0, List=>[1, 0], doc=>'Generate extra code for debug');
 //;
 //; my $use_sad   = $use_add > 1;
@@ -45,10 +47,13 @@ module   `mname`  #(
   input                         cmpr_eq_in,
 //;   } elsif($en_double) {
   input                          res_p_msb,
-  output logic [`$use_add -1`:0]             carry_out,
   output logic                   cmpr_eq_out,
 //;   }
 //; }
+//; if(($use_add > 0) & ($get_carry | ($en_double & !$is_msb))) {
+  output logic [`$use_add -1`:0]             carry_out,
+//;}
+
 //; if($use_cntr) {
   output logic [DataWidth-1:0]   cntr_next,
   output logic                   cntr_en,
@@ -162,7 +167,7 @@ generate
       .c_out (add_c_out[ggg])
     );
 
-//; if($en_double & !$is_msb) {
+//; if($get_carry | ($en_double & !$is_msb)) {
   assign carry_out[ggg] = add_c_out[ggg];
 //;}
   end

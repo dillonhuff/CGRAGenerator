@@ -17,6 +17,8 @@
 //; my $use_max_min = parameter(Name=>'use_max_min', val=> 1, List=>[1, 0],  doc=>'0 - no max/min, 1 - enable max/min');
 //; my $use_relu    = parameter(Name=>'use_relu', val=> 1, List=>[1, 0],  doc=>'0 - no relu, 1 - enable relu');
 //;
+//; my $get_carry = parameter(Name=>'get_carry', val=> 1, List=>[1, 0], doc=>'1 - output carry, 0 - No carry');
+//;
 //; my $debug = $self->parameter(name=>'debug', val=> 0, List=>[1, 0], doc=>'Generate extra code for debug');
 //;
 //; my $use_flip  = $self->parameter(name=>'use_flip', val=> 0, List=>[1, 0], doc=>'Add option to flip inputs?');
@@ -111,6 +113,11 @@ logic                         op_f_p;
 logic [DataWidth-1:0] comp_res;
 logic                 comp_res_p;
 logic                 res_p_w;
+
+//; if(($use_add > 0) & ($get_carry & !($en_double & !$is_msb))) {
+  logic [`$use_add -1`:0]             carry_out;
+//;}
+
 
 //; if($reg_inputs) {
 
@@ -257,6 +264,7 @@ assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'doubl
 //;                         "use_div" => $use_div, "is_msb"=>$is_msb, "en_double"=>$en_double,
 //;                         "use_relu" => $use_relu, "en_opt"=>$en_opt, "en_trick"=>$en_trick,
 //;                         "use_abs"=>$use_abs, "use_max_min"=>$use_max_min,
+//;                         "get_carry" => $get_carry,
 //;                         "debug"=>$debug);
 
 `$pe_comp->instantiate()`
@@ -285,10 +293,12 @@ assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'doubl
   .cmpr_eq_in  (cmpr_eq_in),
 //;   } else {
   .res_p_msb   (res_p_msb  ),
-  .carry_out   (carry_out  ),
   .cmpr_eq_out (cmpr_eq_out),
 //;   }
 //; }
+//; if(($use_add > 0) & ($get_carry | ($en_double & !$is_msb))) {
+  .carry_out   (carry_out  ),
+//;}
 
 //; if($use_div) {
   .div_oper    (div_oper),
@@ -311,6 +321,29 @@ assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'doubl
 //;}
   .res_p    (comp_res_p)
 );
+
+logic result_flag;
+
+//; if($get_carry) {
+    logic Z;
+    logic N;
+    logic C;
+
+    logic [3:0] flag_mask;
+
+    assign flag_mask = op_code[15:12];
+
+    assign C = carry_out[`$use_add -1`];
+    assign Z = ~|comp_res;
+    assign N = comp_res[DataWidth-1];
+
+    assign result_flag = |({Z,N, C, comp_res_p} & flag_mask);
+//; } else {
+    assign result_flag = comp_res_p;
+//; }
+
+
+
 
 //; if($use_lut) {
 logic res_lut;
@@ -342,10 +375,10 @@ logic res_lut;
   .res      (res_lut)
 );
 
-  assign res_p_w = op_code[8] ? res_lut : comp_res_p;
+  assign res_p_w = op_code[8] ? res_lut : result_flag;//comp_res_p;
 //;} else {
 
-  assign res_p_w = comp_res_p;
+  assign res_p_w = result_flag;//comp_res_p;
 //;}
 
 
