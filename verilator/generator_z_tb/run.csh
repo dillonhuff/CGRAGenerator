@@ -39,10 +39,27 @@ setenv CGRA_GEN_USE_MEM 1
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
 
-# set config = ../../bitstream/examples/cd2.bs  # cd2 broken i think
-# set config = ../../bitstream/examples/cd.bsv1
-# set config = ../../bitstream/examples/cd387-good.bs
-set config   = ../../bitstream/examples/pointwise_handcrafted.bs
+# Default configuration bitstream
+set config   = ../../bitstream/examples/940/pw.bs
+
+# Sometimes may need to know what branch we are in
+git branch | grep '^*' > $tmpdir/tmp
+set branch = `sed 's/^..//' $tmpdir/tmp`
+
+# In travis, 'git branch' returns something like
+#   "* (HEAD detached at 09a4672)"
+#   "  master"
+
+# Travis branch comes up as 'detached' :(
+#   * (HEAD detached at a220e19)
+#     master
+if (`expr "$branch" : ".*detached"`) then
+  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
+endif
+echo "run.csh: I think we are in branch '$branch'"
+
+if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2.bs
+if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2.bs
 
 set DELAY = '0,0'
 
@@ -78,6 +95,8 @@ if ($#argv == 1) then
     exit 0
   endif
 endif
+
+echo config = $config 2
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
@@ -193,6 +212,35 @@ if (! -e "$testbench") then
   exit -1
 endif
 
+
+##############################################################################
+##############################################################################
+##############################################################################
+# # Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
+# 
+# # # Set config conditionally depending on current branch
+# # # bsview = v0, master = v1, srdev = v2
+# # 
+# if ("$branch" == "srdev" || "$branch" == "avdev") then
+#   if ("$config" == "../../bitstream/examples/pwv1.bs") then
+#     echo
+#     echo '  SRDEV TRAVIS hack'
+#     echo '  SRDEV TRAVIS hack'
+#     echo '  SRDEV TRAVIS hack'
+#     echo '  pwv1 was requested; using pwv2 instead...'
+#     echo ''
+#     set config = ../../bitstream/examples/pwv2.bs
+#   endif
+# endif
+# 
+##############################################################################
+##############################################################################
+##############################################################################
+
+
+
+
+
 if ($?VERBOSE) then
   # Backslashes line up better when printed...
   echo "Running with the following switches:"
@@ -207,6 +255,11 @@ if ($?VERBOSE) then
     echo "   -trace $tracefile \"
   endif
   echo "   -nclocks  $nclocks                 \"
+endif
+
+if (! -e $config) then
+  echo "run.csh: ERROR Cannot find config file '$config'"
+  exit -1
 endif
 
 # Turn nclocks into an integer.
@@ -235,21 +288,50 @@ else
 
 endif
 
+
+
+#------------------------------------------------------------------------
+# BSB HACK
+echo BSB $config
+unset bsb_hack
+
+if ("$config" == "/nobackup/steveri/github/CGRAGenerator/bitstream/bsbuilder/pw2_bsb.bs") set bsb_hack
+
+if ($?bsb_hack) then
+  echo ""
+  echo "BSB HACK"
+  echo "BSB HACK"
+  echo "BSB HACK"
+  echo "bsb hack because config = pw2_bsb.bs"
+  echo ""
+endif
+if ($?VERBOSE) echo run.csh line 337 ish
+#------------------------------------------------------------------------
+
+
 ########################################################################
 # Now process bitstream file $config
 
-unset embedded_io
-grep "FFFFFFFF" $config > /dev/null && set embedded_io
-if (! $?embedded_io) then
-  echo "ERROR run.csh: Bitstream appears NOT to have embedded I/O information."
-  echo "ERROR run.csh: We don't support that no more."
-  exit -1
-else if ($?VERBOSE) then
-  echo
-  echo "Bitstream appears to have embedded i/o information (as it should)."
-  echo "Will strip out IO hack from '$config'"
-  echo
+
+if (! $?bsb_hack) then
+
+  # Verify that embedded IO info exists (skip if using bsbuilder)
+
+  unset embedded_io
+  grep "FFFFFFFF" $config > /dev/null && set embedded_io
+  if (! $?embedded_io) then
+    echo "ERROR run.csh: Bitstream appears NOT to have embedded I/O information."
+    echo "ERROR run.csh: We don't support that no more."
+    exit -1
+  else if ($?VERBOSE) then
+    echo
+    echo "Bitstream appears to have embedded i/o information (as it should)."
+    echo "Will strip out IO hack from '$config'"
+    echo
+  endif
+
 endif
+
 
 # Nowadays decoder needs cgra_info to work correctly
 set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
@@ -290,36 +372,71 @@ endif
 set newbs = $decoded.bs
 if (-e $newbs) rm $newbs
 
+##############################################################################
+unset LUT_HACK
+if ($?LUT_HACK) then
+  echo
+  echo '  LUT hack'
+  echo '  LUT hack'
+  echo '  LUT hack'
+  echo '  Temporarily stripping out LUT code...'
+  echo ''
+  set lut_hack_en = "^FF00.... 00000080"
+  set lut_hack_ld = "^0000.... ........"
+
+  cat $decoded \
+    | egrep -v "$lut_hack_en" \
+    | egrep -v "$lut_hack_ld" \
+    > $tmpdir/lut_hack
+
+  echo diff $decoded $tmpdir/lut_hack
+  diff $decoded $tmpdir/lut_hack | grep -v d
+  echo ""
+
+  mv $tmpdir/lut_hack $decoded 
+endif
+##############################################################################
+
+
+
 # grep -v HACK $decoded | sed -n '/TILE/,$p' | awk '/^[0-9A-F]/{print $1 " " $2}' > $newbs
 cat $decoded \
   | egrep -v '^F000.... FFFFFFFF' \
   | egrep -v '^F100.... FFFFFFFF' \
   | egrep -v '^FF00.... 000000F0' \
   | egrep -v '^FF00.... 000000FF' \
-  | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
-  > $newbs
+  > $tmpdir/decode2
+
 
 # This is small and SHOULD NOT BE OPTIONAL!
 # Meh.  Now it's optional.
 if ($?VERBOSE) then
-  echo diff $config $newbs
-  diff $config $newbs | grep -v d
+  echo diff $decoded $tmpdir/decode2
+  diff $decoded $tmpdir/decode2 | grep -v d
 endif
 
 
-# Another useful test
-set ndiff = `diff $config $newbs | grep -v d | wc -l`
-if ("$ndiff" == "5") then
-  if ($?VERBOSE) echo "run.csh: Five lines of diff.  That's good!"
-else
-  echo "ERROR run.csh: Looks like we messed up the IO"
-  exit -1
+if (! $?bsb_hack) then
+
+  # Another useful test
+  set ndiff = `diff $decoded $tmpdir/decode2 | grep -v d | wc -l`
+  if ("$ndiff" == "5") then
+    if ($?VERBOSE) echo "run.csh: Five lines of diff.  That's good!"
+  else
+    echo "ERROR run.csh: Looks like we messed up the IO"
+    exit -1
+  endif
+
 endif
+
+
+# Strip out comments from decoded bitstream
+cat $tmpdir/decode2\
+  | awk '/^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]/{print $1 " " $2}' \
+  > $newbs
 
 set config = $newbs
 
-
-# set lno = 321; set tmpf = $newbs; echo "FOO-$lno"; head -1 $tmpf; echo
 
 
 # This is what we're looking for:
@@ -328,6 +445,20 @@ set config = $newbs
 #     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
 set inwires = `egrep '^# INPUT' $decoded | awk '{print $NF}'`
 set outwires = `egrep '^# OUTPUT' $decoded | awk '{print $NF}'`
+
+if ($?bsb_hack) then
+
+  set inwires  = wire_0_m1_BUS16_S0_T0
+  set outwires = wire_0_0_BUS16_S2_T0;
+
+  echo ""
+  echo "BSB HACK"
+  echo "BSB HACK"
+  echo "BSB HACK"
+  echo "For now only works with (input,output)='$inwires,$outwires'"
+  echo ""
+
+endif
 
 if ($?VERBOSE) then
     echo ""
@@ -358,6 +489,7 @@ endif
 #     echo
 #     echo "Inserting wirenames into verilog top module '$vdir/top.v'..."
 #     echo
+
 
     echo "run.csh: Inserting IO wirenames into verilog top module '$vdir/top.v'..."
     ./run-wirehack.csh \
@@ -486,12 +618,16 @@ echo "run.csh: Build the simulator..."
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
     -j -C obj_dir/ -f V$top.mk V$top \
     >& $tmpdir/make_vtop.log \
-    || exit -1
+    || set ERROR
+
+  if ($?ERROR) then
+    cat $tmpdir/make_vtop.log; exit -1
+  endif
 
   if ($?VERBOSE) then
-    cat $tmpdir/make_vtop.log
-    echo
+    cat $tmpdir/make_vtop.log; echo
   endif
+
 
 echo '------------------------------------------------------------------------'
 echo "run.csh: Run the simulator..."

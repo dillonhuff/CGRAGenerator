@@ -4,6 +4,23 @@ import re
 DBG=0
 TARGET_VERSION='v1'
 
+# NOTE currently cb-translate is wrong I think, see
+# - c ; cb_translate.py | tee tmp1 | less
+# switchboxes are feature 03 but shouldn't be...
+
+
+# TODO
+# - incorporate cb_translate.py into bsa_convert.py
+# - c ; cb_translate.py | tee tmp1 | less
+
+# Goal: get all the benchmarks running under v1 (master)
+# - small parrot only
+# - use bsview to generate complete list of v0's (pw,c1,c2,c3,bw)
+# - use this file to convert them to v1's
+
+# Goal 2: then do the same thing for v2
+
+
 def usage():
     print "Usage:"
     print "  %s -v1  < bitstream_v0 > bitstream_v1"  % sys.argv[0]
@@ -25,6 +42,13 @@ if len(sys.argv) == 1: TARGET_VERSION = 'v1'
 elif sys.argv[1] == '--help': usage()
 elif sys.argv[1] == '-v1a'  : TARGET_VERSION = 'v1a'
 elif sys.argv[1] == '-dbg'  : DBG=1
+
+
+
+
+
+# v1 changes the rules about how connection boxes work;
+# e.g. 
 
 
 def cb_failure():
@@ -232,3 +256,21 @@ for line in input_lines:
     # if DBG: print ""
 
 #endfor
+
+
+##############################################################################
+# v0-to-v1/v2 connection boxes (v1 same as v2 for cb's)
+# 
+# Given a v0 cb connection, build an equivalent connection for v1/v2
+#
+# v0: xx030007 00000000 # a <= in_s0t0
+# 
+# v1: xx030007 00000005 # a <= out_s2t0
+#     xx030007 00000000 #      out_s2t0 <= in_s0t0 ([11:10]=0)
+#
+# Note this mucks up the switchbox, so must do a check elsewhere to fix that
+#
+# Need two passes:
+# - pre-pass to identify and make a list of which switchboxes will be mucked
+# - regular pass to do cb, sb fixes on demand
+

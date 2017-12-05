@@ -6,9 +6,12 @@
 
 # Genesis2.pl -parse -generate -top top -input\
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
+  top.vp \
+  \
   ../sb/sb.vp \
   ../cb/cb.vp \
-  ../pe_tile/pe_tile.vp top.vp \
+  \
+  # ../pe_tile/pe_tile.vp \
   \
   ../pe_new/pe/rtl/test_pe_red.svp \
   ../pe_new/pe/rtl/test_pe_dual.vpf \
@@ -22,6 +25,7 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../pe_new/pe/rtl/test_opt_reg.svp  \
   ../pe_new/pe/rtl/test_simple_shift.svp \
   ../pe_new/pe/rtl/test_shifter.svp  \
+  \
   ../pe_tile_new/pe_tile_new.vp \
   \
   ../memory_tile/memory_tile.vp \
