@@ -1,5 +1,6 @@
 #!/bin/csh -f
 
+set echo
 if (! -d $1) then
   echo 'Where are the test.bsa input files?'
   echo "Example: $0:t /tmp/build42/"
