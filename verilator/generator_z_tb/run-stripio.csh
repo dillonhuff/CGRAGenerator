@@ -25,14 +25,8 @@ set bs  = $1
 set out = $3
 if (-e $out) rm $out
 
-set VERBOSE
-set echo
-
-# set tmpdir = /tmp/tmp$$
+# set tmpdir = /tmp/tmp$$; mkdir $tmpdir
 set tmpdir = `mktemp -d /tmp/run-stripio.XXX`
-mkdir $tmpdir
-
-
 
 # Clean bitstream (strip out comments and hacked-in IO info)
 cat $bs \
