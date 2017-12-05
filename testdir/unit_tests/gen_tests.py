@@ -36,47 +36,33 @@ def build_optest(testname):
     DBG=1
 
     bsb = re.sub('OPNAME','%s' % testname, OP_TEMPLATE)
-
-    # Add test name and write the bsb file
-    bsb = ('#TEST  %s' % testname) + bsb
-
-    # Remove excess indentation
-    bsb = re.sub('\n\s+', '\n', bsb)
-
-    if DBG: print bsb
-    write_bsb(testname + '.bsb', bsb)
+    write_bsb(testname, bsb)
 
     # Generate numbers for input file, plus one zero at the end for padding
     pixels = range(16) \
              + random.sample(range(0, 255), 48)\
              + [0]
     # ilist = random.sample(range(0, 255), 100)
-    if DBG: print pixels
+    if DBG>1: print pixels
     write_pixels(testname + '_input.raw', pixels)
-    if DBG: print ''
+    if DBG>1: print ''
 
     # Generate output pixels based on opname
     outpixels = range(len(pixels)-1)
     if (testname == 'add'):
         for i in outpixels:
             outpixels[i] = (pixels[i] + pixels[i+1]) & 0xff
-    if DBG: print outpixels
+    if DBG>1: print outpixels
     write_pixels(testname + '_output.raw', outpixels)
 
 def build_lbuftest(testname):
     # E.g. testname=mem09 for 9-deep fifo
+    DBG=1
 
-    # E.g. 'fifo009' => delay='9'
+    # E.g. 'lbuf09' => delay='9'
     delay = str(int(re.search('lbuf(\d+)', testname).group(1)))
     bsb = re.sub('DEPTH','%s' % delay, MEM_TEMPLATE)
-
-    # Remove excess indentation
-    bsb = re.sub('\n\s+', '\n', bsb)
-
-    # Add test name and write the bsb file
-    bsb = ('#TEST  %s' % testname) + bsb
-    if DBG: print bsb
-    write_bsb(testname,bsb)
+    write_bsb(testname, bsb)
 
     # # Generate 100 random numbers for the input file
     # import random
@@ -98,8 +84,16 @@ def my_open(filename, mode):
         sys.exit(-1)
     return open(filename, mode)
 
-def write_bsb(filename, bsb):
-    outputstream = my_open(filename, "w")
+def write_bsb(testname, bsb, DBG=1):
+    # Remove excess indentation
+    bsb = re.sub('\n\s+', '\n', bsb)
+
+    # Add test name
+    bsb = ('#TEST  %s' % testname) + bsb
+    if DBG: print bsb
+
+    # ...and write the bsb file
+    outputstream = my_open(testname + '.bsb', "w")
     outputstream.write(bsb)
     outputstream.close()
 
