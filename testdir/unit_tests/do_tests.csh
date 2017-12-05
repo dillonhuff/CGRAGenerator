@@ -18,7 +18,8 @@ foreach test (`ls *.bsb`)
   echo "  Looks like delay should be '$delay'"
 
   echo "  Building bitstream using bsbuilder..."
-  $gen/bitstream/bsbuilder/bsbuilder.py $test > $test:r.bsa
+  echo "  "'$'"gen/bitstream/bsbuilder/bsbuilder.py $test"
+  $gen/bitstream/bsbuilder/bsbuilder.py $test > $test:r.bsa || exit -1
 
   set bsa = $scriptpath/${b}.bsa
   set in  = $scriptpath/${b}_input.raw
@@ -30,9 +31,9 @@ foreach test (`ls *.bsb`)
 
   echo "cd $v"
   echo "./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay"
-  (cd $v; ./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay )
+  (cd $v; ./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay ) || exit -1
 
   echo "FINAL COMPARE FOR SUMMARY"
-  ./compare_images.csh $b $cout ${b}_output.raw
+  ./compare_images.csh $b $cout ${b}_output.raw || exit -1
 
 end

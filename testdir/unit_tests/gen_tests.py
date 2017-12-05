@@ -3,74 +3,92 @@
 import os
 import sys
 import re
+import random
 
-TEST_STRING='''
-
-#TEST mem10
-T3_mem_10                             # (fifo_depth=10)
-self.in -> T3_in_s2t0 -> T3_mem_in
-T3_mem_out -> T3_out_s2t0 -> self.out
-
-#DELAY 10,0
-#IN  0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,13
-#OUT 0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,13
-#--------------------------------------------
-
-#TEST mem09
-T3_mem_9                              # (fifo_depth=9)
-self.in -> T3_in_s2t0 -> T3_mem_in
-T3_mem_out -> T3_out_s2t0 -> self.out
-
-#DELAY 9,0
-#IN  0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,19
-#OUT 0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,19
-
+# Replace 'DEPTH' with a decimal integer %03d
+MEM_TEMPLATE='''
+  #DELAY DEPTH,0
+  T3_mem_DEPTH # (fifo_depth=DEPTH)
+  self.in -> T3_in_s2t0 -> T3_mem_in
+  T3_mem_out -> T3_out_s2t0 -> self.out
 '''
 
-def main ():
-    delay = 0
-    tests = {}
-    test_inputs = {}
-    test_outputs = {}
-    testname = False
-    test_lines = TEST_STRING.split('\n')
-    for line in test_lines:
+# Replace OPNAME with name of operand e.g. 'add'
+OP_TEMPLATE='''
+  #TEST OPNAME
+  #DELAY 1,0
+  self.in -> T0_in_s2t0
+  T0_in_s2t0 -> T0_op1
+  T0_in_s2t0 -> T0_out_s1t0
+  T0_out_s1t0 -> T0_op2 (r)
+  T0_OPNAME(wire,reg)
+  T0_pe_out -> T0_out_s0t1 -> self.out
+'''
 
-        parse = re.search('#\s*TEST\s+(\S+)', line)
-        if parse:
-            testname = parse.group(1)
-            # print "Found test '%s'" % testname
-            tests[testname] = []
+TEST_LIST=[
+    'lbuf10',
+    'lbuf09',
+    'add'
+    ]
 
-        parse = re.search('#\s*DELAY\s+(\d+)', line)
-        if parse:
-            delay = parse.group(1)
+def build_optest(testname):
+    # E.g. testname=add
+    DBG=1
 
-        parse = re.search('#\s*IN\s+(.*)', line)
-        if parse:
-            inputs = parse.group(1)
+    bsb = re.sub('OPNAME','%s' % testname, OP_TEMPLATE)
 
-            # Automatically add nulls to compensate for delay
-            if delay:
-                for i in range(101,101+int(delay)):
-                    # inputs = inputs + ',' + str(i)
-                    inputs = inputs + ',255'
+    # Add test name and write the bsb file
+    bsb = ('#TEST  %s' % testname) + bsb
 
-            # print "Found inputs '%s'" % inputs
-            test_inputs[testname] = inputs
+    # Remove excess indentation
+    bsb = re.sub('\n\s+', '\n', bsb)
 
-        parse = re.search('#\s*OUT\s+(.*)', line)
-        if parse:
-            outputs = parse.group(1)
-            # print "Found outputs '%s'" % outputs
-            test_outputs[testname] = outputs
+    if DBG: print bsb
+    write_bsb(testname + '.bsb', bsb)
 
-        if testname: tests[testname].append(line)
-            
-    for testname in tests:
-        write_lines(tests[testname], testname + '.bsb')
-        write_array(test_inputs[testname], testname + '_input.raw')
-        write_array(test_outputs[testname], testname + '_output.raw')
+    # Generate numbers for input file, plus one zero at the end for padding
+    pixels = range(16) \
+             + random.sample(range(0, 255), 48)\
+             + [0]
+    # ilist = random.sample(range(0, 255), 100)
+    if DBG: print pixels
+    write_pixels(testname + '_input.raw', pixels)
+    if DBG: print ''
+
+    # Generate output pixels based on opname
+    outpixels = range(len(pixels)-1)
+    if (testname == 'add'):
+        for i in outpixels:
+            outpixels[i] = (pixels[i] + pixels[i+1]) & 0xff
+    if DBG: print outpixels
+    write_pixels(testname + '_output.raw', outpixels)
+
+def build_lbuftest(testname):
+    # E.g. testname=mem09 for 9-deep fifo
+
+    # E.g. 'fifo009' => delay='9'
+    delay = str(int(re.search('lbuf(\d+)', testname).group(1)))
+    bsb = re.sub('DEPTH','%s' % delay, MEM_TEMPLATE)
+
+    # Remove excess indentation
+    bsb = re.sub('\n\s+', '\n', bsb)
+
+    # Add test name and write the bsb file
+    bsb = ('#TEST  %s' % testname) + bsb
+    if DBG: print bsb
+    write_bsb(testname,bsb)
+
+    # # Generate 100 random numbers for the input file
+    # import random
+    # ilist = random.sample(range(0, 255), 100)
+
+    # Generate full range of numbers for input file;
+    # add zero-padding to compensate for delay
+    pixels = range(256)
+    write_pixels(testname + '_input.raw', pixels + (int(delay) * [0]))
+
+    # Because it's a FIFO (linebuffer), expect the same 100 numbers for output
+    write_pixels(testname + '_output.raw', pixels)
 
 
 def my_open(filename, mode):
@@ -80,30 +98,27 @@ def my_open(filename, mode):
         sys.exit(-1)
     return open(filename, mode)
 
-
-def write_lines(lines, filename):
+def write_bsb(filename, bsb):
     outputstream = my_open(filename, "w")
-    for line in lines: outputstream.write(line+'\n')
+    outputstream.write(bsb)
     outputstream.close()
 
-def write_array(astring, filename):
+def write_pixels(filename, pixels):
     import struct
     outputstream = my_open(filename, "wb")
-    pixels = astring.split(',')
-    for p in pixels:
-        s = re.search('(\S+)',p).group(1)
-        n = int(s, 0) # base '0' => convert according to string e.g. '0x14' => 20
-        outputstream.write(struct.pack('B', n))
+    for p in pixels: outputstream.write(struct.pack('B', p))
     outputstream.close()
 
 
 
+def main ():
+    # For each test e.g. 'lbuf10' build bsb file 'lbuf10.bsb'
+    # plus input and output files 'lbuf10_{input,output}.raw'
 
-
-
-#         outputstream = open(test_filename, "wb")
-#         outputstream.write(struct.pack('i', 69))
-        
+    tests = {}
+    for testname in TEST_LIST:
+        if testname[0:4]=='lbuf': build_lbuftest(testname)
+        else: build_optest(testname)
 
 
 main()
