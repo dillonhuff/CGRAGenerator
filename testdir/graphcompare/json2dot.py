@@ -157,8 +157,12 @@ def to_or_from(nodename):
     if re.search("\.rdata$", nodename): return "from"
     if re.search("\.wen$", nodename): return "to"
 
-    print "FOO I don't know what '%s' is" % nodename
-    return "unknown"
+    # print "FOO I don't know what '%s' is" % nodename
+    # return "unknown"
+    sys.stderr.write("FOO I don't know what '%s' is" % nodename)
+    sys.exit(13)
+
+
 
 if DBG: print "CONNECTIONS"
 for k in connections:
