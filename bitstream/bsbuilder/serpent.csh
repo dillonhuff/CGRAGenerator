@@ -45,10 +45,10 @@ set bsb      =   ${b}.bsb
 
 
   echo "  json2dot < $map_json > $tmp/$map_dot"
-  json2dot < $map_json > $tmp/$map_dot
+  json2dot < $map_json > $tmp/$map_dot || exit -1
 
   echo "  serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent"
-  $bin/serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent
+  $bin/serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent || exit -1
 
   unset VERBOSE
   if ($?VERBOSE) then
