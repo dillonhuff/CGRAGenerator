@@ -97,10 +97,10 @@ while {[get_license {"HDL-Compiler"}] == 0} {
    sh sleep 120
 }
 
-set rtl_files [split [join [ls ../genesis_verif/*.v] " "] " "]
+set rtl_files [split [join [ls ../../top/genesis_verif/*.v] " "] " "]
 read_file -format verilog -rtl $rtl_files 
 
-set rtl_files [split [join [ls ../genesis_verif/*.sv] " "] " "]
+set rtl_files [split [join [ls ../../top/genesis_verif/*.sv] " "] " "]
 read_file -format sverilog -rtl $rtl_files
 
 current_design $design_name
