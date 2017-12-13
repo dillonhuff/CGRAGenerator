@@ -3,6 +3,7 @@
 <b>Documents here:</b>
 * 02_23_2017_CGRA.pptx - CGRA status and overview slides presented by Ankita at AHA mtg 02/23/2017. 
 * CGRA_architecture_overview_NB_161117.pdf - CGRA Overview: Nikhil slides from 11/2016 AHA meeting.
+* CGRA_config_debug_spec_NB_171114b.docx - Latest(?) config/debug spec from Nikhil
 * LineBuffer_block_for_CGRA_AV_161106.pdf - Snapshot of Artem's Google Doc about the line buffer.
 * Wire_segments_experiment_AV_161106.pdf - Snapshot of Artem's Google Doc about wire segments.
 * sample_4x4_connectivity_matrix.xml - sample connectivity matrix for a 4x4 array of switchboxes.
