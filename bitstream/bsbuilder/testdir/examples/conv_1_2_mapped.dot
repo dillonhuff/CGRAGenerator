@@ -1,0 +1,13 @@
+digraph Diagram {
+  node [shape=box]; # Comment
+    "const0__304" -> "add_305_309_310";
+    "const5__308" -> "mul_307_308_309";
+    "const5__308$1" -> "mul_312_308_313";
+    "add_305_313_314" -> "OUTPUT";
+    "INPUT" -> "lb_p4_clamped_stencil_update_stream$reg_0_1";
+    "INPUT" -> "mul_312_308_313";
+    "lb_p4_clamped_stencil_update_stream$reg_0_1" -> "mul_307_308_309";
+    "add_305_309_310" -> "add_305_313_314";
+    "mul_307_308_309" -> "add_305_309_310";
+    "mul_312_308_313" -> "add_305_313_314";
+}
