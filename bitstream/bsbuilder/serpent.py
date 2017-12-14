@@ -429,6 +429,8 @@ def print_oplist():
         src = nodes[sname]
         if is_pe(sname):
             addmul = sname[0:3]
+            assert src.input0 != False, "PE op '%s' has no op1; why?" % sname
+            assert src.input1 != False, "PE op '%s' has no op2; why?" % sname
             op1 = optype(src.input0)
             op2 = optype(src.input1)
             opline = 'T%d_%s(%s,%s)' % (src.tileno, addmul, op1, op2)
@@ -1063,8 +1065,14 @@ def dstports(name,tile):
     def T(port): return 'T%d_%s' % (tile,port)
 
     if is_mem(name):  p = [T('mem_in')]
-    elif is_pe(name): p = [T('op1'),T('op2')]
-    elif is_folded_reg(name): p = [T(nodes[name].input0)]
+    elif is_pe(name):
+        # p = [T('op1'),T('op2')]
+        p = []
+        if nodes[name].input0 == False: p.append(T('op1'))
+        if nodes[name].input1 == False: p.append(T('op2'))
+
+    elif is_regop(name): p = [T(nodes[name].input0)]
+
     else:
         # 'name' is a register, I guess;
         # so return names of all outports in the tile
