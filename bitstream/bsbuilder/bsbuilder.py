@@ -98,20 +98,19 @@ opb = {}
 # T3_in_s2t0 -> T3_mem_in
 
 def main():
-
-    DBG=1
     process_args()
 
     # Read the input, store to 'input_lines' tuple
     input_lines = [] # for line in sys.stdin: input_lines.append(line)
     for line in sys.stdin: input_lines.append(line)
 
+    if not VERBOSE: DBG=0
+    else:           DBG=1
+
     io_info = []
 
     tileno = -1
     for line in input_lines:
-        # line = line.strip().lower() might be a step too far...
-        line = line.strip()
 
         # Skip blank lines
         if re.search("^\s*$", line):
@@ -122,7 +121,7 @@ def main():
         # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
         # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
         if re.search('^# (IN|OUT)PUT\s+tile', line):
-            print line
+            if DBG: print line
             io_info.append(line)
             if DBG>1: print 'IO_INFO', io_info
             continue
@@ -130,7 +129,7 @@ def main():
         # Skip comments
         if re.search("^\s*#", line):
             # print "%-40s (comment)" % line
-            print "#"+line
+            if DBG: print "#"+line
             continue
 
         # T4_mul(wire,const15_15)    # mul_47515_476_PE
@@ -153,19 +152,19 @@ def main():
         # add(wire,wire) 
         # mul(reg,const13_13$1)
         if bs_op(tileno,line,DBG-1):
-            print ''
+            if DBG: print ''
             continue
 
 
         # T3_mem_64    # mem_1 fifo_depth=64 => 'mem_64'
         # T17_mem_64   # mem_2 fifo_depth=64 => 'mem_64'
         if bs_mem(tileno,line,DBG-1):
-            print ''
+            if DBG: print ''
             continue
 
 
         if bs_connection(tileno, line, DBG-1):
-            print ''
+            if DBG: print ''
             continue
 
         continue
@@ -204,7 +203,7 @@ def main():
             sys.exit(1)
         ################################################################
             
-    print ''
+    if DBG: print ''
     emit_bitstream()
 
     # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
@@ -213,6 +212,65 @@ def main():
 
     return
 
+def preprocess(input_lines, DBG=0):
+    # For lazy programmers:
+    # Turn 't0_in_s2t0' into 'T0_in_s2t0'
+    # Turn 'self.in -> T0_in_s2t0 -> T0_op1' into
+    #   'self.in -> T0_in_s2t0'
+    #   'T0_in_s2t0 -> T0_op1'
+
+    output_lines = []
+    for line in input_lines:
+        line = line.strip()
+        if DBG: print "LINE0", line
+
+        # Maybe this is a bad road
+        # # Turn 't0_in_s2t0' into 'T0_in_s2t0'
+        # line1 = re.sub(r't(\d+)_(in|out)', r'T\1_', line)
+        # if DBG: print "LINE1", line1
+        line1 = line
+
+        # Turn 'a -> b -> c' into 'a -> b', 'b -> c'
+        nodes = re.split('\s*->\s*', line1)
+        if len(nodes) <= 2:
+            output_lines.append(line1)
+            continue
+
+        for i in range( len(nodes)-1 ):
+            c = '%s -> %s' % (nodes[i], nodes[i+1])
+            if DBG: print c
+            output_lines.append(c)
+
+        if DBG: print ""
+
+    return output_lines
+
+def process_input(line):
+    '''
+    line = 'self.in -> T0_in_s2t0'
+    rval = 'INPUT  tile  0 (0,0) / in_BUS16_S2_T0 / wire_0_m1_BUS16_S0_T0'
+    '''
+    wire = re.search('self.in\s*->\s*(\S+)', line).group(1)
+    # (tileno,lhs) = striptile(wire)
+    # (tileno,lhs) = cgra_info.parse_resource(wire)
+    (tileno, dir, side, track) = cgra_info.parse_canon(wire)
+    (r,c) = cgra_info.tileno2rc(tileno)
+    g = cgra_info.canon2global(wire)
+    return '# INPUT  tile  %d (%d,%d) /  %s_BUS16_S%d_T%d / %s' %\
+          (tileno, r, c, dir, side, track, g)
+
+
+def process_output(line):
+    '''
+    line = 'T0_out_s0t0 -> self.out'
+    rval = 'OUTPUT tile  0 (0,0) / out_BUS16_S0_T0 / wire_0_0_BUS16_S0_T0'
+    '''
+    wire = re.search('(\S+)\s*->\s*self.out', line).group(1)
+    (tileno, dir, side, track) = cgra_info.parse_canon(wire)
+    (r,c) = cgra_info.tileno2rc(tileno)
+    g = cgra_info.canon2global(wire)
+    return '# OUTPUT tile  %d (%d,%d) / %s_BUS16_S%d_T%d / %s' %\
+          (tileno, r, c, dir, side, track, g)
 
 
 def bs_connection(tileno, line, DBG=0):
@@ -240,6 +298,12 @@ def bs_connection(tileno, line, DBG=0):
     Tlhs = "T%d_%s" % (tileno,lhs)
     Trhs = "T%d_%s" % (tileno,rhs)
     cwt = cgra_info.connect_within_tile(tileno, Tlhs, Trhs, DBG-1)
+    if not cwt:
+        # Print useful connection hints
+        src_cgra = canon2cgra(TLhs)
+        snk_cgra = canon2cgra(Trhs)
+        find_mux(tile, src_cgra, snk_cgra, DBG=1)
+        sys.exit(-1)
     (addr,data,ra,rd,comm,rcomm) = cwt
 
     # print 'sel %08X %08X' % (addr,data)
