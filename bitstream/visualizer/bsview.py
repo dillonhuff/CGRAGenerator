@@ -401,6 +401,20 @@ def connectionpoint(tileno, wirename):
     # outs2/ins0 blocks start in SW/SE and go up   (neg y direction)
     # outs3/ins1 blocks start in NW/NE and go right (pos x direction)
 
+    DBG=0
+    # Translate newstyle memwire names to oldstyle e.g. 'out_s6t0' => 'out1_s2t0'
+    if (tiletype(tileno) == "memory_tile"):
+        if not re.search("(in|out)[01]", wirename):
+            # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
+            # sys.exit(-1)
+            # print "Can we recover?  Default to 10,10"; return (10,10)
+            wnew = memwire_translate(wirename)
+            if DBG: 
+                print "ERROR Invalid wire name '%s' in memtile %d" % (wirename,tileno)
+                print "ERROR Should have this format: 'out1_s2t3'"
+                print "Can we recover?  Translate '%s' => '%s'\n" % (wirename, wnew)
+            wirename = wnew
+
     decode = re.search('(in[01]*_s.*|out[01]*_s.*)t(.*)', wirename);
 
     if (decode):
@@ -410,14 +424,6 @@ def connectionpoint(tileno, wirename):
         print "WARNING CP does not understand wirename '%s' (yet)" % wirename
         print "WARNING (Arbitrarily) connecting unknown wire to 'outs3t4' instead"
         (b,t) = ("out_s3",4)
-
-    if (tiletype(tileno) == "memory_tile"):
-        if not re.search("(in|out)[01]", b):
-            print "ERROR Invalid wire name '%s' in memtile %d" % (wirename,tileno)
-            print "ERROR Should have this format: 'out1_s2t3'"
-            sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
-            # sys.exit(-1)
-            print "Can we recover?  Default to 10,10"; return (10,10)
 
 
     ########################################################################
@@ -515,6 +521,18 @@ def connectionpoint(tileno, wirename):
 
     # print "yfudge is (still) %d" % yfudge
     return (x, y + yfudge);
+
+def memwire_translate(w):
+    # Given newstyle mem wirename translate to old style e.g.
+    # out_s2t0 => out0_s2t0
+    # out_s6t0 => out1_s2t0
+    parse = re.search('(in|out)_s(\d+)t(\d+)', w)
+    dir = parse.group(1)
+    side = int(parse.group(2))
+    track = int(parse.group(3))
+    return '%s%d_s%dt%d' % (dir, side/4, side%4, track)
+
+
 
 def drawreg(cr, w,h, color='white'):
     # Draw a register with UL at (0,0), height h and width w
