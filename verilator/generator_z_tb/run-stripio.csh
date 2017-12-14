@@ -25,7 +25,8 @@ set bs  = $1
 set out = $3
 if (-e $out) rm $out
 
-set tmpdir = /tmp/tmp$$; mkdir $tmpdir
+# set tmpdir = /tmp/tmp$$; mkdir $tmpdir
+set tmpdir = `mktemp -d /tmp/run-stripio.XXX`
 
 # Clean bitstream (strip out comments and hacked-in IO info)
 cat $bs \
@@ -50,7 +51,7 @@ set ndiff = `diff $bs $tmpdir/stripped_bs | grep -v d | wc -l`
 if ("$ndiff" == "5") then
     if ($?VERBOSE) echo "run.csh: Five lines of diff.  That's good!"
 else
-    echo "ERROR run.csh: Looks like we messed up the IO"
+    echo "ERROR run-stripio: Looks like we messed up the IO"
     exit -1
 endif
 

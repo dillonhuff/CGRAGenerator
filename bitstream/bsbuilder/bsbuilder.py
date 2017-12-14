@@ -100,9 +100,8 @@ opb = {}
 def main():
     process_args()
 
-    # Read the input, store to 'input_lines' tuple
-    input_lines = [] # for line in sys.stdin: input_lines.append(line)
-    for line in sys.stdin: input_lines.append(line)
+    if not VERBOSE: DBG=0
+    else:           DBG=1
 
     if not VERBOSE: DBG=0
     else:           DBG=1
@@ -114,8 +113,19 @@ def main():
 
         # Skip blank lines
         if re.search("^\s*$", line):
-            print ""
+            if DBG: print ""
             continue
+
+        # self.in -> T0_in_s2t0
+        if re.search('self.in', line):
+            io_info.append(process_input(line))
+            continue
+
+        # T0_out_s0t0 -> self.out
+        if re.search('self.out', line):
+            io_info.append(process_output(line))
+            continue
+
 
         # Save I/O info for later
         # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
@@ -515,8 +525,8 @@ def parse_pe_out(line,tilestr):
 
 def emit_bitstream():
     DBG=0
-    print "# FINAL PASS: EMIT BITSTREAM"
-    print "#----------------------------------------------------------------"
+    if VERBOSE: print "# FINAL PASS: EMIT BITSTREAM"
+    if VERBOSE: print "#----------------------------------------------------------------"
     for addr in sorted(bitstream.iterkeys(), key=bs_addr_sort):
         if DBG:
             print "# " + addr, bscomment[addr]
@@ -794,10 +804,11 @@ def addbs(addr,data, comment=''):
     # Watch for redundant info
     for d in bitstream[addr]:
         if d == data:
-            print '# '
-            print "# WARNING redundant instruction, this was already done (and/or it's the default)"
-            print "# %s %s" % (addr,data),
-            print ":: bs['%s'] = %s" % (addr, bitstream[addr])
+            if VERBOSE:
+                print '# '
+                print "# WARNING redundant instruction, this was already done (and/or it's the default)"
+                print "# %s %s" % (addr,data),
+                print ":: bs['%s'] = %s" % (addr, bitstream[addr])
 
             # BUT!  Still want a comment :(
             if data != '00000000': return
@@ -808,13 +819,14 @@ def addbs(addr,data, comment=''):
     if type(comment)==str: comment = [comment]
     bscomment[addr] = bscomment[addr] + comment
 
-    print '# '
-    print "# %s %s" % (addr,data),
-    print ":: bs['%s'] = %s" % (addr, bitstream[addr])
+    if VERBOSE:
+        print '# '
+        print "# %s %s" % (addr,data),
+        print ":: bs['%s'] = %s" % (addr, bitstream[addr])
 
-    # if comment != '': print "# " + comment
-    for c in comment: print "# " + c
-
+        # if comment != '': print "# " + comment
+        for c in comment: print "# " + c
+        
     # Howzabout a quick error check on cb, sb elements
     feature = int(addr[2:4],16)
 
@@ -881,9 +893,10 @@ def myparse(line, regexp):
 #     return cgra_filename
 
 
-
-
+input_lines = []
 def process_args():
+    DBG=0
+    bitstream_filename = False
 
     # Get name of this script
     scriptname = sys.argv[0]
@@ -893,13 +906,15 @@ def process_args():
     if (parse): scriptname_tail = parse.group(1)
     args = sys.argv[1:] # shift
 
-    # --help
     usage = '''
-Decodes/annotates the indicated bitstream file
+Decodes/annotates the indicated bitstream file, output to stdout
 Usage:
-   %s [ -v ] <bsb-file> -cgra <cgra_info_file>
+   %s [ -v ] -cgra [cgra_info_file] < [bsb-file]
+   %s [ -v ] -cgra [cgra_info_file] [bsb-file]
+   %s [ -v ] < [bsb-file]
+   %s [ -v ] [bsb-file]
    %s --help
-''' % (scriptname_tail, scriptname_tail)
+''' % (scriptname_tail, scriptname_tail, scriptname_tail, scriptname_tail, scriptname_tail)
 
     # Load cgra_info
     cgra_filename = cgra_info.get_default_cgra_info_filename()
@@ -911,6 +926,7 @@ Usage:
     while (len(args) > 0):
         if   (args[0] == '--help'): print usage; sys.exit(0);
         elif (args[0] == '-v'):    VERBOSE = True
+        elif (args[0] == '-q'):    VERBOSE = False
         elif (args[0] == '-cgra' or args[0] == '-cgra_info'):
             cgra_filename = args[1]
             args = args[1:];
@@ -920,12 +936,18 @@ Usage:
 
     cgra_info.read_cgra_info(cgra_filename, verbose=VERBOSE)
 
-
-
-
-
-
-
+    global input_lines
+    if bitstream_filename:
+        input_stream = open(bitstream_filename)
+        for line in input_stream: input_lines.append(line)
+        input_stream.close()
+    else:
+        for line in sys.stdin: input_lines.append(line)
+        
+    # Read the input, store to 'input_lines' tuple
+    input_lines = preprocess(input_lines)
+    if DBG>1:
+        for i in input_lines: print i
 
 
 def find_outreg16(outwire):

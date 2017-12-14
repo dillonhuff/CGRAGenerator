@@ -63,7 +63,11 @@ set bsb      =   ${b}.bsb
   endif
 
   echo "  bsbuilder.py < $tmp/$bsb > $bsa_out"
-  $bin/bsbuilder.py < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $bsa_out || exit -1
+  #  $bin/bsbuilder.py    < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $bsa_out
+  #  $bin/bsbuilder.py -v < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $bsa_out || exit -1
+  $bin/bsbuilder.py < $tmp/$bsb > $bsa_out || exit -1
+
+
 
   if ($?VERBOSE) then
     echo ''

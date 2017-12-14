@@ -3,7 +3,8 @@
 set VERBOSE
 
 # Build a tmp space for intermediate files
-set tmpdir = deleteme
+# set tmpdir = deleteme
+set tmpdir = `mktemp -d /tmp/run.csh.XXX`
 if (! -e $tmpdir) then
   unset ERR
   mkdir $tmpdir || set ERR
@@ -43,8 +44,9 @@ set GENERATE  = "-gen"
 set config   = ../../bitstream/examples/940/pw.bs
 
 # Sometimes may need to know what branch we are in
-git branch | grep '^*' > $tmpdir/tmp
+git branch | grep '^*' >    $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
+rm $tmpdir/tmp
 
 # In travis, 'git branch' returns something like
 #   "* (HEAD detached at 09a4672)"
@@ -316,8 +318,8 @@ set inwires =  `egrep '^# INPUT  tile' $config_io | awk '{print $NF}'`
 set outwires = `egrep '^# OUTPUT tile' $config_io | awk '{print $NF}'`
 
 # Clean up config file for verilator use
-grep -v '#' $config_io | grep . > /tmp/tmpconfig$$
-set config = /tmp/tmpconfig$$
+grep -v '#' $config_io | grep . > $tmpdir/tmpconfig
+set config = $tmpdir/tmpconfig
 
 if ($?VERBOSE) then
   echo

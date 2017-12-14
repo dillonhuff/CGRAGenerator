@@ -1,5 +1,11 @@
 #!/bin/csh -f
 
+if ($#argv == 0) then
+  echo 'Where should I put the bsa output files?'
+  echo "Example: $0:t /tmp/build42/"
+  exit -1
+endif
+
 if (! -d $1) then
   echo 'Where should I put the bsa output files?'
   echo "Example: $0:t /tmp/build42/"
@@ -39,7 +45,7 @@ foreach b ($bmarks)
   set bsa      =   ${b}.bsa
 
   echo "  json2dot < $map_json > $t/$map_dot"
-  json2dot < $map_json > $tmp/$map_dot
+  json2dot < $map_json > $tmp/$map_dot || exit -1
 
   echo "  cmp examples/$map_dot $t/$map_dot"
   cmp examples/$map_dot $tmp/$map_dot || set result = 'FAILED'
@@ -47,7 +53,7 @@ foreach b ($bmarks)
 
 
   echo "  ../serpent.py $t/$map_dot -o $t/$bsb > \$t/$b.log.serpent"
-  ../serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent
+  ../serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent || exit -1
 
   echo "  cmp examples/$bsb $tmp/$bsb"
   cmp examples/$bsb $tmp/$bsb || set result = 'FAILED'
@@ -65,9 +71,11 @@ foreach b ($bmarks)
   endif
 
   echo "  ../bsbuilder.py < $tmp/$bsb > $tmp/$bsa"
-  ../bsbuilder.py < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $tmp/$bsa
+  # ../bsbuilder.py -v < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $tmp/$bsa || exit -1
+  ../bsbuilder.py < $tmp/$bsb > $tmp/$bsa || exit -1
 
   echo "  cmp examples/$bsa $tmp/$bsa"
+  ls -l examples/$bsa $tmp/$bsa
   cmp examples/$bsa $tmp/$bsa || set result = 'FAILED'
 
   if ($?VERBOSE) then
@@ -81,6 +89,8 @@ foreach b ($bmarks)
 
   echo "TEST $b $result"
   echo ""
+
+  if ($result == "FAILED") exit -1
 
 end
 
