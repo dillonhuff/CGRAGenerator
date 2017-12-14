@@ -599,29 +599,52 @@ def set_opb(tileno, wr):
 
 
 
-# op_data = {} # dictionary
-# op_data['mul'] = "0000000B"
-# 
-# # B mode bits are 12,13
-# op_data['reg_b']  = "%08X" % (0 << 12)
-# op_data['wire_b'] = "%08X" % (2 << 12)
-# 
-# # A mode bits are 14,15
-# op_data['reg_a']  = "%08X" % (0 << 14)
-# op_data['wire_a'] = "%08X" % (2 << 14)
+# % grep localparam $top/../pe_new/pe/rtl/test_pe_comp.svp | grep _OP
+# localparam PE_ADD_OP     = 6'h0;
+# localparam PE_SUB_OP     = 6'h1;
+# localparam PE_ABS_OP     = 6'h3;
+# localparam PE_GTE_MAX_OP = 6'h4;
+# localparam PE_LTE_MIN_OP = 6'h5;
+# localparam PE_EQ_OP      = 6'h6;
+# localparam PE_SEL_OP     = 6'h8;
+# localparam PE_RSHFT_OP   = 6'hF;
+# localparam PE_LSHFT_OP   = 6'h11;
+# localparam PE_MULT_0_OP  = 6'hB;
+# localparam PE_MULT_1_OP  = 6'hC;
+# localparam PE_MULT_2_OP  = 6'hD;
+# localparam PE_OR_OP      = 6'h12;
+# localparam PE_AND_OP     = 6'h13;
+# localparam PE_XOR_OP     = 6'h14;
+# no
+# localparam PE_CNTR_OP    = 6'h18;
+# localparam PE_DIV_OP     = 6'h19;
 
 op_data = {} # dictionary
-op_data['add'] = 0x00000000
-op_data['mul'] = 0x0000000B
+# op_data['add']   = 0x00000000
+# op_data['mul']   = 0x0000000B
+op_data['add']     = 0x00000000
+op_data['sub']     = 0x00000001
+op_data['abs']     = 0x00000003
+op_data['gte']     = 0x00000004
+op_data['lte']     = 0x00000005
+op_data['eq']      = 0x00000006
+op_data['sel']     = 0x00000008
+op_data['rshft']   = 0x0000000F
+op_data['lshft']   = 0x00000011
+op_data['mul']     = 0x0000000B
+op_data['or']      = 0x00000012
+op_data['and']     = 0x00000013
+op_data['xor']     = 0x00000014
 
 
-# REG_CONST = 0; REG_DELAY = 3; REG_BYPASS = 2
-# A (data0) mode bits are 16,17
+
+
+# A (data0) mode bits are 16,17; REG_CONST=0; REG_DELAY=3; REG_BYPASS=2
 op_data['const_a'] = (0 << 16)
 op_data['wire_a']  = (2 << 16)
 op_data['reg_a']   = (3 << 16)
 
-# B (data1) mode bits are 18,19
+# B (data1) mode bits are 18,19; REG_CONST=0; REG_DELAY=3; REG_BYPASS=2
 op_data['const_b'] = (0 << 18)
 op_data['wire_b']  = (2 << 18)
 op_data['reg_b']   = (3 << 18)
