@@ -354,7 +354,10 @@ int main(int argc, char **argv, char **env) {
                         exit(0);
                     } // (input_filename == NULL) {} else {
                     else {
-                        final_delay_so_far++;
+                        printf("\nOne more (349): delay_out=%d, final_delay_so_far=%d",
+                               delay_out, final_delay_so_far);
+                        in_0_0 = 0;
+                        // final_delay_so_far++; // This happnes later, see below.
                     }
                 }
 
@@ -443,14 +446,21 @@ int main(int argc, char **argv, char **env) {
         // FIXME/TODO maybe build a "close_all_and_exit" subroutine and call it before exit(s)
         if (input_filename != NULL) {
             if (feof(input_file)) {
-                printf("\n\nINFO Simulation ran for %d cycles (446)\n\n", i);
-                // fclose(input_file);
-                // if (output_file) { fclose(output_file); }
-                if (input_file)       { fclose(input_file ); }
-                if (output_file)      { fclose(output_file); }
-                if (config_data_file) { fclose(config_data_file); }
-                CLOSETRACE
-                exit(0);
+                if (final_delay_so_far == delay_out) {
+                    printf("\n\nINFO Simulation ran for %d cycles (446)\n\n", i);
+                    // fclose(input_file);
+                    // if (output_file) { fclose(output_file); }
+                    if (input_file)       { fclose(input_file ); }
+                    if (output_file)      { fclose(output_file); }
+                    if (config_data_file) { fclose(config_data_file); }
+                    CLOSETRACE
+                    exit(0);
+                }
+                else {
+                    printf("\nOne more (446): delay_out=%d, final_delay_so_far=%d\n",
+                           delay_out, final_delay_so_far);
+                        final_delay_so_far++;
+                }
             }
         }
     } // for (i)

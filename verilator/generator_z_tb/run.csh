@@ -40,9 +40,6 @@ setenv CGRA_GEN_USE_MEM 1
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
 
-# Default configuration bitstream
-set config   = ../../bitstream/examples/940/pw.bs
-
 # Sometimes may need to know what branch we are in
 git branch | grep '^*' >    $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
@@ -60,10 +57,20 @@ if (`expr "$branch" : ".*detached"`) then
 endif
 echo "run.csh: I think we are in branch '$branch'"
 
-if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2.bs
-if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2.bs
+# Default configuration bitstream
+# set config   = ../../bitstream/examples/940/pw.bs
+# if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2_io.bs
+# if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2_io.bs
+set config   = ../../bitstream/examples/pwv2_io.bs
 
 set DELAY = '0,0'
+
+# FIXME Yes this WILL bite my ass and very soon, I expect :(
+if ("$config" == "../../bitstream/examples/pwv2_io.bs") set DELAY = '3,3'
+
+echo .${config}.
+echo $DELAY
+
 
 set input     = io/gray_small.png
 set output    = $tmpdir/output.raw

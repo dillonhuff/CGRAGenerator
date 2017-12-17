@@ -31,6 +31,12 @@
 //; my @IO_count = qw(32 32 32 32);
 //; #
 //; #
+//; #
+//; # SR 12/2017: want 8x8 grid!
+//; @IO_count = qw(8 8 8 8);
+//; #
+//; #
+//; #
 //; my $tile_config;
 //; $tile_config->{ 'pe' } = {
 //;       type => 'pe_tile_new',
