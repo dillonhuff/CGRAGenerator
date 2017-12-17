@@ -31,6 +31,22 @@ TEST_LIST=[
     'add'
     ]
 
+# bsbuilder now has support for...
+# op_data['add']     = 0x00000000
+# op_data['sub']     = 0x00000001
+# op_data['abs']     = 0x00000003
+# op_data['gte']     = 0x00000004
+# op_data['lte']     = 0x00000005
+# op_data['eq']      = 0x00000006
+# op_data['sel']     = 0x00000008
+# op_data['rshft']   = 0x0000000F
+# op_data['lshft']   = 0x00000011
+# op_data['mul']     = 0x0000000B
+# op_data['or']      = 0x00000012
+# op_data['and']     = 0x00000013
+# op_data['xor']     = 0x00000014
+
+
 def build_optest(testname):
     # E.g. testname=add
     DBG=1
