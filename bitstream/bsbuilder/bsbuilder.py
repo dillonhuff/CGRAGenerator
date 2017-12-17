@@ -103,9 +103,6 @@ def main():
     if not VERBOSE: DBG=0
     else:           DBG=1
 
-    if not VERBOSE: DBG=0
-    else:           DBG=1
-
     io_info = []
 
     tileno = -1
