@@ -341,7 +341,7 @@ CGRA_FILENAME_TOP = "CGRAGenerator/hardware/generator_z/top/cgra_info.txt"
 def get_generated_cgra_info_filename():
     import os
     mydir = os.path.dirname(os.path.realpath(__file__))
-    # print mydir
+    print mydir
     parse = re.search('^(.*/)CGRAGenerator', mydir)
     if not parse:
         return ''
@@ -635,21 +635,6 @@ def find_mux(tile, src, snk, DBG=0):
                         if src == owsrc:
                             return get_encoding(tile,bb,mux,msrc,DBG-1)
 
-    if DBG:
-        # Provide helpful messages about why we failed
-        sys.stderr.write("\n\nCannot connect '%s' to '%s'\n\n" % (src,snk))
-
-        rlist = find_sources(tile, 'sb', src) + find_sources(tile, 'cb', src)
-        rlist = '\n    '.join(rlist)
-        sys.stderr.write("%s can connect to\n    %s\n\n" % (src, rlist))
-
-        rlist = find_sinks(tile, 'sb', snk) + find_sinks(tile, 'cb', snk)
-        rlist = '\n    '.join(rlist)
-        sys.stderr.write("%s can connect to\n    %s\n" % (snk, rlist))
-
-    # Note find_mux must be allowed to fail gracefully
-    # as that e.g. triggers a retry in the serpent PNR
-    # sys.exit(-1)
     return False
 
 def get_encoding(tile,box,mux,msrc,DBG=0):
@@ -801,10 +786,11 @@ def find_sources(tile, box, rsrc, DBG=0):
                     snk = mux.attrib['snk']
                     if DBG: print 'found snk', snk
                     rlist.append(oneworld(snk))
-    if DBG:
-        print rsrc, 'can connect to', rlist
-        print ''
     return rlist
+
+    DBG=1
+    if DBG: print rsrc, 'can connect to', rlist
+    print ''
      
 
 def find_sinks(tile, box, rdst, DBG=0):
