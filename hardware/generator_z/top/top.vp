@@ -100,7 +100,7 @@
 //; # not include IO tiles in the basic block.
 //; #
 //; my $basic_block  = "pe pe pe mem\n";
-//; $basic_block .= "pe pe pe X  ";
+//;    $basic_block .= "pe pe pe X  ";
 //; #
 //; # Number of times the basic block repeats in the horizontal direction.
 //; #
@@ -109,6 +109,13 @@
 //; # Number of times the basic block repeats in the vertical direction
 //; #
 //; my $basic_block_repeat_y = 16;
+//; #
+//; #
+//; #
+//; # SR 12/2017: want 8x8 grid!
+//; $basic_block_repeat_x = 2;
+//; $basic_block_repeat_y = 4;
+//; #
 //; #
 //; #
 //; #####################################################
