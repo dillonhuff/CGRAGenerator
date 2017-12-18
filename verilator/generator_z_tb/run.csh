@@ -65,11 +65,12 @@ set config   = ../../bitstream/examples/pwv2_io.bs
 
 set DELAY = '0,0'
 
-# FIXME Yes this WILL bite my ass and very soon, I expect :(
-if ("$config" == "../../bitstream/examples/pwv2_io.bs") set DELAY = '3,3'
-
-echo .${config}.
-echo $DELAY
+# FIXED maybe
+# # FIXME Yes this WILL bite my ass and very soon, I expect :(
+# if ("$config" == "../../bitstream/examples/pwv2_io.bs") set DELAY = '3,3'
+# 
+# echo .${config}.
+# echo $DELAY
 
 
 set input     = io/gray_small.png

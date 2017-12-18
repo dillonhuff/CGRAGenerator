@@ -95,8 +95,13 @@ config_en
 
    // Seems like the entire register should be initialized, not just a subset of the bits, yes?
    // FIXME Owner please check that this is still correct!
-   // config_sb <= `$config_bit_count`'d0;
-      config_sb <= ~(`$config_reg_width`'d0);
+   // // config_sb <= `$config_bit_count`'d0;
+   // config_sb <= ~(`$config_reg_width`'d0);
+   // FIXME2 [SR 12/2017] okay now this changed (above) it used to be what is shown below,
+   // which I am restoring so that benchmarks will run until we can get this sorted...
+      config_sb <= `$config_reg_width`'d0;
+
+
 
     end else begin
       if (config_en==1'b1) begin

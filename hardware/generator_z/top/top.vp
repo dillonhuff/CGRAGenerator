@@ -33,7 +33,11 @@
 //; #
 //; #
 //; # SR 12/2017: want 8x8 grid!
-//; @IO_count = qw(8 8 8 8);
+//; my $sr_grid_size = "default";
+//; $sr_grid_size = "8x8";
+//; # $sr_grid_size = "64x64";
+//; if ($sr_grid_size == "8x8") { @IO_count = qw(8 8 8 8); }
+//; if ($sr_grid_size == "64x64") { @IO_count = qw(64 64 64 64); }
 //; #
 //; #
 //; #
@@ -119,8 +123,8 @@
 //; #
 //; #
 //; # SR 12/2017: want 8x8 grid!
-//; $basic_block_repeat_x = 2;
-//; $basic_block_repeat_y = 4;
+//; if ($sr_grid_size == "8x8")   { $basic_block_repeat_x =  2; $basic_block_repeat_y =  4; }
+//; if ($sr_grid_size == "64x64") { $basic_block_repeat_x = 16; $basic_block_repeat_y = 32; }
 //; #
 //; #
 //; #
