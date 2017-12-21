@@ -64,7 +64,7 @@ endmodule
 //;print TILEINFO "        <io_group>$io_group</io_group>\n";
 //;print TILEINFO "        <direction in='0' out='1'>0</direction>\n";
 //;print TILEINFO "        <input>in_1BIT_S${side}_T0</input>\n";
-//;print TILEINFO "        <output>out_1BIT_S${side}_T0</input>\n";
+//;print TILEINFO "        <output>out_1BIT_S${side}_T0</output>\n";
 
 //;close TILEINFO;
 

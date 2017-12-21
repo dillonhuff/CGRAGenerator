@@ -288,7 +288,7 @@ echo
 if ("$GENERATE" == "-nogen") then
   echo "No generate!"
 else
-  echo "Building CGRA because you asked for it with '-gen'..."
+  echo "run.csh: Building CGRA because you asked for it with '-gen'..."
   ../../bin/generate.csh $VSWITCH || exit -1
 endif
 
@@ -472,16 +472,24 @@ echo "run.csh: Build the simulator..."
   if ($?VERBOSE) then
     echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
     echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
-    echo '%Warning3 See $tmpdir/verilator.out for full log.'
+    echo "%Warning3 See $tmpdir/verilator.out for full log."
     echo
-    cat $tmpdir/verilator.out \
-      | awk -f ./run-verilator-warning-filter.awk \
-      | head -n 40 
+
+    # This (head -n 40) can cause broken pipe error (!)
+    # awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out | head -n 40
+    awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out
+
   else
     echo "See $tmpdir/verilator.out for full log of verilator warnings."
   endif
 
-  if ($verilator_exit_status != 0) exit -1
+  if ($verilator_exit_status != 0) then
+    tail -40 $tmpdir/verilator.out
+    echo ""
+    echo "VERILATOR FAILED!"
+    echo "See $tmpdir/verilator.out for full log of verilator warnings."
+    exit -1
+  endif
 
   echo
   echo "run.csh: Build the testbench..."

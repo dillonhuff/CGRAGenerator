@@ -384,16 +384,19 @@ def read_cgra_info(filename='', grid='8x8', verbose=False):
     # If cannot open indicated config file (or if config file is blank), try default file
     global CGRA
     import xml.etree.ElementTree
-    try:
-        if verbose: sys.stdout.write("Using config file '%s'\n\n" % filename)
+    if verbose: sys.stdout.write("Using config file '%s'\n\n" % filename)
+    if os.path.exists(filename):
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
-        return
-    except:
-        sys.stderr.write("WARNING Could not open cgra_info file '%s'\n" % filename)
+
+    else:
+        sys.stderr.write("WARNING cgra_info.py(392) "\
+                         +"Could not find cgra_info file '%s'\n" % filename)
         filename = get_local_cgra_info_filename()
-        sys.stderr.write("WARNING Will try using local copy '%s'\n" % filename)
+        sys.stderr.write("WARNING cgra_info.py(392) "\
+                         +"Will try using local copy '%s'\n" % filename)
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
-        sys.stderr.write("WARNING Loaded local copy '%s'\n\n" % filename)
+        sys.stderr.write("WARNING cgra_info.py(392) "\
+                         +" Loaded local copy '%s'\n\n" % filename)
 
 def load_check():
     # if not CGRA:
@@ -482,8 +485,9 @@ def mem_or_pe(tileno):
     if   type[0] == 'm': return 'mem'
     elif type[0] == 'p': return 'pe'
     else:
-        assert False, 'unknown tile type'
-        return 'unknown'
+        # assert False, "unknown tile type '%s'" % type
+        sys.stderr.write("cgra_info.py (489) WARNING unknown tile type '%s'\n\n" % type)
+        return type
 
 def is_mem(tileno): return (mem_or_pe(tileno)=='mem')
 

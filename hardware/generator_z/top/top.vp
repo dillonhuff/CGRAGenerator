@@ -657,8 +657,9 @@ config_data
 //;     foreach my $bus (sort keys %bus_num_tracks_hash) {
 //;       print INFO "$bus:$bus_num_tracks_hash{$bus} ";
 //;     }
+//;     print INFO "'";
 //;   }
-//;   print INFO "'>\n";
+//;   print INFO ">\n";
 //;   if ($tile_type ne "empty") {
 //;     open (INP, "<TILE".$inst_obj->mname()) or die "Couldn't open file TILE$inst_obj->mname(), $!";
 //;     while (<INP>) {

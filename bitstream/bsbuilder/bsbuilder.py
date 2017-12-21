@@ -107,6 +107,7 @@ def main():
 
     tileno = -1
     for line in input_lines:
+        orig_line = line     # We can use this later...
 
         # Skip blank lines
         if re.search("^\s*$", line):
@@ -169,46 +170,49 @@ def main():
             if DBG: print ''
             continue
 
-
         if bs_connection(tileno, line, DBG-1):
             if DBG: print ''
             continue
 
+        err_msg = "\n\n# %s\n" % orig_line\
+                  + "I don't know what this is: '%s'\n\n" % line
+        assert False, err_msg
+
         continue
 
-        ################################################################
-        # This is the old stuff.
-        # SKIP IT for now anyways
-        
-        # "tile=7" (also: "tile7" or "tile=7" or "TILE 7" ...)
-        # (tile) = myparse(line, "\s+tile\s+([0-9]+)")
-        if parse_tile_decl(line):
-            tilestr = "%04X" % int(curtile)
-            continue
-
-        # "op=mul" or "op MUL"
-        if parse_op(line,tilestr): continue
-
-        # "in_s3=>a" or "in_s3 -> a" or "in_s3 => wire a" or "in_s3 => reg a"
-        # or "out_s3 => reg a"
-        if parse_opa(line, tilestr): continue
-        
-        # FIXME have to extend above code for operand b (doofus)
-
-        # "in_s3=>out_s0"
-        if parse_connection(line, tilestr): continue
-
-        # Konstants: "2=>b"
-        if parse_const(line, tilestr): continue
-
-        # pe_out=>out_s0
-        # pe_out_res=>out_s0
-        if parse_pe_out(line, tilestr): continue
-
-        else:
-            print "ERROR I can't do that yet."
-            sys.exit(1)
-        ################################################################
+#         ################################################################
+#         # This is the old stuff.
+#         # SKIP IT for now anyways
+#         
+#         # "tile=7" (also: "tile7" or "tile=7" or "TILE 7" ...)
+#         # (tile) = myparse(line, "\s+tile\s+([0-9]+)")
+#         if parse_tile_decl(line):
+#             tilestr = "%04X" % int(curtile)
+#             continue
+# 
+#         # "op=mul" or "op MUL"
+#         if parse_op(line,tilestr): continue
+# 
+#         # "in_s3=>a" or "in_s3 -> a" or "in_s3 => wire a" or "in_s3 => reg a"
+#         # or "out_s3 => reg a"
+#         if parse_opa(line, tilestr): continue
+#         
+#         # FIXME have to extend above code for operand b (doofus)
+# 
+#         # "in_s3=>out_s0"
+#         if parse_connection(line, tilestr): continue
+# 
+#         # Konstants: "2=>b"
+#         if parse_const(line, tilestr): continue
+# 
+#         # pe_out=>out_s0
+#         # pe_out_res=>out_s0
+#         if parse_pe_out(line, tilestr): continue
+# 
+#         else:
+#             print "ERROR I can't do that yet."
+#             sys.exit(1)
+#         ################################################################
             
     if DBG: print ''
     emit_bitstream()
@@ -307,8 +311,8 @@ def bs_connection(tileno, line, DBG=0):
     cwt = cgra_info.connect_within_tile(tileno, Tlhs, Trhs, DBG-1)
     if not cwt:
         # Print useful connection hints
-        src_cgra = canon2cgra(TLhs)
-        snk_cgra = canon2cgra(Trhs)
+        src_cgra = cgra_info.canon2cgra(TLhs)
+        snk_cgra = cgra_info.canon2cgra(Trhs)
         find_mux(tile, src_cgra, snk_cgra, DBG=1)
         sys.exit(-1)
     (addr,data,ra,rd,comm,rcomm) = cwt
@@ -694,13 +698,15 @@ def bs_op(tileno, line, DBG=0):
     # data[(17, 16)] : data0: REG_DELAY
     # data[(19, 18)] : data1: REG_CONST
 
-    parse = re.search('(add|mul)\s*\(\s*(\S+)\s*,\s*(\S+)\s*\)', line)
+    parse = re.search('(\S+)\s*\(\s*(\S+)\s*,\s*(\S+)\s*\)', line)
     if not parse: return False
 
     opname = parse.group(1)       # 'mul'
     op1    = parse.group(2)+"_a"  # 'reg_a' or 'wire_a' or 'const19_19$1_a'
     op2    = parse.group(3)+"_b"
+
     if DBG>1: print '# tile%02d  %s %s %s' % (tileno,opname,op1,op2)
+    if opname not in op_data: return False
 
     # If op is a const, returns 'const_a' or 'const_b'
     op1 = bs_const(tileno, op1, 'op1')
