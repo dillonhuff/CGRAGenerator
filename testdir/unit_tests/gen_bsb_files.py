@@ -5,25 +5,53 @@ import sys
 import re
 import random
 
+# Version for CGRA w/o IO tiles
+# # Replace 'DEPTH' with a decimal integer %03d
+# MEM_TEMPLATE='''
+#   #DELAY DEPTH,0
+#   #
+#   T3_mem_DEPTH # (fifo_depth=DEPTH)
+#   self.in -> T3_in_s2t0 -> T3_mem_in
+#   T3_mem_out -> T3_out_s2t0 -> self.out
+# '''
+
+# OOPS with IO tiles included, first mem tile is...?  tile 14?
 # Replace 'DEPTH' with a decimal integer %03d
 MEM_TEMPLATE='''
-  #DELAY DEPTH,0
-  T3_mem_DEPTH # (fifo_depth=DEPTH)
-  self.in -> T3_in_s2t0 -> T3_mem_in
-  T3_mem_out -> T3_out_s2t0 -> self.out
+  #DELAY DEPTH,DEPTH
+  #
+  T14_mem_DEPTH # (fifo_depth=DEPTH)
+  self.in -> T14_in_s2t0 -> T14_mem_in
+  T14_mem_out -> T14_out_s2t0 -> self.out
 '''
 
+
+# Version for CGRA w/o IO tiles
+# # Replace OPNAME with name of operand e.g. 'add'
+# OP_TEMPLATE_OLD='''
+#   #DELAY 1,1
+#   #
+#   self.in -> T0_in_s2t0
+#   T0_in_s2t0 -> T0_op1
+#   T0_in_s2t0 -> T0_out_s1t0
+#   T0_out_s1t0 -> T0_op2 (r)
+#   T0_OPNAME(wire,reg)
+#   T0_pe_out -> T0_out_s0t1 -> self.out
+# '''
+
+# OOPS with IO tiles included, first PE tile is...? tile 11?
 # Replace OPNAME with name of operand e.g. 'add'
 OP_TEMPLATE='''
-  #TEST OPNAME
-  #DELAY 1,0
-  self.in -> T0_in_s2t0
-  T0_in_s2t0 -> T0_op1
-  T0_in_s2t0 -> T0_out_s1t0
-  T0_out_s1t0 -> T0_op2 (r)
-  T0_OPNAME(wire,reg)
-  T0_pe_out -> T0_out_s0t1 -> self.out
+  #DELAY 1,1
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2 (r)
+  T11_OPNAME(wire,reg)
+  T11_pe_out -> T11_out_s0t1 -> self.out
 '''
+
 
 # bsbuilder now has support for...
 # op_data['add']     = 0x00000000
@@ -61,34 +89,40 @@ LBUF_LIST=[
     'lbuf09'
     ]
 
+DBG=0
+VERBOSE = True
+
 def main ():
     # For each test e.g. 'lbuf10' build bsb file 'lbuf10.bsb'
     # plus input and output files 'lbuf10_{input,output}.raw'
 
+    if VERBOSE: print "gen_bsb_files.py:"
     for testname in OP_LIST:   build_optest(testname)
     for testname in LBUF_LIST: build_lbuftest(testname)
 
 def build_optest(testname):
     bsb = re.sub('OPNAME','%s' % testname, OP_TEMPLATE)
-    write_bsb('op_' + testname, bsb)
+    write_bsb('op_' + testname, bsb, DBG=DBG)
 
 def build_lbuftest(testname):
     delay = str(int(re.search('lbuf(\d+)', testname).group(1)))
     bsb = re.sub('DEPTH','%s' % delay, MEM_TEMPLATE)
-    write_bsb('mem_' + testname, bsb)
+    write_bsb('mem_' + testname, bsb, DBG=DBG)
 
 def write_bsb(testname, bsb, DBG=1):
     # Remove excess indentation
     bsb = re.sub('\n\s+', '\n', bsb)
 
     # Add test name
-    bsb = ('#TEST  %s' % testname) + bsb
+    bsb = ('#TEST %s' % testname) + bsb
     if DBG: print bsb
 
     # ...and write the bsb file
-    outputstream = my_open(testname + '.bsb', "w")
+    testfile = testname + '.bsb'
+    outputstream = my_open(testfile, "w")
     outputstream.write(bsb)
     outputstream.close()
+    if VERBOSE: print "  Built " + testfile
 
 def my_open(filename, mode):
     no_overwrite = False
