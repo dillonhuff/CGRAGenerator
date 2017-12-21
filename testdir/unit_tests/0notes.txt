@@ -5,6 +5,11 @@ utest.py --help
 mkdir tmpdir
 cd tmpdir; ../utest.py
 
+* pat's simulator thingy
+** https://github.com/phanrahan/pe
+**  pe/tests/test_pe.py
+** mounted here: /nobackup/steveri/github/pe
+
 
 
 
