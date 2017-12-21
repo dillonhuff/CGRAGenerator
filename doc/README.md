@@ -22,6 +22,14 @@
 
 
 -----
+<b>Other stuff:</b>
+* Coreir primitives: https://github.com/StanfordAHA/Primitives
+* Pat's CGRA-op simulator: https://github.com/phanrahan/pe
+
+
+
+
+-----
 <b>Paper(s):</b>
 * Evaluating programmable architectures for imaging and vision applications http://ieeexplore.ieee.org/abstract/document/7783755/ 
 
