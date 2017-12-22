@@ -10,6 +10,12 @@ cd tmpdir; ../utest.py
 **  pe/tests/test_pe.py
 ** mounted here: /nobackup/steveri/github/pe
 
+------------------------------------------------------------------------
+'sub' appears to be broken in BOTH patpy and cgra(!)
+
+patpy functions missing/broken:
+- mul
+- abs
 
 
 

@@ -4,7 +4,7 @@ import sys
 import re
 import os
 
-VERBOSE = True
+# VERBOSE = False # see process_args, below
 
 # Script dir is maybe '$gen/testdir/unit_tests'
 mypath = os.path.realpath(__file__)
@@ -14,10 +14,9 @@ PYPAT_DIR = mydir + '/../../../pe'
 sys.path.insert(0, PYPAT_DIR)
 import pe 
 
-OP_LIST=[
+BINARY_OPS=[
     'add',
     'sub',
-    'abs',
     'gte',
     'lte',
     'eq',
@@ -29,6 +28,10 @@ OP_LIST=[
     'and',
     'xor',
     ]
+
+UNARY_OPS=[
+    'abs',
+]
 
 LBUF_LIST=[
     'lbuf10',
@@ -64,6 +67,8 @@ def main():
     if not os.path.exists('op_add.bsa'):
         os.system(mydir+'/gen_bsa_files.csh')
         sys.stdout.flush()
+    else:
+        print "Skipping (redundant) bsa file generation b/w found 'op_add.bsa'"
 
     # n_iter = 'forever'
     # n_iter = 3
@@ -90,7 +95,12 @@ def do_one_round(i):
     print ""
 
     t = OPTIONS['tests']
-    if t == 'all': tests = ['add','mul','lbuf09']
+    # if t == 'all': tests = ['add','mul','lbuf09', 'lbuf10']
+    if t == 'all': tests = LBUF_LIST + BINARY_OPS + UNARY_OPS
+
+    # Do the broken one FIRST
+    if t == 'all': tests = ['lbuf10'] + tests
+
     else: tests = t.split(",")
 
     for test in tests:
@@ -100,8 +110,10 @@ def do_one_round(i):
 
 # E.g. test = 'add'
 # bsa files have names like 'mem_lbuf09.bsa', 'op_add.bsa'
-def do_one_test(test):
+def do_one_test(test, DBG=0):
     print "Testing '%s'" % test
+
+    # Find bsa file
     tname_op  = 'op_'  + test
     tname_mem = 'mem_' + test
     if   os.path.exists(tname_op  + '.bsa'): tname = tname_op
@@ -109,70 +121,97 @@ def do_one_test(test):
     else:
         assert False, 'Could not find bsa file'
 
-    DBG=0
-    gen_output_file_gold(test, DBG=DBG)
-    gen_output_file_cgra(tname, DBG=DBG)
+    print "  INPUT ",; print_raw_file('test_in.raw',first_line_only=True)
+
+    gold_out = gen_output_file_gold(test, DBG=DBG)
+    if is_binary(tname): print "  GOLD    ",;
+    else:                print "  GOLD  ",;
+    print_raw_file(gold_out, first_line_only=True)
+
+    cgra_out = gen_output_file_cgra(tname, DBG=DBG)
+    if is_binary(tname): print "  OUTPUT  ",;
+    else:                print "  OUTPUT",;
+    print_raw_file(cgra_out, first_line_only=True)
+
+    # compare_outputs ends the program if comparison is bad...
     compare_outputs(tname, DBG=DBG)
-
-
 
 def compare_outputs(tname, DBG=0):
     gold_out = '%s_gold_out.raw' % tname
     cgra_out  = '%s_CGRA_out.raw' % tname
-    print "  Comparing %s and %s..." % (gold_out,cgra_out)
     cmd = 'cmp %s %s' % (gold_out,cgra_out)
-    print "  " + cmd
+
+    if VERBOSE:
+        print "  Comparing %s and %s..." % (gold_out,cgra_out)
+        print "  " + cmd
+
+    sys.stdout.flush()
     err = os.system(cmd)
     if err:
-        print "OOPS thatsa no good"
-        sys.exit(13)
+        print "  OOPS thatsa no good"
+        # sys.exit(13)
     else:
-        print "   IT'S GOOD!!!"
+        if VERBOSE: print "   IT'S GOOD!!!"
+        return True
 
 
 
+##############################################################################
+# FIXME this is whack.  Maybe should be a class or something?
 # pypat['add'](1,3)[0] should yield '4' I think
-PYPAT = {}
-# PYPAT['add'] = pe.isa.add()
-# print PYPAT['add'](1,3)[0]
+GOLD = {}
+# GOLD['add'] = pe.isa.add()
+# print GOLD['add'](1,3)[0]
 
-PYPAT['add']   = pe.isa.add()
-PYPAT['sub']   = pe.isa.sub()
-PYPAT['abs']   = pe.isa.abs()
-# PYPAT['gte']   = pe.isa.ge()
-# PYPAT['lte']   = pe.isa.le()
-# PYPAT['eq']    = pe.isa.eq()
-PYPAT['sel']   = pe.isa.sel()
-PYPAT['rshft'] = pe.isa.lshr()
-PYPAT['lshft'] = pe.isa.lshl()
-PYPAT['or']    = pe.isa.or_()
-PYPAT['and']   = pe.isa.and_()
-PYPAT['xor']   = pe.isa.xor()
+GOLD['add']   = pe.isa.add()
+GOLD['sub']   = pe.isa.sub()
+GOLD['abs']   = pe.isa.abs()
 
-# PYPAT['add'] = (lambda a, b: [a + b,0])
-PYPAT['mul']   = (lambda a, b: [a * b,0])
-PYPAT['lbuf09']   = (lambda a, b: [a,0])
-PYPAT['lbuf10']   = (lambda a, b: [a,0])
+# GOLD['gte']   = pe.isa.ge()
+# GOLD['lte']   = pe.isa.le()
+# GOLD['eq']    = pe.isa.eq()
 
+GOLD['sel']   = pe.isa.sel()
+GOLD['rshft'] = pe.isa.lshr()
+GOLD['lshft'] = pe.isa.lshl()
+GOLD['or']    = pe.isa.or_()
+GOLD['and']   = pe.isa.and_()
+GOLD['xor']   = pe.isa.xor()
+
+# GOLD['add'] = (lambda a, b: [a + b,0])
+GOLD['abs']   = (lambda a: [abs(a),0])
+GOLD['mul']   = (lambda a, b: [a * b,0])
+
+GOLD['lbuf09']   = (lambda a, b: [a,0])
+GOLD['lbuf10']   = (lambda a, b: [a,0])
+##############################################################################
+
+
+def gen_pixels_binary(tname): 
+    outpixels = []
+    for i in range(len(PIXELS)-1):
+        (a,b) = (PIXELS[i], PIXELS[i+1])
+        p = GOLD[tname](a,b)[0] & 0xFF
+        outpixels.append(p)
+    return outpixels
+
+def gen_pixels_unary(tname): 
+    outpixels = []
+    for i in range(len(PIXELS)):
+        a = PIXELS[i]
+        p = GOLD[tname](a)[0] & 0xFF
+        outpixels.append(p)
+    return outpixels
 
 
 def gen_output_file_gold(tname, DBG=0):
-    gold_out = 'op_%s_gold_out.raw' % tname
+    if is_mem(tname): gold_out = 'mem_%s_gold_out.raw' % tname
+    else:             gold_out =  'op_%s_gold_out.raw' % tname
 
-    outpixels = []
-
-    if tname[0:4] == 'lbuf':
-        gold_out = 'mem_%s_gold_out.raw' % tname
-        outpixels = PIXELS
-    else:
-        for i in range(len(PIXELS)-1):
-            (a,b) = (PIXELS[i], PIXELS[i+1])
-            outpixels.append(\
-                PYPAT[tname](a,b)[0] & 0xFF \
-                )
-
-
-    # print PYPAT['add'](1,3)[0]
+    if   is_mem(tname):    outpixels = PIXELS
+    elif is_unary(tname):  outpixels = gen_pixels_unary(tname)
+    elif is_binary(tname): outpixels = gen_pixels_binary(tname)
+    else: assert False
     # print outpixels
 
     filename = gold_out
@@ -184,6 +223,8 @@ def gen_output_file_gold(tname, DBG=0):
         sys.stdout.flush()
         os.system('od -t u1 ' + filename + " | egrep -v '^.......$' | sed 's/^/  /'")
         print ""
+
+    return gold_out
     
 
 def gen_output_file_cgra(tname, DBG=0):
@@ -192,7 +233,8 @@ def gen_output_file_cgra(tname, DBG=0):
     # Maybe (FIXME)
     cgra_out = '%s_CGRA_out.raw' % tname
 
-    print "  Will use bsa file '%s.bsa' to generate '%s'" % (tname,cgra_out)
+    if VERBOSE:
+        print "  Will use bsa file '%s.bsa' to generate '%s'" % (tname,cgra_out)
     sys.stdout.flush()
     if DBG: os.system('(cd %s; ls -l run.csh)' % VERILATOR_DIR)
 
@@ -214,16 +256,17 @@ def gen_output_file_cgra(tname, DBG=0):
     if DBG: savelog = ''
     else:   savelog = ' > ' + logfile + ' 2>&1'
 
-    # How to redo on error:
-    print ""
-    print "  set d = " + cwd
-    print "  cd " + VERILATOR_DIR
-    print "  " + re.sub(cwd, '$d/', cmd)
-    if savelog != '': print "  " + savelog
-    print ""
-    sys.stdout.flush()
+    if VERBOSE:
+        # How to redo on error:
+        print ""
+        print "  set d = " + cwd
+        print "  cd " + VERILATOR_DIR
+        print "  " + re.sub(cwd, '$d/', cmd)
+        if savelog != '': print "  " + savelog
+        print ""
 
     # (cd $v; ./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay ) || exit -1
+    sys.stdout.flush()
     os.system('(cd %s; %s%s)' % (VERILATOR_DIR, cmd, savelog))
     # if not VERBOSE: os.system('egrep ^run.csh %s' % logfile)
     sys.stdout.flush()
@@ -233,13 +276,15 @@ def gen_output_file_cgra(tname, DBG=0):
         sys.stdout.flush()
         os.system('od -t u1 ' + cgra_out + " | egrep -v '^.......$' | sed 's/./  /'")
 
+    return cgra_out
 
 
 
 def find_delay(tname, DBG=0):
     # Calculate the appropriate delay e.g. '1,0' for PE ops or '9,0' for 9-deep lbuf.
-    if tname[0:2] == "op":
-        delay = '1,0'
+    DBG=0
+    if is_unary(tname):      delay = '0,0'
+    elif tname[0:2] == "op": delay = '1,0'
     elif tname[0:8] == 'mem_lbuf':
         # E.g. name might be 'mem_lbuf09'
         d = int(tname[8:])
@@ -249,6 +294,18 @@ def find_delay(tname, DBG=0):
     return delay
 
 
+def is_unary(tname):
+    # Strip prefix e.g. 'op_abs' => 'abs'
+    tname = re.sub('op_', '', tname)
+    return tname in UNARY_OPS
+
+def is_binary(tname):
+    # Strip prefix e.g. 'op_abs' => 'abs'
+    tname = re.sub('op_', '', tname)
+    return tname in BINARY_OPS
+
+def is_mem(tname):
+    return re.search('lbuf|fifo|sram', tname)
 
 
 
@@ -266,12 +323,29 @@ def gen_input_file_seq():
 
     if VERBOSE:
         print "input file '%s':" % filename
-        sys.stdout.flush()
-        os.system('od -t u1 ' + filename + " | egrep -v '^.......$'")
+        print_raw_file(filename)
 
     # Save the pixels for later
     global PIXELS
     PIXELS = pixels
+
+def print_raw_file(filename, first_line_only = False):
+    sys.stdout.flush()
+
+    if not first_line_only:
+        # The 'egrep' filter removes blank lines from output
+        os.system('od -t u1 ' + filename + " | egrep -v '^.......$'")
+    else:
+        # cmd = 'echo "`od -t u1 ' + filename + " | head -n 1 | sed 's/^....... //'" +`'" ...'
+        cmd_od = "od -t u1 " + filename
+        cmd_head = "head -n 1"
+        cmd_sed =  "sed 's/^....... //'"
+        cmd_pipe = "%s | %s | %s" % (cmd_od, cmd_head, cmd_sed)
+
+        cmd = 'echo -n "`%s`" ...' % cmd_pipe
+        # print cmd
+        os.system(cmd)
+        print ""
 
 
 def write_pixels(filename, pixels):
@@ -320,6 +394,8 @@ Examples:
 ''' % (scriptname_tail, scriptname_tail, scriptname_tail)
 
     global VERBOSE
+    VERBOSE=False
+
     global OPTIONS
     OPTIONS = {}
     OPTIONS['tests']   = 'all'
