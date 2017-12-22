@@ -6,6 +6,14 @@ import os
 
 VERBOSE = True
 
+# Script dir is maybe '$gen/testdir/unit_tests'
+mypath = os.path.realpath(__file__)
+mydir  = os.path.dirname(mypath)
+global PYPAT_DIR
+PYPAT_DIR = mydir + '/../../../pe'
+sys.path.insert(0, PYPAT_DIR)
+import pe 
+
 OP_LIST=[
     'add',
     'sub',
@@ -51,8 +59,11 @@ def main():
     # Always build all bsb and bsa files b/c why not
     os.system(mydir+'/gen_bsb_files.py')
     print ""
-    # os.system(mydir+'/gen_bsa_files.csh')
     sys.stdout.flush()
+
+    if not os.path.exists('op_add.bsa'):
+        os.system(mydir+'/gen_bsa_files.csh')
+        sys.stdout.flush()
 
     # n_iter = 'forever'
     # n_iter = 3
@@ -78,7 +89,6 @@ def do_one_round(i):
     gen_input_file_seq()
     print ""
 
-    print OPTIONS
     t = OPTIONS['tests']
     if t == 'all': tests = ['add','mul','lbuf09']
     else: tests = t.split(",")
@@ -100,7 +110,81 @@ def do_one_test(test):
         assert False, 'Could not find bsa file'
 
     DBG=0
+    gen_output_file_gold(test, DBG=DBG)
     gen_output_file_cgra(tname, DBG=DBG)
+    compare_outputs(tname, DBG=DBG)
+
+
+
+def compare_outputs(tname, DBG=0):
+    gold_out = '%s_gold_out.raw' % tname
+    cgra_out  = '%s_CGRA_out.raw' % tname
+    print "  Comparing %s and %s..." % (gold_out,cgra_out)
+    cmd = 'cmp %s %s' % (gold_out,cgra_out)
+    print "  " + cmd
+    err = os.system(cmd)
+    if err:
+        print "OOPS thatsa no good"
+        sys.exit(13)
+    else:
+        print "   IT'S GOOD!!!"
+
+
+
+# pypat['add'](1,3)[0] should yield '4' I think
+PYPAT = {}
+# PYPAT['add'] = pe.isa.add()
+# print PYPAT['add'](1,3)[0]
+
+PYPAT['add']   = pe.isa.add()
+PYPAT['sub']   = pe.isa.sub()
+PYPAT['abs']   = pe.isa.abs()
+# PYPAT['gte']   = pe.isa.ge()
+# PYPAT['lte']   = pe.isa.le()
+# PYPAT['eq']    = pe.isa.eq()
+PYPAT['sel']   = pe.isa.sel()
+PYPAT['rshft'] = pe.isa.lshr()
+PYPAT['lshft'] = pe.isa.lshl()
+PYPAT['or']    = pe.isa.or_()
+PYPAT['and']   = pe.isa.and_()
+PYPAT['xor']   = pe.isa.xor()
+
+# PYPAT['add'] = (lambda a, b: [a + b,0])
+PYPAT['mul']   = (lambda a, b: [a * b,0])
+PYPAT['lbuf09']   = (lambda a, b: [a,0])
+PYPAT['lbuf10']   = (lambda a, b: [a,0])
+
+
+
+def gen_output_file_gold(tname, DBG=0):
+    gold_out = 'op_%s_gold_out.raw' % tname
+
+    outpixels = []
+
+    if tname[0:4] == 'lbuf':
+        gold_out = 'mem_%s_gold_out.raw' % tname
+        outpixels = PIXELS
+    else:
+        for i in range(len(PIXELS)-1):
+            (a,b) = (PIXELS[i], PIXELS[i+1])
+            outpixels.append(\
+                PYPAT[tname](a,b)[0] & 0xFF \
+                )
+
+
+    # print PYPAT['add'](1,3)[0]
+    # print outpixels
+
+    filename = gold_out
+    write_pixels(filename, outpixels)
+    if DBG>1: print ''
+
+    if VERBOSE:
+        print "  gold-model output file '%s':" % filename
+        sys.stdout.flush()
+        os.system('od -t u1 ' + filename + " | egrep -v '^.......$' | sed 's/^/  /'")
+        print ""
+    
 
 def gen_output_file_cgra(tname, DBG=0):
 
@@ -145,9 +229,9 @@ def gen_output_file_cgra(tname, DBG=0):
     sys.stdout.flush()
 
     if VERBOSE:
-        print "CGRA output file '%s':" % cgra_out
+        print "  CGRA output file '%s':" % cgra_out
         sys.stdout.flush()
-        os.system('od -t u1 ' + cgra_out + " | egrep -v '^.......$'")
+        os.system('od -t u1 ' + cgra_out + " | egrep -v '^.......$' | sed 's/./  /'")
 
 
 
@@ -159,10 +243,13 @@ def find_delay(tname, DBG=0):
     elif tname[0:8] == 'mem_lbuf':
         # E.g. name might be 'mem_lbuf09'
         d = int(tname[8:])
-        # delay = '%d,%d' % (d,d)
-        delay = '%d,0' % (d)
+        delay = '%d,%d' % (d,d)
+        # delay = '%d,0' % (d)
     if DBG: print "  delay should be " + delay
     return delay
+
+
+
 
 
 # Generate an input file full of sequential 8-bit pixels {0,1,2,3,4,5,6,7,8,9}
@@ -182,13 +269,16 @@ def gen_input_file_seq():
         sys.stdout.flush()
         os.system('od -t u1 ' + filename + " | egrep -v '^.......$'")
 
+    # Save the pixels for later
+    global PIXELS
+    PIXELS = pixels
+
 
 def write_pixels(filename, pixels):
     import struct
     outputstream = my_open(filename, "wb")
     for p in pixels: outputstream.write(struct.pack('B', p))
     outputstream.close()
-
 
 def my_open(filename, mode):
     no_overwrite = False
