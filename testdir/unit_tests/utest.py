@@ -4,7 +4,7 @@ import sys
 import re
 import os
 
-# VERBOSE = False # see process_args, below
+VERBOSE = False # For real default value, see process_args() below
 
 # Script dir is maybe '$gen/testdir/unit_tests'
 mypath = os.path.realpath(__file__)
@@ -34,8 +34,8 @@ UNARY_OPS=[
 ]
 
 LBUF_LIST=[
+    'lbuf09',
     'lbuf10',
-    'lbuf09'
     ]
 
 VERILATOR_DIR = ''
@@ -87,7 +87,7 @@ def show_options():
 
 def do_one_round(i):
     print "----------------------------------------------------------------"
-    print "Iteration %06d," % i,
+    print "Round %3d" % i,
     
     # Build input file 'test_in.raw'
     # Build one input file per iteration
@@ -99,7 +99,7 @@ def do_one_round(i):
     if t == 'all': tests = LBUF_LIST + BINARY_OPS + UNARY_OPS
 
     # Do the broken one FIRST
-    if t == 'all': tests = ['lbuf10'] + tests
+    # if t == 'all': tests = ['lbuf09', 'lbuf10', 'add', 'abs', 'eq','lte','gte'] + tests
 
     else: tests = t.split(",")
 
@@ -121,20 +121,42 @@ def do_one_test(test, DBG=0):
     else:
         assert False, 'Could not find bsa file'
 
-    print "  INPUT ",; print_raw_file('test_in.raw',first_line_only=True)
+    # Because 'abs' has delay zero, like our input file 'test_in.raw'
+    print_raw_file_abbrev('INPUT ', 'abs', 'test_in.raw')
 
     gold_out = gen_output_file_gold(test, DBG=DBG)
-    if is_binary(tname): print "  GOLD    ",;
-    else:                print "  GOLD  ",;
-    print_raw_file(gold_out, first_line_only=True)
+    print_raw_file_abbrev('GOLD ', tname, gold_out)
 
     cgra_out = gen_output_file_cgra(tname, DBG=DBG)
-    if is_binary(tname): print "  OUTPUT  ",;
-    else:                print "  OUTPUT",;
-    print_raw_file(cgra_out, first_line_only=True)
+    print_raw_file_abbrev('CGRA ', tname, cgra_out)
 
     # compare_outputs ends the program if comparison is bad...
     compare_outputs(tname, DBG=DBG)
+
+def print_raw_file_abbrev(label, tname, filename):
+
+    # Sample output from e.g.
+    #   print_raw_file_abbrev('INPUT ', 'abs', 'test_in.raw') # ('abs' d1=0)
+    #   print_raw_file_abbrev('GOLD ', 'add', gold_out)       # ('add' d1=1)
+    #   print_raw_file_abbrev('CGRA ', 'add', cgra_out)       # ('add' d1=1)
+    #
+    #   INPUT   0   1   2   3   4   5   6   7   8   9 
+    #   GOLD ---->  1   3   5   7   9  11  13  15  17
+    #   CGRA ---->  1   3   5   7   9  11  13  15  17
+
+    # d1,d2 are front-end, back-end delay respectively
+    delay = find_delay(tname, DBG=0)
+    (d1,d2) = delay.split(',')
+    d1 = int(d1)
+
+    print "  %s"   % label,
+    if d1 < 40:
+        # Align in/out cycles (unless delay is too darn big)
+        for i in range(d1): sys.stdout.write('----')
+        if d1: sys.stdout.write('>')
+
+    print_raw_file(filename, first_line_only=True)
+
 
 def compare_outputs(tname, DBG=0):
     gold_out = '%s_gold_out.raw' % tname
@@ -148,7 +170,7 @@ def compare_outputs(tname, DBG=0):
     sys.stdout.flush()
     err = os.system(cmd)
     if err:
-        print "  OOPS thatsa no good"
+        print "  OOPS thatsa no good: '%s' failed" % tname
         # sys.exit(13)
     else:
         if VERBOSE: print "   IT'S GOOD!!!"
@@ -167,9 +189,10 @@ GOLD['add']   = pe.isa.add()
 GOLD['sub']   = pe.isa.sub()
 GOLD['abs']   = pe.isa.abs()
 
-# GOLD['gte']   = pe.isa.ge()
-# GOLD['lte']   = pe.isa.le()
-# GOLD['eq']    = pe.isa.eq()
+signed = False
+GOLD['gte']   = pe.isa.ge(signed)
+GOLD['lte']   = pe.isa.le(signed)
+GOLD['eq']    = pe.isa.eq()
 
 GOLD['sel']   = pe.isa.sel()
 GOLD['rshft'] = pe.isa.lshr()
@@ -178,12 +201,31 @@ GOLD['or']    = pe.isa.or_()
 GOLD['and']   = pe.isa.and_()
 GOLD['xor']   = pe.isa.xor()
 
-# GOLD['add'] = (lambda a, b: [a + b,0])
-GOLD['abs']   = (lambda a: [abs(a),0])
-GOLD['mul']   = (lambda a, b: [a * b,0])
+
+
 
 GOLD['lbuf09']   = (lambda a, b: [a,0])
 GOLD['lbuf10']   = (lambda a, b: [a,0])
+
+# Busted ops include, abs, mul, eq
+GOLD['abs']   = (lambda a: [abs(a),0])
+GOLD['mul']   = (lambda a, b: [a * b,0])
+
+# Spec says 'eq' result is same as 'add'
+GOLD['eq']    = GOLD['add']
+
+
+# FIXME I couldn't figure out how to make gte/lte work with Pat's functions :(
+def gold_gte(a,b):
+    if (a>=b): return [a,-1]
+    else:      return [b,-1]
+GOLD['gte']   = gold_gte
+
+def gold_lte(a,b):
+    if (a<=b): return [a,-1]
+    else:      return [b,-1]
+GOLD['lte']   = gold_lte
+
 ##############################################################################
 
 
@@ -337,16 +379,17 @@ def print_raw_file(filename, first_line_only = False):
         os.system('od -t u1 ' + filename + " | egrep -v '^.......$'")
     else:
         # cmd = 'echo "`od -t u1 ' + filename + " | head -n 1 | sed 's/^....... //'" +`'" ...'
-        cmd_od = "od -t u1 " + filename
+        cmd_od   = "od -t u1 " + filename
         cmd_head = "head -n 1"
-        cmd_sed =  "sed 's/^....... //'"
+        cmd_sed  = "sed 's/^....... //'"
         cmd_pipe = "%s | %s | %s" % (cmd_od, cmd_head, cmd_sed)
 
-        cmd = 'echo -n "`%s`" ...' % cmd_pipe
-        # print cmd
+        # If first line cannot contain entire file, add ellipsis...
+        if len(PIXELS) > 16: cmd = 'echo -n "`%s`"...' % cmd_pipe
+        else:                cmd = 'echo -n "`%s`"' % cmd_pipe
+
         os.system(cmd)
         print ""
-
 
 def write_pixels(filename, pixels):
     import struct
