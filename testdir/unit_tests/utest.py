@@ -4,6 +4,15 @@ import sys
 import re
 import os
 
+# Instead of
+# sts = os.system("mycmd" + " myarg")
+# must do
+# sts = Popen("mycmd" + " myarg", shell=True).wait()
+
+def my_syscall(cmd):
+    import subprocess
+    subprocess.Popen(cmd, shell=True).wait()
+
 VERBOSE = False # For real default value, see process_args() below
 
 # Script dir is maybe '$gen/testdir/unit_tests'
@@ -60,12 +69,13 @@ def main():
     show_options()
 
     # Always build all bsb and bsa files b/c why not
-    os.system(mydir+'/gen_bsb_files.py')
+    my_syscall(mydir+'/gen_bsb_files.py')
+
     print ""
     sys.stdout.flush()
 
     if not os.path.exists('op_add.bsa'):
-        os.system(mydir+'/gen_bsa_files.csh')
+        my_syscall(mydir+'/gen_bsa_files.csh')
         sys.stdout.flush()
     else:
         print "Skipping (redundant) bsa file generation b/w found 'op_add.bsa'"
@@ -168,7 +178,7 @@ def compare_outputs(tname, DBG=0):
         print "  " + cmd
 
     sys.stdout.flush()
-    err = os.system(cmd)
+    err = my_syscall(cmd)
     if err:
         print "  OOPS thatsa no good: '%s' failed" % tname
         # sys.exit(13)
@@ -263,7 +273,7 @@ def gen_output_file_gold(tname, DBG=0):
     if VERBOSE:
         print "  gold-model output file '%s':" % filename
         sys.stdout.flush()
-        os.system('od -t u1 ' + filename + " | egrep -v '^.......$' | sed 's/^/  /'")
+        my_syscall('od -t u1 ' + filename + " | egrep -v '^.......$' | sed 's/^/  /'")
         print ""
 
     return gold_out
@@ -278,7 +288,7 @@ def gen_output_file_cgra(tname, DBG=0):
     if VERBOSE:
         print "  Will use bsa file '%s.bsa' to generate '%s'" % (tname,cgra_out)
     sys.stdout.flush()
-    if DBG: os.system('(cd %s; ls -l run.csh)' % VERILATOR_DIR)
+    if DBG: my_syscall('(cd %s; ls -l run.csh)' % VERILATOR_DIR)
 
     # Calculate the appropriate delay e.g. '1,0' for PE ops or '9,0' for 9-deep lbuf.
     delay = find_delay(tname, DBG=0)
@@ -309,14 +319,15 @@ def gen_output_file_cgra(tname, DBG=0):
 
     # (cd $v; ./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay ) || exit -1
     sys.stdout.flush()
-    os.system('(cd %s; %s%s)' % (VERILATOR_DIR, cmd, savelog))
-    # if not VERBOSE: os.system('egrep ^run.csh %s' % logfile)
+    # my_syscall('(cd %s; %s%s)' % (VERILATOR_DIR, cmd, savelog))
+    my_syscall('cd %s; %s%s' % (VERILATOR_DIR, cmd, savelog))
+    # if not VERBOSE: my_syscall('egrep ^run.csh %s' % logfile)
     sys.stdout.flush()
 
     if VERBOSE:
         print "  CGRA output file '%s':" % cgra_out
         sys.stdout.flush()
-        os.system('od -t u1 ' + cgra_out + " | egrep -v '^.......$' | sed 's/./  /'")
+        my_syscall('od -t u1 ' + cgra_out + " | egrep -v '^.......$' | sed 's/./  /'")
 
     return cgra_out
 
@@ -376,7 +387,7 @@ def print_raw_file(filename, first_line_only = False):
 
     if not first_line_only:
         # The 'egrep' filter removes blank lines from output
-        os.system('od -t u1 ' + filename + " | egrep -v '^.......$'")
+        my_syscall('od -t u1 ' + filename + " | egrep -v '^.......$'")
     else:
         # cmd = 'echo "`od -t u1 ' + filename + " | head -n 1 | sed 's/^....... //'" +`'" ...'
         cmd_od   = "od -t u1 " + filename
@@ -388,7 +399,7 @@ def print_raw_file(filename, first_line_only = False):
         if len(PIXELS) > 16: cmd = 'echo -n "`%s`"...' % cmd_pipe
         else:                cmd = 'echo -n "`%s`"' % cmd_pipe
 
-        os.system(cmd)
+        my_syscall(cmd)
         print ""
 
 def write_pixels(filename, pixels):
