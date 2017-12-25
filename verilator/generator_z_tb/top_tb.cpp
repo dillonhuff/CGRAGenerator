@@ -354,7 +354,8 @@ int main(int argc, char **argv, char **env) {
                         exit(0);
                     } // (input_filename == NULL) {} else {
                     else {
-                        printf("\nOne more (349): delay_out=%d, final_delay_so_far=%d",
+                        if (final_delay_so_far == 0) { printf("\n"); }
+                        printf("One more (349): delay_out=%d, final_delay_so_far=%d",
                                delay_out, final_delay_so_far);
                         in_0_0 = 0;
                         // final_delay_so_far++; // This happnes later, see below.
@@ -457,8 +458,8 @@ int main(int argc, char **argv, char **env) {
                     exit(0);
                 }
                 else {
-                    printf("\nOne more (446): delay_out=%d, final_delay_so_far=%d\n",
-                           delay_out, final_delay_so_far);
+                    //printf("One more (446): delay_out=%d, final_delay_so_far=%d\n",
+                    //delay_out, final_delay_so_far);
                         final_delay_so_far++;
                 }
             }

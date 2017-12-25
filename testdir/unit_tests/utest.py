@@ -10,10 +10,14 @@ import os
 # sts = Popen("mycmd" + " myarg", shell=True).wait()
 
 def my_syscall(cmd):
+    DBG=0
+    sys.stdout.flush()
     import subprocess
-    subprocess.Popen(cmd, shell=True).wait()
+    if DBG: print "okay here we go with", cmd
+    return subprocess.Popen(cmd, shell=True).wait()
 
 VERBOSE = False # For real default value, see process_args() below
+GENERATED=False # Only need to generate CGRA ONCE (idiot)
 
 # Script dir is maybe '$gen/testdir/unit_tests'
 mypath = os.path.realpath(__file__)
@@ -76,32 +80,36 @@ def main():
 
     if not os.path.exists('op_add.bsa'):
         my_syscall(mydir+'/gen_bsa_files.csh')
-        sys.stdout.flush()
+        print ""
     else:
         print "Skipping (redundant) bsa file generation b/w found 'op_add.bsa'"
 
     # n_iter = 'forever'
     # n_iter = 3
 
+    i = 1
     n_iter = OPTIONS['repeat']
-    i = 0
-    while (i != n_iter):
+    while (True):
+        print "----------------------------------------------------------------"
+        print "Round %d of %s:" % (i, n_iter),
+        do_one_round()
+        print ""
         i = i + 1
-        do_one_round(i)
-
+        if n_iter == 'forever': continue
+        elif i > int(n_iter): break
 
 def show_options():
+    print "OPTIONS"
     for i in OPTIONS:
         print "  OPTIONS['%-7s'] = %s" % (i, OPTIONS[i])
+    print ""
 
 
-def do_one_round(i):
-    print "----------------------------------------------------------------"
-    print "Round %3d" % i,
-    
+def do_one_round():
     # Build input file 'test_in.raw'
     # Build one input file per iteration
-    gen_input_file_seq()
+    # gen_input_file_seq()
+    gen_input_file()
     print ""
 
     t = OPTIONS['tests']
@@ -177,7 +185,6 @@ def compare_outputs(tname, DBG=0):
         print "  Comparing %s and %s..." % (gold_out,cgra_out)
         print "  " + cmd
 
-    sys.stdout.flush()
     err = my_syscall(cmd)
     if err:
         print "  OOPS thatsa no good: '%s' failed" % tname
@@ -272,7 +279,6 @@ def gen_output_file_gold(tname, DBG=0):
 
     if VERBOSE:
         print "  gold-model output file '%s':" % filename
-        sys.stdout.flush()
         my_syscall('od -t u1 ' + filename + " | egrep -v '^.......$' | sed 's/^/  /'")
         print ""
 
@@ -287,7 +293,6 @@ def gen_output_file_cgra(tname, DBG=0):
 
     if VERBOSE:
         print "  Will use bsa file '%s.bsa' to generate '%s'" % (tname,cgra_out)
-    sys.stdout.flush()
     if DBG: my_syscall('(cd %s; ls -l run.csh)' % VERILATOR_DIR)
 
     # Calculate the appropriate delay e.g. '1,0' for PE ops or '9,0' for 9-deep lbuf.
@@ -299,14 +304,19 @@ def gen_output_file_cgra(tname, DBG=0):
     output = cwd + cgra_out
     logfile = cwd + "run_csh.log"
 
-    run_csh = './run.csh -v'
+    global GENERATED
+    # GENERATED=True
+    if not GENERATED: run_csh = './run.csh -v'
+    else:             run_csh = './run.csh -v -nobuild'
+    GENERATED=True
+        
     # echo "./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay"
     cmd = "%s -hackmem -config %s -input %s -output %s -delay %s"\
           % (run_csh, config, input, output, delay)
 
     DBG=0
-    if DBG: savelog = ''
-    else:   savelog = ' > ' + logfile + ' 2>&1'
+    if VERBOSE: savelog = ''
+    else:       savelog = ' > ' + logfile + ' 2>&1'
 
     if VERBOSE:
         # How to redo on error:
@@ -318,7 +328,6 @@ def gen_output_file_cgra(tname, DBG=0):
         print ""
 
     # (cd $v; ./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay ) || exit -1
-    sys.stdout.flush()
     # my_syscall('(cd %s; %s%s)' % (VERILATOR_DIR, cmd, savelog))
     my_syscall('cd %s; %s%s' % (VERILATOR_DIR, cmd, savelog))
     # if not VERBOSE: my_syscall('egrep ^run.csh %s' % logfile)
@@ -326,7 +335,6 @@ def gen_output_file_cgra(tname, DBG=0):
 
     if VERBOSE:
         print "  CGRA output file '%s':" % cgra_out
-        sys.stdout.flush()
         my_syscall('od -t u1 ' + cgra_out + " | egrep -v '^.......$' | sed 's/./  /'")
 
     return cgra_out
@@ -363,10 +371,23 @@ def is_mem(tname):
 
 
 # Generate an input file full of sequential 8-bit pixels {0,1,2,3,4,5,6,7,8,9}
-def gen_input_file_seq():
+def gen_input_file():
+    nvecs = OPTIONS['nvecs']
+    if OPTIONS['vectype'][0:3] == 'seq':
+        print "using input file of %d sequential 8-bit vectors" % OPTIONS['nvecs']
+        pixels =  gen_input_file_seq(nvecs)
+    elif OPTIONS['vectype'][0:4] == 'rand':
+        print "using input file of %d random 8-bit vectors" % OPTIONS['nvecs']
+        pixels =  gen_input_file_rand(nvecs)
+
+    # Save the pixels for later
+    global PIXELS
+    PIXELS = pixels
+
+
+def gen_input_file_seq(nvecs):
 
     DBG=0
-    nvecs = 10
     pixels = range(nvecs)
 
     if DBG>1: print pixels
@@ -378,12 +399,33 @@ def gen_input_file_seq():
         print "input file '%s':" % filename
         print_raw_file(filename)
 
-    # Save the pixels for later
-    global PIXELS
-    PIXELS = pixels
+    return pixels
+
+def gen_input_file_rand(nvecs):
+    import random
+
+    seed = random.randint(1000000,9999999)
+    print "seed=", seed
+    random.seed(seed)
+
+    DBG=0
+    pixels = random.sample(range(0,255), nvecs)
+
+    if DBG>1: print pixels
+    filename = 'test_in.raw'
+    write_pixels(filename, pixels)
+    if DBG>1: print ''
+
+    if VERBOSE:
+        print "input file '%s':" % filename
+        print_raw_file(filename)
+
+    return pixels
+
+
+
 
 def print_raw_file(filename, first_line_only = False):
-    sys.stdout.flush()
 
     if not first_line_only:
         # The 'egrep' filter removes blank lines from output
@@ -461,18 +503,20 @@ Examples:
     # cgra_filename = get_default_cgra_info_filename()
     while (len(args) > 0):
         if   (args[0] == '--help'): print usage; sys.exit(0);
-        elif (args[0] == '-v'):    VERBOSE = True
+        elif (args[0] == '-v'):
+            print "VERBOSE=True"
+            VERBOSE = True
         elif (args[0] == '--repeat'):
-            OPTIONS['repeat'] = args[1];
+            OPTIONS['repeat'] = args[1]
             args = args[1:];
         elif (args[0] == '--vectype'):
             OPTIONS['vectype'] = args[1];
             args = args[1:];
         elif (args[0] == '--nvecs'):
-            OPTIONS['nvecs'] = args[1];
+            OPTIONS['nvecs'] = int(args[1])
             args = args[1:];
         elif (args[0] == '--seed'):
-            OPTIONS['seed'] = args[1];
+            OPTIONS['seed'] = int(args[1])
             args = args[1:];
         else:
             OPTIONS['tests'] = args[0];
