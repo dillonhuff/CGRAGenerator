@@ -107,6 +107,7 @@ tile_id
   input [15:0] tile_id;
   input reset;
 
+  wire ___genesis_wire_`${bus_config}`_`${all_segments_for_all_tiles}`_`${gen_mem_for_busname}`_`${control_busname}`_`${ddepth}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${mem_tile_height}`;
 //; ##############################################
 //; #
 //; # Generate config enables

@@ -184,15 +184,15 @@
 //; }
 //; # Instantiate IO tiles on the right. IOs are vertically centered.
 //; if ($IO_count[0] > $cgra_grid_height - 4 ) {print STDOUT "ERROR: Too many IOs on the right. Quitting\n"; exit;}
-//; my $io_start_y = ($cgra_grid_height/2) - ($IO_count[0]/2);
+//; my $io_start_y = int(($cgra_grid_height/2) - ($IO_count[0]/2));
 //; my $w1 = $cgra_grid_width - 1;
 //; my $w16 = $cgra_grid_width - 2;
 //; for (my $h=$io_start_y; $h < ($IO_count[0]+$io_start_y); $h++) {
 //;   my $cgra_key = "${w1}_${h}";
 //;   $tile_grid{$cgra_key} = 'io1';
 //;   $tile_grid{"${cgra_key}_side"} = 2; 
-//;   $tile_grid{"${cgra_key}_count"} = ($h -$io_start_y); 
-//;   if ((($h-$io_start_y)%16)==0) {
+//;   $tile_grid{"${cgra_key}_count"} = ($h -$io_start_y);
+//;   if ((($h-$io_start_y)%16)==0 && ((($h-$io_start_y)+16)<=$IO_count[0])) {
 //;     $cgra_key = "${w16}_${h}";
 //;     $tile_grid{$cgra_key} = 'io16';
 //;     $tile_grid{"${cgra_key}_side"} = 2; 
@@ -201,7 +201,7 @@
 //; }
 //; # instantiate io tiles on the bottom. ios are horizontally centered.
 //; if ($IO_count[1] > $cgra_grid_width - 4 ) {print STDOUT "ERROR: Too many ios on the bottom. quitting\n"; exit;}
-//; my $io_start_x = ($cgra_grid_width/2) - ($IO_count[1]/2);
+//; my $io_start_x = int(($cgra_grid_width/2) - ($IO_count[1]/2));
 //; my $h1 = $cgra_grid_height - 1;
 //; my $h16 = $cgra_grid_height - 2;
 //; for (my $w=$io_start_x; $w < ($IO_count[1]+$io_start_x); $w++) {
@@ -209,7 +209,7 @@
 //;   $tile_grid{$cgra_key} = 'io1';
 //;   $tile_grid{"${cgra_key}_side"} = 3; 
 //;   $tile_grid{"${cgra_key}_count"} = ($w -$io_start_x);
-//;   if ((($w-$io_start_x)%16)==0) {
+//;   if ((($w-$io_start_x)%16)==0 && ((($w-$io_start_x)+16)<=$IO_count[1])) {
 //;     $cgra_key = "${w}_${h16}";
 //;     $tile_grid{$cgra_key} = 'io16';
 //;     $tile_grid{"${cgra_key}_side"} = 3; 
@@ -218,7 +218,7 @@
 //; } 
 //; # Instantiate IO tiles on the left. IOs are vertically centered.
 //; if ($IO_count[2] > $cgra_grid_height - 4 ) {print STDOUT "ERROR: Too many IOs on the left. Quitting\n"; exit;}
-//; my $io_start_y = ($cgra_grid_height/2) - ($IO_count[2]/2);
+//; my $io_start_y = int(($cgra_grid_height/2) - ($IO_count[2]/2));
 //; my $w1 = 0;
 //; my $w16 = 1;
 //; for (my $h=$io_start_y; $h < ($IO_count[2]+$io_start_y); $h++) {
@@ -226,7 +226,7 @@
 //;   $tile_grid{"${cgra_key}_side"} = 0; 
 //;   $tile_grid{"${cgra_key}_count"} = ($h -$io_start_y); 
 //;   $tile_grid{$cgra_key} = 'io1';
-//;   if ((($h-$io_start_y)%16)==0) {
+//;   if ((($h-$io_start_y)%16)==0 && ((($h-$io_start_y)+16)<=$IO_count[2])) {
 //;     $cgra_key = "${w16}_${h}";
 //;     $tile_grid{$cgra_key} = 'io16';
 //;     $tile_grid{"${cgra_key}_side"} = 0; 
@@ -235,7 +235,7 @@
 //; } 
 //; # Instantiate IO tiles on the top. IOs are horizontally centered.
 //; if ($IO_count[3] > $cgra_grid_width - 4 ) {print "ERROR: Too many IOs on the top. Quitting\n"; exit;}
-//; my $io_start_x = ($cgra_grid_width/2) - ($IO_count[3]/2);
+//; my $io_start_x = int(($cgra_grid_width/2) - ($IO_count[3]/2));
 //; my $h1 = 0;
 //; my $h16 = 1;
 //; for (my $w=$io_start_x; $w < ($IO_count[3]+$io_start_x); $w++) {
@@ -243,7 +243,7 @@
 //;   $tile_grid{"${cgra_key}_side"} = 1; 
 //;   $tile_grid{"${cgra_key}_count"} = ($w -$io_start_x); 
 //;   $tile_grid{$cgra_key} = 'io1';
-//;   if ((($w-$io_start_x)%16)==0) {
+//;   if ((($w-$io_start_x)%16)==0 && ((($w-$io_start_x)+16)<=$IO_count[3])) {
 //;     $cgra_key = "${w}_${h16}";
 //;     $tile_grid{$cgra_key} = 'io16';
 //;     $tile_grid{"${cgra_key}_side"} = 1; 

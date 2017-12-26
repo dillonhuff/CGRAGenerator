@@ -27,6 +27,8 @@ tile_id
   input [15:0] tile_id;
   /* verilator lint_on UNUSED */
 
+  wire ___genesis_wire_`${side}`_`${io_group}`;
+
   //; # Bits [31:24] are for switch box, [23:0] for connection box.
   //; # So we have to let the linter know (verilator directives below) or it complains:
   //; # %Warning-UNUSED: .../cb_unq1.v:73: Bits of signal are not used: config_addr[23:0]
@@ -64,7 +66,7 @@ endmodule
 //;print TILEINFO "        <io_group>$io_group</io_group>\n";
 //;print TILEINFO "        <direction in='0' out='1'>0</direction>\n";
 //;print TILEINFO "        <input>in_1BIT_S${side}_T0</input>\n";
-//;print TILEINFO "        <output>out_1BIT_S${side}_T0</input>\n";
+//;print TILEINFO "        <output>out_1BIT_S${side}_T0</output>\n";
 
 //;close TILEINFO;
 

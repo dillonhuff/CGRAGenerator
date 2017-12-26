@@ -5,6 +5,11 @@
 # setenv CGRA_GEN_ALL_REG 1
 
 # Genesis2.pl -parse -generate -top top -input\
+
+if [ ! -d genesis_verif ]; then
+  rm -rf genesis_verif
+fi
+
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../sb/sb.vp \
   ../cb/cb.vp \
@@ -26,3 +31,6 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../memory_tile/memory_tile.vp \
   ../memory_core/memory_core.vp \
   ../memory_core/mem.vp
+
+source clean_up_cgra_inputs.csh
+source remove_genesis_wires.csh

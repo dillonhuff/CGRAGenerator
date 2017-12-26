@@ -20,6 +20,8 @@ input  [`$width - 1`:0] f2p_in;
 output [`$width - 1`:0] f2p_out;
 input dummy;
 
+wire ___genesis_wire_`${side}`_`${width}`_`${io_group}`;
+
   assign p2f_out = p2f_in;
   assign f2p_out = f2p_in;
 endmodule
@@ -31,7 +33,7 @@ endmodule
 //;print TILEINFO "        <io_group>$io_group</io_group>\n";
 //;print TILEINFO "        <direction in='0' out='1'>0</direction>\n";
 //;print TILEINFO "        <input>in_16BIT_S${side}_T0</input>\n";
-//;print TILEINFO "        <output>out_16BIT_S${side}_T0</input>\n";
+//;print TILEINFO "        <output>out_16BIT_S${side}_T0</output>\n";
 
 //;close TILEINFO;
 
