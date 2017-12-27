@@ -11,6 +11,14 @@ decoder_path = mydir+"/../decoder"
 sys.path.insert(0, decoder_path)
 from lib import cgra_info
 
+# cgra_info.read_cgra_info('foo')
+# w = "T14_out_s5t1"
+# cgra=cgra_info.canon2cgra(w)
+# # print w, cgra
+# glob = cgra_info.canon2global(w)
+# print w, cgra, glob
+# 
+# exit()
 
 def bs_addr_sort(addr):
     '''Bitstream address looks like this: RRFFTTTT;
@@ -311,9 +319,10 @@ def bs_connection(tileno, line, DBG=0):
     cwt = cgra_info.connect_within_tile(tileno, Tlhs, Trhs, DBG-1)
     if not cwt:
         # Print useful connection hints
-        src_cgra = cgra_info.canon2cgra(TLhs)
+        src_cgra = cgra_info.canon2cgra(Tlhs)
         snk_cgra = cgra_info.canon2cgra(Trhs)
-        find_mux(tile, src_cgra, snk_cgra, DBG=1)
+        tile = cgra_info.get_tile(tileno)
+        cgra_info.find_mux(tile, src_cgra, snk_cgra, DBG=1)
         sys.exit(-1)
     (addr,data,ra,rd,comm,rcomm) = cwt
 
