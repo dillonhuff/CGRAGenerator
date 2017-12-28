@@ -28,6 +28,7 @@ sys.path.insert(0, PYPAT_DIR)
 import pe 
 
 BINARY_OPS=[
+    'abs',
     'add',
     'sub',
     'gte',
@@ -42,9 +43,10 @@ BINARY_OPS=[
     'xor',
     ]
 
-UNARY_OPS=[
-    'abs',
-]
+# # Silly rabbit...there's no unary ops
+# # UNARY_OPS=[     'abs', ]
+# UNARY_OPS=[]
+# 
 
 LBUF_LIST=[
     'lbuf09',
@@ -114,7 +116,7 @@ def do_one_round():
 
     t = OPTIONS['tests']
     # if t == 'all': tests = ['add','mul','lbuf09', 'lbuf10']
-    if t == 'all': tests = LBUF_LIST + BINARY_OPS + UNARY_OPS
+    if t == 'all': tests = LBUF_LIST + BINARY_OPS
 
     # Do the broken one FIRST
     # if t == 'all': tests = ['lbuf09', 'lbuf10', 'add', 'abs', 'eq','lte','gte'] + tests
@@ -139,8 +141,7 @@ def do_one_test(test, DBG=0):
     else:
         assert False, 'Could not find bsa file'
 
-    # Because 'abs' has delay zero, like our input file 'test_in.raw'
-    print_raw_file_abbrev('INPUT ', 'abs', 'test_in.raw')
+    print_raw_file_abbrev('INPUT ', 'nodelay', 'test_in.raw')
 
     gold_out = gen_output_file_gold(test, DBG=DBG)
     print_raw_file_abbrev('GOLD ', tname, gold_out)
@@ -218,14 +219,11 @@ GOLD['or']    = pe.isa.or_()
 GOLD['and']   = pe.isa.and_()
 GOLD['xor']   = pe.isa.xor()
 
-
-
-
 GOLD['lbuf09']   = (lambda a, b: [a,0])
 GOLD['lbuf10']   = (lambda a, b: [a,0])
 
 # Busted ops include, abs, mul, eq
-GOLD['abs']   = (lambda a: [abs(a),0])
+GOLD['abs']   = (lambda a, b: [abs(a),0])
 GOLD['mul']   = (lambda a, b: [a * b,0])
 
 # Spec says 'eq' result is same as 'add'
@@ -249,18 +247,20 @@ GOLD['lte']   = gold_lte
 def gen_pixels_binary(tname): 
     outpixels = []
     for i in range(len(PIXELS)-1):
-        (a,b) = (PIXELS[i], PIXELS[i+1])
+        # (a,b) = (PIXELS[i], PIXELS[i+1])
+        (b,a) = (PIXELS[i], PIXELS[i+1])
         p = GOLD[tname](a,b)[0] & 0xFF
         outpixels.append(p)
     return outpixels
 
-def gen_pixels_unary(tname): 
-    outpixels = []
-    for i in range(len(PIXELS)):
-        a = PIXELS[i]
-        p = GOLD[tname](a)[0] & 0xFF
-        outpixels.append(p)
-    return outpixels
+# Silly rabbit...there's no unary ops
+# def gen_pixels_unary(tname): 
+#     outpixels = []
+#     for i in range(len(PIXELS)):
+#         a = PIXELS[i]
+#         p = GOLD[tname](a)[0] & 0xFF
+#         outpixels.append(p)
+#     return outpixels
 
 
 def gen_output_file_gold(tname, DBG=0):
@@ -268,7 +268,6 @@ def gen_output_file_gold(tname, DBG=0):
     else:             gold_out =  'op_%s_gold_out.raw' % tname
 
     if   is_mem(tname):    outpixels = PIXELS
-    elif is_unary(tname):  outpixels = gen_pixels_unary(tname)
     elif is_binary(tname): outpixels = gen_pixels_binary(tname)
     else: assert False
     # print outpixels
@@ -328,10 +327,11 @@ def gen_output_file_cgra(tname, DBG=0):
         print ""
 
     # (cd $v; ./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay ) || exit -1
-    # my_syscall('(cd %s; %s%s)' % (VERILATOR_DIR, cmd, savelog))
-    my_syscall('cd %s; %s%s' % (VERILATOR_DIR, cmd, savelog))
+    bad_outcome = my_syscall('cd %s; %s%s' % (VERILATOR_DIR, cmd, savelog))
     # if not VERBOSE: my_syscall('egrep ^run.csh %s' % logfile)
     sys.stdout.flush()
+
+    if bad_outcome != 0: assert False, "Oops looks like run.csh failed"
 
     if VERBOSE:
         print "  CGRA output file '%s':" % cgra_out
@@ -343,22 +343,23 @@ def gen_output_file_cgra(tname, DBG=0):
 
 def find_delay(tname, DBG=0):
     # Calculate the appropriate delay e.g. '1,0' for PE ops or '9,0' for 9-deep lbuf.
-    DBG=0
-    if is_unary(tname):      delay = '0,0'
+    if tname == 'nodelay':   delay = '0,0'
     elif tname[0:2] == "op": delay = '1,0'
     elif tname[0:8] == 'mem_lbuf':
         # E.g. name might be 'mem_lbuf09'
         d = int(tname[8:])
         delay = '%d,%d' % (d,d)
         # delay = '%d,0' % (d)
+    else: assert False, 'What is this thing: "%s"' % tname
     if DBG: print "  delay should be " + delay
     return delay
 
 
-def is_unary(tname):
-    # Strip prefix e.g. 'op_abs' => 'abs'
-    tname = re.sub('op_', '', tname)
-    return tname in UNARY_OPS
+# # Silly rabbit...there's no unary ops
+# def is_unary(tname):
+#     # Strip prefix e.g. 'op_abs' => 'abs'
+#     tname = re.sub('op_', '', tname)
+#     return tname in UNARY_OPS
 
 def is_binary(tname):
     # Strip prefix e.g. 'op_abs' => 'abs'

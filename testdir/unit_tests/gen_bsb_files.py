@@ -79,19 +79,34 @@ MEM_TEMPLATE='''
 #   T0_pe_out -> T0_out_s0t1 -> self.out
 # '''
 
-# # OOPS with IO tiles included, first PE tile is...? tile 11?
-# # Replace OPNAME with name of operand e.g. 'add'
-# OP_TEMPLATE='''
-#   #DELAY 1,1
-#   #
-#   self.in -> T11_in_s2t0
-#   T11_in_s2t0 -> T11_op1
-#   T11_in_s2t0 -> T11_out_s1t0
-#   T11_out_s1t0 -> T11_op2 (r)
-#   T11_OPNAME(wire,reg)
-#   T11_pe_out -> T11_out_s0t1 -> self.out
-# '''
+# THIS ONE CRASHES!!
+# OOPS with IO tiles included, first PE tile is...? tile 11?
+# Replace OPNAME with name of operand e.g. 'add'
+# BAD reg op1 ba
+OP_TEMPLATE='''
+  #DELAY 1,1
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1 (r)
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2
+  T11_OPNAME(reg,wire)
+  T11_pe_out -> T11_out_s0t1 -> self.out
+'''
 
+# OOPS with IO tiles included, first PE tile is...? tile 11?
+# Replace OPNAME with name of operand e.g. 'add'
+# GOOD reg op2 ab
+OP_TEMPLATE='''
+  #DELAY 1,1
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2 (r)
+  T11_OPNAME(wire,reg)
+  T11_pe_out -> T11_out_s0t1 -> self.out
+'''
 
 # Input from PE tile 11, output to mem tile T14
 OP_TEMPLATE='''

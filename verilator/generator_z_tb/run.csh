@@ -3,8 +3,10 @@
 set VERBOSE
 
 # Build a tmp space for intermediate files
-# set tmpdir = deleteme
 set tmpdir = `mktemp -d /tmp/run.csh.XXX`
+# set tmpdir = deleteme;     /bin/rm -rf $tmpdir/* || echo already empty
+# set tmpdir = /tmp/run.csh; /bin/rm -rf $tmpdir/* || echo already empty
+
 if (! -e $tmpdir) then
   unset ERR
   mkdir $tmpdir || set ERR
@@ -521,6 +523,8 @@ echo "run.csh: Build the simulator..."
   echo
   echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
   echo "make $vtop -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
+  /bin/rm obj_dir/Vtop
+
   make \
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
     -j -C obj_dir/ -f $vtop.mk $vtop \
@@ -639,6 +643,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   set qf2         = (cat)
 
 
+  # FIXME note the '|| exit -1" below is USELESS
   if ($?VERBOSE) set echo
     obj_dir/$vtop \
       -config $config \
@@ -653,8 +658,10 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   unset echo >& /dev/null
   echo -n " TIME NOW: "; date
 
+  set echo
   unset FAIL
-  grep FAIL $tmpdir/run.log.$$ && set FAIL
+  grep FAIL   $tmpdir/run.log.$$ && set FAIL
+  grep %Error $tmpdir/run.log.$$ && set FAIL
 
 
   echo
