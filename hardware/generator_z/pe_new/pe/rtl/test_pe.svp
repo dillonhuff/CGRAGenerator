@@ -27,6 +27,8 @@
 //;
 //; my $en_ovfl = parameter(Name=>'en_ovfl', val=> 1, List=>[1, 0], doc=>'Enable overflow signals?');
 //;
+//; my $en_debug = parameter(Name=>'en_debug', val=> 1, List=>[1, 0], doc=>'Enable debuging registers?');
+//;
 //;
 //; my $lut_inps  = parameter(Name=>'lut_inps',
 //;                               Val=> 3, Min=>0, Step=>1, Max=>16,
@@ -102,7 +104,10 @@ module   `mname`  #(
 //; if($en_double & $mult_mode > 0) {
   output logic [2*DataWidth-1:0] mult_res,
 //;}
-  output logic                  res_p
+//; if($en_debug) {
+  output logic                   irq,
+//;}
+  output logic                   res_p
 );
 
 logic  [DataWidth-1:0]        op_a;
@@ -164,7 +169,7 @@ logic [DataWidth-1:0] op_b_val;
 //; if($use_acc) {
 
 logic en_acc;
-assign en_acc = op_code[10];
+assign en_acc = op_code[9];
 //; }
 
 //; if($use_cntr) {
@@ -287,7 +292,7 @@ assign op_d_p = bit0;//op_d_p_in;
 
 //; if ($use_flip){
 logic flip_inputs;
-assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'double' mode
+assign flip_inputs = op_code[8]; // WARNING:: 'Flip' is not supported for 'double' mode
 //;}
 
 //; if($en_ovfl) {
@@ -306,7 +311,7 @@ logic V;
 
 `$pe_comp->instantiate()`
 (
-  .op_code (op_code[8:0]),
+  .op_code (op_code[7:0]),
 
 //; if($use_flip) {
   .op_a     (flip_inputs ? op_b : op_a),
@@ -471,7 +476,7 @@ logic res_lut;
 //; 	 if($get_carry) {
   assign res_p_w = result_flag;
 //;	 } else {
-  assign res_p_w = op_code[8] ? res_lut : result_flag;//comp_res_p;
+  assign res_p_w = op_code[12] ? res_lut : result_flag;//comp_res_p;
 //;	 }
 
 
@@ -506,6 +511,45 @@ end
   assign res   = `$res_w`;
   assign res_p = res_p_w;
 //;}
+
+//; if($en_debug) {
+
+logic irq_data;
+logic irq_bit;
+
+//; my $debug_d = generate_base('test_debug_reg', 'test_debug_data');
+`$debug_d->mname()` #(.DataWidth(DataWidth)) `$debug_d->iname()`
+(
+  .cfg_clk   (clk),
+  .cfg_rst_n (rst_n),
+  .cfg_d     (cfg_d),
+  .cfg_en    (cfg_en && (cfg_a == 8'hE0)),
+
+  .data_in   (res),
+
+  .debug_irq (irq_data)
+);
+
+//; my $debug_b = clone($debug_d, 'test_debug_bit');
+`$debug_b->mname()` #(.DataWidth(1)) `$debug_b->iname()`
+(
+  .cfg_clk   (clk),
+  .cfg_rst_n (rst_n),
+  .cfg_d     (cfg_d),
+  .cfg_en    (cfg_en && (cfg_a == 8'hE1)),
+
+  .data_in   (res_p),
+
+  .debug_irq (irq_bit)
+);
+
+logic [1:0] irq_en;
+assign irq_en = op_code[11:10];
+
+assign irq = |({irq_data,irq_bit} & irq_en);
+
+//;}
+
 
 endmodule
 

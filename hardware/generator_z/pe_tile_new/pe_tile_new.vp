@@ -441,6 +441,7 @@ tile_id
   .`$port`(pe_out_`$port`),
 //; }
 //; my $count=0;
+   .irq(), // Assumes en_debug=1 in PE
 //; foreach my $port (@bit1_outputs) {
 //;   $count = $count + 1;
 //;   if ($count==(scalar @bit1_outputs)) {

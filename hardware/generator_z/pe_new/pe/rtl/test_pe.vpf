@@ -9,4 +9,4 @@
 ./test_opt_reg.svp
 ./test_simple_shift.svp
 ./test_shifter.svp
-
+./test_debug_reg.svp
