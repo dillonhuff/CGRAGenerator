@@ -23,6 +23,10 @@
 //;
 //; my $use_flip  = $self->parameter(name=>'use_flip', val=> 0, List=>[1, 0], doc=>'Add option to flip inputs?');
 //;
+//; my $use_acc  = $self->parameter(name=>'use_acc', val=> 0, List=>[1, 0], doc=>'Enable accumulation?');
+//;
+//; my $en_ovfl = parameter(Name=>'en_ovfl', val=> 1, List=>[1, 0], doc=>'Enable overflow signals?');
+//;
 //;
 //; my $lut_inps  = parameter(Name=>'lut_inps',
 //;                               Val=> 3, Min=>0, Step=>1, Max=>16,
@@ -157,15 +161,43 @@ assign nc_op_code = op_code;
 
 logic                 op_b_ld;
 logic [DataWidth-1:0] op_b_val;
+//; if($use_acc) {
+
+logic en_acc;
+assign en_acc = op_code[10];
+//; }
 
 //; if($use_cntr) {
   logic cntr_en;
-  logic [DataWidth-1:0] cntr_next;
+  //logic [DataWidth-1:0] cntr_next;
+//; }
 
-  assign op_b_ld  = (cfg_en && (cfg_a == 8'hF1)) | (clk_en & cntr_en);
+//;
+//;my $b_en_acc = '';
+//;my $b_acc_rst = '';
+//;
+//;if ($use_cntr) {
+//;  $b_en_acc = 'cntr_en';
+//;  $b_acc_rst = '(cntr_en & comp_res_p)';
+//;}
+//;
+//;if ($use_acc) {
+//;  if ($use_cntr) {
+//;    $b_en_acc  = $b_en_acc  . '|';
+//;    $b_acc_rst = $b_acc_rst . '|';
+//;  }
+//;
+//;  $b_en_acc  = $b_en_acc  . 'en_acc';
+//;  $b_acc_rst = $b_acc_rst . '(en_acc & op_d_p)';
+//;}
+//;
+
+
+//; if($use_cntr | $use_acc) {
+  assign op_b_ld  = (cfg_en && (cfg_a == 8'hF1)) | (clk_en & (`$b_en_acc`));
   assign op_b_val = cfg_en ?
                     cfg_d[DataWidth-1:0] :
-                    (comp_res_p ? {DataWidth{1'b0}}: cntr_next);
+                    (`$b_acc_rst` ? {DataWidth{1'b0}}: comp_res);
 
 //;} else {
   assign op_b_ld  = cfg_en && (cfg_a == 8'hF1);
@@ -258,13 +290,18 @@ logic flip_inputs;
 assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'double' mode
 //;}
 
+//; if($en_ovfl) {
+logic V;
+
+//;}
+
 
 //; my $pe_comp = generate('test_pe_comp', 'test_pe_comp', "use_bool"=>$use_bool, "use_add"=>$use_add,
 //;                         "use_cntr" => $use_cntr, "use_shift"=>$use_shift, "mult_mode"=>$mult_mode,
 //;                         "use_div" => $use_div, "is_msb"=>$is_msb, "en_double"=>$en_double,
 //;                         "use_relu" => $use_relu, "en_opt"=>$en_opt, "en_trick"=>$en_trick,
 //;                         "use_abs"=>$use_abs, "use_max_min"=>$use_max_min,
-//;                         "get_carry" => $get_carry,
+//;                         "get_carry" => $get_carry, "en_ovfl" => $en_ovfl,
 //;                         "debug"=>$debug);
 
 `$pe_comp->instantiate()`
@@ -313,31 +350,87 @@ assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'doubl
 
 //; if($use_cntr) {
   .cntr_en  (cntr_en),
-  .cntr_next(cntr_next),
+  //.cntr_next(cntr_next),
 //;}
   .res      (comp_res),
 //; if($en_double & $mult_mode > 0) {
   .mult_res (mult_res),
 //;}
+//; if($en_ovfl) {
+  .ovfl     (V),
+//;}
   .res_p    (comp_res_p)
 );
 
 logic result_flag;
+//; if($use_lut) {
+logic res_lut;
+//; }
 
 //; if($get_carry) {
     logic Z;
     logic N;
     logic C;
 
-    logic [3:0] flag_mask;
+//; 	  if(!$en_ovfl) {
+   logic V;
+   assign V = 1'b0;
+//;	    }
 
-    assign flag_mask = op_code[15:12];
+    logic [3:0] flag_sel;
+
+    assign flag_sel = op_code[15:12];
 
     assign C = carry_out[`$use_add -1`];
     assign Z = ~|comp_res;
     assign N = comp_res[DataWidth-1];
 
-    assign result_flag = |({Z,N, C, comp_res_p} & flag_mask);
+    localparam PE_FLAG_EQ = 4'h0;
+    localparam PE_FLAG_NE = 4'h1;
+    localparam PE_FLAG_CS = 4'h2;
+    localparam PE_FLAG_CC = 4'h3;
+    localparam PE_FLAG_MI = 4'h4;
+    localparam PE_FLAG_PL = 4'h5;
+    localparam PE_FLAG_VS = 4'h6;
+    localparam PE_FLAG_VC = 4'h7;
+    localparam PE_FLAG_HI = 4'h8;
+    localparam PE_FLAG_LS = 4'h9;
+    localparam PE_FLAG_GE = 4'hA;
+    localparam PE_FLAG_LT = 4'hB;
+    localparam PE_FLAG_GT = 4'hC;
+    localparam PE_FLAG_LE = 4'hD;
+//; if($use_lut) {
+    localparam PE_FLAG_LUT = 4'hE;
+//; }
+    localparam PE_FLAG_PE  = 4'hF;
+
+    always_comb begin
+        case (flag_sel)
+            PE_FLAG_EQ  : result_flag = Z;
+            PE_FLAG_NE  : result_flag = ~Z;
+            PE_FLAG_CS  : result_flag = C;
+            PE_FLAG_CC  : result_flag = ~C;
+            PE_FLAG_MI  : result_flag = N;
+            PE_FLAG_PL  : result_flag = ~N;
+            PE_FLAG_VS  : result_flag = V;
+            PE_FLAG_VC  : result_flag = ~V;
+            PE_FLAG_HI  : result_flag = C & ~Z;
+            PE_FLAG_LS  : result_flag = ~C | Z;
+            PE_FLAG_GE  : result_flag = (N == V);
+            PE_FLAG_LT  : result_flag = (N != V);
+            PE_FLAG_GT  : result_flag = ~Z & (N == V);
+            PE_FLAG_LE  : result_flag = Z | (N != V);
+//; if($use_lut) {
+            PE_FLAG_LUT : result_flag = res_lut;
+//; }
+            PE_FLAG_PE  : result_flag = comp_res_p;
+
+            default     : result_flag = comp_res_p;
+        endcase
+    end
+
+
+    //assign result_flag = |({Z,N, C, comp_res_p} & flag_mask);
 //; } else {
     assign result_flag = comp_res_p;
 //; }
@@ -346,7 +439,7 @@ logic result_flag;
 
 
 //; if($use_lut) {
-logic res_lut;
+//;#logic res_lut;
 
 //; my $lut           = generate_base('test_lut', 'test_lut', "lut_inps"=>$lut_inps);
 //; my $lut_extra_inp = $lut->get_param('lut_inps') > 2;
@@ -375,11 +468,28 @@ logic res_lut;
   .res      (res_lut)
 );
 
+//; 	 if($get_carry) {
+  assign res_p_w = result_flag;
+//;	 } else {
   assign res_p_w = op_code[8] ? res_lut : result_flag;//comp_res_p;
+//;	 }
+
+
 //;} else {
 
   assign res_p_w = result_flag;//comp_res_p;
 //;}
+
+//; my $res_w = 'comp_res';
+//;
+//; if($use_cntr & $use_acc) {
+//;  $res_w = '(cntr_en | en_acc) ? op_b : comp_res';
+//; } elsif($use_cntr) {
+//;  $res_w = '(cntr_en) ? op_b : comp_res';
+//; } elsif($use_cntr) {
+//;  $res_w = '(en_acc) ? op_b : comp_res';
+//; }
+//;
 
 
 //; if($reg_out) {
@@ -388,12 +498,12 @@ always_ff @(posedge clk or negedge rst_n) begin
     res   <= 16'h0;
     res_p <= 1'b0;
   end else begin
-    res   <= comp_res;
+    res   <= `$res_w`;
     res_p <= res_p_w;
   end
 end
 //; } else {
-  assign res   = comp_res;
+  assign res   = `$res_w`;
   assign res_p = res_p_w;
 //;}
 
