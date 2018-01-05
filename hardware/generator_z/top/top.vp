@@ -1,3 +1,4 @@
+//; use POSIX;
 ///////////////////////////////////////////////////////////////////
 // CGRA TOP generator 
 //
@@ -9,9 +10,14 @@
 //;   $bus_config = "BUS16:16b#1_1:1_1:1_1:1_1:1_1 BUS1:1b#1_1:1_1:1_1:1_1:1_1";
 //; }
 //; my $all_segments_for_all_tiles = 1;
+//; # specify the number of global signals available for each pe/mem tile
+//; my $global_signal_count = 4;
 //; my $sides = 4;
 //; # for cb
-//; my $cb_connections = "1111111111";
+//; # IMP: ensure cb_connections length is equal to (num of tracks defined in bus_config)*2 + num of global signals
+//; #      eg: for 5 wires and 4 global signals, set cb_connections = "11111111111111" i.e. 5*2 + 4 = 14
+//; #      '1' bits to enable muxing of all wires passing through the CB.
+//; my $cb_connections = "11111111111111";
 //; # for sb
 //; my $sb_fs = "10000#10000#10000";
 //; #
@@ -38,7 +44,8 @@
 //;       is_bidi => 0,
 //;       bus_config => $bus_config,
 //;       cb_connections => $cb_connections,
-//;       has_constant => 1,
+//;       global_signal_count => $global_signal_count,
+//;       has_constant => 0,
 //;       tile_height => 1,
 //;       tile_width => 1,
 //;       reg_inputs => 1,
@@ -64,31 +71,23 @@
 //;       tile_width => 1,
 //;       bus_config => $bus_config,
 //;       cb_connections => $cb_connections,
+//;       global_signal_count => $global_signal_count,
 //;       sb_fs => $sb_fs
 //; };
 //; $tile_config->{ 'io1' } = {
 //;       type => 'io1bit',
 //;       tile_height => 1,
 //;       tile_width => 1,
-//;       bus_config => $bus_config,
-//;       cb_connections => $cb_connections,
-//;       sb_fs => $sb_fs
 //; };
 //; $tile_config->{ 'io16' } = {
 //;       type => 'io16bit',
 //;       tile_height => 1,
 //;       tile_width => 1,
-//;       bus_config => $bus_config,
-//;       cb_connections => $cb_connections,
-//;       sb_fs => $sb_fs
 //; };
 //; $tile_config->{ 'empty' } = {
 //;       type => 'empty',
 //;       tile_height => 1,
 //;       tile_width => 1,
-//;       bus_config => $bus_config,
-//;       cb_connections => $cb_connections,
-//;       sb_fs => $sb_fs
 //; };
 //; # Specify, in form of a AxB grid, the basic tile pattern that repeats. Each
 //; # grid node represents a unit tile (1x1) on the CGRA fabric. Assign a tile
@@ -100,7 +99,7 @@
 //; # not include IO tiles in the basic block.
 //; #
 //; my $basic_block  = "pe pe pe mem\n";
-//; $basic_block .= "pe pe pe X  ";
+//; $basic_block    .= "pe pe pe X  ";
 //; #
 //; # Number of times the basic block repeats in the horizontal direction.
 //; #
@@ -253,7 +252,7 @@
 //; #####################################################
 //; #Print cgra grid as comments in the verilog file
 //; #####################################################
-//; my $tile_count=0;
+//; my $tile_count=2;
 //; for (my $h=0; $h<$cgra_grid_height; $h++) {
 //;   print "//";
 //;   for (my $w=0; $w<$cgra_grid_width; $w++) {
@@ -262,6 +261,7 @@
 //;     my $tile_count_hex = sprintf("0x%X", $tile_count);
 //;     if (($tile_type ne "X") && ($tile_type ne "empty")) {
 //;       printf "%-12s", "${tile_type}_${tile_count_hex}";
+//;       $tile_grid{"${key}_addr"} = $tile_count;
 //;       $tile_count+=1;
 //;     } else {
 //;       printf "%-12s", ".......";
@@ -269,13 +269,13 @@
 //;   }
 //;   print "\n";
 //; }
-
+//; my $core_tile_addr = $tile_count;
 //; #####################################################
 //; #Create verilog
 //; #####################################################
 module top(
-clk,
-reset,
+clk_in,
+reset_in,
 //; for (my $side=0; $side<4; $side++) {
 //;   for (my $count=0; $count< $IO_count[$side]; $count++) {
         pad_S`$side`_T`$count`,
@@ -294,17 +294,23 @@ reset,
 // VERILATOR_PORT7
 // VERILATOR_PORT8
 // -------------------------------------
-config_addr,
-config_data
+config_addr_in,
+config_data_in,
+tdi,
+tdo,
+tms
 );
 
 //;open(INFO, ">cgra_info.txt") or die "Couldn't open file cgra_info.txt, $!";
 //;print INFO "<CGRA>\n";
 
-  input clk;
-  input reset;
-  input [31:0] config_addr;
-  input [31:0] config_data;
+  input clk_in;
+  input reset_in;
+  input [31:0] config_addr_in;
+  input [31:0] config_data_in;
+  input tdi;
+  input tms;
+  output tdo;
    // --------------------------------------
    // PLACEHOLDERS FOR VERILATOR INPUT WIRES
    // --------------------------------------
@@ -331,6 +337,26 @@ config_data
 
 //; ###################################################################################
 
+wire [31:0] config_addr;
+wire [31:0] config_data;
+wire clk;
+wire reset;
+
+//; my $global_controller_obj = generate("global_controller", "global_controller", dummy_value => 0);
+    `$global_controller_obj->instantiate()` 
+    (
+      .clk_in(clk_in),
+      .clk_out(clk),
+      .reset_in(reset_in),
+      .reset_out(reset),
+      .config_addr_in(config_addr_in),
+      .config_addr_out(config_addr),
+      .config_data_in(config_data_in),
+      .config_data_out(config_data),
+      .tdi(tdi),
+      .tdo(tdo),
+      .tms(tms)
+    );
 
 // FIXME Note there are LOTS of unused wires being created below!
 // FIXME I assume they will be hooked up to something eventually
@@ -357,20 +383,26 @@ config_data
 //;         }
 //;       }
 //;     }
-//;     if ($tile_config->{ $tile_type }{ 'type' } eq "memory_tile") {
+//;     if ($tile_type eq "mem") {
 //;       my $data_bus = $tile_config->{ $tile_type }{ 'gen_mem_for_busname' };
 //;       my $bus_width = $bus_width_hash { $data_bus };
     wire [`$bus_width-1`:0] mem_chain_`$h`_`$w`;
     wire  mem_chain_valid_`$h`_`$w`;
 //;     }
-
+//;     if (($tile_type eq "mem") || ($tile_type eq "pe")) {
+//;       for (my $i=0; $i<$global_signal_count; $i++) {
+//;         if ((${w}%2==0) && (${h}%2==0)) {
+      wire global_wire_h2l_1_`${i}`_`(int(floor((${w}-2)/2))+2)`_`(int(floor((${h}-2)/2))+2)`;
+//;         }
+//;       }
+    wire global_wire_l2h_0_`${w}`_`${h}`;
+//;     }
 //;   }
 //; }
 /* verilator lint_on UNUSED */
 
 
 //; my $tile_hash_ref;
-//; my $tile_count=0;
 //#####################################################
 //#Instantiate components
 //#####################################################
@@ -378,6 +410,7 @@ config_data
 //;   for (my $w=0; $w<$cgra_grid_width; $w++) {
 //;     my $key = "${w}_${h}";
 //;     my $tile_type = $tile_grid{$key};
+//;     my $tile_addr = $tile_grid{ "${key}_addr" };
 //;     my $io_side = -1;
 //;     my $io_count = -1;
 //;     my $io_group = -1;
@@ -388,7 +421,8 @@ config_data
 //;       $io_group = int($io_count/16);
 //;     }
 //;     my $options = "";
-//;     my $tile_id = sprintf("%s_0x%X", $tile_type, $tile_count);
+//;     my $tile_addr_hex = sprintf("%X", $tile_addr);
+//;     my $tile_id = sprintf("%s_0x%s", $tile_type, $tile_addr_hex);
 //;#Add PE specific parameters from the tile config to the generate command
 //;#All paramters in the tile_config hash except type, tile_height/width are passed to the generator
 //;     while( my ($f, $v) = each $tile_config->{ $tile_type } ) {
@@ -461,7 +495,7 @@ config_data
 //;    if ($tile_type eq "mem") {
     `$inst_obj->instantiate()` 
     (
-      .clk(clk),
+      .clk_in(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
@@ -519,12 +553,16 @@ config_data
 //;   }
       .chain_out(mem_chain_`$h`_`$w`),
       .chain_valid_out(mem_chain_valid_`$h`_`$w`),
-      .tile_id(16'd`$tile_count`)
+//;   for (my $i=0; $i<$global_signal_count; $i++) {
+      .gin_`${i}`(global_wire_h2l_1_`${i}`_`(int(floor((${w}-2)/2))+2)`_`(int(floor((${h}-2)/2))+2)`),
+//;   }
+      .gout(global_wire_l2h_0_`${w}`_`${h}`),
+      .tile_id(16'h`$tile_addr_hex`)
     );
 //;    } elsif ($tile_type eq "pe") {
     `$inst_obj->instantiate()` 
     (
-      .clk(clk),
+      .clk_in(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
@@ -551,7 +589,11 @@ config_data
 //;         }
 //;       }
 //;     }
-      .tile_id(16'd`$tile_count`)
+//;   for (my $i=0; $i<$global_signal_count; $i++) {
+      .gin_`${i}`(global_wire_h2l_1_`${i}`_`(int(floor((${w}-2)/2))+2)`_`(int(floor((${h}-2)/2))+2)`),
+//;   }
+      .gout(global_wire_l2h_0_`${w}`_`${h}`),
+      .tile_id(16'h`$tile_addr_hex`)
     );
 //;    } elsif ($tile_type eq "empty") {
 //;    } elsif ($tile_type eq "io1") {
@@ -578,7 +620,7 @@ config_data
       .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T0),
       .f2p(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T0),
       .pad(pad_S`$opposite_side`_T`$io_count`),
-      .tile_id(16'd`$tile_count`)
+      .tile_id(16'h`$tile_addr_hex`)
     );
 //;    } elsif ($tile_type eq "io16") {
     `$inst_obj->instantiate()` 
@@ -632,11 +674,11 @@ config_data
     );
 //;    }
 //;   if ($tile_type eq "io1") {
-//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='$tile_count' row='$h' col='$w' tracks='BUS1:1 BUS16:0'";
+//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='BUS1:1 BUS16:0'";
 //;   } elsif ($tile_type eq "io16") {
-//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='$tile_count' row='$h' col='$w' tracks='BUS1:0 BUS16:1'";
+//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='BUS1:0 BUS16:1'";
 //;   } else {
-//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='$tile_count' row='$h' col='$w' tracks='";
+//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='";
 //;     foreach my $bus (sort keys %bus_num_tracks_hash) {
 //;       print INFO "$bus:$bus_num_tracks_hash{$bus} ";
 //;     }
@@ -650,10 +692,118 @@ config_data
 //;     close INP;
 //;   }
 //;   print INFO "  </tile>\n";
-//;   if ($tile_type ne "empty") {$tile_count+=1;}
 //;   }
 //; }
 
-//;print INFO "</CGRA>\n";
-//;close INFO;
+//; #####################################################
+//; # Create global wire merge and distribute structure
+//; #####################################################
+//; my $obj = generate("global_signal_tile", "gst", global_signal_count=>$global_signal_count);
+//; my %gst_hash_new;
+//; my %gst_hash_old = %tile_grid;  
+//; my $incr=1;
+//; my $height=$cgra_grid_height;
+//; my $width=$cgra_grid_width;
+//; my $new_tile_addr = $core_tile_addr;
+//; my $last_tile_addr = 0;
+//; ####### tile ordering for connecting global signal tiles
+//; # 0   1
+//; # 3   2
+//; #######
+//; while (1) {
+//; ####### 
+//; ####### instantiate wires for each gst level 
+//; ####### 
+//;   my %wire_hash = ();
+//;   my $next_h=2;
+//;   for (my $h=2; $h<($height/$incr); $h+=2) {
+//;     my $next_w=2;
+//;     for (my $w=2; $w<($width/$incr); $w+=2) {
+//;       for (my $i=0; $i<4; $i++) {
+//;         my $key = "global_wire_h2l_".($incr*2)."_${i}_".(int(floor((${next_w}-2)/2))+2)."_".(int(floor((${next_h}-2)/2))+2);
+//;         $wire_hash{$key} = 1;
+//;       } 
+//;       my $key = "global_wire_l2h_${incr}_${next_w}_${next_h}";
+//;       $wire_hash{$key} = 1;
+//;       $next_w++;
+//;     }
+//;     $next_h++;
+//;   }
+//;   foreach my $w (keys(%wire_hash)) {
+//;     if ($incr!=1) {
+    wire `$w`;
+//;     }
+//;   }
+//; ####### 
+//; ####### instantiate all tiles for a gst level 
+//; ####### 
+//;   my $next_h=2;
+//;   for (my $h=2; $h<($height/$incr); $h+=2) {
+//;     my $next_w=2;
+//;     for (my $w=2; $w<($width/$incr); $w+=2) {
+//;       my @keys;
+//;       $keys[0] = (${w}+0)."_".(${h}+0);
+//;       $keys[1] = (${w}+1)."_".(${h}+0);
+//;       $keys[2] = (${w}+1)."_".(${h}+1);
+//;       $keys[3] = (${w}+0)."_".(${h}+1);
+//;       my $found=0;
+//;       my $new_key = "${next_w}_${next_h}";
+//;       $gst_hash_new{ ${new_key} } = "empty";
+//;       for (my $i=0; $i<4; $i++) {
+//;         my $key = $keys[$i];
+//;         my $child_type = $gst_hash_old{ $key };
+//;         if ($child_type eq "mem" || $child_type eq "pe" || $child_type eq "gst") {
+//;           $found = 1;
+//;         }
+//;       }
+//;       if ($found==1) {
+//;         $gst_hash_new{ ${new_key} } = "gst";
+//;         $gst_hash_new{ "${new_key}_addr" } = ${new_tile_addr};
+//;         my $new_tile_addr_hex = sprintf("%X",$new_tile_addr);
+//;         print INFO "  <tile type='gst' tile_addr='0x$new_tile_addr_hex'>\n";
+//;         print INFO "    <controlled_tiles>\n";
+//;         my $inst_obj = clone($obj, "gst_0x${new_tile_addr_hex}");
+    `$inst_obj->instantiate()` 
+    (
+      .clk(clk),
+      .reset(reset),
+      .config_addr(config_addr),
+      .config_data(config_data),
+      .tile_id(16'h`$new_tile_addr_hex`),
+//;         for (my $i=0; $i<4; $i++) {
+//;           my $child_key = $keys[$i];
+//;           my $child_type = $gst_hash_old{ $child_key };
+//;           my $child_addr = $gst_hash_old{ "${child_key}_addr" };
+//;           my $child_addr_hex = sprintf("%X",$child_addr);
+//;           if ($child_type eq "mem" || $child_type eq "pe" || $child_type eq "gst") {
+      .gout_l_`$i`(global_wire_h2l_`$incr`_`$i`_`$new_key`), 
+      .gin_u_`$i`(global_wire_h2l_`($incr*2)`_`$i`_`(int(floor((${next_w}-2)/2))+2)`_`(int(floor((${next_h}-2)/2))+2)`), 
+      .gin_l_`$i`(global_wire_l2h_`(floor($incr/2))`_`$child_key`), 
+//;             print INFO "      <tile>0x${child_addr_hex}</tile>\n";
+//;           } else {
+      .gout_l_`$i`(), 
+      .gin_u_`$i`(1'b0), 
+      .gin_l_`$i`(1'b0), 
+//;           }
+//;         }
+      .gout_u(global_wire_l2h_`$incr`_`$new_key`)
+//;         $new_tile_addr++;
+//;         print INFO "    </controlled_tiles>\n";
+//;         print INFO "  </tile>\n";
+    );
+//;       }
+//;       $next_w++;
+//;     }
+//;     $next_h++;
+//;   }
+//;   foreach my $key (keys %gst_hash_new) {
+//;   }
+//;   %gst_hash_old = %gst_hash_new;
+//;   print INFO "####################GST level: $incr #################\n";
+//;   if (($new_tile_addr - $last_tile_addr)==0 || ($incr >= 1024)) {last;}
+//;   $last_tile_addr = $new_tile_addr;
+//;   $incr*=2;
+//; }
+//; print INFO "</CGRA>\n";
+//; close INFO;
 endmodule

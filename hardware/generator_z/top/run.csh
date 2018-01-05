@@ -28,9 +28,12 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../empty/empty.vp \
   ../io1bit/io1bit.vp \
   ../io16bit/io16bit.vp \
+  ../global_signal_tile/global_signal_tile.vp \
   ../memory_tile/memory_tile.vp \
   ../memory_core/memory_core.vp \
-  ../memory_core/mem.vp
+  ../memory_core/mem.vp \
+  ../global_controller/global_controller.vp \
+  ../jtag/jtag.vp
 
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh

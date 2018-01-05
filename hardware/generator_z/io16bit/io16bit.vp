@@ -11,14 +11,12 @@ p2f_in,
 p2f_out,
 f2p_in,
 f2p_out,
-dummy
 );
 
 input  [`$width - 1`:0] p2f_in;
 output [`$width - 1`:0] p2f_out;
 input  [`$width - 1`:0] f2p_in;
 output [`$width - 1`:0] f2p_out;
-input dummy;
 
 wire ___genesis_wire_`${side}`_`${width}`_`${io_group}`;
 

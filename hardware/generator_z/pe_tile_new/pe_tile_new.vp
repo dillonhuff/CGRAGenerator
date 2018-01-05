@@ -8,6 +8,7 @@
 //; #global
 //; my $bus_config = parameter(Name=>'bus_config', val=> "BUS16:16b#4_2:2_4:1_16:1_8:1_4 BUS1:1b#4_2:2_4:1_16:1_8:1_4", doc=>'buses used at global level.');
 //; my $all_segments_for_all_tiles =  parameter(Name=>'all_segments_for_all_tiles', val=> "1", doc=>'stagger or overlap segments');
+//; my $global_signal_count = parameter(Name=>'global_signal_count', val=> "4", doc=>'number of global signals supported');
 //; # for sb
 //; my $sides = parameter(Name=>'sides', val=> 4, doc=>'number of edges for a SB'); 
 //; my $feedthrough_outputs = parameter(Name=>'feedthrough_outputs', val=> "11000", doc=>'binary vector for feedthrough output config. Affects all sides. MSB corresponds to output 0 eg: 00000010 means output 7 is feedthrough. Length in bits = num_tracks.');
@@ -76,10 +77,10 @@
 //; my $tile_info_hash;
 //; my $rename_hash;
 module `mname` (
-clk,
+clk_in,
 config_addr,
 config_data,
-//;   for my $bus (keys %bus_width_hash) {
+//;   for my $bus (sort keys %bus_width_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     for(my $i=0; $i<$sides; $i++) {
 //;       for(my $j=0; $j<$num_tracks; $j++) {
@@ -88,15 +89,19 @@ in_`$bus`_S`$i`_T`$j`,
 //;      }
 //;     }
 //;   }
+//;   for (my $i=0; $i<$global_signal_count; $i++) {
+gin_`${i}`,
+//;   }
+gout,
 reset,
 tile_id
 );
 //; my $config_bits_used = 0;
-  input clk;
+  input clk_in;
   input [31:0] config_addr;
   input [31:0] config_data;
 
-//;   for my $bus (keys %bus_num_tracks_hash) {
+//;   for my $bus (sort keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     my $bus_width = $bus_width_hash { $bus };
 //;     for(my $i=0; $i<$sides; $i++) {
@@ -106,11 +111,15 @@ tile_id
 //;      }
 //;     }
 //;   }
-
+//;   for (my $i=0; $i<$global_signal_count; $i++) {
+  input gin_`${i}`;
+//;   }
+  output gout;
   input [15:0] tile_id;
   input reset;
 
-  wire ___genesis_wire_`${bus_config}`_`${all_segments_for_all_tiles}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${has_constant}`_`${reg_inputs}`_`${reg_out}`_`${use_add}`_`${use_cntr}`_`${use_bool}`_`${use_shift}`_`${mult_mode}`_`${use_div}`_`${is_msb}`_`${en_double}`_`${lut_inps}`;
+  wire ___genesis_wire_`${global_signal_count}`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${has_constant}`_`${reg_inputs}`_`${reg_out}`_`${use_add}`_`${use_cntr}`_`${use_bool}`_`${use_shift}`_`${mult_mode}`_`${use_div}`_`${is_msb}`_`${en_double}`_`${lut_inps}`;
+  wire clk;
 //; #############################################################
 //; # Generate PE enables
 //; #############################################################
@@ -160,6 +169,7 @@ tile_id
 //; # Generate CBs and corresponding config enables
 //; #############################################################
 //; my @pe_inputs = ("BUS16#op_a_in","BUS16#op_b_in","BUS1#op_d_p_in","BUS1#op_e_p_in","BUS1#op_f_p_in");
+//; my @non_pe_inputs = ("BUS1#cg_en");
 //; if ($en_double & $use_shift) {
 //;   push @pe_inputs, "BUS16#op_a_shift";
 //; }
@@ -182,10 +192,11 @@ tile_id
 //;   }
 //;   push @pe_inputs,  "BUS16#div_ci";
 //; }
-//; my $cb_wide = generate('cb', 'cbwide_base', width=>$wide_bus_width, num_tracks=>$bus_num_tracks_hash{'BUS16'}, has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
-//; my $cb_1b = generate('cb', 'cb1b_base', width=>1, num_tracks=>$bus_num_tracks_hash{'BUS1'}, has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
 //; my $num_tracks_wide = $bus_num_tracks_hash{'BUS16'};
 //; my $num_tracks_1b = $bus_num_tracks_hash{'BUS1'};
+//; my $cb_wide = generate('cb', 'cbwide_base', width=>$wide_bus_width, num_tracks=>($num_tracks_wide*2), has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
+//; my $cb_1b = generate('cb', 'cb1b_base', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
+//; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>1, feedthrough_outputs=>$cb_connections, default_value=>'1');
 //; my @cb_connections_arr = split('',$cb_connections);
 //; my $input_count=0;
 //; my $num_tracks;
@@ -193,7 +204,7 @@ tile_id
 //;
 //; #######
 //;
-//;foreach my $pe_input (@pe_inputs) {
+//;foreach my $pe_input (@pe_inputs,@non_pe_inputs) {
 //; ##
 //; ## Generate config enables for the input CB
 //; ##
@@ -228,6 +239,9 @@ tile_id
 //; if ($pe_input_bus eq "BUS16") {
 //;   $cb = clone($cb_wide,'cb_'.$pe_input_name);
 //;    $num_tracks=$num_tracks_wide;
+//; } elsif ($pe_input_name eq "cg_en") {
+//;   $cb = clone($cb_cg,'cb_'.$pe_input_name);
+//;   $num_tracks=$num_tracks_1b;
 //; } else {
 //;   $cb = clone($cb_1b,'cb_'.$pe_input_name);
 //;   $num_tracks=$num_tracks_1b;
@@ -260,7 +274,13 @@ tile_id
 //;         $rename_hash->{ 'cb_'.$pe_input_name }{"in_${k}"} = "${dirn}_BUS1_S${xside}_T${track}";
 //;       }
 //;     }
-//;   }    
+//;   }
+//;   if ($pe_input_bus eq "BUS1") {
+//;     for (my $i=0; $i<$global_signal_count; $i++, $k++) {
+    .in_`$k`(gin_`${i}`),
+//;       $rename_hash->{ 'cb_'.$pe_input_name }{"in_${k}"} = "gin_${i}";
+//;     }
+//;   }
     .config_addr(config_addr),
     .config_data(config_data),
     .config_en(config_en_cb_`$pe_input_name`)
@@ -406,6 +426,53 @@ tile_id
 //; $tile_info_hash->{ 'sb_1bit' }{'bus'} = 'BUS1';
 //; $tile_info_hash->{ 'sb_1bit' }{'mname'} = $sb_1b->mname();
 
+//; #####################################
+//; ## global out signal
+//; #####################################
+//; 
+//;  $intra_tile_addr+=1;
+//;  my $gout_output_count = $output_count;
+//;  my $number_of_gout_select_bits_needed = int(ceil(log($gout_output_count)/log(2)));
+//; 
+//;   $tile_info_hash->{ 'gout' } = {
+//;     address => $intra_tile_addr,
+//;     mux_map => ""
+//;   };
+//; if ($number_of_gout_select_bits_needed > 0) {  
+  reg [`$number_of_gout_select_bits_needed - 1`:0] gout_sel;
+  always @(*) begin
+    if (reset) begin
+       gout_sel = `$number_of_gout_select_bits_needed`'d0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+         gout_sel  = config_data[`$number_of_gout_select_bits_needed - 1`:0];
+       end
+    end
+  end
+//;
+//;   my $count = 0;
+  always @(*) begin
+    case (gout_sel)
+//;    foreach my $pe_output (@bit1_outputs) {
+//;      if ($count==0) {
+      default: gout = pe_out_`${pe_output}`;
+//;      }
+      `$number_of_gout_select_bits_needed`'d`$count`: gout = pe_out_`${pe_output}`;
+//;      my $str = "      <src sel=${count}>pe_out_${pe_output}</src>\n";
+//;      $tile_info_hash->{ 'gout' }{ 'mux_map' } .= $str;
+//;      $count = $count + 1;
+//;    }
+    endcase
+  end
+//;  } else {
+  assign gout = pe_out_`$bit1_outputs[0]`;
+//;      my $str = "      <src sel=0>pe_out_$bit1_outputs[0]</src>\n";
+//;      $tile_info_hash->{ 'gout' }{ 'mux_map' } .= $str;
+//;  }
+//; #####################################
+//; ## clock_gating
+//; #####################################
+  assign clk = clk_in & cg_en;
 //; #############################################################
 //; # Generate PE
 //; #############################################################
@@ -504,7 +571,6 @@ tile_id
 //;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
 //;    while (<INP>) {
 //;      my $line = $_;
-//;      # while ( my ($find, $replace) = each(%$rename_hash->{$feature}) ) { # ref use DEPRECATED
 //;      while ( my ($find, $replace) = each($rename_hash->{$feature}) ) {
 //;#         print TILEINFO "$find###$replace###$line\n";
 //;         $line=~s/>$find</>$replace</g;
@@ -522,7 +588,6 @@ tile_id
 //;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
 //;    while (<INP>) {
 //;      my $line = $_;
-//;      # while ( my ($find, $replace) = each(%$rename_hash->{$feature}) ) { # ref use DEPRECATED
 //;      while ( my ($find, $replace) = each($rename_hash->{$feature}) ) {
 //;#         print TILEINFO "$find###$replace###$line\n";
 //;         $line=~s/>$find</>$replace</g;
@@ -533,6 +598,19 @@ tile_id
 //;    close INP;
 //;    print TILEINFO "    </sb>\n"
 //;  }
+//;################### Global signal out
+//;  if ($feature=~m/gout/) {
+//;    print TILEINFO "    <gout feature_address='$value->{'address'}'>\n";
+//;    foreach my $param_name (sort keys %$value) {
+//;      my $param_value = $value->{$param_name};
+//;      if ($param_name!~m/address/) {
+//;        print TILEINFO "$param_value";
+//;      }
+//;    }
+//;    print TILEINFO "    </gout>\n"
+//;  }
+//;
+//; #End of TILEINFO loop
 //;}
 //;close TILEINFO;
 endmodule

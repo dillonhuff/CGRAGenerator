@@ -1,0 +1,69 @@
+//; use POSIX;
+//; my $global_signal_count = parameter(Name=>'global_signal_count', val=> "4", doc=>'number of global signals supported');
+
+module `mname` (
+//;   for (my $i=0; $i<$global_signal_count; $i++) {
+gin_l_`${i}`,
+gin_u_`${i}`,
+gout_l_`${i}`,
+//;   }
+gout_u,
+clk,
+reset,
+config_addr,
+config_data,
+tile_id
+);
+//;   for (my $i=0; $i<$global_signal_count; $i++) {
+  input gin_l_`${i}`;
+  input gin_u_`${i}`;
+//;   }
+//;   for (my $i=0; $i<$global_signal_count; $i++) {
+  output reg gout_l_`${i}`;
+//;   }
+  output reg gout_u;
+  input  clk;
+  input  reset;
+  input [31:0] config_addr;
+  input [31:0] config_data;
+  input [15:0] tile_id;
+
+wire ___genesis_wire_`${global_signal_count}`;
+
+//; my $mux_sel_bit_count = int(ceil(log($global_signal_count)/log(2)));
+//; # The output going to the higher level global_signal_tile muxes 
+//; # incoming signals from lower level (#sel bits = mux_sel_bit_count)
+//; # Each output going to the lower level global_signal_tile muxes the 
+//; # input from the higher level and the corresponding input from the lower 
+//; # level (#sel bits = global_signal_count)
+//; my $config_bit_count = $global_signal_count+$mux_sel_bit_count;
+  reg [`$config_bit_count-1`:0] config_reg;
+  always @(posedge clk) begin
+    if (reset==1'b1) begin
+      config_reg <= {`$global_signal_count`'d0,`$mux_sel_bit_count`'d0};
+    end else begin
+        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd0)&&(config_addr[31:24]==8'd0)) begin
+          config_reg <= config_data[`$config_bit_count-1`:0];
+        end
+    end
+  end
+
+  always @(*) begin
+    case (config_reg[`$mux_sel_bit_count-1`:0])
+//; for (my $i=0; $i<$global_signal_count;$i++) {
+      `$mux_sel_bit_count`'d`${i}`: gout_u = gin_l_`${i}`;
+//; }
+      default: gout_u =  gin_l_0;
+    endcase
+  end
+
+//; for (my $j=0;$j<$global_signal_count;$j++) {
+  always @(*) begin
+    case (config_reg[`$j+$mux_sel_bit_count`])
+      1'd0: gout_l_`${j}` = gin_u_`${j}`;
+      1'd1: gout_l_`${j}` = gin_l_`${j}`;
+      default: gout_l_`${j}` =  gin_u_`${j}`;
+    endcase
+  end
+//; }
+endmodule
