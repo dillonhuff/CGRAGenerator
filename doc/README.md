@@ -3,6 +3,7 @@
 <b>Documentation in the github wiki:</b>
 * CGRA SPEC: https://github.com/StanfordAHA/CGRAGenerator/wiki/0.Guide-To-CGRA-Specs-And-Docs
 
+-----
 <b>Documents here:</b>
 * 02_23_2017_CGRA.pptx - CGRA status and overview slides presented by Ankita at AHA mtg 02/23/2017. 
 * CGRA_architecture_overview_NB_161117.pdf - CGRA Overview: Nikhil slides from 11/2016 AHA meeting.
