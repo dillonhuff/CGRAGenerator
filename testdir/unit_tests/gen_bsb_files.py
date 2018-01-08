@@ -15,6 +15,7 @@ import random
 #   T3_mem_out -> T3_out_s2t0 -> self.out
 # '''
 
+<<<<<<< HEAD
 # OOPS with IO tiles included, first mem tile is...?  tile 14?
 # Replace 'DEPTH' with a decimal integer %03d
 MEM_TEMPLATE='''
@@ -25,6 +26,58 @@ MEM_TEMPLATE='''
   T14_mem_out -> T14_out_s2t0 -> self.out
 '''
 
+=======
+# # OOPS with IO tiles included, first mem tile is...?  tile 14?
+# # Replace 'DEPTH' with a decimal integer %03d
+# MEM_TEMPLATE='''
+#   #DELAY DEPTH,DEPTH
+#   #
+#   T14_mem_DEPTH # (fifo_depth=DEPTH)
+#   self.in -> T14_in_s2t0 -> T14_mem_in
+#   T14_mem_out -> T14_out_s2t0 -> self.out
+# '''
+
+# # Send output to PE tile T11
+# MEM_TEMPLATE='''
+#   #DELAY DEPTH,DEPTH
+#   #
+#   self.in -> T11_in_s2t0
+#   T11_in_s2t0 -> T11_out_s0t0
+#   T12_in_s2t0 -> T12_out_s0t0
+#   T13_in_s2t0 -> T13_out_s0t0
+#   T14_in_s2t0 -> T14_mem_in
+#   T14_mem_DEPTH # (fifo_depth=DEPTH)
+#   T14_mem_out -> T14_out_s2t1
+#   T13_in_s0t1 -> T13_out_s2t1
+#   T12_in_s0t1 -> T12_out_s2t1
+#   T11_in_s0t1 -> T11_out_s2t1 -> self.out
+# '''
+
+# Input from PE tile 11, output to mem tile T14
+MEM_TEMPLATE='''
+  #DELAY DEPTH,DEPTH
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_out_s0t0
+  T12_in_s2t0 -> T12_out_s0t0
+  T13_in_s2t0 -> T13_out_s0t0
+  T14_in_s2t0 -> T14_mem_in
+  T14_mem_DEPTH # (fifo_depth=DEPTH)
+  T14_mem_out -> T14_out_s1t1
+  T14_in_s7t1 -> T14_out_s5t1 -> self.out
+'''
+
+# MEM_TEMPLATE='''
+#   #DELAY DEPTH,DEPTH
+#   #
+#   self.in -> T11_in_s2t0 -> T11_out_s0t0 -> T12_out_s0t0 -> T13_out_s0t0
+#   T14_in_s2t0 -> T14_mem_in
+#   T14_mem_DEPTH # (fifo_depth=DEPTH)
+#   T14_mem_out -> T14_out_s2t0 -> self.out
+# '''
+
+
+>>>>>>> srdev
 
 # Version for CGRA w/o IO tiles
 # # Replace OPNAME with name of operand e.g. 'add'
@@ -39,8 +92,36 @@ MEM_TEMPLATE='''
 #   T0_pe_out -> T0_out_s0t1 -> self.out
 # '''
 
+<<<<<<< HEAD
+=======
+# THIS ONE CRASHES!!
+>>>>>>> srdev
 # OOPS with IO tiles included, first PE tile is...? tile 11?
 # Replace OPNAME with name of operand e.g. 'add'
+# BAD reg op1 ba
+OP_TEMPLATE='''
+  #DELAY 1,1
+  #
+  self.in -> T11_in_s2t0
+<<<<<<< HEAD
+  T11_in_s2t0 -> T11_op1
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2 (r)
+  T11_OPNAME(wire,reg)
+  T11_pe_out -> T11_out_s0t1 -> self.out
+'''
+
+=======
+  T11_in_s2t0 -> T11_op1 (r)
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2
+  T11_OPNAME(reg,wire)
+  T11_pe_out -> T11_out_s0t1 -> self.out
+'''
+
+# OOPS with IO tiles included, first PE tile is...? tile 11?
+# Replace OPNAME with name of operand e.g. 'add'
+# GOOD reg op2 ab
 OP_TEMPLATE='''
   #DELAY 1,1
   #
@@ -52,6 +133,26 @@ OP_TEMPLATE='''
   T11_pe_out -> T11_out_s0t1 -> self.out
 '''
 
+# Input from PE tile 11, output to mem tile T14
+OP_TEMPLATE='''
+  #DELAY 1,1
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2 (r)
+  T11_OPNAME(wire,reg)
+  T11_pe_out -> T11_out_s0t1
+  T12_in_s2t1 -> T12_out_s0t1
+  T13_in_s2t1 -> T13_out_s0t1
+  T14_in_s2t1 -> T14_out_s1t1
+  T14_in_s7t1 -> T14_out_s5t1 -> self.out
+'''
+
+
+
+
+>>>>>>> srdev
 
 # bsbuilder now has support for...
 # op_data['add']     = 0x00000000

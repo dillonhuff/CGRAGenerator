@@ -1,0 +1,245 @@
+cd /tmp/utest-EoR
+TEN SEQUENTIAL TESTS
+OPTIONS
+  OPTIONS['vectype'] = seq
+  OPTIONS['tests  '] = all
+  OPTIONS['repeat '] = 1
+  OPTIONS['seed   '] = False
+  OPTIONS['nvecs  '] = 10
+
+gen_bsb_files.py:
+  Built op_add.bsb
+  Built op_sub.bsb
+  Built op_abs.bsb
+  Built op_gte.bsb
+  Built op_lte.bsb
+  Built op_eq.bsb
+  Built op_sel.bsb
+  Built op_rshft.bsb
+  Built op_lshft.bsb
+  Built op_mul.bsb
+  Built op_or.bsb
+  Built op_and.bsb
+  Built op_xor.bsb
+  Built mem_lbuf10.bsb
+  Built mem_lbuf09.bsb
+
+gen_bsa_files.csh:
+  $gen/bitstream/bsbuilder/bsbuilder.py mem_lbuf09.bsb > mem_lbuf09.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py mem_lbuf10.bsb > mem_lbuf10.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_abs.bsb     > op_abs.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_add.bsb     > op_add.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_and.bsb     > op_and.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_eq.bsb      > op_eq.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_gte.bsb     > op_gte.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_lshft.bsb   > op_lshft.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_lte.bsb     > op_lte.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_mul.bsb     > op_mul.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_or.bsb      > op_or.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_rshft.bsb   > op_rshft.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_sel.bsb     > op_sel.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_sub.bsb     > op_sub.bsa
+  $gen/bitstream/bsbuilder/bsbuilder.py op_xor.bsb     > op_xor.bsa
+
+----------------------------------------------------------------
+Round 1 of 1: using input file of 10 sequential 8-bit vectors
+
+Testing 'lbuf09'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ------------------------------------>  0   1   2   3   4   5   6   7   8   9
+  CGRA ------------------------------------>  0   1   2   3   4   5   6   7   8   9
+
+Testing 'lbuf10'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---------------------------------------->  0   1   2   3   4   5   6   7   8   9
+  CGRA ---------------------------------------->  0   1   2   3   4   5   6   7   8   9
+
+Testing 'abs'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   2   3   4   5   6   7   8   9
+  CGRA ---->  1   2   3   4   5   6   7   8   9
+
+Testing 'add'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   3   5   7   9  11  13  15  17
+  CGRA ---->  1   3   5   7   9  11  13  15  17
+
+Testing 'sub'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   1   1   1   1   1   1   1   1
+  CGRA ---->  1   1   1   1   1   1   1   1   1
+
+Testing 'gte'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   2   3   4   5   6   7   8   9
+  CGRA ---->  1   2   3   4   5   6   7   8   9
+
+Testing 'lte'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  0   1   2   3   4   5   6   7   8
+  CGRA ---->  0   1   2   3   4   5   6   7   8
+
+Testing 'eq'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   3   5   7   9  11  13  15  17
+  CGRA ---->  0   1   2   3   4   5   6   7   8
+op_eq_gold_out.raw op_eq_CGRA_out.raw differ: byte 1, line 1
+  OOPS thatsa no good: 'op_eq' failed
+
+Testing 'sel'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   2   3   4   5   6   7   8   9
+  CGRA ---->  0   1   2   3   4   5   6   7   8
+op_sel_gold_out.raw op_sel_CGRA_out.raw differ: byte 1, line 1
+  OOPS thatsa no good: 'op_sel' failed
+
+Testing 'rshft'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   1   0   0   0   0   0   0   0
+  CGRA ---->  1   1   0   0   0   0   0   0   0
+
+Testing 'lshft'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   4  12  32  80 192 192   0   0
+  CGRA ---->  1   4  12  32  80 192 192   0   0
+
+Testing 'mul'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  0   2   6  12  20  30  42  56  72
+  CGRA ---->  0   2   6  12  20  30  42  56  72
+
+Testing 'or'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   3   3   7   5   7   7  15   9
+  CGRA ---->  1   3   3   7   5   7   7  15   9
+
+Testing 'and'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  0   0   2   0   4   4   6   0   8
+  CGRA ---->  0   0   2   0   4   4   6   0   8
+
+Testing 'xor'
+  INPUT   0   1   2   3   4   5   6   7   8   9 
+  GOLD ---->  1   3   1   7   1   3   1  15   1
+  CGRA ---->  1   3   1   7   1   3   1  15   1
+
+
+
+================================================================
+TEN RANDOM TESTS
+OPTIONS
+  OPTIONS['vectype'] = rand
+  OPTIONS['tests  '] = all
+  OPTIONS['repeat '] = 1
+  OPTIONS['seed   '] = False
+  OPTIONS['nvecs  '] = 10
+
+gen_bsb_files.py:
+  Built op_add.bsb
+  Built op_sub.bsb
+  Built op_abs.bsb
+  Built op_gte.bsb
+  Built op_lte.bsb
+  Built op_eq.bsb
+  Built op_sel.bsb
+  Built op_rshft.bsb
+  Built op_lshft.bsb
+  Built op_mul.bsb
+  Built op_or.bsb
+  Built op_and.bsb
+  Built op_xor.bsb
+  Built mem_lbuf10.bsb
+  Built mem_lbuf09.bsb
+
+Skipping (redundant) bsa file generation b/w found 'op_add.bsa'
+----------------------------------------------------------------
+Round 1 of 1: using input file of 10 random 8-bit vectors
+seed= 1005423
+
+Testing 'lbuf09'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ------------------------------------>132 120 217 213 149 117 190 129 218  57
+  CGRA ------------------------------------>132 120 217 213 149 117 190 129 218  57
+
+Testing 'lbuf10'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---------------------------------------->132 120 217 213 149 117 190 129 218  57
+  CGRA ---------------------------------------->132 120 217 213 149 117 190 129 218  57
+
+Testing 'abs'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->120 217 213 149 117 190 129 218  57
+  CGRA ----> 12 217   4  64  32 190  61 218 161
+op_abs_gold_out.raw op_abs_CGRA_out.raw differ: byte 1, line 1
+  OOPS thatsa no good: 'op_abs' failed
+
+Testing 'add'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->252  81 174 106  10  51  63  91  19
+  CGRA ---->252  81 174 106  10  51  63  91  19
+
+Testing 'sub'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->244  97 252 192 224  73 195  89  95
+  CGRA ---->244  97 252 192 224  73 195  89  95
+
+Testing 'gte'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->132 217 217 213 149 190 190 218 218
+  CGRA ---->132 217 217 213 149 190 190 218 218
+
+Testing 'lte'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->120 120 213 149 117 117 129 129  57
+  CGRA ---->120 120 213 149 117 117 129 129  57
+
+Testing 'eq'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->252  81 174 106  10  51  63  91  19
+  CGRA ---->132 120 217 213 149 117 190 129 218
+op_eq_gold_out.raw op_eq_CGRA_out.raw differ: byte 1, line 1
+  OOPS thatsa no good: 'op_eq' failed
+
+Testing 'sel'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->120 217 213 149 117 190 129 218  57
+  CGRA ---->132 120 217 213 149 117 190 129 218
+op_sel_gold_out.raw op_sel_CGRA_out.raw differ: byte 1, line 1
+  OOPS thatsa no good: 'op_sel' failed
+
+Testing 'rshft'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->  7   0   0   0   0   0   0 109   0
+  CGRA ---->  7   0   0   4   3   5   0 109   0
+op_rshft_gold_out.raw op_rshft_CGRA_out.raw differ: byte 4, line 1
+  OOPS thatsa no good: 'op_rshft' failed
+
+Testing 'lshft'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->  0   0   0   0   0   0   0   0   0
+  CGRA ---->128   0   0 160 160 192   0 180   0
+op_lshft_gold_out.raw op_lshft_CGRA_out.raw differ: byte 1, line 1
+  OOPS thatsa no good: 'op_lshft' failed
+
+Testing 'mul'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->224 184 141 249  25 214 190 218 138
+  CGRA ---->224 184 141 249  25 214 190 218 138
+
+Testing 'or'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->252 249 221 213 245 255 191 219 251
+  CGRA ---->252 249 221 213 245 255 191 219 251
+
+Testing 'and'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->  0  88 209 149  21  52 128 128  24
+  CGRA ---->  0  88 209 149  21  52 128 128  24
+
+Testing 'xor'
+  INPUT 132 120 217 213 149 117 190 129 218  57 
+  GOLD ---->252 161  12  64 224 203  63  91 227
+  CGRA ---->252 161  12  64 224 203  63  91 227
+
+
+/bin/rm -rf /tmp/utest-EoR

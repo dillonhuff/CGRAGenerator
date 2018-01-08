@@ -1,0 +1,71 @@
+//; use POSIX;
+//; my $io_group = parameter(Name=>'io_group', val=> -1, doc=>'specifies the IO group the IO belongs to');
+//; my $side = parameter(Name=>'side', val=> 0, doc=>'specifies the side (0=right/1=bottom/2=left/3=top) of the pad on which fabric wires exist ');
+
+//;my $filename = "TILE".$self->mname();
+//;open(TILEINFO, ">$filename") or die "Couldn't open file $filename, $!";
+
+module `mname` (
+clk, 
+reset,
+pad,
+p2f,
+f2p,
+config_addr,
+config_data,
+tile_id
+);
+
+  /* verilator lint_off UNUSED */
+  input  clk;
+  input  reset;
+  inout  pad;
+  output p2f;
+  input f2p;
+  input [31:0] config_data;
+  input [31:0] config_addr;
+  input [15:0] tile_id;
+  /* verilator lint_on UNUSED */
+
+  //; # Bits [31:24] are for switch box, [23:0] for connection box.
+  //; # So we have to let the linter know (verilator directives below) or it complains:
+  //; # %Warning-UNUSED: .../cb_unq1.v:73: Bits of signal are not used: config_addr[23:0]
+  //; # FIXME Owner please confirm that this is correct and delete this FIXME line (but keep the rest)
+  //; # FIXME someday? Maybe shouldn't bring in all 32 bits if we're not going to use them?
+
+  reg config_en_pe;
+  always @(*) begin
+    if (reset) begin
+       config_en_pe = 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd0)) begin
+         config_en_pe = 1'b1;
+       end else begin
+         config_en_pe = 1'b0;
+       end
+    end
+  end
+
+  reg io_bit;
+  always @(clk) begin
+    if (reset) begin
+       io_bit = 1'b0;
+    end else begin
+       if (config_en_pe==1'b1) begin
+         io_bit = config_data[0];
+       end
+    end
+  end
+
+  assign pad = (io_bit==1'b1)?f2p:1'bz;
+  assign p2f = pad;
+endmodule
+
+//;print TILEINFO "        <io_group>$io_group</io_group>\n";
+//;print TILEINFO "        <direction in='0' out='1'>0</direction>\n";
+//;print TILEINFO "        <input>in_1BIT_S${side}_T0</input>\n";
+//;print TILEINFO "        <output>out_1BIT_S${side}_T0</output>\n";
+
+//;close TILEINFO;
+
+
