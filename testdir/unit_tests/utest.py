@@ -90,17 +90,20 @@ def main():
     process_args()
     show_options()
 
-    # Always build all bsb and bsa files b/c why not
-    my_syscall(mydir+'/gen_bsb_files.py')
-
-    print ""
-    sys.stdout.flush()
-
-    if not os.path.exists('op_add.bsa'):
-        my_syscall(mydir+'/gen_bsa_files.csh')
-        print ""
+    if OPTIONS['nobuild']:
+        print "Skipping bsb/bsa file generation b/c '--nobuild'"
     else:
-        print "Skipping (redundant) bsa file generation b/c found 'op_add.bsa'"
+        # Build all bsb and bsa files
+        my_syscall(mydir+'/gen_bsb_files.py')
+
+        print ""
+        sys.stdout.flush()
+
+        if not os.path.exists('op_add.bsa'):
+            my_syscall(mydir+'/gen_bsa_files.csh')
+            print ""
+        else:
+            print "Skipping (redundant) bsa file generation b/c found 'op_add.bsa'"
 
     # n_iter = 'forever'
     # n_iter = 3
@@ -326,6 +329,7 @@ def gen_output_file_cgra(tname, DBG=0):
     logfile = cwd + "run_csh.log"
 
     global GENERATED
+    if OPTIONS['nobuild']: GENERATED=True
     # GENERATED=True
     if not GENERATED: run_csh = './run.csh -v'
     else:             run_csh = './run.csh -v -nobuild'
@@ -522,6 +526,7 @@ Examples:
     OPTIONS['vectype'] = 'random'
     OPTIONS['nvecs']   = 10
     OPTIONS['seed']    = False
+    OPTIONS['nobuild'] = False
 
     # cgra_filename = get_default_cgra_info_filename()
     while (len(args) > 0):
@@ -541,6 +546,8 @@ Examples:
         elif (args[0] == '--seed'):
             OPTIONS['seed'] = int(args[1])
             args = args[1:];
+        elif (args[0] == '--nobuild'):
+            OPTIONS['nobuild'] = True
         else:
             OPTIONS['tests'] = args[0];
         args = args[1:]
