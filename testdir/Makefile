@@ -19,7 +19,6 @@ endif
 # $(warning OUTPUT = "$(OUTPUT)")
 
 TEMPDIR := $(shell mktemp -d /tmp/gentest-XXX)
-DELAY = 0,0
 
 # gray_small_4x4:
 # 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
@@ -39,15 +38,6 @@ pw_gray_small_8x8:
 pw_gray_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
 	CONFIG="-config ../../bitstream/examples/pwv2.bs"
-
-test_basic:
-	@./writelog.csh log1 -init
-	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" DELAY="0,0" \
-	          CONFIG="-config ../../bitstream/examples/pwv2_io.bs"
-	@echo
-	@./writelog.csh log1 -print
-
-
 
 test_all:
 	make hackdiff_test 2>&1 | tee $(TEMPDIR)/hackdiff_test.log
@@ -109,7 +99,7 @@ test:
 	   $(CONFIG)                         \
 	   -input  io/$(IMAGE).png            \
 	   -output $(TEMPDIR)/$(IMAGE)_out.raw \
-	   -delay $(DELAY) \
+	   -delay 0,0 \
 	   -nclocks 5M || echo FAIL
 
 	cmp $(VERILATOR_TOP)/io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw      \

@@ -105,15 +105,7 @@ echo "  Disconnecting input wires from internal net..."
 foreach inwire ($inwires)
   (egrep "out.*$inwire" $vtop > /dev/null)\
     || echo "    Wire not found in internal net of top.v"
-
-  # sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > $tmpdir/tmp$$
-  # oops new io tiles do this kind of assignment:
-  #    .p2f_out(wire_2_1_BUS16_S0_T0),
-  # instead of prev
-  #    .out_BUS16_S2_T0(wire_2_1_BUS16_S0_T0),
-  # Does it work to just remove the dot?
-  sed "s/\(.*out.*\)$inwire/\1/" $vtop > $tmpdir/tmp$$
-
+  sed "s/\(.*[.]out.*\)$inwire/\1/" $vtop > $tmpdir/tmp$$
   # diff $vtop $tmpdir/tmp$$ | egrep '^[<>]' | sed 's/  */ /g' | sed 's/^/    /'
   echo "    $inwire..."; mv $tmpdir/tmp$$ $vtop
 end

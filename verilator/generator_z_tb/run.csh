@@ -3,10 +3,8 @@
 set VERBOSE
 
 # Build a tmp space for intermediate files
+# set tmpdir = deleteme
 set tmpdir = `mktemp -d /tmp/run.csh.XXX`
-# set tmpdir = deleteme;     /bin/rm -rf $tmpdir/* || echo already empty
-# set tmpdir = /tmp/run.csh; /bin/rm -rf $tmpdir/* || echo already empty
-
 if (! -e $tmpdir) then
   unset ERR
   mkdir $tmpdir || set ERR
@@ -41,7 +39,9 @@ setenv CGRA_GEN_USE_MEM 1
 # DEFAULTS
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
-set BUILD
+
+# Default configuration bitstream
+set config   = ../../bitstream/examples/940/pw.bs
 
 # Sometimes may need to know what branch we are in
 git branch | grep '^*' >    $tmpdir/tmp
@@ -60,21 +60,10 @@ if (`expr "$branch" : ".*detached"`) then
 endif
 echo "run.csh: I think we are in branch '$branch'"
 
-# Default configuration bitstream
-# set config   = ../../bitstream/examples/940/pw.bs
-# if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2_io.bs
-# if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2_io.bs
-set config   = ../../bitstream/examples/pwv2_io.bs
+if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2.bs
+if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2.bs
 
 set DELAY = '0,0'
-
-# FIXED maybe
-# # FIXME Yes this WILL bite my ass and very soon, I expect :(
-# if ("$config" == "../../bitstream/examples/pwv2_io.bs") set DELAY = '3,3'
-# 
-# echo .${config}.
-# echo $DELAY
-
 
 set input     = io/gray_small.png
 set output    = $tmpdir/output.raw
@@ -84,7 +73,7 @@ unset tracefile
 if ($#argv == 1) then
   if ("$argv[1]" == '--help') then
     echo "Usage:"
-    echo "    $0 <textbench.cpp> -q [-gen | -nogen] [-nobuild]"
+    echo "    $0 <textbench.cpp> -q [-gen | -nogen]"
     echo "        -usemem -allreg"
     echo "        -config <config_filename.bs>"
     echo "        -input   <input_filename.png>"
@@ -113,12 +102,10 @@ echo config = $config 2
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
-
-# NO don't cleanup might want this later (for -nobuild)...
-# # CLEANUP
-# foreach f (obj_dir counter.cvd tile_config.dat)
-#   if (-e $f) rm -rf $f
-# end
+# CLEANUP
+foreach f (obj_dir counter.cvd tile_config.dat)
+  if (-e $f) rm -rf $f
+end
 
 # I GUESS 4x4 vs. 8x8 is implied by presence or absence of CGRA_GEN_USE_MEM (!!???)
 # I can't find anything else that does it :(
@@ -163,9 +150,6 @@ while ($#argv)
 
     case '-gen':
       set GENERATE = '-gen'; breaksw;
-
-    case '-nobuild':
-      set GENERATE = '-nogen'; unset BUILD; breaksw;
 
     case '-nogen':
       set GENERATE = '-nogen'; breaksw;
@@ -261,7 +245,6 @@ if (1) then
   # Backslashes line up better when printed...
   echo "Running with the following switches:"
   echo "$0 top_tb.cpp \"
-  if (! $?BUILD) echo "   -nobuild                    \"
   echo "   $GENERATE                    \"
   echo "   -config   $config   \"
   #echo "   -io       $iofile   \"
@@ -288,14 +271,6 @@ set nclocks = "-nclocks $nclocks"
 if   ($?VERBOSE) set VSWITCH = '-v'
 if (! $?VERBOSE) set VSWITCH = '-q'
 
-set vtop = 'Vtop'
-if (! $?BUILD) then
-  echo ""
-  echo "Skipping generate and build b/c you asked me to..."
-  goto RUN_SIM
-endif
-
-
 ##############################################################################
 # By default, we assume generate has already been done.
 # Otherwise, user must set "-gen" to make it happen here.
@@ -303,11 +278,9 @@ endif
 echo
 # if (! $?GENERATE) then
 if ("$GENERATE" == "-nogen") then
-  echo "run.csh: No generate!"
-  echo "run.csh: Not building CGRA because you asked for it with '-nogen'..."
+  echo "No generate!"
 else
-  # echo "run.csh: Building CGRA because you asked for it with '-gen'..."
-  echo "run.csh: Building CGRA because it's the default..."
+  echo "Building CGRA because you asked for it with '-gen'..."
   ../../bin/generate.csh $VSWITCH || exit -1
 endif
 
@@ -491,24 +464,16 @@ echo "run.csh: Build the simulator..."
   if ($?VERBOSE) then
     echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
     echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
-    echo "%Warning3 See $tmpdir/verilator.out for full log."
+    echo '%Warning3 See $tmpdir/verilator.out for full log.'
     echo
-
-    # This (head -n 40) can cause broken pipe error (!)
-    # awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out | head -n 40
-    awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out
-
+    cat $tmpdir/verilator.out \
+      | awk -f ./run-verilator-warning-filter.awk \
+      | head -n 40 
   else
     echo "See $tmpdir/verilator.out for full log of verilator warnings."
   endif
 
-  if ($verilator_exit_status != 0) then
-    tail -40 $tmpdir/verilator.out
-    echo ""
-    echo "VERILATOR FAILED!"
-    echo "See $tmpdir/verilator.out for full log of verilator warnings."
-    exit -1
-  endif
+  if ($verilator_exit_status != 0) exit -1
 
   echo
   echo "run.csh: Build the testbench..."
@@ -517,17 +482,15 @@ echo "run.csh: Build the simulator..."
     echo
     echo "make \"
     echo "  VM_USER_CFLAGS='-DINWIRE=top->$inwires -DOUTWIRE=top->$outwires' \"
-    echo "  -j -C obj_dir/ -f $vtop.mk $vtop"
+    echo "  -j -C obj_dir/ -f V$top.mk V$top"
   endif
 
   echo
   echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
-  echo "make $vtop -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
-  /bin/rm obj_dir/Vtop
-
+  echo "make V$top -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
   make \
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
-    -j -C obj_dir/ -f $vtop.mk $vtop \
+    -j -C obj_dir/ -f V$top.mk V$top \
     >& $tmpdir/make_vtop.log \
     || set ERROR
 
@@ -538,9 +501,6 @@ echo "run.csh: Build the simulator..."
   if ($?VERBOSE) then
     cat $tmpdir/make_vtop.log; echo
   endif
-
-
-RUN_SIM:
 
 echo '------------------------------------------------------------------------'
 echo "run.csh: Run the simulator..."
@@ -620,13 +580,6 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     set qf2         = (cat)
   endif
 
-  # This is ugly.  -nobuild skips config-file processing so redo here.
-  if (! $?BUILD) then
-    # Clean up config file for verilator use
-    grep -v '#' $config | grep . > $tmpdir/tmpconfig
-    set config = $tmpdir/tmpconfig
-  endif
-
   if ($?VERBOSE) then
     echo
     echo "BITSTREAM '$config':"
@@ -635,7 +588,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
 
   echo
   echo "run.csh: TIME NOW: `date`"
-  echo "run.csh: $vtop -output $output:t"
+  echo "run.csh: V$top -output $output:t"
 
   # OOPS big parrot won't work in travis if output gets filtered...
   # Must have the printf every 10K cycles
@@ -643,9 +596,8 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   set qf2         = (cat)
 
 
-  # FIXME note the '|| exit -1" below is USELESS
   if ($?VERBOSE) set echo
-    obj_dir/$vtop \
+    obj_dir/V$top \
       -config $config \
       $in \
       $out \
@@ -658,10 +610,8 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   unset echo >& /dev/null
   echo -n " TIME NOW: "; date
 
-  set echo
   unset FAIL
-  grep FAIL   $tmpdir/run.log.$$ && set FAIL
-  grep %Error $tmpdir/run.log.$$ && set FAIL
+  grep FAIL $tmpdir/run.log.$$ && set FAIL
 
 
   echo

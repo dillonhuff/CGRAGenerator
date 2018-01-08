@@ -384,19 +384,16 @@ def read_cgra_info(filename='', grid='8x8', verbose=False):
     # If cannot open indicated config file (or if config file is blank), try default file
     global CGRA
     import xml.etree.ElementTree
-    if verbose: sys.stdout.write("Using config file '%s'\n\n" % filename)
-    if os.path.exists(filename):
+    try:
+        if verbose: sys.stdout.write("Using config file '%s'\n\n" % filename)
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
-
-    else:
-        sys.stderr.write("WARNING cgra_info.py(392) "\
-                         +"Could not find cgra_info file '%s'\n" % filename)
+        return
+    except:
+        sys.stderr.write("WARNING Could not open cgra_info file '%s'\n" % filename)
         filename = get_local_cgra_info_filename()
-        sys.stderr.write("WARNING cgra_info.py(392) "\
-                         +"Will try using local copy '%s'\n" % filename)
+        sys.stderr.write("WARNING Will try using local copy '%s'\n" % filename)
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
-        sys.stderr.write("WARNING cgra_info.py(392) "\
-                         +" Loaded local copy '%s'\n\n" % filename)
+        sys.stderr.write("WARNING Loaded local copy '%s'\n\n" % filename)
 
 def load_check():
     # if not CGRA:
@@ -464,13 +461,11 @@ def rc2tileno(row,col):
           % (row,col)
 
 
-def tiletype(tileno,DBG=0):
-    if DBG: print "Looking for type of tile %d" % tileno
+def tiletype(tileno):
+    # print "Looking for type of tile %d" % tileno
     for tile in CGRA.findall('tile'):
         t = tile.attrib['tile_addr']
         if (t == str(tileno)):
-            if DBG: print "Found tile %d" % tileno
-            if DBG: print "type='%s'" % tile.attrib['type']
             return tile.attrib['type']
 
     err = ("\n\nERROR Cannot find tile %d in cgra_info\n" % tileno)\
@@ -487,9 +482,8 @@ def mem_or_pe(tileno):
     if   type[0] == 'm': return 'mem'
     elif type[0] == 'p': return 'pe'
     else:
-        # assert False, "unknown tile type '%s'" % type
-        sys.stderr.write("cgra_info.py (489) WARNING unknown tile type '%s'\n\n" % type)
-        return type
+        assert False, 'unknown tile type'
+        return 'unknown'
 
 def is_mem(tileno): return (mem_or_pe(tileno)=='mem')
 
@@ -935,7 +929,6 @@ def canon2global(name, DBG=0):
 
     if dir=='out':
         if side>=4: r = r+1 # Right? RIGHT??
-        side = side%4 # oops don't forget
         gname = 'wire_%d_%d_BUS16_S%d_T%d' % (r,c,side,track)
     else:
         assert dir=='in'
@@ -986,23 +979,20 @@ def canon2cgra(name, DBG=0):
     # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'
     (T,d,side,t) = parse_canon(name)
     # assert T != -1
-    if DBG>1: print (T,d,side,t)
+    if DBG>1: print (T,d,s,t)
     if side == -1:
         # not a wire; name is returned as 'd'
         if d == 'op1'   :  newname = 'data0'
-        elif d == 'op2'   :  newname = 'data1'
-        elif d == 'pe_out':  newname = 'pe_out_res'
+        if d == 'op2'   :  newname = 'data1'
+        if d == 'pe_out':  newname = 'pe_out_res'
 
-        elif d == 'mem_in':  newname = 'wdata'
-        elif d == 'mem_out': newname = 'rdata'
-        else:
-            assert False, "Could not identify wire '%s'" % name
+        if d == 'mem_in':  newname = 'wdata'
+        if d == 'mem_out': newname = 'rdata'
 
     else:
         dnot = 'out';
         if d == 'out': dnot = 'in'
 
-        if DBG>2: print T, mem_or_pe(T)
         # if not is_mem_tile(T):
         if mem_or_pe(T) != 'mem':
             newname = '%s_BUS16_S%d_T%d' % (d,side,t)
@@ -1011,13 +1001,10 @@ def canon2cgra(name, DBG=0):
             # must know if top or bottom
             tb = 'top';
             if side>3: tb='bottom'
-            if DBG>2: print "mem tile", tb, side
-            if   (tb == 'top')    and (side == 1):
-                # newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (dnot,t)
-                newname = 'sb_wire_%s_1_BUS16_3_%d' % (dnot,t)
-            elif (tb == 'bottom') and (side == 7):
-                # newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (d,t)
-                newname = 'sb_wire_%s_1_BUS16_3_%d' % (d,t)
+            if   (tb == 'top')    and (side == '1'):
+                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (dnot,t)
+            elif (tb == 'bottom') and (side == '7'):
+                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (d,t)
             else:
                 # newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
                 # yes; sometimes; maybe; but better is:

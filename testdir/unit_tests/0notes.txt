@@ -10,19 +10,6 @@ cd tmpdir; ../utest.py
 **  pe/tests/test_pe.py
 ** mounted here: /nobackup/steveri/github/pe
 
-------------------------------------------------------------------------
-'sub' appears to be broken in BOTH patpy and cgra(!)
-spec says 'eq' function yields 'a+b' but it actually seems to give 'a'
-
-patpy functions missing/broken:
-- mul
-- abs
-
-
-
-
-
-
 
 
 

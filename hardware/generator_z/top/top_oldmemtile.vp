@@ -1,13 +1,11 @@
 ///////////////////////////////////////////////////////////////////
 // CGRA TOP generator 
 //
+// (C) Stanford University
 //////////////////////////////////////////////////////////////////
 //; #global
 //; #<BUS_NAME>:<number of bits>b#<seg1_length>_<seg1_register_after_hops>:<seg2_length>_<seg2_register_after_hops>:...
-//;   my $bus_config = "BUS16:16b#1_4:1_4:1_4:1_4:1_4 BUS1:1b#1_4:1_4:1_4:1_4:1_4";
-//; if ($ENV{'CGRA_GEN_ALL_REG'}==1) {
-//;   $bus_config = "BUS16:16b#1_1:1_1:1_1:1_1:1_1 BUS1:1b#1_1:1_1:1_1:1_1:1_1";
-//; }
+//; my $bus_config = "BUS16:16b#1_4:1_4:1_4:1_4:1_4 BUS1:1b#1_4:1_4:1_4:1_4:1_4";
 //; my $all_segments_for_all_tiles = 1;
 //; my $sides = 4;
 //; # for cb
@@ -27,23 +25,19 @@
 //;       reg_inputs => 1,
 //;       reg_out => 0, 
 //;       use_add => 1,
-//;       use_cntr => 1,
-//;       use_bool => 1,
+//;       bool_inps => 1,
 //;       use_shift => 1,
-//;       use_div => 0,
 //;       mult_mode => 1,
-//;       is_msb => 0,
-//;       en_double => 0,
-//;       lut_inps => 3,
 //;       sb_fs => $sb_fs,
 //;       all_segments_for_all_tiles => $all_segments_for_all_tiles
 //; };
 //; $tile_config->{ 't1' } = {
-//;       type => 'memory_tile',
+//;       type => 'mem_tile_sb_cb',
+//;       max_lb => 4,
 //;       gen_mem_for_busname => 'BUS16',
-//;       control_busname => 'BUS1',
-//;       ddepth => 1024,
-//;       tile_height => 2,
+//;       ddepth => 4096,
+//;       impl_mem_tile_height => 4,
+//;       tile_height => 4,
 //;       tile_width => 1,
 //;       bus_config => $bus_config,
 //;       cb_connections => $cb_connections,
@@ -53,20 +47,8 @@
 //; my %tile_pattern;
 //; #Tile pattern : <tile_name_defined_in_tile_config>_<number_of_columns>_<number_of_rows>
 //; #             : <pattern_name>_<number_of_columns>_<number_of_rows>
-
-//; # This makes 32 columns and 16 rows I think
-//; # $tile_pattern {'p1'} = "t0_3_2 t1_1_1";
-//; # $tile_pattern {'top'} = "p1_8_8";
-
-//; # This should make the old 8x8 pattern maybe
-//; # $tile_pattern {'p1'} = "t0_1_2 t1_1_1";
-//; # $tile_pattern {'top'} = "p1_4_4";
-
-//; # Oops no should be like this for the old 8x8
-//; $tile_pattern {'p1'} = "t0_3_2 t1_1_1";
-//; $tile_pattern {'top'} = "p1_2_4";
-
-
+//;    $tile_pattern {'p1'} = "t0_1_1";
+//;    $tile_pattern {'top'} = "p1_4_4";
 
 //; #####################################################
 //; #Populate bus track hash
@@ -115,7 +97,7 @@
 //;   my $height = 0;
 //;   my @plist = split / /, $tile_pattern {$pattern};
 //;   foreach my $p (@plist) {
-//;#     print "NB: $p $x $y #\n";
+//;#     print "$p $x $y #\n";
 //;     if ($p =~ m/^\s*(p\d+)_(\d+)_(\d+)/) {
 //;       my $pts = $1;
 //;       my $prx = $2;
@@ -183,11 +165,11 @@
 //; #Create verilog
 //; #####################################################
 
-module top(
+module top_oldmemtile (
 clk,
 reset,
 //; for (my $i=0; $i<$canvas_size{'height'}; $i++) {
-//;   for my $bus (sort keys %bus_num_tracks_hash) {
+//;   for my $bus (keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     my $bus_width = $bus_width_hash { $bus };
 //;     for(my $t=0; $t<$num_tracks; $t++) {
@@ -198,7 +180,7 @@ wire_`$i`_`$canvas_size{'width'}`_`$bus`_S2_T`$t`,
 //; }
 
 //; for (my $i=0; $i<$canvas_size{'width'}; $i++) {
-//;   for my $bus (sort keys %bus_num_tracks_hash) {
+//;   for my $bus (keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     my $bus_width = $bus_width_hash { $bus };
 //;     for(my $t=0; $t<$num_tracks; $t++) {
@@ -246,7 +228,7 @@ config_data
 
 //;# Handle grid edge conditions for inter-tile wires
 //; for (my $i=0; $i<$canvas_size{'height'}; $i++) {
-//;   for my $bus (sort keys %bus_num_tracks_hash) {
+//;   for my $bus (keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     my $bus_width = $bus_width_hash { $bus };
 //;     for(my $t=0; $t<$num_tracks; $t++) {
@@ -257,7 +239,7 @@ config_data
 //; }
 
 //; for (my $i=0; $i<$canvas_size{'width'}; $i++) {
-//;   for my $bus (sort keys %bus_num_tracks_hash) {
+//;   for my $bus (keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     my $bus_width = $bus_width_hash { $bus };
 //;     for(my $t=0; $t<$num_tracks; $t++) {
@@ -286,39 +268,20 @@ config_data
 // FIXME At which point the verilator directive(s) can be removed maybe...
 
 /* verilator lint_off UNUSED */
-//#####################################################
-//#Create wires
-//#Naming: wire_<row>_<col>_<busname>_S<side_T<track>
-//#Where : row,col = row,col of source tile
-//#####################################################
-//; for (my $j=0; $j<$canvas_size{'height'}; $j++) {
-//;   for (my $i=0; $i<$canvas_size{'width'}; $i++) {
-//;     my $key = "${j}_${i}";
-//;     my $tile = $tile_grid->{$key};
-//;     if ($tile eq "") {next;}
-//;     $tile =~ m/(\S+)#(\S+)#(\d+)/;
-//;     my $tile_type = $1;
-//;     my $tile_loc = $2;
-//;     my $tile_section = $3;
-//;     my $tile_height = $tile_config->{ $tile_type }{ 'tile_height' };
-//;     for my $bus (sort keys %bus_num_tracks_hash) {
+//; #####################################################
+//; #Create wires
+//; #####################################################
+//; for (my $i=0; $i<$canvas_size{'height'}; $i++) {
+//;   for (my $j=0; $j<$canvas_size{'width'}; $j++) {
+//;     for my $bus (keys %bus_num_tracks_hash) {
 //;       my $num_tracks = $bus_num_tracks_hash { $bus };
 //;       my $bus_width = $bus_width_hash { $bus };
 //;       for(my $s=0; $s<$sides; $s++) {
 //;         for(my $t=0; $t<$num_tracks; $t++) {
-//;           if (($s==0||$s==2)||($s==1&&($tile_section==$tile_height-1))||($s==3&&($tile_section==0))) {
-    wire [`$bus_width-1`:0] wire_`$j`_`$i`_`$bus`_S`$s`_T`$t`;
-//;           }
+    wire [`$bus_width-1`:0] wire_`$i`_`$j`_`$bus`_S`$s`_T`$t`;
 //;         }
 //;       }
 //;     }
-//;     if ($tile_config->{ $tile_type }{ 'type' } eq "memory_tile") {
-//;       my $data_bus = $tile_config->{ $tile_type }{ 'gen_mem_for_busname' };
-//;       my $bus_width = $bus_width_hash { $data_bus };
-    wire [`$bus_width-1`:0] mem_chain_`$j`_`$i`;
-    wire  mem_chain_valid_`$j`_`$i`;
-//;     }
-
 //;   }
 //; }
 /* verilator lint_on UNUSED */
@@ -326,11 +289,11 @@ config_data
 
 //; my $tile_hash_ref;
 //; my $tile_count=0;
-//#####################################################
-//#Instantiate components
-//#####################################################
-//; for (my $j=0; $j<$canvas_size{'height'}; $j++) {
-//;   for (my $i=0; $i<$canvas_size{'width'}; $i++) {
+//; #####################################################
+//; #Instantiate components
+//; #####################################################
+//; for (my $i=0; $i<$canvas_size{'height'}; $i++) {
+//;   for (my $j=0; $j<$canvas_size{'width'}; $j++) {
 //;     my $key = "${j}_${i}";
 //;     my $tile = $tile_grid->{$key};
 //;     if ($tile eq "") {next;}
@@ -338,8 +301,6 @@ config_data
 //;     my $tile_type = $1;
 //;     my $tile_loc = $2;
 //;     my $tile_section = $3;
-//;     if ($tile_section!=0) {next}
-//;#     print "NB:create tile $tile for location $tile_loc for i=$i j=$j\n";
 //;     my $options = "";
 //;     my $tile_id = "${tile_type}_${tile_loc}";
 //;#Add PE specific parameters from the tile config to the generate command
@@ -406,79 +367,13 @@ config_data
 //;       my $obj = $tile_hash_ref->{$options_key};
 //;       $inst_obj = clone($obj, $tile_id);
 //;     }
-//;    if ($tile_config->{ $tile_type }{ 'type' } eq "memory_tile") {
     `$inst_obj->instantiate()` 
     (
       .clk(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
-//;   for (my $row=0; $row < $tile_config->{ $tile_type }{ 'tile_height' }; $row++) {
-//;     for my $bus (sort keys %bus_num_tracks_hash) {
-//;       my $num_tracks = $bus_num_tracks_hash { $bus };
-//;       my $bus_width = $bus_width_hash { $bus };
-//;       for(my $s=0; $s<$sides; $s++) {
-//;         for(my $t=0; $t<$num_tracks; $t++) {
-//;# NB: Change the following for the case of sides > 4
-//;           if ($s==0 || $s==2) {
-      .out_`$row`_`$bus`_`$s`_`$t`(wire_`$j+$row`_`$i`_`$bus`_S`$s`_T`$t`),
-//;           }
-//;           if ($s==1 && $row==($tile_config->{ $tile_type }{ 'tile_height' }-1)) {
-      .out_`$row`_`$bus`_`$s`_`$t`(wire_`$j+$row`_`$i`_`$bus`_S`$s`_T`$t`),
-//;           }
-//;           if ($s==3 && $row==0) {
-      .out_`$row`_`$bus`_`$s`_`$t`(wire_`$j+$row`_`$i`_`$bus`_S`$s`_T`$t`),
-//;           }
-//;           my $opposite_side = $s + int($sides*0.5);
-//;           if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
-//;           my $i_delta=0;
-//;           my $j_delta=0;
-//;#Modification needed to support different 'sides' options
-//;           if ($sides==4) {
-//;             if ($s==0) {$i_delta=1;}
-//;             if ($s==1) {$j_delta=1;}
-//;             if ($s==2) {$i_delta=-1;}
-//;             if ($s==3) {$j_delta=-1;}
-//;           }
-//;           my $j_new = $j+$row+$j_delta;
-//;           my $i_new = $i+$i_delta;
-//;           $j_new =~ s/-/m/g;
-//;           $i_new =~ s/-/m/g;
-//;           if ($s==0 || $s==2) {
-      .in_`$row`_`$bus`_`$s`_`$t`(wire_`$j_new`_`$i_new`_`$bus`_S`$opposite_side`_T`$t`),
-//;           }
-//;           if ($s==1 && $row==($tile_config->{ $tile_type }{ 'tile_height' }-1)) {
-      .in_`$row`_`$bus`_`$s`_`$t`(wire_`$j_new`_`$i_new`_`$bus`_S`$opposite_side`_T`$t`),
-//;           }
-//;           if ($s==3 && $row==0) {
-      .in_`$row`_`$bus`_`$s`_`$t`(wire_`$j_new`_`$i_new`_`$bus`_S`$opposite_side`_T`$t`),
-//;           }
-//;         }
-//;       }
-//;     }
-//;   }
-//;   my $j_new = $j+2;
-//;   if ($j_new >= $canvas_size{'height'}) {
-//;   my $data_bus=$tile_config->{ $tile_type }{ 'gen_mem_for_busname' };
-//;   my $width=$bus_width_hash { $data_bus };
-      .chain_in(`$width`'d0),
-      .chain_wen_in(1'b0),
-//;   } else {
-      .chain_in(mem_chain_`$j_new`_`$i`),
-      .chain_wen_in(mem_chain_valid_`$j_new`_`$i`),
-//;   }
-      .chain_out(mem_chain_`$j`_`$i`),
-      .chain_valid_out(mem_chain_valid_`$j`_`$i`),
-      .tile_id(16'd`$tile_count`)
-    );
-//;    } elsif ($tile_config->{ $tile_type }{ 'type' } eq "pe_tile_new") {
-    `$inst_obj->instantiate()` 
-    (
-      .clk(clk),
-      .reset(reset),
-      .config_addr(config_addr),
-      .config_data(config_data),
-//;     for my $bus (sort keys %bus_num_tracks_hash) {
+//;     for my $bus (keys %bus_num_tracks_hash) {
 //;       my $num_tracks = $bus_num_tracks_hash { $bus };
 //;       my $bus_width = $bus_width_hash { $bus };
 //;       for(my $s=0; $s<$sides; $s++) {
@@ -505,8 +400,7 @@ config_data
 //;     }
       .tile_id(16'd`$tile_count`)
     );
-//;    }
-//;   print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='$tile_count' row='$j' col='$i' tracks='";
+//;   print INFO "  <tile tile_addr='$tile_count' row='$j' col='$i' tracks='";
 //;   foreach my $bus (sort keys %bus_num_tracks_hash) {
 //;     print INFO "$bus:$bus_num_tracks_hash{$bus} ";
 //;   }

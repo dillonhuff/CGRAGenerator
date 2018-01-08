@@ -28,10 +28,6 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   \
   ../pe_tile_new/pe_tile_new.vp \
   \
-  ../empty/empty.vp \
-  ../io1bit/io1bit.vp \
-  ../io16bit/io16bit.vp \
-  \
   ../memory_tile/memory_tile.vp \
   ../memory_core/memory_core.vp \
   ../memory_core/mem.vp
