@@ -23,7 +23,6 @@ patpy functions missing/broken:
 
 
 
->>>>>>> srdev
 
 
 
