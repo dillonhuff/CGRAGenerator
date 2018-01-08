@@ -1,5 +1,8 @@
 # CGRA/doc - A Place for CGRA-Related Documentation
 
+<b>Documentation in the github wiki:</b>
+* CGRA SPEC: https://github.com/StanfordAHA/CGRAGenerator/wiki/0.Guide-To-CGRA-Specs-And-Docs
+
 <b>Documents here:</b>
 * 02_23_2017_CGRA.pptx - CGRA status and overview slides presented by Ankita at AHA mtg 02/23/2017. 
 * CGRA_architecture_overview_NB_161117.pdf - CGRA Overview: Nikhil slides from 11/2016 AHA meeting.
@@ -9,7 +12,7 @@
 * sample_4x4_connectivity_matrix.xml - sample connectivity matrix for a 4x4 array of switchboxes.
 
 -----
-<b>Documentation in the wiki:</b>
+<b>Documentation in the vlsiweb wiki:</b>
 * AHA: https://vlsiweb.stanford.edu/mediawiki/index.php/Agile_HArdware
 * CGRA: https://vlsiweb.stanford.edu/mediawiki/index.php/AHA_CGRA_subgroup
 * CGRA meeting notes: https://vlsiweb.stanford.edu/mediawiki/index.php/AHA_CGRA_subgroup#Meeting_Notes
