@@ -398,6 +398,12 @@ def read_cgra_info(filename='', grid='8x8', verbose=False):
         sys.stderr.write("WARNING cgra_info.py(392) "\
                          +" Loaded local copy '%s'\n\n" % filename)
 
+    global CGRA_FILENAME
+    CGRA_FILENAME = filename
+    
+
+
+global CGRA_FILENAME
 def load_check():
     # if not CGRA:
     # FutureWarning: The behavior of this method will change in future
@@ -473,7 +479,7 @@ def tiletype(tileno,DBG=0):
             if DBG: print "type='%s'" % tile.attrib['type']
             return tile.attrib['type']
 
-    err = ("\n\nERROR Cannot find tile %d in cgra_info\n" % tileno)\
+    err = ("\n\nERROR Cannot find tile %d in cgra_info '%s'\n" % (tileno,CGRA_FILENAME))\
           + ("ERROR Could not find type for tile %d" % tileno)
     assert False, err
 
@@ -488,7 +494,7 @@ def mem_or_pe(tileno):
     elif type[0] == 'p': return 'pe'
     else:
         # assert False, "unknown tile type '%s'" % type
-        sys.stderr.write("cgra_info.py (489) WARNING unknown tile type '%s'\n\n" % type)
+        sys.stderr.write("cgra_info.py (489) WARNING unknown tile type '%s'\n" % type)
         return type
 
 def is_mem(tileno): return (mem_or_pe(tileno)=='mem')
