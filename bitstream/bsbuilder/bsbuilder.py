@@ -184,7 +184,7 @@ def main():
 
         err_msg = "\n\n# %s\n" % orig_line\
                   + "I don't know what this is: '%s'\n\n" % line
-        #assert False, err_msg
+        assert False, err_msg
 
         continue
 
@@ -707,13 +707,15 @@ def bs_op(tileno, line, DBG=0):
     # data[(17, 16)] : data0: REG_DELAY
     # data[(19, 18)] : data1: REG_CONST
 
-    parse = re.search('(add|mul)\s*\(\s*(\S+)\s*,\s*(\S+)\s*\)', line)
+    parse = re.search('(\S+)\s*\(\s*(\S+)\s*,\s*(\S+)\s*\)', line)
     if not parse: return False
 
     opname = parse.group(1)       # 'mul'
     op1    = parse.group(2)+"_a"  # 'reg_a' or 'wire_a' or 'const19_19$1_a'
     op2    = parse.group(3)+"_b"
+
     if DBG>1: print '# tile%02d  %s %s %s' % (tileno,opname,op1,op2)
+    if opname not in op_data: return False
 
     # If op is a const, returns 'const_a' or 'const_b'
     op1 = bs_const(tileno, op1, 'op1')
