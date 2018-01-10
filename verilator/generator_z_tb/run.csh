@@ -464,7 +464,7 @@ echo "run.csh: Build the simulator..."
   if ($?VERBOSE) then
     echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
     echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
-    echo '%Warning3 See $tmpdir/verilator.out for full log.'
+    echo "%Warning3 See $tmpdir/verilator.out for full log."
     echo
     cat $tmpdir/verilator.out \
       | awk -f ./run-verilator-warning-filter.awk \
@@ -595,6 +595,16 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   set quietfilter = (cat)
   set qf2         = (cat)
 
+  # Shouldn't have to do this except for I'm too stupid to get this right.
+  set nyb = '[0-9a-fA-F]'
+  set wrd = "$nyb$nyb$nyb$nyb$nyb$nyb$nyb$nyb"
+  set bad = `egrep -v "^$wrd $wrd" $config | head -1`
+  if ("$bad" != "") then
+    echo "ERROR run.csh: bad line in config file:"
+    echo "  '$bad'"
+    echo
+    exit -1
+  endif
 
   if ($?VERBOSE) set echo
     obj_dir/V$top \

@@ -5,15 +5,8 @@ import sys
 import re
 import random
 
-# Version for CGRA w/o IO tiles
-# # Replace 'DEPTH' with a decimal integer %03d
-# MEM_TEMPLATE='''
-#   #DELAY DEPTH,0
-#   #
-#   T3_mem_DEPTH # (fifo_depth=DEPTH)
-#   self.in -> T3_in_s2t0 -> T3_mem_in
-#   T3_mem_out -> T3_out_s2t0 -> self.out
-# '''
+
+# FIXME/TODO if tile 3 is memtile, use non-io templates etc.
 
 # OOPS with IO tiles included, first mem tile is...?  tile 14?
 # Replace 'DEPTH' with a decimal integer %03d
@@ -25,6 +18,15 @@ MEM_TEMPLATE='''
   T14_mem_out -> T14_out_s2t0 -> self.out
 '''
 
+# Version for CGRA w/o IO tiles
+# Replace 'DEPTH' with a decimal integer %03d
+MEM_TEMPLATE='''
+  #DELAY DEPTH,DEPTH
+  #
+  T3_mem_DEPTH # (fifo_depth=DEPTH)
+  self.in -> T3_in_s2t0 -> T3_mem_in
+  T3_mem_out -> T3_out_s2t0 -> self.out
+'''
 
 # Version for CGRA w/o IO tiles
 # # Replace OPNAME with name of operand e.g. 'add'
