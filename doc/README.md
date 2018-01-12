@@ -5,6 +5,7 @@
 
 -----
 <b>Documents here:</b>
+* global_signals_arch.pptx - NB doc for global signals and stalls 01/2018
 * 02_23_2017_CGRA.pptx - CGRA status and overview slides presented by Ankita at AHA mtg 02/23/2017. 
 * CGRA_architecture_overview_NB_161117.pdf - CGRA Overview: Nikhil slides from 11/2016 AHA meeting.
 * CGRA_config_debug_spec_NB_171114b.docx - Latest(?) config/debug spec from Nikhil
