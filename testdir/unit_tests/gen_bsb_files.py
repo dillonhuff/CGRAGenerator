@@ -5,15 +5,7 @@ import sys
 import re
 import random
 
-# Version for CGRA w/o IO tiles
-# # Replace 'DEPTH' with a decimal integer %03d
-# MEM_TEMPLATE='''
-#   #DELAY DEPTH,0
-#   #
-#   T3_mem_DEPTH # (fifo_depth=DEPTH)
-#   self.in -> T3_in_s2t0 -> T3_mem_in
-#   T3_mem_out -> T3_out_s2t0 -> self.out
-# '''
+# FIXME/TODO if tile 3 is memtile, use non-io templates etc.
 
 # # OOPS with IO tiles included, first mem tile is...?  tile 14?
 # # Replace 'DEPTH' with a decimal integer %03d
@@ -23,22 +15,6 @@ import random
 #   T14_mem_DEPTH # (fifo_depth=DEPTH)
 #   self.in -> T14_in_s2t0 -> T14_mem_in
 #   T14_mem_out -> T14_out_s2t0 -> self.out
-# '''
-
-# # Send output to PE tile T11
-# MEM_TEMPLATE='''
-#   #DELAY DEPTH,DEPTH
-#   #
-#   self.in -> T11_in_s2t0
-#   T11_in_s2t0 -> T11_out_s0t0
-#   T12_in_s2t0 -> T12_out_s0t0
-#   T13_in_s2t0 -> T13_out_s0t0
-#   T14_in_s2t0 -> T14_mem_in
-#   T14_mem_DEPTH # (fifo_depth=DEPTH)
-#   T14_mem_out -> T14_out_s2t1
-#   T13_in_s0t1 -> T13_out_s2t1
-#   T12_in_s0t1 -> T12_out_s2t1
-#   T11_in_s0t1 -> T11_out_s2t1 -> self.out
 # '''
 
 # Input from PE tile 11, output to mem tile T14
@@ -55,6 +31,22 @@ MEM_TEMPLATE='''
   T14_in_s7t1 -> T14_out_s5t1 -> self.out
 '''
 
+# # Input from PE tile 11, output to PE tile T11
+# MEM_TEMPLATE='''
+#   #DELAY DEPTH,DEPTH
+#   #
+#   self.in -> T11_in_s2t0
+#   T11_in_s2t0 -> T11_out_s0t0
+#   T12_in_s2t0 -> T12_out_s0t0
+#   T13_in_s2t0 -> T13_out_s0t0
+#   T14_in_s2t0 -> T14_mem_in
+#   T14_mem_DEPTH # (fifo_depth=DEPTH)
+#   T14_mem_out -> T14_out_s2t1
+#   T13_in_s0t1 -> T13_out_s2t1
+#   T12_in_s0t1 -> T12_out_s2t1
+#   T11_in_s0t1 -> T11_out_s2t1 -> self.out
+# '''
+
 # MEM_TEMPLATE='''
 #   #DELAY DEPTH,DEPTH
 #   #
@@ -64,21 +56,17 @@ MEM_TEMPLATE='''
 #   T14_mem_out -> T14_out_s2t0 -> self.out
 # '''
 
-
-
 # Version for CGRA w/o IO tiles
-# # Replace OPNAME with name of operand e.g. 'add'
-# OP_TEMPLATE_OLD='''
-#   #DELAY 1,1
-#   #
-#   self.in -> T0_in_s2t0
-#   T0_in_s2t0 -> T0_op1
-#   T0_in_s2t0 -> T0_out_s1t0
-#   T0_out_s1t0 -> T0_op2 (r)
-#   T0_OPNAME(wire,reg)
-#   T0_pe_out -> T0_out_s0t1 -> self.out
-# '''
+# Replace 'DEPTH' with a decimal integer %03d
+MEM_TEMPLATE_OLD='''
+  #DELAY DEPTH,DEPTH
+  #
+  T3_mem_DEPTH # (fifo_depth=DEPTH)
+  self.in -> T3_in_s2t0 -> T3_mem_in
+  T3_mem_out -> T3_out_s2t0 -> self.out
+'''
 
+##############################################################################
 # THIS ONE CRASHES!!
 # OOPS with IO tiles included, first PE tile is...? tile 11?
 # Replace OPNAME with name of operand e.g. 'add'
@@ -123,6 +111,30 @@ OP_TEMPLATE='''
   T14_in_s2t1 -> T14_out_s1t1
   T14_in_s7t1 -> T14_out_s5t1 -> self.out
 '''
+
+# Version for CGRA w/o IO tiles
+# Replace OPNAME with name of operand e.g. 'add'
+OP_TEMPLATE_OLD='''
+  #DELAY 1,1
+  #
+  self.in -> T0_in_s2t0
+  T0_in_s2t0 -> T0_op1
+  T0_in_s2t0 -> T0_out_s1t0
+  T0_out_s1t0 -> T0_op2 (r)
+  T0_OPNAME(wire,reg)
+  T0_pe_out -> T0_out_s0t1 -> self.out
+'''
+
+# using get will return `None` if a key is not present rather than raise a `KeyError`
+# print os.environ.get('KEY_THAT_MIGHT_EXIST')
+# os.getenv is equivalent, and can also give a default value instead of `None`
+# print os.getenv('KEY_THAT_MIGHT_EXIST', default_value)
+
+if os.getenv('NO_IO_TILES'):
+    MEM_TEMPLATE = MEM_TEMPLATE_OLD
+    OP_TEMPLATE  =  OP_TEMPLATE_OLD
+
+
 
 
 

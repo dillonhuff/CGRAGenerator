@@ -1,3 +1,33 @@
+REGISTER PROBLEMS: in gen_bsb_files.py, verilog crashes if try to use
+register on op1 instead of op2
+
+# THIS ONE CRASHES!!
+# BAD reg op1 ba
+OP_TEMPLATE='''
+  #DELAY 1,1
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1 (r)
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2
+  T11_OPNAME(reg,wire)
+  T11_pe_out -> T11_out_s0t1 -> self.out
+
+# GOOD reg op2 ab
+OP_TEMPLATE='''
+  #DELAY 1,1
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2 (r)
+  T11_OPNAME(wire,reg)
+  T11_pe_out -> T11_out_s0t1 -> self.out
+'''
+
+
+
+
 To run the tests
 
 utest.py --help
