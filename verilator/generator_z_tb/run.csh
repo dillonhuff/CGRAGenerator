@@ -115,10 +115,11 @@ echo config = $config 2
 
 
 
-# CLEANUP
-foreach f (obj_dir counter.cvd tile_config.dat)
-  if (-e $f) rm -rf $f
-end
+# NO don't cleanup might want this later (for -nobuild)...
+# # CLEANUP
+# foreach f (obj_dir counter.cvd tile_config.dat)
+#   if (-e $f) rm -rf $f
+# end
 
 # I GUESS 4x4 vs. 8x8 is implied by presence or absence of CGRA_GEN_USE_MEM (!!???)
 # I can't find anything else that does it :(
@@ -165,7 +166,11 @@ while ($#argv)
       set GENERATE = '-gen'; breaksw;
 
     case '-nobuild':
-      set GENERATE = '-nogen'; unset BUILD; breaksw;
+      # set GENERATE = '-nogen'; unset BUILD; breaksw;
+      # FIXME
+      echo "haha sorry, in master branch -nobuild does NOTHING (for now)"
+      breaksw
+
 
     case '-nogen':
       set GENERATE = '-nogen'; breaksw;
@@ -514,7 +519,7 @@ echo "run.csh: Build the simulator..."
 
   echo
   echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
-  echo "make V$top -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
+  echo "make $vtop -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
   /bin/rm obj_dir/Vtop
 
   make \
@@ -611,6 +616,13 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     set qf2         = (cat)
   endif
 
+  # This is ugly.  -nobuild skips config-file processing so redo here.
+  if (! $?BUILD) then
+    # Clean up config file for verilator use
+    grep -v '#' $config | grep . > $tmpdir/tmpconfig
+    set config = $tmpdir/tmpconfig
+  endif
+
   if ($?VERBOSE) then
     echo
     echo "BITSTREAM '$config':"
@@ -652,8 +664,10 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   unset echo >& /dev/null
   echo -n " TIME NOW: "; date
 
+
   unset FAIL
   grep FAIL $tmpdir/run.log.$$ && set FAIL
+  grep %Error $tmpdir/run.log.$$ && set FAIL
 
 
   echo
