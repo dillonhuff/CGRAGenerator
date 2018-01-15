@@ -303,7 +303,7 @@ endif
 echo
 # if (! $?GENERATE) then
 if ("$GENERATE" == "-nogen") then
-  echo "No generate!"
+  echo "run.csh: No generate!"
   echo "run.csh: Not building CGRA because you asked for it with '-nogen'..."
 else
   # echo "run.csh: Building CGRA because you asked for it with '-gen'..."
@@ -509,15 +509,17 @@ echo "run.csh: Build the simulator..."
     echo
     echo "make \"
     echo "  VM_USER_CFLAGS='-DINWIRE=top->$inwires -DOUTWIRE=top->$outwires' \"
-    echo "  -j -C obj_dir/ -f V$top.mk V$top"
+    echo "  -j -C obj_dir/ -f $vtop.mk $vtop"
   endif
 
   echo
   echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
   echo "make V$top -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
+  /bin/rm obj_dir/Vtop
+
   make \
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
-    -j -C obj_dir/ -f V$top.mk V$top \
+    -j -C obj_dir/ -f $vtop.mk $vtop \
     >& $tmpdir/make_vtop.log \
     || set ERROR
 
@@ -617,7 +619,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
 
   echo
   echo "run.csh: TIME NOW: `date`"
-  echo "run.csh: V$top -output $output:t"
+  echo "run.csh: $vtop -output $output:t"
 
   # OOPS big parrot won't work in travis if output gets filtered...
   # Must have the printf every 10K cycles
@@ -635,8 +637,9 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     exit -1
   endif
 
+  # FIXME note the '|| exit -1" below is USELESS
   if ($?VERBOSE) set echo
-    obj_dir/V$top \
+    obj_dir/$vtop \
       -config $config \
       $in \
       $out \
