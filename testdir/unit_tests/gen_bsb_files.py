@@ -18,6 +18,44 @@ MEM_TEMPLATE='''
   T14_mem_out -> T14_out_s2t0 -> self.out
 '''
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Version for CGRA w/o IO tiles
 # Replace 'DEPTH' with a decimal integer %03d
 MEM_TEMPLATE='''
@@ -26,6 +64,36 @@ MEM_TEMPLATE='''
   T3_mem_DEPTH # (fifo_depth=DEPTH)
   self.in -> T3_in_s2t0 -> T3_mem_in
   T3_mem_out -> T3_out_s2t0 -> self.out
+'''
+
+##############################################################################
+# THIS ONE CRASHES!!
+# OOPS with IO tiles included, first PE tile is...? tile 11?
+# Replace OPNAME with name of operand e.g. 'add'
+# BAD reg op1 ba
+OP_TEMPLATE='''
+  #DELAY 1,1
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1 (r)
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2
+  T11_OPNAME(reg,wire)
+  T11_pe_out -> T11_out_s0t1 -> self.out
+'''
+
+# OOPS with IO tiles included, first PE tile is...? tile 11?
+# Replace OPNAME with name of operand e.g. 'add'
+# GOOD reg op2 ab
+OP_TEMPLATE='''
+  #DELAY 1,1
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1
+  T11_in_s2t0 -> T11_out_s1t0
+  T11_out_s1t0 -> T11_op2 (r)
+  T11_OPNAME(wire,reg)
+  T11_pe_out -> T11_out_s0t1 -> self.out
 '''
 
 # Version for CGRA w/o IO tiles
@@ -40,19 +108,6 @@ MEM_TEMPLATE='''
 #   T0_OPNAME(wire,reg)
 #   T0_pe_out -> T0_out_s0t1 -> self.out
 # '''
-
-# OOPS with IO tiles included, first PE tile is...? tile 11?
-# Replace OPNAME with name of operand e.g. 'add'
-OP_TEMPLATE='''
-  #DELAY 1,1
-  #
-  self.in -> T11_in_s2t0
-  T11_in_s2t0 -> T11_op1
-  T11_in_s2t0 -> T11_out_s1t0
-  T11_out_s1t0 -> T11_op2 (r)
-  T11_OPNAME(wire,reg)
-  T11_pe_out -> T11_out_s0t1 -> self.out
-'''
 
 
 # bsbuilder now has support for...
