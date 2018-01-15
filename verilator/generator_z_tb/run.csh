@@ -3,8 +3,10 @@
 set VERBOSE
 
 # Build a tmp space for intermediate files
-# set tmpdir = deleteme
 set tmpdir = `mktemp -d /tmp/run.csh.XXX`
+# set tmpdir = deleteme;     /bin/rm -rf $tmpdir/* || echo already empty
+# set tmpdir = /tmp/run.csh; /bin/rm -rf $tmpdir/* || echo already empty
+
 if (! -e $tmpdir) then
   unset ERR
   mkdir $tmpdir || set ERR
@@ -39,9 +41,7 @@ setenv CGRA_GEN_USE_MEM 1
 # DEFAULTS
 set testbench = top_tb.cpp
 set GENERATE  = "-gen"
-
-# Default configuration bitstream
-set config   = ../../bitstream/examples/940/pw.bs
+set BUILD
 
 # Sometimes may need to know what branch we are in
 git branch | grep '^*' >    $tmpdir/tmp
@@ -60,10 +60,21 @@ if (`expr "$branch" : ".*detached"`) then
 endif
 echo "run.csh: I think we are in branch '$branch'"
 
+# Default configuration bitstream
+set config   = ../../bitstream/examples/940/pw.bs
+
 if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2.bs
 if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2.bs
 
 set DELAY = '0,0'
+
+# FIXED maybe
+# # FIXME Yes this WILL bite my ass and very soon, I expect :(
+# if ("$config" == "../../bitstream/examples/pwv2_io.bs") set DELAY = '3,3'
+# 
+# echo .${config}.
+# echo $DELAY
+
 
 set input     = io/gray_small.png
 set output    = $tmpdir/output.raw
@@ -73,7 +84,7 @@ unset tracefile
 if ($#argv == 1) then
   if ("$argv[1]" == '--help') then
     echo "Usage:"
-    echo "    $0 <textbench.cpp> -q [-gen | -nogen]"
+    echo "    $0 <textbench.cpp> -q [-gen | -nogen] [-nobuild]"
     echo "        -usemem -allreg"
     echo "        -config <config_filename.bs>"
     echo "        -input   <input_filename.png>"
@@ -101,6 +112,8 @@ endif
 echo config = $config 2
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
+
+
 
 # CLEANUP
 foreach f (obj_dir counter.cvd tile_config.dat)
@@ -150,6 +163,9 @@ while ($#argv)
 
     case '-gen':
       set GENERATE = '-gen'; breaksw;
+
+    case '-nobuild':
+      set GENERATE = '-nogen'; unset BUILD; breaksw;
 
     case '-nogen':
       set GENERATE = '-nogen'; breaksw;
@@ -245,6 +261,7 @@ if (1) then
   # Backslashes line up better when printed...
   echo "Running with the following switches:"
   echo "$0 top_tb.cpp \"
+  if (! $?BUILD) echo "   -nobuild                    \"
   echo "   $GENERATE                    \"
   echo "   -config   $config   \"
   #echo "   -io       $iofile   \"
@@ -271,6 +288,14 @@ set nclocks = "-nclocks $nclocks"
 if   ($?VERBOSE) set VSWITCH = '-v'
 if (! $?VERBOSE) set VSWITCH = '-q'
 
+set vtop = 'Vtop'
+if (! $?BUILD) then
+  echo ""
+  echo "Skipping generate and build b/c you asked me to..."
+  goto RUN_SIM
+endif
+
+
 ##############################################################################
 # By default, we assume generate has already been done.
 # Otherwise, user must set "-gen" to make it happen here.
@@ -279,8 +304,10 @@ echo
 # if (! $?GENERATE) then
 if ("$GENERATE" == "-nogen") then
   echo "No generate!"
+  echo "run.csh: Not building CGRA because you asked for it with '-nogen'..."
 else
-  echo "Building CGRA because you asked for it with '-gen'..."
+  # echo "run.csh: Building CGRA because you asked for it with '-gen'..."
+  echo "run.csh: Building CGRA because it's the default..."
   ../../bin/generate.csh $VSWITCH || exit -1
 endif
 
@@ -501,6 +528,8 @@ echo "run.csh: Build the simulator..."
   if ($?VERBOSE) then
     cat $tmpdir/make_vtop.log; echo
   endif
+
+RUN_SIM:
 
 echo '------------------------------------------------------------------------'
 echo "run.csh: Run the simulator..."
