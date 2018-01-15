@@ -18,7 +18,8 @@ else
 endif
 # $(warning OUTPUT = "$(OUTPUT)")
 
-TEMPDIR := $(shell mktemp -d)
+TEMPDIR := $(shell mktemp -d /tmp/gentest-XXX)
+DELAY = 0,0
 
 # gray_small_4x4:
 # 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
@@ -29,41 +30,54 @@ TEMPDIR := $(shell mktemp -d)
 # 	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
 
 pw_gray_small_8x8:
+# 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
+#	CONFIG="-config ../../bitstream/examples/pwv2.bs"
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
-	CONFIG="-config ../../bitstream/examples/pwv1.bs"
+	CONFIG="-config ../../bitstream/examples/pw1009.bsa"
+
 
 pw_gray_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
-	CONFIG="-config ../../bitstream/examples/pwv1.bs"
+	CONFIG="-config ../../bitstream/examples/pwv2.bs"
+
+test_basic:
+	@./writelog.csh log1 -init
+	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" DELAY="0,0" \
+	          CONFIG="-config ../../bitstream/examples/pwv2_io.bs"
+	@echo
+	@./writelog.csh log1 -print
+
+
 
 test_all:
-	pwd; ls
-	./writelog.csh log1 -init TEST SUMMARY BEGIN `date`
-	make hackdiff_test | tee $(TEMPDIR)/hackdiff_test.log
+	make hackdiff_test 2>&1 | tee $(TEMPDIR)/hackdiff_test.log
+	make test_standalone
+	make test_serpent
 
-#         # Note the '| tee' masks any errors that might have occurred :(
-# 	make TEMPDIR=$(TEMPDIR) test_4x4_gray_small
-# 	make TEMPDIR=$(TEMPDIR) test_8x8_gray_small
-# 	make TEMPDIR=$(TEMPDIR) test_4x4_gray
-# 	make TEMPDIR=$(TEMPDIR) test_8x8_gray
-
-	make pw_gray_small_8x8
-	make pw_gray_8x8
-# 	# make gray_small_4x4
-# 	# make gray_4x4
-
+        # Read standalone test result(s) from 'log1'
 	@echo ""
-	@echo SUMMARY OF TEST RESULTS
+	@echo SUMMARY OF STANDALONE TEST RESULTS
 	@echo ==================================================
-#	cat $(TEMPDIR)/test_summary.txt
 	./writelog.csh log1 -print
 
-# 	@egrep '^00014'                \
-# 	  $(TEMPDIR)/hackdiff_test.log \
-# 	  $(TEMPDIR)/test_4x4_gray_small.log \
-# 	  $(TEMPDIR)/test_8x8_gray_small.log \
-# 	  $(TEMPDIR)/test_4x4_gray.log       \
-# 	  $(TEMPDIR)/test_8x8_gray.log
+        # Summary of hackdiff results
+	egrep ^hackdiff $(TEMPDIR)/hackdiff_test.log
+
+
+test_serpent:
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR)
+	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR)
+#	FIXME Who will delete TEMPDIR?
+
+test_standalone:
+# 	pwd; ls
+	./writelog.csh log1 -init TEST SUMMARY BEGIN `date`
+
+        # Note: Results go to 'log1'
+	make pw_gray_small_8x8
+#	make pw_gray_8x8
+# 	# make gray_small_4x4
+# 	# make gray_4x4
 
 # Probably want to restore the more-challenging conv_bw test, once smoke has cleared.
 # hackdiff_test:
@@ -74,11 +88,9 @@ test_all:
 
 hackdiff_test:
 	cd ../bitstream; \
-	decoder/hackdiff.csh -v \
-	  examples/pw351.bs examples/pw351.bsa \
+	decoder/hackdiff.csh \
+	  examples/bw1000.bs examples/bw1000.bsa \
 	  -cgra examples/cgra_configs/cgra_info_new.txt
-
-
 
 
 
@@ -97,7 +109,7 @@ test:
 	   $(CONFIG)                         \
 	   -input  io/$(IMAGE).png            \
 	   -output $(TEMPDIR)/$(IMAGE)_out.raw \
-	   -delay 0,0 \
+	   -delay $(DELAY) \
 	   -nclocks 5M || echo FAIL
 
 	cmp $(VERILATOR_TOP)/io/$(IMAGE)_out.raw $(TEMPDIR)/$(IMAGE)_out.raw      \

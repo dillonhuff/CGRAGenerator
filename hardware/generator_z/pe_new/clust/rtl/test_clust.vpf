@@ -9,3 +9,5 @@
 ../../pe/rtl/test_cmpr.svp
 ../../pe/rtl/test_mult_add.svp
 ../../pe/rtl/test_opt_reg.svp
+../../pe/rtl/test_simple_shift.svp
+../../pe/rtl/test_shifter.svp

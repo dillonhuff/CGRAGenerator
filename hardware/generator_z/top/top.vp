@@ -37,6 +37,16 @@
 //; my @IO_count = qw(32 32 32 32);
 //; #
 //; #
+//; #
+//; # SR 12/2017: want 8x8 grid!
+//; my $sr_grid_size = "default";
+//; $sr_grid_size = "8x8";
+//; # $sr_grid_size = "64x64";
+//; if ($sr_grid_size == "8x8") { @IO_count = qw(8 8 8 8); }
+//; if ($sr_grid_size == "64x64") { @IO_count = qw(64 64 64 64); }
+//; #
+//; #
+//; #
 //; my $tile_config;
 //; $tile_config->{ 'pe' } = {
 //;       type => 'pe_tile_new',
@@ -99,7 +109,7 @@
 //; # not include IO tiles in the basic block.
 //; #
 //; my $basic_block  = "pe pe pe mem\n";
-//; $basic_block    .= "pe pe pe X  ";
+//;    $basic_block .= "pe pe pe X  ";
 //; #
 //; # Number of times the basic block repeats in the horizontal direction.
 //; #
@@ -108,6 +118,13 @@
 //; # Number of times the basic block repeats in the vertical direction
 //; #
 //; my $basic_block_repeat_y = 16;
+//; #
+//; #
+//; #
+//; # SR 12/2017: want 8x8 grid!
+//; if ($sr_grid_size == "8x8")   { $basic_block_repeat_x =  2; $basic_block_repeat_y =  4; }
+//; if ($sr_grid_size == "64x64") { $basic_block_repeat_x = 16; $basic_block_repeat_y = 32; }
+//; #
 //; #
 //; #
 //; #####################################################
@@ -682,8 +699,9 @@ wire reset;
 //;     foreach my $bus (sort keys %bus_num_tracks_hash) {
 //;       print INFO "$bus:$bus_num_tracks_hash{$bus} ";
 //;     }
+//;     print INFO "'";
 //;   }
-//;   print INFO "'>\n";
+//;   print INFO ">\n";
 //;   if ($tile_type ne "empty") {
 //;     open (INP, "<TILE".$inst_obj->mname()) or die "Couldn't open file TILE$inst_obj->mname(), $!";
 //;     while (<INP>) {

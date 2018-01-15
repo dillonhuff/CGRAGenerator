@@ -1,0 +1,78 @@
+
+# CONSTANTS
+# const0_0::add_340_343_344 T15_op2
+# const3_3::mul_3423_343 T16_op2
+# const5_5::mul_3465_347 T2_op2
+# const7_7::mul_3507_351 T0_op2
+
+# REGISTERS []
+
+# PE tiles
+T0_mul(wire,const7_7)      # mul_3507_351
+T2_mul(wire,const5_5)      # mul_3465_347
+T8_add(wire,wire)          # add_340_351_352
+T9_add(wire,wire)          # add_340_347_348
+T15_add(wire,const0_0)     # add_340_343_344
+T16_mul(wire,const3_3)     # mul_3423_343
+
+# MEM tiles
+T3_mem_10    # mem_1 fifo_depth=10
+T17_mem_10   # mem_2 fifo_depth=10
+
+# ROUTING
+
+# INPUT::mem_1
+T0_in_s2t0 -> T0_out_s0t0
+T1_in_s2t0 -> T1_out_s0t0
+T2_in_s2t0 -> T2_out_s0t0
+T3_in_s2t0 -> T3_mem_in
+
+# INPUT::mul_3507_351
+T0_in_s2t0 -> T0_op1
+
+# add_340_343_344::add_340_347_348
+T15_pe_out -> T15_out_s3t0
+T9_in_s1t0 -> T9_out_s2t0
+T9_out_s2t0 -> T9_op1
+
+# add_340_347_348::add_340_351_352
+T9_pe_out -> T9_out_s2t1
+T8_in_s0t1 -> T8_out_s2t1
+T8_out_s2t1 -> T8_op1
+
+# add_340_351_352::OUTPUT
+T8_pe_out -> T8_out_s0t0
+
+# mem_1::mem_2
+T3_mem_out -> T3_out_s5t0
+T17_in_s3t0 -> T17_out_s2t0
+T17_out_s2t0 -> T17_mem_in
+
+# mem_1::mul_3465_347
+T3_mem_out -> T3_out_s2t0
+T2_in_s0t0 -> T2_out_s2t0
+T2_out_s2t0 -> T2_op1
+
+# mem_2::mul_3423_343
+T17_mem_out -> T17_out_s2t1
+T16_in_s0t1 -> T16_out_s2t1
+T16_out_s2t1 -> T16_op1
+
+# mul_3423_343::add_340_343_344
+T16_pe_out -> T16_out_s2t0
+T15_in_s0t0 -> T15_out_s2t0
+T15_out_s2t0 -> T15_op1
+
+# mul_3465_347::add_340_347_348
+T2_pe_out -> T2_out_s1t0
+T10_in_s3t0 -> T10_out_s2t0
+T9_in_s0t0 -> T9_out_s1t0
+T9_out_s1t0 -> T9_op2
+
+# mul_3507_351::add_340_351_352
+T0_pe_out -> T0_out_s1t0
+T8_in_s3t0 -> T8_out_s1t0
+T8_out_s1t0 -> T8_op2
+
+# INPUT  tile  0 (0,0) / in_BUS16_S2_T0 / wire_0_m1_BUS16_S0_T0
+# OUTPUT tile  8 (1,0) / out_BUS16_S0_T0 / wire_1_0_BUS16_S0_T0

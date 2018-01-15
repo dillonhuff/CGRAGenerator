@@ -1,5 +1,5 @@
 //; my $reg_inputs = parameter(Name=>'reg_inputs', val=> 1, List=>[1, 0], doc=>'Add register on the inputs');
-//; my $reg_out    = parameter(Name=>'reg_out', val=> 1, List=>[1, 0], doc=>'Add register on the outputs');
+//; my $reg_out    = parameter(Name=>'reg_out', val=> 0, List=>[1, 0], doc=>'Add register on the outputs');
 //;
 //; my $use_add   = parameter(Name=>'use_add', val=> 2, List=>[2, 1, 0], doc=>'0 - no adders, 1 - simple ADDs, 2 - SAD');
 //; my $use_cntr  = parameter(Name=>'use_cntr', val=> 1, List=>[1, 0],  doc=>'0 - no counter mode, 1 - enable counter mode');
@@ -10,21 +10,36 @@
 //; my $is_msb    = parameter(Name=>'is_msb', val=> 0, List=>[1, 0], doc=>'1 - MSB in 32b mode, 0 - LSB result');
 //; my $en_double = parameter(Name=>'en_double', val=> 0, List=>[1, 0], doc=>'1 - 32b supported, 0 - No 32b support');
 //;
+//; my $en_opt   = parameter(Name=>'en_opt', val=> 1, List=>[1, 0], doc=>'Use shifter area optimization?');
+//; my $en_trick = parameter(Name=>'en_trick', val=> 0, List=>[1, 0], doc=>'Shiter sharing trick in double presition');
+//;
+//; my $use_abs     = parameter(Name=>'use_abs', val=> 1, List=>[1, 0],  doc=>'0 - no ABS, 1 - enable ABS');
+//; my $use_max_min = parameter(Name=>'use_max_min', val=> 1, List=>[1, 0],  doc=>'0 - no max/min, 1 - enable max/min');
+//; my $use_relu    = parameter(Name=>'use_relu', val=> 1, List=>[1, 0],  doc=>'0 - no relu, 1 - enable relu');
+//;
 //; my $debug = $self->parameter(name=>'debug', val=> 0, List=>[1, 0], doc=>'Generate extra code for debug');
+//;
+//; my $use_flip  = $self->parameter(name=>'use_flip', val=> 0, List=>[1, 0], doc=>'Add option to flip inputs?');
 //;
 //;
 //; my $lut_inps  = parameter(Name=>'lut_inps',
-//;                               Val=>3, Min=>0, Step=>1, Max=>16,
+//;                               Val=> 3, Min=>0, Step=>1, Max=>16,
 //;                               Doc=>"0 - no LUT, 1-16 - uses LUTs with that number of inputs");
 //;
 //;
-//;
-//; my $use_sad  = $use_add > 1;
 //; my $use_lut  = ($lut_inps > 1);
 //;
-//; my $use_cntr = ($use_add > 1) ? 1 : 0;
-//;
-//; my $use_c_input = ($use_sad > 0 || $mult_mode > 1 || $lut_inps > 3);
+//; my $use_c_input = ($use_add > 1) or ($mult_mode > 1) or ($lut_inps > 3);
+/*
+use_add   = `$use_add  `
+mult_mode = `$mult_mode`
+lut_inps  = `$lut_inps `
+
+use_abs     = `$use_abs    `
+use_max_min = `$use_max_min`
+use_relu    = `$use_relu   `
+
+*/
 
 module   `mname`  #(
   parameter DataWidth = 16
@@ -36,7 +51,7 @@ module   `mname`  #(
 //;}
 
 //; if($use_lut || $reg_inputs) {
-  input         [DataWidth-1:0] cfg_d,
+  input         [31:0] cfg_d,
   input         [7:0]  cfg_a,
   input                cfg_en,
 
@@ -44,17 +59,17 @@ module   `mname`  #(
   input [15:0]                  op_code,
 //;}
 
-  input  [DataWidth-1:0]        op_a_in,
+  input  [DataWidth-1:0]        data0,//op_a_in,
 //; if($en_double & $use_shift) {
   input  [DataWidth-1:0]        op_a_shift,
 //; }
-  input  [DataWidth-1:0]        op_b_in,
+  input  [DataWidth-1:0]        data1,//op_b_in,
 //; if($use_c_input) {
-  input  [DataWidth-1:0]        op_c_in,
+  input  [DataWidth-1:0]        data2,//op_c_in,
 //;}
-  input                         op_d_p_in,
-  input                         op_e_p_in,
-  input                         op_f_p_in,
+  input                         bit0,//op_d_p_in,
+  input                         bit1,//op_e_p_in,
+  input                         bit2,//op_f_p_in,
 
 //; if($en_double & $use_add > 0) {
 //;   if($is_msb) {
@@ -67,15 +82,14 @@ module   `mname`  #(
 //;   }
 //; }
 //; if($use_div) {
-//;   if($is_msb) {
-  input        [1:0]           div_low_msb,
-//;   } elsif(!$en_double) {
-  input                        res_p_msb,
+  input        [DataWidth-1:0]   div_oper,
+//;   if(!$is_msb & !$en_double) {
+  input                          res_p_msb,
 //;   }
-  input        [DataWidth-1:0] div_ci,
-  output logic [DataWidth-1:0] div_co,
+//;   if(!$is_msb) {
+  output logic [DataWidth-1:0]   div_co,
+//;   }
 //;}
-
 
 
   output logic [DataWidth-1:0]  res,
@@ -91,6 +105,8 @@ logic  [DataWidth-1:0]        op_b;
 logic  [DataWidth-1:0]        op_c;
 //; }
 logic                         op_d_p;
+logic                         op_e_p;
+logic                         op_f_p;
 
 logic [DataWidth-1:0] comp_res;
 logic                 comp_res_p;
@@ -99,15 +115,23 @@ logic                 res_p_w;
 //; if($reg_inputs) {
 
 
+logic [15:0] inp_code;
 logic [15:0] op_code;
+
 always_ff @(posedge clk or negedge rst_n) begin
   if(~rst_n) begin
-    op_code <= 'h0;
+    inp_code <= 'h0;
+    op_code  <= 'h0;
   end else if(cfg_en && (&cfg_a)) begin
-    op_code <= cfg_d[15:0];
+    inp_code <= cfg_d[31:16];
+    op_code  <= cfg_d[15:0];
   end
 end
 
+logic [15:0] nc_inp_code;
+assign nc_inp_code = inp_code;
+logic [15:0] nc_op_code;
+assign nc_op_code = op_code;
 
 //; my $op_a_r = generate_base('test_opt_reg', 'test_opt_reg_a');
 `$op_a_r->mname()` #(.DataWidth(DataWidth)) `$op_a_r->iname()`
@@ -117,8 +141,8 @@ end
   .rst_n      (rst_n),
   .load       (cfg_en && (cfg_a == 8'hF0)),
   .val        (cfg_d[DataWidth-1:0]),
-  .mode       (op_code[15:14]),
-  .data_in    (op_a_in),
+  .mode       (inp_code[1:0]),
+  .data_in    (data0),//op_a_in),
   .res        (op_a)
 );
 
@@ -128,12 +152,13 @@ logic                 op_b_ld;
 logic [DataWidth-1:0] op_b_val;
 
 //; if($use_cntr) {
-  logic cntr_en; //(op_code[5:0]==PE_CNTR_OP)
+  logic cntr_en;
+  logic [DataWidth-1:0] cntr_next;
 
   assign op_b_ld  = (cfg_en && (cfg_a == 8'hF1)) | (clk_en & cntr_en);
   assign op_b_val = cfg_en ?
                     cfg_d[DataWidth-1:0] :
-                    (comp_res_p ? {DataWidth{1'b0}}: comp_res);
+                    (comp_res_p ? {DataWidth{1'b0}}: cntr_next);
 
 //;} else {
   assign op_b_ld  = cfg_en && (cfg_a == 8'hF1);
@@ -148,8 +173,8 @@ logic [DataWidth-1:0] op_b_val;
   .rst_n      (rst_n),
   .load       (op_b_ld),
   .val        (op_b_val),
-  .mode       (op_code[13:12]),
-  .data_in    (op_b_in),
+  .mode       (inp_code[3:2]),
+  .data_in    (data1),//op_b_in),
   .res        (op_b)
 );
 
@@ -163,8 +188,8 @@ logic [DataWidth-1:0] op_b_val;
   .rst_n      (rst_n),
   .load       (cfg_en && (cfg_a == 8'hF2)),
   .val        (cfg_d[DataWidth-1:0]),
-  .mode       (op_code[11:10]),
-  .data_in    (op_c_in),
+  .mode       (inp_code[5:4]),
+  .data_in    (data2),//op_c_in),
   .res        (op_c)
 );
 //; }
@@ -178,38 +203,76 @@ logic [DataWidth-1:0] op_b_val;
   .rst_n      (rst_n),
   .load       (cfg_en && (cfg_a == 8'hF3)),
   .val        (cfg_d[0]),
-  .mode       (op_code[9:8]),
-  .data_in    (op_d_p_in),
+  .mode       (inp_code[9:8]),
+  .data_in    (bit0),//op_d_p_in),
   .res        (op_d_p)
 );
 
 
+//;my $op_e_r = clone($op_a_r, 'test_opt_reg_e');
+`$op_e_r->mname()` #(.DataWidth(1)) `$op_e_r->iname()`
+(
+  .clk        (clk),
+  .clk_en     (clk_en),
+  .rst_n      (rst_n),
+  .load       (cfg_en && (cfg_a == 8'hF4)),
+  .val        (cfg_d[0]),
+  .mode       (inp_code[11:10]),
+  .data_in    (bit1),//op_e_p_in),
+  .res        (op_e_p)
+);
+
+
+//;my $op_f_r = clone($op_a_r, 'test_opt_reg_f');
+`$op_f_r->mname()` #(.DataWidth(1)) `$op_f_r->iname()`
+(
+  .clk        (clk),
+  .clk_en     (clk_en),
+  .rst_n      (rst_n),
+  .load       (cfg_en && (cfg_a == 8'hF5)),
+  .val        (cfg_d[0]),
+  .mode       (inp_code[13:12]),
+  .data_in    (bit2),//op_f_p_in),
+  .res        (op_f_p)
+);
+
 //;} else {
-assign op_a = op_a_in;
-assign op_b = op_b_in;
+assign op_a = data0;//op_a_in;
+assign op_b = data1;//op_b_in;
 //; if($use_c_input) {
-assign op_c = op_c_in;
+assign op_c = data2;//op_c_in;
 //; }
-assign op_d_p = op_d_p_in;
+assign op_d_p = bit0;//op_d_p_in;
 
 //;}
 
+//; if ($use_flip){
+logic flip_inputs;
+assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'double' mode
+//;}
 
 
 //; my $pe_comp = generate('test_pe_comp', 'test_pe_comp', "use_bool"=>$use_bool, "use_add"=>$use_add,
 //;                         "use_cntr" => $use_cntr, "use_shift"=>$use_shift, "mult_mode"=>$mult_mode,
 //;                         "use_div" => $use_div, "is_msb"=>$is_msb, "en_double"=>$en_double,
+//;                         "use_relu" => $use_relu, "en_opt"=>$en_opt, "en_trick"=>$en_trick,
+//;                         "use_abs"=>$use_abs, "use_max_min"=>$use_max_min,
 //;                         "debug"=>$debug);
 
 `$pe_comp->instantiate()`
 (
-  .op_code ({1'b0, op_code[7:0]}),
+  .op_code (op_code[8:0]),
 
+//; if($use_flip) {
+  .op_a     (flip_inputs ? op_b : op_a),
+  .op_b     (flip_inputs ? op_a : op_b),
+//; } else {
   .op_a     (op_a),
+  .op_b     (op_b),
+//; }
 //; if($en_double & $use_shift) {
   .op_a_shift (op_a_shift),
 //; }
-  .op_b     (op_b),
 //; if($use_c_input) {
   .op_c     (op_c),
 //;}
@@ -227,21 +290,20 @@ assign op_d_p = op_d_p_in;
 //;   }
 //; }
 
-
 //; if($use_div) {
-//;   if($is_msb) {
-  .div_low_msb (div_low_msb),
-//;   } elsif(!$en_double) {
+  .div_oper    (div_oper),
+//;   if(!$is_msb & !$en_double) {
   .res_p_msb   (res_p_msb  ),
 //;   }
-  .div_ci      (div_ci),
+//;   if(!$is_msb) {
   .div_co      (div_co),
+//;   }
 //;}
-
 
 
 //; if($use_cntr) {
   .cntr_en  (cntr_en),
+  .cntr_next(cntr_next),
 //;}
   .res      (comp_res),
 //; if($en_double & $mult_mode > 0) {
@@ -256,9 +318,9 @@ logic res_lut;
 //; my $lut           = generate_base('test_lut', 'test_lut', "lut_inps"=>$lut_inps);
 //; my $lut_extra_inp = $lut->get_param('lut_inps') > 2;
 //; my $lut_c_inp     = "";
-//; my $c_in_slice    = ($lut->get_param('lut_inps') == 3) ? "[0]" : "["+($lut_inps-1)+":0]";
+//; my $c_in_slice    = ($lut->get_param('lut_inps') == 3) ? "[0]" : "[".($lut_inps-3).":0]";
 //; if( $lut->get_param('lut_inps') == 3) {
-//;    $lut_c_inp     = "op_d_p_in";
+//;    $lut_c_inp     = "op_f_p";
 //; } elsif($use_c_input) {
 //;    $lut_c_inp     = "op_c".$c_in_slice;
 //; }
@@ -271,8 +333,8 @@ logic res_lut;
   .cfg_a    (cfg_a),
   .cfg_en   (cfg_en),
 
-  .op_a_in  (op_e_p_in),
-  .op_b_in  (op_f_p_in),
+  .op_a_in  (op_d_p),
+  .op_b_in  (op_e_p),
 //; if($lut_extra_inp){
   .op_c_in  (`$lut_c_inp`),
 //;}
@@ -280,12 +342,11 @@ logic res_lut;
   .res      (res_lut)
 );
 
-  assign res_p_w = op_code[7] ? res_lut : comp_res_p;
+  assign res_p_w = op_code[8] ? res_lut : comp_res_p;
 //;} else {
 
   assign res_p_w = comp_res_p;
 //;}
-
 
 
 //; if($reg_out) {

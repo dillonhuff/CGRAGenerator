@@ -17,6 +17,18 @@ if (0):
 global verbose
 verbose = False
 
+# Haha FIXME FIXME oh yeahhhh...this is gonna break big time
+# FIXME names should come from cgra_info
+OP_IN = {}
+# OP_IN['a'] = "op_a_in"
+# OP_IN['b'] = "op_b_in"
+# OP_IN['c'] = "op_c_in"
+# OP_IN['d'] = "op_d_in"
+OP_IN['a'] = "data0"
+OP_IN['b'] = "data1"
+OP_IN['c'] = "data2"
+#OP_IN['d'] = "data3" # NOPE
+
 def get_default_cgra_info_filename():
     '''
     Look for default cgra_info file in <decoder-directory>/examples/cgra_info.txt
@@ -453,10 +465,18 @@ def pe_decode(RR, DDDDDDDD):
     DDDD = DDDDDDDD[4:8]   # last four hex digits
     dstring = "0x" + DDDD  # Same, with a "0x" in front
     # Note: C input unused/invalid for 2-input PEs!
-    if (RR == "F0"): areg = dstring; k="op_a_in"
-    if (RR == "F1"): breg = dstring; k="op_b_in"
-    if (RR == "F2"): creg = dstring; k="op_c_in"
-    if (RR == "F3"): dreg = dstring; k="op_d_in"; print "\n\nFOOOOOOOOOOOOOOO\n\n"
+
+    # Haha FIXME FIXME oh yeahhhh...this is gonna break big time
+    # FIXME names should come from cgra_info
+    # if (RR == "F0"): areg = dstring; k="op_a_in"
+    # if (RR == "F1"): breg = dstring; k="op_b_in"
+    # if (RR == "F2"): creg = dstring; k="op_c_in"
+    # if (RR == "F3"): dreg = dstring; k="op_d_in"; print "\n\nFOOOOOOOOOOOOOOO\n\n"
+    if (RR == "F0"): areg = dstring; k=OP_IN['a']
+    if (RR == "F1"): breg = dstring; k=OP_IN['b']
+    if (RR == "F2"): creg = dstring; k=OP_IN['c']
+    if (RR == "F3"): dreg = dstring; k=OP_IN['d']; print "\n\nFOOOOOOOOOOOOOOO\n\n"
+
     if (k):
         if verbose:
             iohack = "";
@@ -487,8 +507,6 @@ def pe_decode(RR, DDDDDDDD):
     # FF00xxxx xxxxDDDD =>
     # case DDDD[15:8]: program behavior of operands A, B, D
 
-    dddd = int(DDDD,16) >> 8;
-
     # 0xxx,xxxx => (always) read A from reg_a
     # 1xxx,xxxx => (always) read A from wire op_a_in
     # x1xx,xxxx => (always) load reg a from wire op_a_in
@@ -503,9 +521,40 @@ def pe_decode(RR, DDDDDDDD):
 
     # (Note default value for all tiles is opcode = 16'h0000 (ADD, src=reg, reg=wire)
 
+    dddd = int(DDDD,16) >> 8;
     if (dddd & 0x80): asrc = "wire `op_a_in`";
     if (dddd & 0x20): bsrc = "wire `op_b_in`";
     if (dddd & 0x02): dsrc = "wire `op_d_in`";
+
+
+    ########################################################################
+    ########################################################################
+    ########################################################################
+    # Consider:
+    # leave asrc as is for now
+    # calculate new/separate acomment,bcomment for decoder
+
+    # FIXME these bits should come from cgra_info, yes?
+    # 
+    #    old   new
+    # a 15,14  17,16 data0
+    # b 13,12  19,18 data1
+    # c 11,10  21,20 data2
+    # d  9, 8  ????
+
+    # FIXME this could be better. also missing c, d,e,f
+    
+    rmode = range(4)
+    rmode[0] = "REG_CONST"  #  Output is constant 
+    rmode[1] = "REG_VALID"  #  Pipeline delay with clock_en = 'clk_en'
+    rmode[2] = "REG_BYPASS" # FF is bypassed
+    rmode[3] = "REG_DELAY"  #  Assumes data is always valid, adds 1 cycle delay
+
+    d0 = ((int(DDDDDDDD,16)>>16)&0x3); d0_comment = "# data[(17, 16)] : data0: %s" % rmode[d0]
+    d1 = ((int(DDDDDDDD,16)>>18)&0x3); d1_comment = "# data[(19, 18)] : data1: %s" % rmode[d1]
+    # print "d0 = %d" % d0
+    # print "d1 = %d" % d1
+
 
 #     if     (asrc == "wireA"): print "# data[15] : read from wire `op_a_in`"
 #     else:                     print "# data[15] : read from reg `op_a_in`"
@@ -587,6 +636,23 @@ def pe_decode(RR, DDDDDDDD):
     if ((asrc == "reg `op_c_in`") and re.search("0x", creg)): A = creg;
     if ((asrc == "reg `op_d_in`") and re.search("0x", dreg)): A = dreg;
 
+#     if (op == "8B"):
+#         print "okay here we go"
+#         # Oh yes this will break things.
+#         print ""
+#         print "op = %s" % op
+#         print "opi = %d" % opi
+            
+    # There are better ways to do this I'm sure... FIXME maybe
+    if not (op == "F0" or op == "FF"):
+        opi = int(op,16)
+        op = "%02X" % (opi & 0x7F)
+        if (opi & 0x80): print "# data[(7, 7)] : Enable Lut"
+
+
+
+
+
     if   (op == "00"): opp="add"; opstr = "ADD(%s,%s)" % (A,B)
     elif (op == "01"): opp="sub"; opstr = "SUB(%s,%s)" % (A,B)
 
@@ -656,19 +722,26 @@ def pe_decode(RR, DDDDDDDD):
     # PRINT:
     # "pe_out <= MUL(wireA,wireB) ; regA <= wireA (always) ; regB <= wireB (always)"
 
+    # Oops FIXME bits should come from cgra_info
     print "# data[(4, 0)] : alu_op = %s" % opp
+    # print "# data[(5, 0)] : alu_op = %s" % opp
 
     if (not iohack):
         # FIXME when/if have an op that uses d, will want to activate this...
         # print "# data[2] : read from "  + dsrc
 
         # Got to get the order correct!  Now don't we.
-        if breg == "wireB": print "# data[(12, 12)] : load `op_b_in` reg with wire"
-        if (1):             print "# data[(13, 13)] : read from " + bsrc
-        if areg == "wireA": print "# data[(14, 14)] : load `op_a_in` reg with wire"
-        if (1):             print "# data[(15, 15)] : read from " + asrc
+        # if breg == "wireB": print "# data[(12, 12)] : load `op_b_in` reg with wire"
+        # if (1):             print "# data[(13, 13)] : read from " + bsrc
+        # if areg == "wireA": print "# data[(14, 14)] : load `op_a_in` reg with wire"
+        # if (1):             print "# data[(15, 15)] : read from " + asrc
 
-        if dreg == "wireD": print "BOOOOOOOOOOOOOOOOO " + DDDD + "  " + str(dddd);
+        # if dreg == "wireD": print "BOOOOOOOOOOOOOOOOO " + DDDD + "  " + str(dddd);
+        print d0_comment
+        print d1_comment
+
+
+
 
     if verbose:
         reg = ""

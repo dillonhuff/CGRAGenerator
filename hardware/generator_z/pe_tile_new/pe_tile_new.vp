@@ -174,7 +174,7 @@ tile_id
 //;   push @pe_inputs, "BUS16#op_a_shift";
 //; }
 //; if ($use_c_input) {
-//;   push @pe_inputs, "BUS16#op_c_in";
+//;   push @pe_inputs, "BUS16#data2";
 //; }
 //; if($en_double & $use_add > 0) {
 //;   if($is_msb) {
@@ -491,7 +491,7 @@ tile_id
   .clk_en(1'b1),
 //;}
 //; if($use_lut || $reg_inputs) {
-  .cfg_d(config_data[15:0]),
+  .cfg_d(config_data[31:0]),
   .cfg_a(config_addr[31:24]),
   .cfg_en(config_en_pe),
 //;} else {

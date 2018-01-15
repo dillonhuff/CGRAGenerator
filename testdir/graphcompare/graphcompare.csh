@@ -74,6 +74,9 @@ $scripthome/convert2dot.csh $f1 $tmpdir/$r1.dot $cgra_info
 if ($?yakky) echo Building $tmpdir/$r2.dot...
 $scripthome/convert2dot.csh $f2 $tmpdir/$r2.dot $cgra_info
 
+if ($?yakky) wc -l $tmpdir/{$r1,$r2}.dot
+
+
 ########################################################################
 if ($?yakky) echo Building $tmpdir/$r1.nodelist...
 $scripthome/dotsummary.py < $tmpdir/$r1.dot > $tmpdir/$r1.nodelist
@@ -87,6 +90,10 @@ if ($?yakky) echo 'DIFF (should be null)'
 if ($?yakky) echo
 
 unset FAIL
+if ($?yakky) then
+  wc -l $tmpdir/{$r1,$r2}.nodelist
+  echo "diff $tmpdir/{$r1,$r2}.nodelist"
+endif
 diff $tmpdir/{$r1,$r2}.nodelist || set FAIL
 
 if ($?FAIL) then
