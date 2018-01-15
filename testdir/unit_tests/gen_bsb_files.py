@@ -96,20 +96,6 @@ OP_TEMPLATE='''
   T11_pe_out -> T11_out_s0t1 -> self.out
 '''
 
-# Version for CGRA w/o IO tiles
-# # Replace OPNAME with name of operand e.g. 'add'
-# OP_TEMPLATE_OLD='''
-#   #DELAY 1,1
-#   #
-#   self.in -> T0_in_s2t0
-#   T0_in_s2t0 -> T0_op1
-#   T0_in_s2t0 -> T0_out_s1t0
-#   T0_out_s1t0 -> T0_op2 (r)
-#   T0_OPNAME(wire,reg)
-#   T0_pe_out -> T0_out_s0t1 -> self.out
-# '''
-
-
 # bsbuilder now has support for...
 # op_data['add']     = 0x00000000
 # op_data['sub']     = 0x00000001
