@@ -8,6 +8,8 @@ config_data_out,
 tdi,
 tdo,
 tms,
+clk_to_gc,
+reset_to_gc,
 );
 
   input  clk;
@@ -18,5 +20,9 @@ tms,
   output reg [31:0] config_addr_out;
   output reg [31:0] config_data_out;
   output tdo;
+  output clk_to_gc;
+  output reset_to_gc;
 
 endmodule
+
+
