@@ -15,6 +15,7 @@
 BEGIN {
     # print "%Warning Ignoring warnings about unoptimizable switchbox wires (see SR for explainer)."
     ignore = "FALSE";
+    nprinted = 0;
 }
 
 # These are never useful
@@ -25,8 +26,14 @@ BEGIN {
 /Example path/ {
     if (ignore == "TRUE") next;
 }
+
 { ignore = "FALSE"; }
 /Signal unoptimizable.*sb_wide.out/ { ignore = "TRUE"; next; }
 /Signal unoptimizable.*sb_1b.out/   { ignore = "TRUE"; next; }
-{ print }
+
+{
+    print
+    nprinted++
+    if (nprinted > 40) { exit }
+}
 # awk -f ~/bin/awk-examples/verilator-warning-filter.awk /tmp/verilator.out | less

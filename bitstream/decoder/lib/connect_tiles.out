@@ -1,0 +1,264 @@
+WARNING using default cgra_info file
+  '/nobackup/steveri/github/CGRAGenerator/bitstream/decoder/lib/cgra_info_8x8.txt'
+
+########################################
+# Begin ctsr testing
+
+# Connect tile 0 (r0,c0) to tile 1 (r0,c1)
+# T0_out_s0t0 -> T1_in_s2t0
+# 
+# Check ctsr 0 ('T0_out_s0t0', [], 'T1_in_s2t0')
+# Result checks out!
+
+# Connect tile 0 (r0,c0) to tile 2 (r0,c2)
+# ------------->  T0_out_s0t0 ->
+#  T1_in_s2t0 ->  T1_out_s0t0 ->
+#  T2_in_s2t0
+# 
+# Check ctsr 1 ('T0_out_s0t0', ['T1_in_s2t0 -> T1_out_s0t0'], 'T2_in_s2t0')
+# Result checks out!
+
+# Connect tile 2 (r0,c2) to tile 0 (r0,c0)
+# ------------->  T2_out_s2t0 ->
+#  T1_in_s0t0 ->  T1_out_s2t0 ->
+#  T0_in_s0t0
+# 
+# Check ctsr 2 ('T2_out_s2t0', ['T1_in_s0t0 -> T1_out_s2t0'], 'T0_in_s0t0')
+# Result checks out!
+
+# Connect tile 0 (r0,c0) to tile 5 (r0,c5)
+# ------------->  T0_out_s0t0 ->
+#  T1_in_s2t0 ->  T1_out_s0t0 ->
+#  T2_in_s2t0 ->  T2_out_s0t0 ->
+#  T3_in_s2t0 ->  T3_out_s0t0 ->
+#  T4_in_s2t0 ->  T4_out_s0t0 ->
+#  T5_in_s2t0
+# 
+# Check ctsr 3 ('T0_out_s0t0', ['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0', 'T3_in_s2t0 -> T3_out_s0t0', 'T4_in_s2t0 -> T4_out_s0t0'], 'T5_in_s2t0')
+# Result checks out!
+
+# Connect tile 5 (r0,c5) to tile 0 (r0,c0)
+# ------------->  T5_out_s2t0 ->
+#  T4_in_s0t0 ->  T4_out_s2t0 ->
+#  T3_in_s0t0 ->  T3_out_s2t0 ->
+#  T2_in_s0t0 ->  T2_out_s2t0 ->
+#  T1_in_s0t0 ->  T1_out_s2t0 ->
+#  T0_in_s0t0
+# 
+# Check ctsr 4 ('T5_out_s2t0', ['T4_in_s0t0 -> T4_out_s2t0', 'T3_in_s0t0 -> T3_out_s2t0', 'T2_in_s0t0 -> T2_out_s2t0', 'T1_in_s0t0 -> T1_out_s2t0'], 'T0_in_s0t0')
+# Result checks out!
+
+# Connect to top half of a memory tile
+# Connect tile 0 (r0,c0) to tile 3 (r0,c3)
+# ------------->  T0_out_s0t0 ->
+#  T1_in_s2t0 ->  T1_out_s0t0 ->
+#  T2_in_s2t0 ->  T2_out_s0t0 ->
+#  T3_in_s2t0
+# 
+# Check ctsr 5 ('T0_out_s0t0', ['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0'], 'T3_in_s2t0')
+# Result checks out!
+
+# Connect to bottom half of a memory tile
+# Connect tile 8 (r1,c0) to tile 3 (r1,c3)
+# ------------->  T8_out_s0t0 ->
+#  T9_in_s2t0 ->  T9_out_s0t0 ->
+# T10_in_s2t0 -> T10_out_s0t0 ->
+#  T3_in_s6t0
+# 
+# Check ctsr 6 ('T8_out_s0t0', ['T9_in_s2t0 -> T9_out_s0t0', 'T10_in_s2t0 -> T10_out_s0t0'], 'T3_in_s6t0')
+# Result checks out!
+
+# This one crosses bottom half of a memory tile
+# Connect tile 8 (r1,c0) to tile 13 (r1,c6)
+# ------------->  T8_out_s0t0 ->
+#  T9_in_s2t0 ->  T9_out_s0t0 ->
+# T10_in_s2t0 -> T10_out_s0t0 ->
+#  T3_in_s6t0 ->  T3_out_s4t0 ->
+# T11_in_s2t0 -> T11_out_s0t0 ->
+# T12_in_s2t0 -> T12_out_s0t0 ->
+# T13_in_s2t0
+# 
+# Check ctsr 7 ('T8_out_s0t0', ['T9_in_s2t0 -> T9_out_s0t0', 'T10_in_s2t0 -> T10_out_s0t0', 'T3_in_s6t0 -> T3_out_s4t0', 'T11_in_s2t0 -> T11_out_s0t0', 'T12_in_s2t0 -> T12_out_s0t0'], 'T13_in_s2t0')
+# Result checks out!
+
+########################################
+# Begin ctsc testing
+
+# Connect tile 0 (r0,c0) to tile 8 (r1,c0)
+# T0_out_s1t0 -> T8_in_s3t0
+# 
+# Check ctsc 0 ('T0_out_s1t0', [], 'T8_in_s3t0')
+# (Use above result for verification.)
+
+# Connect tile 0 (r0,c0) to tile 14 (r2,c0)
+# ------------->  T0_out_s1t0 ->
+#  T8_in_s3t0 ->  T8_out_s1t0 ->
+# T14_in_s3t0
+# 
+# Check ctsc 1 ('T0_out_s1t0', ['T8_in_s3t0 -> T8_out_s1t0'], 'T14_in_s3t0')
+# (Use above result for verification.)
+
+# Connect tile 14 (r2,c0) to tile 0 (r0,c0)
+# -------------> T14_out_s3t0 ->
+#  T8_in_s1t0 ->  T8_out_s3t0 ->
+#  T0_in_s1t0
+# 
+# Check ctsc 2 ('T14_out_s3t0', ['T8_in_s1t0 -> T8_out_s3t0'], 'T0_in_s1t0')
+# (Use above result for verification.)
+
+# Connect tile 0 (r0,c0) to tile 36 (r5,c0)
+# ------------->  T0_out_s1t0 ->
+#  T8_in_s3t0 ->  T8_out_s1t0 ->
+# T14_in_s3t0 -> T14_out_s1t0 ->
+# T22_in_s3t0 -> T22_out_s1t0 ->
+# T28_in_s3t0 -> T28_out_s1t0 ->
+# T36_in_s3t0
+# 
+# Check ctsc 3 ('T0_out_s1t0', ['T8_in_s3t0 -> T8_out_s1t0', 'T14_in_s3t0 -> T14_out_s1t0', 'T22_in_s3t0 -> T22_out_s1t0', 'T28_in_s3t0 -> T28_out_s1t0'], 'T36_in_s3t0')
+# (Use above result for verification.)
+
+# Connect tile 36 (r5,c0) to tile 0 (r0,c0)
+# -------------> T36_out_s3t0 ->
+# T28_in_s1t0 -> T28_out_s3t0 ->
+# T22_in_s1t0 -> T22_out_s3t0 ->
+# T14_in_s1t0 -> T14_out_s3t0 ->
+#  T8_in_s1t0 ->  T8_out_s3t0 ->
+#  T0_in_s1t0
+# 
+# Check ctsc 4 ('T36_out_s3t0', ['T28_in_s1t0 -> T28_out_s3t0', 'T22_in_s1t0 -> T22_out_s3t0', 'T14_in_s1t0 -> T14_out_s3t0', 'T8_in_s1t0 -> T8_out_s3t0'], 'T0_in_s1t0')
+# (Use above result for verification.)
+
+# What happens if we try to make a path through mem column?
+# Connect tile 3 (r1,c3) to tile 45 (r6,c3)
+# ------------->  T3_out_s5t0 ->
+# T17_in_s3t0 -> T17_out_s1t0 ->
+# T17_in_s7t0 -> T17_out_s5t0 ->
+# T31_in_s3t0 -> T31_out_s1t0 ->
+# T31_in_s7t0 -> T31_out_s5t0 ->
+# T45_in_s3t0
+# 
+# Check ctsc 5 ('T3_out_s5t0', ['T17_in_s3t0 -> T17_out_s1t0', 'T17_in_s7t0 -> T17_out_s5t0', 'T31_in_s3t0 -> T31_out_s1t0', 'T31_in_s7t0 -> T31_out_s5t0'], 'T45_in_s3t0')
+# (Use above result for verification.)
+
+# What happens if we try to make a path UP through mem column?
+# Connect tile 45 (r6,c3) to tile 3 (r1,c3)
+# -------------> T45_out_s3t0 ->
+# T31_in_s5t0 -> T31_out_s7t0 ->
+# T31_in_s1t0 -> T31_out_s3t0 ->
+# T17_in_s5t0 -> T17_out_s7t0 ->
+# T17_in_s1t0 -> T17_out_s3t0 ->
+#  T3_in_s5t0
+# 
+# Check ctsc 6 ('T45_out_s3t0', ['T31_in_s5t0 -> T31_out_s7t0', 'T31_in_s1t0 -> T31_out_s3t0', 'T17_in_s5t0 -> T17_out_s7t0', 'T17_in_s1t0 -> T17_out_s3t0'], 'T3_in_s5t0')
+# (Use above result for verification.)
+
+# Connect adjacent NS mem tiles
+# Connect tile 3 (r1,c3) to tile 17 (r2,c3)
+# T3_out_s5t0 -> T17_in_s3t0
+# 
+# Check ctsc 7 ('T3_out_s5t0', [], 'T17_in_s3t0')
+# (Use above result for verification.)
+
+########################################
+# Begin any-to-any testing
+
+########################################
+# End turn takes us down a mem column
+# Connect tile 0 (r0,c0) to tile 17 (r2,c3) on hv path
+# Destination is a memory tile
+# Found corner tile 3 (r0,c3)
+# 
+# Begin: ['T0_out_s0t0']
+# hpath  ['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0']
+# corner ['T3_in_s2t0 -> T3_out_s5t0']
+# End:   ['T17_in_s3t0']
+# 
+# Complete path: ['T0_out_s0t0']['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0', 'T3_in_s2t0 -> T3_out_s5t0']['T17_in_s3t0']
+# 
+# Check anypath 0 ('T0_out_s0t0', ['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0', 'T3_in_s2t0 -> T3_out_s5t0'], 'T17_in_s3t0')
+# (Use above result for verification.)
+
+########################################
+# Same thing except vh instead of hv
+# Connect tile 0 (r0,c0) to tile 17 (r2,c3) on vh path
+# Destination is a memory tile
+# Found corner tile 14 (r2,c0)
+# 
+# Begin: ['T0_out_s1t0']
+# vpath  ['T8_in_s3t0 -> T8_out_s1t0']
+# corner ['T14_in_s3t0 -> T14_out_s0t0']
+# hpath  ['T15_in_s2t0 -> T15_out_s0t0', 'T16_in_s2t0 -> T16_out_s0t0']
+# End:   ['T17_in_s2t0']
+# 
+# Complete path: ['T0_out_s1t0']['T8_in_s3t0 -> T8_out_s1t0', 'T14_in_s3t0 -> T14_out_s0t0', 'T15_in_s2t0 -> T15_out_s0t0', 'T16_in_s2t0 -> T16_out_s0t0']['T17_in_s2t0']
+# 
+# Check anypath 1 ('T0_out_s1t0', ['T8_in_s3t0 -> T8_out_s1t0', 'T14_in_s3t0 -> T14_out_s0t0', 'T15_in_s2t0 -> T15_out_s0t0', 'T16_in_s2t0 -> T16_out_s0t0'], 'T17_in_s2t0')
+# (Use above result for verification.)
+
+########################################
+# End turn takes us further down a mem column
+# Connect tile 0 (r0,c0) to tile 39 (r5,c4) on hv path
+# Found corner tile 4 (r0,c4)
+# 
+# Begin: ['T0_out_s0t0']
+# hpath  ['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0', 'T3_in_s2t0 -> T3_out_s0t0']
+# corner ['T4_in_s2t0 -> T4_out_s1t0']
+# vpath  ['T11_in_s3t0 -> T11_out_s1t0', 'T18_in_s3t0 -> T18_out_s1t0', 'T25_in_s3t0 -> T25_out_s1t0', 'T32_in_s3t0 -> T32_out_s1t0']
+# End:   ['T39_in_s3t0']
+# 
+# Complete path: ['T0_out_s0t0']['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0', 'T3_in_s2t0 -> T3_out_s0t0', 'T4_in_s2t0 -> T4_out_s1t0', 'T11_in_s3t0 -> T11_out_s1t0', 'T18_in_s3t0 -> T18_out_s1t0', 'T25_in_s3t0 -> T25_out_s1t0', 'T32_in_s3t0 -> T32_out_s1t0']['T39_in_s3t0']
+# 
+# Check anypath 2 ('T0_out_s0t0', ['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s0t0', 'T3_in_s2t0 -> T3_out_s0t0', 'T4_in_s2t0 -> T4_out_s1t0', 'T11_in_s3t0 -> T11_out_s1t0', 'T18_in_s3t0 -> T18_out_s1t0', 'T25_in_s3t0 -> T25_out_s1t0', 'T32_in_s3t0 -> T32_out_s1t0'], 'T39_in_s3t0')
+# (Use above result for verification.)
+
+########################################
+# A long path straight down column zero
+# Connect tile 0 (r0,c0) to tile 36 (r5,c0) on hv path
+# Both tiles are in same column
+# 
+# Begin: ['T0_out_s1t0']
+# vpath  ['T8_in_s3t0 -> T8_out_s1t0', 'T14_in_s3t0 -> T14_out_s1t0', 'T22_in_s3t0 -> T22_out_s1t0', 'T28_in_s3t0 -> T28_out_s1t0']
+# End:   ['T36_in_s3t0']
+# 
+# Complete path: ['T0_out_s1t0']['T8_in_s3t0 -> T8_out_s1t0', 'T14_in_s3t0 -> T14_out_s1t0', 'T22_in_s3t0 -> T22_out_s1t0', 'T28_in_s3t0 -> T28_out_s1t0']['T36_in_s3t0']
+# 
+# Check anypath 3 ('T0_out_s1t0', ['T8_in_s3t0 -> T8_out_s1t0', 'T14_in_s3t0 -> T14_out_s1t0', 'T22_in_s3t0 -> T22_out_s1t0', 'T28_in_s3t0 -> T28_out_s1t0'], 'T36_in_s3t0')
+# (Use above result for verification.)
+
+# Connect tile 0 (r0,c0) to tile 1 (r0,c1)
+# T0_out_s0t0 -> T1_in_s2t0
+# 
+# Check anypath 4 ('T0_out_s0t0', [], 'T1_in_s2t0')
+# (Use above result for verification.)
+
+# Connect tile 0 (r0,c0) to tile 8 (r1,c0)
+# T0_out_s1t0 -> T8_in_s3t0
+# 
+# Check anypath 5 ('T0_out_s1t0', [], 'T8_in_s3t0')
+# (Use above result for verification.)
+
+# Connect tile 0 (r0,c0) to tile 10 (r1,c2) on hv path
+# Found corner tile 2 (r0,c2)
+# 
+# Begin: ['T0_out_s0t0']
+# hpath  ['T1_in_s2t0 -> T1_out_s0t0']
+# corner ['T2_in_s2t0 -> T2_out_s1t0']
+# End:   ['T10_in_s3t0']
+# 
+# Complete path: ['T0_out_s0t0']['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s1t0']['T10_in_s3t0']
+# 
+# Check anypath 6 ('T0_out_s0t0', ['T1_in_s2t0 -> T1_out_s0t0', 'T2_in_s2t0 -> T2_out_s1t0'], 'T10_in_s3t0')
+# (Use above result for verification.)
+
+# Connect tile 8 (r1,c0) to tile 10 (r1,c2) on hv path
+# Both tiles are in same row
+# 
+# Begin: ['T8_out_s0t0']
+# hpath  ['T9_in_s2t0 -> T9_out_s0t0']
+# End:   ['T10_in_s2t0']
+# 
+# Complete path: ['T8_out_s0t0']['T9_in_s2t0 -> T9_out_s0t0']['T10_in_s2t0']
+# 
+# Check anypath 7 ('T8_out_s0t0', ['T9_in_s2t0 -> T9_out_s0t0'], 'T10_in_s2t0')
+# (Use above result for verification.)
+

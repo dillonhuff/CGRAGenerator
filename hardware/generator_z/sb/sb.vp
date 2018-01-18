@@ -94,11 +94,17 @@ config_en
   always @(posedge clk) begin
     if (reset==1'b1) begin
 
-   // Seems like the entire register should be initialized, not just a subset of the bits, yes?
-   // FIXME Owner please check that this is still correct!
-   // config_sb <= `$config_bit_count`'d0;
-      config_sb <= ~(`$config_reg_width`'d0);
-
+   // 12/2017 Nikhil changed default to pe_output to avoid loops
+   // config_sb <= ~(`$config_reg_width`'d0);
+   // 
+   // 12/2017 SR changed default so that pe_output is selected AND registers are off
+   // Want regs initialized to zero, everything else to 1 e.g. 64'h0000,00FF,FFFF,FFFF
+   //; {
+   //;   my   $nreg_bits = $registered_count * $sides;
+   //;   my $nonreg_bits = $config_bit_count - $nreg_bits;
+   //;   my $mask = sprintf("%016X", 2**$nonreg_bits - 1);
+      config_sb <= `$config_reg_width`'h`$mask`;
+   //; }
     end else begin
       if (config_en==1'b1) begin
          case (config_addr[31:24])
