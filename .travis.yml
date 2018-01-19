@@ -15,6 +15,10 @@ script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
   - cd testdir; make test_all
+  - pip install pytest
+  - pip install git+git://github.com/leonardt/pe.git
+  - cd tests/test_pe
+  - ./run_tests.sh
   # - cd testdir; make test_basic
   # - cd testdir; make SILENT=TRUE test_all
   
