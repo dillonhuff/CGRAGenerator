@@ -30,7 +30,7 @@ script:
   - pip install git+git://github.com/leonardt/pe.git
 
   # Run python based tests
-  - cd tests/test_pe
+  - cd $TRAVIS_BUILD_DIR/tests/test_pe
   - ./run_tests.sh
 
   # - cd testdir; make test_basic
