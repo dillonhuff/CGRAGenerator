@@ -15,6 +15,28 @@ script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
   - cd testdir; make test_all
+
+  # Install python for testing infrastructure
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -u -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+
+  # Install python dependencies
+  - pip install pytest numpy
+  - pip install git+git://github.com/leonardt/pe.git
+
+  # Run python based tests
+  - cd $TRAVIS_BUILD_DIR/tests/test_pe
+  # Set env variables for genesis (installed earlier)
+  - export GENESIS_HOME=/tmp/Genesis2/Genesis2Tools
+  - export PATH=$GENESIS_HOME/bin:$GENESIS_HOME/gui/bin:$PATH
+  - export PERL5LIB=$GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions:$PERL5LIB
+  - ./run_tests.sh
+
   # - cd testdir; make test_basic
   # - cd testdir; make SILENT=TRUE test_all
   
