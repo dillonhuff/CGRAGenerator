@@ -46,11 +46,13 @@
  * Mar 28, 2010  shacham  init version  --  
  * May 24, 2010  shacham  Replaced config bus signals and parameters with an 
  *			  interface. 
+ * Apr 18, 2012  shacham  clean up of names and genesis syntactic sugar
+ * May 20, 2014  jingpu   fixed legacy verilog syntax and fix idcode
  * ****************************************************************************/
 
 // ACTUAL GENESIS2 PARAMETERIZATIONS
 //; # System clock config parameterization
-//; my $sc_cfg_bus = $self->define_param(SC_CFG_BUS => 'off');
+//; my $sc_cfg_bus = parameter(name=>'SC_CFG_BUS', val => 'off');
 //; my $sc_cfg_ifc_ref = $self->define_param(SC_CFG_IFC_REF => '');
 //; my $sc_cfg_ops = $self->define_param('SC_CFG_OPCODES' => {nop=>0, read=>1, write=>2, bypass=>3});
 //; my ($sc_cfg_req_ifc, $sc_cfg_rep_ifc, $sc_cfg_bus_width, $sc_cfg_addr_width, $sc_cfg_op_width);
@@ -59,9 +61,9 @@
 //;   $self->error("Missing reference system clock interface parameter: SC_CFG_IFC_REF") if ($sc_cfg_ifc_ref eq '');
 //;   $sc_cfg_req_ifc = $self->clone_inst($sc_cfg_ifc_ref, 'sc_cfgReq');
 //;   $sc_cfg_rep_ifc = $self->clone_inst($sc_cfg_ifc_ref, 'sc_cfgRep');
-//;   $sc_cfg_bus_width = $sc_cfg_req_ifc->get_param('CFG_BUS_WIDTH');
-//;   $sc_cfg_addr_width = $sc_cfg_req_ifc->get_param('CFG_ADDR_WIDTH');
-//;   $sc_cfg_op_width = $sc_cfg_req_ifc->get_param('CFG_OPCODE_WIDTH');
+//;   $sc_cfg_bus_width = $sc_cfg_req_ifc->get_param('DataWidth');
+//;   $sc_cfg_addr_width = $sc_cfg_req_ifc->get_param('AddrWidth');
+//;   $sc_cfg_op_width = $sc_cfg_req_ifc->get_param('OpcodeWidth');
 //;
 //;   # Verify correctness of opcode parameters:
 //;   $self->error("Illegal value for parameter SC_CFG_BUS -->$sc_cfg_bus<--. (Allowed values are on/off)")
@@ -90,9 +92,9 @@
 //;   $self->error("Missing reference system clock interface parameter: TC_CFG_IFC_REF") if ($tc_cfg_ifc_ref eq '');
 //;   $tc_cfg_req_ifc = $self->clone_inst($tc_cfg_ifc_ref, 'tc_cfgReq');
 //;   $tc_cfg_rep_ifc = $self->clone_inst($tc_cfg_ifc_ref, 'tc_cfgRep');
-//;   $tc_cfg_bus_width = $tc_cfg_req_ifc->get_param('CFG_BUS_WIDTH');
-//;   $tc_cfg_addr_width = $tc_cfg_req_ifc->get_param('CFG_ADDR_WIDTH');
-//;   $tc_cfg_op_width = $tc_cfg_req_ifc->get_param('CFG_OPCODE_WIDTH');
+//;   $tc_cfg_bus_width = $tc_cfg_req_ifc->get_param('DataWidth');
+//;   $tc_cfg_addr_width = $tc_cfg_req_ifc->get_param('AddrWidth');
+//;   $tc_cfg_op_width = $tc_cfg_req_ifc->get_param('OpcodeWidth');
 //;
 //;   # Verify correctness of opcode parameters:
 //;   $self->error("Illegal value for parameter TC_CFG_BUS -->$tc_cfg_bus<--. (Allowed values are on/off)")
@@ -110,8 +112,7 @@
 //; }
 
 
-
-module `$self->get_module_name()`
+module `mname`
   (
    // Signals for a system clked configuration bus
    //; if ($sc_cfg_bus =~ m/^(on|yes)$/i){
@@ -119,8 +120,8 @@ module `$self->get_module_name()`
    `$sc_cfg_rep_ifc->get_module_name()`.cfgIn sc_cfgRep,
 
    // system clock and reset
-    input 				Clk,
-    input 				Reset,
+   input                                logic Clk,
+   input             	                logic Reset,
    //; }
    
    // Signals for a jtag clked configuration bus
@@ -128,27 +129,26 @@ module `$self->get_module_name()`
    `$tc_cfg_req_ifc->get_module_name()`.cfgOut tc_cfgReq,
    `$tc_cfg_rep_ifc->get_module_name()`.cfgIn tc_cfgRep,
 					   
-    output 				test_logic_reset,	// tap fsm in test_logic_reset
+    output 				logic test_logic_reset,	// tap fsm in test_logic_reset
    //; }
  
    // Signals for the Boundary Scan Register
-    output 				bsr_tdi,
-    output 				bsr_sample,
-    output 				bsr_intest,
-    output 				bsr_extest,
-    output 				bsr_update_en,
-    output 				bsr_capture_en,
-    output 				bsr_shift_dr,
-    input 				bsr_tdo,
+    output 				logic bsr_tdi,
+    output 				logic bsr_sample,
+    output 				logic bsr_intest,
+    output 				logic bsr_extest,
+    output 				logic bsr_update_en,
+    output 				logic bsr_capture_en,
+    output 				logic bsr_shift_dr,
+    input 				logic bsr_tdo,
 
 
-    // the standard JTAG IOs
-    input         tms,          	// JTAG Test Mode Select
-    input         tck,          	// JTAG Test Clock
-    input         trst_n,         	// JTAG Test Reset
-    input         tdi,          	// JTAG Test Data Input
-    output        tdo,	          	// JTAG Test Data Output
-    output        tdo_en	        // JTAG Test Data Output
+    input        logic  tms,          	// JTAG Test Mode Select
+    input        logic  tck,          	// JTAG Test Clock
+    input        logic  trst_n,         // JTAG Test Reset
+    input        logic  tdi,          	// JTAG Test Data Input
+    output       logic  tdo,	      	// JTAG Test Data Output
+    output       logic  tdo_en	        // JTAG Test Data Output
     );
 
    //; # if there is no output test_logic_reset, we at least need an internal signal
@@ -265,8 +265,9 @@ module `$self->get_module_name()`
       .tc_cfg_addr_update_dr(tc_cfg_addr_update_dr),
       .tc_cfg_addr_tdo(tc_cfg_addr_tdo),
 
-      .test_logic_reset(test_logic_reset),
       //; }
+      .test_logic_reset(test_logic_reset),
+
       
       // BSR interface
       .bsr_extest(bsr_extest),
@@ -292,24 +293,24 @@ module `$self->get_module_name()`
    /***************************************************************************/
    // shift in/out the instuction
    //; my $sc_inst_reg = $self->unique_inst('flop', 'sc_inst_reg', 
-   //;					     FLOP_TYPE => 'reflop',
-   //;					     FLOP_DEFAULT => $sc_nop,
-   //;					     FLOP_WIDTH => $sc_cfg_op_width);
+   //;					     Type => 'REFlop',
+   //;					     Default => $sc_nop,
+   //;					     Width => $sc_cfg_op_width);
    logic [`$sc_cfg_op_width-1`:0] sc_inst;
    `$sc_inst_reg->get_module_name()` `$sc_inst_reg->get_instance_name()` 
-     (.data_out(sc_inst),	.data_in({tdi, sc_inst[`$sc_cfg_op_width-1`:1]}),
-      .Clk(tck),	.Enable(sc_cfg_inst_shift_dr),      .Reset(test_logic_reset));
+     (.dout(sc_inst),	.din({tdi, sc_inst[`$sc_cfg_op_width-1`:1]}),
+      .Clk(tck),	.en(sc_cfg_inst_shift_dr),      .Reset(test_logic_reset));
 
    // Qualify the instruction
-   logic [2:0] 			   inst_update_qual;
-   logic 			   inst_update_qualified;
-   assign 			   inst_update_qualified = (inst_update_qual===3'b001)?1'b1:1'b0;
-   //; my $inst_update_reg = $self->unique_inst('flop', 'inst_update_reg', 
-   //;					     FLOP_TYPE => 'rflop',
-   //;					     FLOP_DEFAULT => 0,
-   //;					     FLOP_WIDTH => 3);
+   logic [3:0] inst_update_qual;
+   logic       inst_update_qualified;
+   assign inst_update_qualified = (inst_update_qual==4'b1110)?1'b1:1'b0;
+   //; my $inst_update_reg = generate('flop', 'inst_update_reg', 
+   //;					     Type => 'RFlop',
+   //;					     Default => 0,
+   //;					     Width => 4);
    `$inst_update_reg->get_module_name()` `$inst_update_reg->get_instance_name()` 
-     (.data_out(inst_update_qual),	.data_in({sc_cfg_inst_update_dr, inst_update_qual[2:1]}),
+     (.dout(inst_update_qual),	.din({sc_cfg_inst_update_dr, inst_update_qual[3:1]}),
       .Clk(Clk),	.Reset(Reset));
    
 
@@ -323,13 +324,14 @@ module `$self->get_module_name()`
    
    //*******
    // shift in/out the address
-   //; my $sc_addr_reg = $self->unique_inst('flop', 'sc_addr_reg', 
-   //;					     FLOP_TYPE => 'reflop',
-   //;					     FLOP_WIDTH => $sc_cfg_addr_width);
+   //; my $sc_addr_reg = generate('flop', 'sc_addr_reg', 
+   //;				  Type => 'REFlop',
+   //;				  Default => 0,
+   //;				  Width => $sc_cfg_addr_width);
    logic [`$sc_cfg_addr_width-1`:0] sc_addr;
-   `$sc_addr_reg->get_module_name()` `$sc_addr_reg->get_instance_name()` 
-     (.data_out(sc_addr),	.data_in({tdi, sc_addr[`$sc_cfg_addr_width-1`:1]}),
-      .Clk(tck),	.Enable(sc_cfg_addr_shift_dr),      .Reset(test_logic_reset));
+   `$sc_addr_reg->instantiate` 
+     (.dout(sc_addr),	.din({tdi, sc_addr[`$sc_cfg_addr_width-1`:1]}),
+      .Clk(tck),	.en(sc_cfg_addr_shift_dr),      .Reset(test_logic_reset));
 
    // assign bus / tdo with address (always)
    assign 			     sc_cfgReq.addr = sc_addr;
@@ -340,15 +342,16 @@ module `$self->get_module_name()`
    //*******
    // register for the received data until the jtag interface asks for it
    //; my $sc_data_rd_reg = $self->unique_inst('flop', 'sc_data_rd_reg', 
-   //;					     FLOP_TYPE => 'reflop',
-   //;					     FLOP_WIDTH => $sc_cfg_bus_width);
+   //;					     Type => 'REFlop',
+   //;					     Default => 0,
+   //;					     Width => $sc_cfg_bus_width);
    logic [`$sc_cfg_bus_width-1`:0] sc_data_rd;
    logic 			   sc_data_rd_en;
-   assign 			   sc_data_rd_en = (sc_cfgRep.op === `$sc_cfg_op_width`'d`$sc_bypassop`)? 
+   assign 			   sc_data_rd_en = (sc_cfgRep.op == `$sc_cfg_op_width`'d`$sc_bypassop`)? 
 						   1'b1: 1'b0;
    `$sc_data_rd_reg->get_module_name()` `$sc_data_rd_reg->get_instance_name()` 
-     (.data_out(sc_data_rd),	.data_in(sc_cfgRep.data),
-      .Clk(Clk),	.Enable(sc_data_rd_en),      
+     (.dout(sc_data_rd),	.din(sc_cfgRep.data),
+      .Clk(Clk),	.en(sc_data_rd_en),      
       .Reset(Reset));
    //*******
 
@@ -356,16 +359,17 @@ module `$self->get_module_name()`
    //*******
    // shift in/out the data
    //; my $sc_data_reg = $self->unique_inst('flop', 'sc_data_reg', 
-   //;					     FLOP_TYPE => 'reflop',
-   //;					     FLOP_WIDTH => $sc_cfg_bus_width);
+   //;					     Type => 'REFlop',
+   //;					     Default => 0,
+   //;					     Width => $sc_cfg_bus_width);
    logic [`$sc_cfg_bus_width-1`:0] sc_data;
    logic [`$sc_cfg_bus_width-1`:0] sc_data_nxt;
    assign 			     sc_data_nxt = (sc_cfg_data_capture_dr) ? 
 						    sc_data_rd : {tdi, sc_data[`$sc_cfg_bus_width-1`:1]};
    
    `$sc_data_reg->get_module_name()` `$sc_data_reg->get_instance_name()` 
-     (.data_out(sc_data),	.data_in(sc_data_nxt),
-      .Clk(tck),	.Enable(sc_cfg_data_shift_dr | sc_cfg_data_capture_dr),      
+     (.dout(sc_data),	.din(sc_data_nxt),
+      .Clk(tck),	.en(sc_cfg_data_shift_dr | sc_cfg_data_capture_dr),      
       .Reset(test_logic_reset));
 
    // assign bus / tdo with data (always)
@@ -386,13 +390,13 @@ module `$self->get_module_name()`
    /***************************************************************************/
    // shift in/out the instuction
    //; my $tc_inst_reg = $self->unique_inst('flop', 'tc_inst_reg', 
-   //;					     FLOP_TYPE => 'reflop',
-   //;					     FLOP_DEFAULT => $tc_nop,
-   //;					     FLOP_WIDTH => $tc_cfg_op_width);
+   //;					     Type => 'REFlop',
+   //;					     Default => $tc_nop,
+   //;					     Width => $tc_cfg_op_width);
    logic [`$tc_cfg_op_width-1`:0] tc_inst;
    `$tc_inst_reg->get_module_name()` `$tc_inst_reg->get_instance_name()` 
-     (.data_out(tc_inst),	.data_in({tdi, tc_inst[`$tc_cfg_op_width-1`:1]}),
-      .Clk(tck),	.Enable(tc_cfg_inst_shift_dr),      .Reset(test_logic_reset));
+     (.dout(tc_inst),	.din({tdi, tc_inst[`$tc_cfg_op_width-1`:1]}),
+      .Clk(tck),	.en(tc_cfg_inst_shift_dr),      .Reset(test_logic_reset));
 
    // assign transaction to the bus on update (pulse)
    assign 			   tc_cfgReq.op = (tc_cfg_inst_update_dr) ? 
@@ -405,12 +409,13 @@ module `$self->get_module_name()`
    //*******
    // shift in/out the address
    //; my $tc_addr_reg = $self->unique_inst('flop', 'tc_addr_reg', 
-   //;					     FLOP_TYPE => 'reflop',
-   //;					     FLOP_WIDTH => $tc_cfg_addr_width);
+   //;					     Type => 'REFlop',
+   //;					     Default => 0,
+   //;					     Width => $tc_cfg_addr_width);
    logic [`$tc_cfg_addr_width-1`:0] tc_addr;
    `$tc_addr_reg->get_module_name()` `$tc_addr_reg->get_instance_name()` 
-     (.data_out(tc_addr),	.data_in({tdi, tc_addr[`$tc_cfg_addr_width-1`:1]}),
-      .Clk(tck),	.Enable(tc_cfg_addr_shift_dr),      .Reset(test_logic_reset));
+     (.dout(tc_addr),	.din({tdi, tc_addr[`$tc_cfg_addr_width-1`:1]}),
+      .Clk(tck),	.en(tc_cfg_addr_shift_dr),      .Reset(test_logic_reset));
 
    // assign bus / tdo with address (always)
    assign 			     tc_cfgReq.addr = tc_addr;
@@ -421,15 +426,16 @@ module `$self->get_module_name()`
    //*******
    // register for the received data until the jtag interface asks for it
    //; my $tc_data_rd_reg = $self->unique_inst('flop', 'tc_data_rd_reg', 
-   //;					     FLOP_TYPE => 'reflop',
-   //;					     FLOP_WIDTH => $tc_cfg_bus_width);
+   //;					     Type => 'REFlop',
+   //;					     Default => 0,
+   //;					     Width => $tc_cfg_bus_width);
    logic [`$tc_cfg_bus_width-1`:0] tc_data_rd;
    logic 			   tc_data_rd_en;
    assign 			   tc_data_rd_en = (tc_cfgRep.op == `$tc_cfg_op_width`'d`$tc_bypassop`)? 
 						   1'b1: 1'b0;
    `$tc_data_rd_reg->get_module_name()` `$tc_data_rd_reg->get_instance_name()` 
-     (.data_out(tc_data_rd),	.data_in(tc_cfgRep.data),
-      .Clk(tck),	.Enable(tc_data_rd_en),      
+     (.dout(tc_data_rd),	.din(tc_cfgRep.data),
+      .Clk(tck),	.en(tc_data_rd_en),      
       .Reset(test_logic_reset));
    //*******
 
@@ -437,16 +443,17 @@ module `$self->get_module_name()`
    //*******
    // shift in/out the data
    //; my $tc_data_reg = $self->unique_inst('flop', 'tc_data_reg', 
-   //;					     FLOP_TYPE => 'reflop',
-   //;					     FLOP_WIDTH => $tc_cfg_bus_width);
+   //;					     Type => 'REFlop',
+   //;					     Default => 0,
+   //;					     Width => $tc_cfg_bus_width);
    logic [`$tc_cfg_bus_width-1`:0] tc_data;
    logic [`$tc_cfg_bus_width-1`:0] tc_data_nxt;
    assign 			     tc_data_nxt = (tc_cfg_data_capture_dr) ? 
 						    tc_data_rd : {tdi, tc_data[`$tc_cfg_bus_width-1`:1]};
    
    `$tc_data_reg->get_module_name()` `$tc_data_reg->get_instance_name()` 
-     (.data_out(tc_data),	.data_in(tc_data_nxt),
-      .Clk(tck),	.Enable(tc_cfg_data_shift_dr | tc_cfg_data_capture_dr),      
+     (.dout(tc_data),	.din(tc_data_nxt),
+      .Clk(tck),	.en(tc_cfg_data_shift_dr | tc_cfg_data_capture_dr),      
       .Reset(test_logic_reset));
 
    // assign bus / tdo with data (always)
@@ -455,4 +462,4 @@ module `$self->get_module_name()`
    //*******
    //; } # end of "if ($tc_cfg_bus =~ m/on|yes/i)..."
 
-endmodule // `$self->get_module_name()`
+endmodule // `mname`

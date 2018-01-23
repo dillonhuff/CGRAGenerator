@@ -15,9 +15,9 @@
  * 
  * REQUIRED GENESIS PARAMETERS:
  * ----------------------------
- * * CFG_BUS_WIDTH - width of the configuration bus (default is 32bit)
- * * CFG_ADDR_WIDTH - width of the configuration bus address (default is 32bit)
- * * CFG_OPCODE_WIDTH - width of the configuration bus opcode (default is 2bit)
+ * * DataWidth - width of the configuration bus (default is 32bit)
+ * * AddrWidth - width of the configuration bus address (default is 32bit)
+ * * OpcodeWidth - width of the configuration bus opcode (default is 2bit)
  * 
  * 
  * Inputs:
@@ -39,18 +39,17 @@
  * -----------
  * Date          Author   Description
  * May  3, 2010  shacham  init version
- * 
+ * Apr 18, 2012  shacham  clean up of names and genesis syntactic sugar
  * 
  * 
  * ****************************************************************************/
 
 // ACTUAL GENESIS2 PARAMETERIZATIONS
-//; my $cfg_bus_width = $self->define_param('CFG_BUS_WIDTH' => 32);
-//; my $cfg_addr_width = $self->define_param('CFG_ADDR_WIDTH' => 32);
-//; my $cfg_op_width = $self->define_param('CFG_OPCODE_WIDTH' => 2);
+//; my $cfg_bus_width = parameter(name=>'DataWidth', val=>32, min=>1, step=>1, doc=>"Bus data width");
+//; my $cfg_addr_width = parameter(name=>'AddrWidth', val=>32, min=>1, step=>1, doc=>"Bus address width");
+//; my $cfg_op_width = parameter(name=>'OpcodeWidth', val=>2, min=>1, step=>1, doc=>"Bus opcode width");
 
-interface `$self->get_module_name()`();
-   
+interface `mname`();
    logic [`$cfg_addr_width-1`:0] addr;
    logic [`$cfg_bus_width-1`:0]  data;
    logic [`$cfg_op_width-1`:0] 	 op;
@@ -66,5 +65,4 @@ interface `$self->get_module_name()`();
     output 			 data,
     output 			 op 			 
 		   );
-   
-endinterface: `$self->get_module_name()`
+endinterface: `mname`
