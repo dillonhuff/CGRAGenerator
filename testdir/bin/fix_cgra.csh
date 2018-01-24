@@ -7,10 +7,10 @@
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
 
+
 # Scriptpath should be $gen/testdir/bin   ...right?
 
-set top = ../../hardware/generator_z/top
-
+set top = $scriptpath/../../hardware/generator_z/top
 cd $top
 
 # grep 'sel=[01]' cgra_info.txt
