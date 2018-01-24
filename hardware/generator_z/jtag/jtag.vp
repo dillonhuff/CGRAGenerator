@@ -9,7 +9,7 @@ tdi,
 tdo,
 tms,
 clk_to_gc,
-reset_to_gc,
+reset_to_gc
 );
 
   input  clk;
