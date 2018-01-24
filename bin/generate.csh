@@ -43,7 +43,8 @@ else if ("$1" == "-q") then
 endif
 
 source $CGROOT/bin/genesis2_setup.csh
-if ($?VERBOSE) which Genesis2.pl
+if ($?VERBOSE) then
+  echo -n "generate.csh: "; which Genesis2.pl
 
 ##############################################################################
 # Run the generator, but first clean up from prior runs.  Die if gen error.
@@ -57,7 +58,7 @@ cd $CGROOT/hardware/generator_z/top
     
     if ($?VERBOSE) then
       echo "";
-      echo "Generator $run looks like this:"; 
+      echo "generator.csh: Generator $run looks like this:"; 
       cat $run | awk '{print "    " $0}';
       echo ""
     endif
