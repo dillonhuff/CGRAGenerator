@@ -54,30 +54,30 @@
 //; # System clock config parameterization
 //; my $sc_cfg_bus = parameter(name=>'SC_CFG_BUS', val => 'off');
 //; my $sc_cfg_ifc_ref = $self->define_param(SC_CFG_IFC_REF => '');
-//; my $sc_cfg_ops = $self->define_param('SC_CFG_OPCODES' => {nop=>0, read=>1, write=>2, bypass=>3});
-//; my ($sc_cfg_req_ifc, $sc_cfg_rep_ifc, $sc_cfg_bus_width, $sc_cfg_addr_width, $sc_cfg_op_width);
-//; my ($sc_nop, $sc_rdop, $sc_wrop, $sc_bypassop);
+// my $sc_cfg_ops = $self->define_param('SC_CFG_OPCODES' => {nop=>0, read=>1, write=>2, bypass=>3});
+//; my ($sc_cfg_req_ifc, $sc_cfg_rep_ifc, $sc_cfg_bus_width, $sc_cfg_addr_width);# $sc_cfg_op_width);
+// my ($sc_nop, $sc_rdop, $sc_wrop, $sc_bypassop);
 //; if ($sc_cfg_bus =~ /^(yes|on)$/i){
 //;   $self->error("Missing reference system clock interface parameter: SC_CFG_IFC_REF") if ($sc_cfg_ifc_ref eq '');
 //;   $sc_cfg_req_ifc = $self->clone_inst($sc_cfg_ifc_ref, 'sc_cfgReq');
 //;   $sc_cfg_rep_ifc = $self->clone_inst($sc_cfg_ifc_ref, 'sc_cfgRep');
 //;   $sc_cfg_bus_width = $sc_cfg_req_ifc->get_param('DataWidth');
 //;   $sc_cfg_addr_width = $sc_cfg_req_ifc->get_param('AddrWidth');
-//;   $sc_cfg_op_width = $sc_cfg_req_ifc->get_param('OpcodeWidth');
+//   $sc_cfg_op_width = $sc_cfg_req_ifc->get_param('OpcodeWidth');
 //;
 //;   # Verify correctness of opcode parameters:
 //;   $self->error("Illegal value for parameter SC_CFG_BUS -->$sc_cfg_bus<--. (Allowed values are on/off)")
 //;  	unless $sc_cfg_bus =~ m/^(on|yes|off|no)$/i;
-//;   $self->error("SC_CFG_OPCODES must define values for all of {nop, read, write, bypass} opcodes")
-//;  	if (!defined $sc_cfg_ops->{nop} || !defined $sc_cfg_ops->{read} || 
-//;  	    !defined $sc_cfg_ops->{write} || !defined $sc_cfg_ops->{bypass});
-//;   $sc_nop = $sc_cfg_ops->{nop};
-//;   $sc_rdop = $sc_cfg_ops->{read};
-//;   $sc_wrop = $sc_cfg_ops->{write};
-//;   $sc_bypassop = $sc_cfg_ops->{bypass};
-//;   $self->error("SC_CFG_OPCODES values don't fit within SC_CFG_IFC_REF.CFG_OPCODE_WIDTH bits")
-//;  	if (($sc_nop > 2**$sc_cfg_op_width-1) || ($sc_rdop > 2**$sc_cfg_op_width-1) || 
-//;  	    ($sc_wrop > 2**$sc_cfg_op_width-1) || ($sc_bypassop > 2**$sc_cfg_op_width-1));
+//   $self->error("SC_CFG_OPCODES must define values for all of {nop, read, write, bypass} opcodes")
+//  	if (!defined $sc_cfg_ops->{nop} || !defined $sc_cfg_ops->{read} || 
+//  	    !defined $sc_cfg_ops->{write} || !defined $sc_cfg_ops->{bypass});
+//   $sc_nop = $sc_cfg_ops->{nop};
+//   $sc_rdop = $sc_cfg_ops->{read};
+//   $sc_wrop = $sc_cfg_ops->{write};
+//   $sc_bypassop = $sc_cfg_ops->{bypass};
+//   $self->error("SC_CFG_OPCODES values don't fit within SC_CFG_IFC_REF.CFG_OPCODE_WIDTH bits")
+//  	if (($sc_nop > 2**$sc_cfg_op_width-1) || ($sc_rdop > 2**$sc_cfg_op_width-1) || 
+//  	    ($sc_wrop > 2**$sc_cfg_op_width-1) || ($sc_bypassop > 2**$sc_cfg_op_width-1));
 //; }
 //;
 //; 
@@ -85,30 +85,30 @@
 //; # Test clock config parameterization
 //; my $tc_cfg_bus = $self->define_param(TC_CFG_BUS => 'off');
 //; my $tc_cfg_ifc_ref = $self->define_param(TC_CFG_IFC_REF => '');
-//; my $tc_cfg_ops = $self->define_param('TC_CFG_OPCODES' => {nop=>0, read=>1, write=>2, bypass=>3});
-//; my ($tc_cfg_req_ifc, $tc_cfg_rep_ifc, $tc_cfg_bus_width, $tc_cfg_addr_width, $tc_cfg_op_width);
-//; my ($tc_nop, $tc_rdop, $tc_wrop, $tc_bypassop);
+// my $tc_cfg_ops = $self->define_param('TC_CFG_OPCODES' => {nop=>0, read=>1, write=>2, bypass=>3});
+//; my ($tc_cfg_req_ifc, $tc_cfg_rep_ifc, $tc_cfg_bus_width, $tc_cfg_addr_width); #$tc_cfg_op_width);
+// my ($tc_nop, $tc_rdop, $tc_wrop, $tc_bypassop);
 //; if ($tc_cfg_bus =~ /^(yes|on)$/i){
 //;   $self->error("Missing reference system clock interface parameter: TC_CFG_IFC_REF") if ($tc_cfg_ifc_ref eq '');
 //;   $tc_cfg_req_ifc = $self->clone_inst($tc_cfg_ifc_ref, 'tc_cfgReq');
 //;   $tc_cfg_rep_ifc = $self->clone_inst($tc_cfg_ifc_ref, 'tc_cfgRep');
 //;   $tc_cfg_bus_width = $tc_cfg_req_ifc->get_param('DataWidth');
 //;   $tc_cfg_addr_width = $tc_cfg_req_ifc->get_param('AddrWidth');
-//;   $tc_cfg_op_width = $tc_cfg_req_ifc->get_param('OpcodeWidth');
+//   $tc_cfg_op_width = $tc_cfg_req_ifc->get_param('OpcodeWidth');
 //;
 //;   # Verify correctness of opcode parameters:
 //;   $self->error("Illegal value for parameter TC_CFG_BUS -->$tc_cfg_bus<--. (Allowed values are on/off)")
 //;  	unless $tc_cfg_bus =~ m/^(on|yes|off|no)$/i;
-//;   $self->error("TC_CFG_OPCODES must define values for all of {nop, read, write, bypass} opcodes")
-//;  	if (!defined $tc_cfg_ops->{nop} || !defined $tc_cfg_ops->{read} || 
-//;  	    !defined $tc_cfg_ops->{write} || !defined $tc_cfg_ops->{bypass});
-//;   $tc_nop = $tc_cfg_ops->{nop};
-//;   $tc_rdop = $tc_cfg_ops->{read};
-//;   $tc_wrop = $tc_cfg_ops->{write};
-//;   $tc_bypassop = $tc_cfg_ops->{bypass};
-//;   $self->error("TC_CFG_OPCODES values don't fit within TC_CFG_IFC_REF.CFG_OPCODE_WIDTH bits")
-//;  	if (($tc_nop > 2**$tc_cfg_op_width-1) || ($tc_rdop > 2**$tc_cfg_op_width-1) || 
-//;  	    ($tc_wrop > 2**$tc_cfg_op_width-1) || ($tc_bypassop > 2**$tc_cfg_op_width-1));
+//   $self->error("TC_CFG_OPCODES must define values for all of {nop, read, write, bypass} opcodes")
+//  	if (!defined $tc_cfg_ops->{nop} || !defined $tc_cfg_ops->{read} || 
+//  	    !defined $tc_cfg_ops->{write} || !defined $tc_cfg_ops->{bypass});
+//   $tc_nop = $tc_cfg_ops->{nop};
+//   $tc_rdop = $tc_cfg_ops->{read};
+//   $tc_wrop = $tc_cfg_ops->{write};
+//   $tc_bypassop = $tc_cfg_ops->{bypass};
+//   $self->error("TC_CFG_OPCODES values don't fit within TC_CFG_IFC_REF.CFG_OPCODE_WIDTH bits")
+//  	if (($tc_nop > 2**$tc_cfg_op_width-1) || ($tc_rdop > 2**$tc_cfg_op_width-1) || 
+//  	    ($tc_wrop > 2**$tc_cfg_op_width-1) || ($tc_bypassop > 2**$tc_cfg_op_width-1));
 //; }
 
 
@@ -163,14 +163,14 @@ module `mname`
    //; # for the sys-clock config bus
    //; if ($sc_cfg_bus =~ m/on|yes/i){
    //;	push(@{$special_insts}, {name => 'sc_cfg_data', code => 0x8});
-   //; 	push(@{$special_insts}, {name => 'sc_cfg_inst', code => 0x9});
+   // 	push(@{$special_insts}, {name => 'sc_cfg_inst', code => 0x9});
    //; 	push(@{$special_insts}, {name => 'sc_cfg_addr', code => 0xa});
    //; }
    //;
    //; # for the jtag-clock config bus
    //; if ($tc_cfg_bus =~ m/on|yes/i){
    //; 	push(@{$special_insts}, {name => 'tc_cfg_data', code => 0xc});
-   //; 	push(@{$special_insts}, {name => 'tc_cfg_inst', code => 0xd});
+   // 	push(@{$special_insts}, {name => 'tc_cfg_inst', code => 0xd});
    //; 	push(@{$special_insts}, {name => 'tc_cfg_addr', code => 0xe});
    //; }
    //;
@@ -184,10 +184,10 @@ module `mname`
    logic 	  sc_cfg_data_update_dr;		
    logic 	  sc_cfg_data_tdo;
    // sc_cfg_inst				
-   logic 	  sc_cfg_inst_capture_dr;		
-   logic 	  sc_cfg_inst_shift_dr;			
-   logic 	  sc_cfg_inst_update_dr;		
-   logic 	  sc_cfg_inst_tdo;
+   //logic 	  sc_cfg_inst_capture_dr;		
+   //logic 	  sc_cfg_inst_shift_dr;			
+   //logic 	  sc_cfg_inst_update_dr;		
+   //logic 	  sc_cfg_inst_tdo;
    // sc_cfg_addr				
    logic 	  sc_cfg_addr_capture_dr;		
    logic 	  sc_cfg_addr_shift_dr;			
@@ -203,10 +203,10 @@ module `mname`
    logic 	  tc_cfg_data_update_dr;		
    logic 	  tc_cfg_data_tdo;
    // tc_cfg_inst				
-   logic 	  tc_cfg_inst_capture_dr;		
-   logic 	  tc_cfg_inst_shift_dr;			
-   logic 	  tc_cfg_inst_update_dr;		
-   logic 	  tc_cfg_inst_tdo;
+   //logic 	  tc_cfg_inst_capture_dr;		
+   //logic 	  tc_cfg_inst_shift_dr;			
+   //logic 	  tc_cfg_inst_update_dr;		
+   //logic 	  tc_cfg_inst_tdo;
    // tc_cfg_addr				
    logic 	  tc_cfg_addr_capture_dr;		
    logic 	  tc_cfg_addr_shift_dr;			
@@ -234,10 +234,10 @@ module `mname`
       .sc_cfg_data_tdo(sc_cfg_data_tdo),
 				
       // sc_cfg_inst				
-      .sc_cfg_inst_capture_dr(sc_cfg_inst_capture_dr),		
-      .sc_cfg_inst_shift_dr(sc_cfg_inst_shift_dr),			
-      .sc_cfg_inst_update_dr(sc_cfg_inst_update_dr),		
-      .sc_cfg_inst_tdo(sc_cfg_inst_tdo),
+     // .sc_cfg_inst_capture_dr(sc_cfg_inst_capture_dr),		
+     // .sc_cfg_inst_shift_dr(sc_cfg_inst_shift_dr),			
+     // .sc_cfg_inst_update_dr(sc_cfg_inst_update_dr),		
+     // .sc_cfg_inst_tdo(sc_cfg_inst_tdo),
       						
       // sc_cfg_addr				
       .sc_cfg_addr_capture_dr(sc_cfg_addr_capture_dr),		
@@ -254,10 +254,10 @@ module `mname`
       .tc_cfg_data_tdo(tc_cfg_data_tdo),
       						
       // tc_cfg_inst				
-      .tc_cfg_inst_capture_dr(tc_cfg_inst_capture_dr),		
-      .tc_cfg_inst_shift_dr(tc_cfg_inst_shift_dr),			
-      .tc_cfg_inst_update_dr(tc_cfg_inst_update_dr),		
-      .tc_cfg_inst_tdo(tc_cfg_inst_tdo),
+     // .tc_cfg_inst_capture_dr(tc_cfg_inst_capture_dr),		
+     // .tc_cfg_inst_shift_dr(tc_cfg_inst_shift_dr),			
+     // .tc_cfg_inst_update_dr(tc_cfg_inst_update_dr),		
+     // .tc_cfg_inst_tdo(tc_cfg_inst_tdo),
       						
       // tc_cfg_addr				
       .tc_cfg_addr_capture_dr(tc_cfg_addr_capture_dr),		
@@ -291,37 +291,6 @@ module `mname`
    // assumed (see header) that the frequency of jtag ops is lower then it takes
    // to go through the chain of reg-files.
    /***************************************************************************/
-   // shift in/out the instuction
-   //; my $sc_inst_reg = $self->unique_inst('flop', 'sc_inst_reg', 
-   //;					     Type => 'REFlop',
-   //;					     Default => $sc_nop,
-   //;					     Width => $sc_cfg_op_width);
-   logic [`$sc_cfg_op_width-1`:0] sc_inst;
-   `$sc_inst_reg->get_module_name()` `$sc_inst_reg->get_instance_name()` 
-     (.dout(sc_inst),	.din({tdi, sc_inst[`$sc_cfg_op_width-1`:1]}),
-      .Clk(tck),	.en(sc_cfg_inst_shift_dr),      .Reset(test_logic_reset));
-
-   // Qualify the instruction
-   logic [3:0] inst_update_qual;
-   logic       inst_update_qualified;
-   assign inst_update_qualified = (inst_update_qual==4'b1110)?1'b1:1'b0;
-   //; my $inst_update_reg = generate('flop', 'inst_update_reg', 
-   //;					     Type => 'RFlop',
-   //;					     Default => 0,
-   //;					     Width => 4);
-   `$inst_update_reg->get_module_name()` `$inst_update_reg->get_instance_name()` 
-     (.dout(inst_update_qual),	.din({sc_cfg_inst_update_dr, inst_update_qual[3:1]}),
-      .Clk(Clk),	.Reset(Reset));
-   
-
-   // assign transaction to the bus on update (pulse)
-   assign 			   sc_cfgReq.op = (inst_update_qualified) ? 
-						   sc_inst : `$sc_cfg_op_width`'d`$sc_nop`;
-   // assign tdo with instruction always
-   assign 			   sc_cfg_inst_tdo = sc_inst[0];
-   //*******
-
-   
    //*******
    // shift in/out the address
    //; my $sc_addr_reg = generate('flop', 'sc_addr_reg', 
@@ -347,8 +316,8 @@ module `mname`
    //;					     Width => $sc_cfg_bus_width);
    logic [`$sc_cfg_bus_width-1`:0] sc_data_rd;
    logic 			   sc_data_rd_en;
-   assign 			   sc_data_rd_en = (sc_cfgRep.op == `$sc_cfg_op_width`'d`$sc_bypassop`)? 
-						   1'b1: 1'b0;
+   assign 			   sc_data_rd_en = 1; // STILL NEED TO FIGURE THIS OUT. NOT USING OPS
+//(sc_cfgRep.op == `#$sc_cfg_op_width`'d`#$sc_bypassop`)?   1'b1: 1'b0;
    `$sc_data_rd_reg->get_module_name()` `$sc_data_rd_reg->get_instance_name()` 
      (.dout(sc_data_rd),	.din(sc_cfgRep.data),
       .Clk(Clk),	.en(sc_data_rd_en),      
@@ -388,24 +357,6 @@ module `mname`
    // don't need to cross clock domains. Just need to tell the jtag register 
    // what and when to sample.
    /***************************************************************************/
-   // shift in/out the instuction
-   //; my $tc_inst_reg = $self->unique_inst('flop', 'tc_inst_reg', 
-   //;					     Type => 'REFlop',
-   //;					     Default => $tc_nop,
-   //;					     Width => $tc_cfg_op_width);
-   logic [`$tc_cfg_op_width-1`:0] tc_inst;
-   `$tc_inst_reg->get_module_name()` `$tc_inst_reg->get_instance_name()` 
-     (.dout(tc_inst),	.din({tdi, tc_inst[`$tc_cfg_op_width-1`:1]}),
-      .Clk(tck),	.en(tc_cfg_inst_shift_dr),      .Reset(test_logic_reset));
-
-   // assign transaction to the bus on update (pulse)
-   assign 			   tc_cfgReq.op = (tc_cfg_inst_update_dr) ? 
-						   tc_inst : `$tc_cfg_op_width`'d`$tc_nop`;
-   // assign tdo with instruction always
-   assign 			   tc_cfg_inst_tdo = tc_inst[0];
-   //*******
-
-   
    //*******
    // shift in/out the address
    //; my $tc_addr_reg = $self->unique_inst('flop', 'tc_addr_reg', 
@@ -431,8 +382,8 @@ module `mname`
    //;					     Width => $tc_cfg_bus_width);
    logic [`$tc_cfg_bus_width-1`:0] tc_data_rd;
    logic 			   tc_data_rd_en;
-   assign 			   tc_data_rd_en = (tc_cfgRep.op == `$tc_cfg_op_width`'d`$tc_bypassop`)? 
-						   1'b1: 1'b0;
+   assign 			   tc_data_rd_en = 1; //STILL NEED TO FIGURE THIS OUT. NOT USING OPS
+//(tc_cfgRep.op == `#$tc_cfg_op_width`'d`#$tc_bypassop`)?  1'b1: 1'b0;
    `$tc_data_rd_reg->get_module_name()` `$tc_data_rd_reg->get_instance_name()` 
      (.dout(tc_data_rd),	.din(tc_cfgRep.data),
       .Clk(tck),	.en(tc_data_rd_en),      

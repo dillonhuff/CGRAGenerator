@@ -22,28 +22,44 @@
  * -----------
  * Date          Author   Description
  * Mar 30, 2010  shacham  init version  --  
+ * May 20, 2014  jingpu   cumulative fixes, compatible with async active low reset flops
  * 
  * ****************************************************************************/
+//;
+//; use Scalar::Util qw(looks_like_number);
+//;
 
 // ACTUAL GENESIS2 PARAMETERIZATIONS
-//; my $width = $self->define_param(WIDTH => 5);
+//; my $width = $self->define_param(Width => 5);
 //; my $special_jtag_insts = $self->define_param(SPECIAL_INSTRUCTIONS => []);
 //; #Example: SPECIAL_INSTRUCTIONS => [	{name => 'CFG_DATA', code => 0x8},
 //; #					{name => 'CFG_INST', code => 0x9},
 //; #					{name => 'CFG_ADDR', code => 0xA}
 //; #				     ]
-//;
-//; my $version = $self->define_param(VERSION_NUM => 0x1);
-//; my $part = $self->define_param(PART_NUM => 0xcafe);
-//; my $man_num = $self->define_param(MAN_NUM => 0xa);
-//;
-//;
+//; 
+//; my $IDCODE = $self->get_top_param('IDCODE');
+//; my ($IDCODE_num, $man_num, $part, $version);
+//; if (looks_like_number($IDCODE)){ 
+//;     $IDCODE_num = $IDCODE;
+//; }else{
+//;     my @chrs = split('',$IDCODE);
+//;     error("IDCODE longer than 3 chars") if scalar(@chrs)>3;
+//;     foreach my $chr (@chrs){
+//;	 #print STDERR "DEBUG: $chr ".ord($chr)."\n";
+//;	 $IDCODE_num = ($IDCODE_num<<8) + ord($chr);
+//;     }
+//;     $IDCODE_num = ($IDCODE_num<<8) + 1;
+//; }
+//; $man_num = 0x7FF  & ($IDCODE_num>>1);
+//; $part =    0xFFFF & ($IDCODE_num>>12);
+//; $version = 0xF    & ($IDCODE_num>>28);
+//; 
 //; # Predefined instructions
 //; my $extest = 0;			# all zeros (From $SYNOPSYS/dw/sim_ver/DW_tap.v)
 //; my $bypass = (2**$width) -1;	# all ones (From $SYNOPSYS/dw/sim_ver/DW_tap.v)
 //; my $idcode = 1;			# all ones (From $SYNOPSYS/dw/sim_ver/DW_tap.v)
 //; my $sample = 2;			# all ones (From $SYNOPSYS/dw/sim_ver/DW_tap.v)
-//;
+//; 
 //; # The INTEST instruction (added by shacham)
 //; my $intest = 3;
 
@@ -58,47 +74,51 @@
 
 module `$self->get_module_name()`
   (
-    // Specific usefule states
-    output        test_logic_reset,		// TAP FSM in Test Logic Reset (time to reset data register)
+   // Specific usefule states
+   output logic test_logic_reset, // TAP FSM in Test Logic Reset (time to reset data register)
 
-    // Required commands by the IEEE Standard 1149.1 for a synchronous boundary scan register
-    // Note to all: INTEST is optional part of the standard but we'll put it in anyway.
-    // Note to me: In bsr cells, connect both update clk and capture clk to tck.
-    output        bsr_extest,	// Test Sellect Data Reg: EXTEST
-    output        bsr_intest,	// Test Sellect Data Reg: INTEST
-    output        bsr_sample,	// Test Sellect Data Reg: SAMPLE
-    output 	  bsr_capture_en,	// required by bsr cells
-    output 	  bsr_shift_dr,	// required by bsr cells	  
-    output 	  bsr_update_en,	// required by bsr cells
-    input 	  bsr_tdo,		// data from the boundary scan register
-									
-    // Special registers
-    //; foreach my $jtag_inst (@{$special_jtag_insts}){
-    output        `$jtag_inst->{name}`_capture_dr,		// Test Sellect Data Reg: `$jtag_inst->{name}`
-    output        `$jtag_inst->{name}`_shift_dr,		// Test Sellect Data Reg: `$jtag_inst->{name}`
-    output        `$jtag_inst->{name}`_update_dr,		// Test Sellect Data Reg: `$jtag_inst->{name}`
-    //;}
+   // Required commands by the IEEE Standard 1149.1 for a synchronous boundary scan register
+   // Note to all: INTEST is optional part of the standard but we'll put it in anyway.
+   // Note to me: In bsr cells, connect both update clk and capture clk to tck.
+   output logic bsr_extest, // Test Sellect Data Reg: EXTEST
+   output logic bsr_intest, // Test Sellect Data Reg: INTEST
+   output logic bsr_sample, // Test Sellect Data Reg: SAMPLE
+   output logic bsr_capture_en, // required by bsr cells
+   output logic bsr_shift_dr, // required by bsr cells	  
+   output logic bsr_update_en, // required by bsr cells
+   input logic 	bsr_tdo, // data from the boundary scan register
+  
+   // Special registers
+   //; foreach my $jtag_inst (@{$special_jtag_insts}){
+   output logic `$jtag_inst->{name}`_capture_dr, // Test Sellect Data Reg: `$jtag_inst->{name}`
+   output logic `$jtag_inst->{name}`_shift_dr, // Test Sellect Data Reg: `$jtag_inst->{name}`
+   output logic `$jtag_inst->{name}`_update_dr, // Test Sellect Data Reg: `$jtag_inst->{name}`
+   //;}
 
-    // Special TDOs
-    //; foreach my $jtag_inst (@{$special_jtag_insts}){
-    input         `$jtag_inst->{name}`_tdo,		// serial data out from DATA register `$jtag_inst->{name}`
-    //;}
+   // Special TDOs
+   //; foreach my $jtag_inst (@{$special_jtag_insts}){
+   input logic 	`$jtag_inst->{name}`_tdo, // serial data out from DATA register `$jtag_inst->{name}`
+   //;}
 
-    // the standard JTAG IOs
-    input         tms,          	// JTAG Test Mode Select
-    input         tck,          	// JTAG Test Clock
-    input         trst_n,         	// JTAG Test Reset
-    input         tdi,          	// JTAG Test Data Input
-    output        tdo,	          	// JTAG Test Data Output
-    output        tdo_en	        // JTAG Test Data Output
+   // the standard JTAG IOs
+   input logic 	tms, // JTAG Test Mode Select
+   input logic 	tck, // JTAG Test Clock
+   input logic 	trst_n, // JTAG Test Reset
+   input logic 	tdi, // JTAG Test Data Input
+   output logic tdo, // JTAG Test Data Output
+   output logic tdo_en	        // JTAG Test Data Output
    );
+
    
 
-   logic 	  muxed_tdo;
+   logic 	muxed_tdo;
    logic [`$width-1`:0] instruction;
    logic [15:0] 	tap_state;
-   
 
+   logic 		shift_dr; 
+   logic 		sync_capture_en; // active low
+   logic 		sync_update_dr;
+   
 
    
    // First, let's instantiate a design-ware module for the tap
@@ -150,7 +170,7 @@ module `$self->get_module_name()`
 	    .version(`$version`),
 	    .part(`$part`),
 	    .man_num(`$man_num`),
-	    .sync_mode(1) // Asynch JTAG is not used for ee272 (can't say that I see a reason to use it anywhere...)
+	    .sync_mode(1) // we are always sync with respect to TCK (i.e., we rather use TCK than clock_dr)
 	    ) tap (
 		   // inputs
 		   .tck(tck),
@@ -158,56 +178,65 @@ module `$self->get_module_name()`
 		   .tms(tms),
 		   .tdi(tdi),
 		   .so(muxed_tdo),
-		   .bypass_sel('0),
-		   .sentinel_val('0),
+		   .bypass_sel(1'b0),
+		   .sentinel_val(`$width-1`'b0),
+		   .test(1'b0),
 		   
 		   //outputs
-		   .clock_dr(/*Not used in synchronous mode*/),
-		   .shift_dr(bsr_shift_dr),
-		   .update_dr(/*Not used in synchronous mode*/),
+		   .clock_dr(/*not used in sync mode*/),
+		   .shift_dr(shift_dr),
+		   .update_dr(/*not used in sync mode*/),
 		   .tdo(tdo),
 		   .tdo_en(tdo_en),
 		   .tap_state(tap_state),
 		   .extest(bsr_extest),
 		   .samp_load(bsr_sample),
 		   .instructions(instruction),
-		   .sync_capture_en(bsr_capture_en),
-		   .sync_update_dr(bsr_update_en)
+		   .sync_capture_en(sync_capture_en),
+		   .sync_update_dr(sync_update_dr)
 		   );
    
 
    // mux the different TDO's into the tap, based on the instruction
    always_comb begin
       unique case(instruction)
-	       `$width`'d`$intest`: muxed_tdo = bsr_tdo; // for INTEST
-	       `$width`'d`$extest`: muxed_tdo = bsr_tdo; // for EXTEST
-	       `$width`'d`$sample`: muxed_tdo = bsr_tdo; // for SAMPLE
-	       //; foreach my $jtag_inst (@{$special_jtag_insts}){
-	       `$width`'d`$jtag_inst->{code}`: muxed_tdo = `$jtag_inst->{name}`_tdo; // serial data out from DATA register `$jtag_inst->{name}`
-	       //;}
-	       default : muxed_tdo = 1'b0;
+	`$width`'d`$intest`: muxed_tdo = bsr_tdo; // for INTEST
+	`$width`'d`$extest`: muxed_tdo = bsr_tdo; // for EXTEST
+	`$width`'d`$sample`: muxed_tdo = bsr_tdo; // for SAMPLE
+	//; foreach my $jtag_inst (@{$special_jtag_insts}){
+	`$width`'d`$jtag_inst->{code}`: muxed_tdo = `$jtag_inst->{name}`_tdo; // serial data out from DATA register `$jtag_inst->{name}`
+	//;}
+	default : muxed_tdo = 1'b0;
       endcase // case(instruction)
    end // always_comb begin
 
-   // output signal for intest (optional in the standard but I think it's important)
-   assign bsr_intest = (instruction===`$width`'d`$intest`) ? 1'b1 : 1'b0;
+   // Qualifiers for the various jtag stages
+   // OS: unfortunatelly, this is hard coded based on the DW_tap documentation 
+   //     and implementation. Not very robust though...
+   assign test_logic_reset  = ~tap_state[0];
+   logic  at_capture_dr;
+   assign at_capture_dr = tap_state[3]; 
+   logic  at_shift_dr;
+   assign at_shift_dr = shift_dr;
+   logic  at_update_dr;
+   assign at_update_dr = sync_update_dr;
    
    // Output control signals per special instruction
-   // OS: unfortunatelly, this is hard coded based on the DW_tap documentation and implementation. Not very robust though...
-   assign test_logic_reset  = tap_state[0];
-   logic  at_capture_dr;
-   assign at_capture_dr = tap_state[3];
-   logic  at_shift_dr;
-   assign at_shift_dr = tap_state[4];
-   logic at_update_dr;
-   assign at_update_dr = tap_state[8];
-   
    //; foreach my $jtag_inst (@{$special_jtag_insts}){
    logic  at_`$jtag_inst->{name}`;
-   assign at_`$jtag_inst->{name}` = (instruction===`$width`'d`$jtag_inst->{code}`) ? 1'b1 : 1'b0;
+   assign at_`$jtag_inst->{name}` = (instruction==`$width`'d`$jtag_inst->{code}`) ? 1'b1 : 1'b0;
    assign `$jtag_inst->{name}`_capture_dr = at_`$jtag_inst->{name}` & at_capture_dr;
    assign `$jtag_inst->{name}`_shift_dr = at_`$jtag_inst->{name}` & at_shift_dr;
    assign `$jtag_inst->{name}`_update_dr = at_`$jtag_inst->{name}` & at_update_dr;
    //; }
+
+
+   logic  bsr_update_dr; //I think this signal should in the port -- Jing
+   
+   // output signal for intest (optional in the standard but I think it's important)
+   assign bsr_intest = (instruction==`$width`'d`$intest`) ? 1'b1 : 1'b0;
+   assign bsr_shift_dr = at_shift_dr & (bsr_intest | bsr_sample | bsr_extest);
+   assign bsr_capture_en = sync_capture_en; 
+   assign bsr_update_dr = at_update_dr & (bsr_intest | bsr_sample | bsr_extest);
 
 endmodule // `$self->get_module_name()`

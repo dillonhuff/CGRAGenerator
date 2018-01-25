@@ -47,7 +47,8 @@
 
 //; # Now, let's decide upon the parameters of the configuration bus:
 //; my $tc_cfg_bus_width =  $self->define_param(TESTCLK_CFG_BUS_WIDTH => 16);
-//; my $tc_cfg_addr_width =  $self->define_param(TESTCLK_CFG_ADDR_WIDTH => 32);
+//; my $tc_cfg_addr_width =  $self->define_param(TESTCLK_CFG_ADDR_WIDTH => 30);
+//; my $IDCODE = $self->define_param(IDCODE => 1);
 
    //  Config interfaces for system and test clock domains (DO I NEED SYS_CLK_IFC??)
  //; my $tc_jtag2gc_ifc = $self->unique_inst('cfg_ifc', 'tc_jtag2gc_ifc',
@@ -61,19 +62,21 @@
 module `$self->get_module_name()`
   (
    // main IOs
+   //Address and Data going out to the global controller
    `$tc_jtag2gc_ifc->get_instance_name()`.cfgOut cfgOut,
+   //Data coming back from the global controller
    `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn cfgIn,
    input tck,
    input trst_n,
    input tdi,
    input tms,
-   input [`$tc_cfg_addr_width-1`:0] config_addr_from_gc,
-   input [`$tc_cfg_bus_width-1`:0] config_data_from_gc, 
+   //input [`#$tc_cfg_addr_width-1`:0] config_addr_from_gc,
+   //input [`#$tc_cfg_bus_width-1`:0] config_data_from_gc, 
    output tdo,
    output clk_to_gc,
    output reset_to_gc,
-   output [`$tc_cfg_addr_width-1`:0] config_addr_to_gc,
-   output [`$tc_cfg_bus_width-1`:0] config_data_to_gc, 
+   //output [`#$tc_cfg_addr_width-1`:0] config_addr_to_gc,
+   //output [`#$tc_cfg_bus_width-1`:0] config_data_to_gc, 
    // Signals for the Boundary Scan Register (these are not chip IOs though)
     output 				bsr_tdi,
     output 				bsr_sample,
@@ -85,9 +88,6 @@ module `$self->get_module_name()`
     input 				bsr_tdo
    );
 
-   //Assign cfg_ifcs to module inputs and outputs
-   assign 
-				
 
    // Reset to the test clock domain (this is different than the trst signal)
    logic 				test_logic_reset;
@@ -127,7 +127,7 @@ module `$self->get_module_name()`
       .bsr_tdo(bsr_tdo),
       
       
-      // signals to the jtag clocked regfile
+      // signals to the jtag clocked global controller
       .tc_cfgReq(cfgOut),
       .tc_cfgRep(cfgIn),
       .test_logic_reset(test_logic_reset)
