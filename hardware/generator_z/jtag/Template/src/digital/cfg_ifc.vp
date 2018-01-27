@@ -47,22 +47,22 @@
 // ACTUAL GENESIS2 PARAMETERIZATIONS
 //; my $cfg_bus_width = parameter(name=>'DataWidth', val=>32, min=>1, step=>1, doc=>"Bus data width");
 //; my $cfg_addr_width = parameter(name=>'AddrWidth', val=>32, min=>1, step=>1, doc=>"Bus address width");
-// my $cfg_op_width = parameter(name=>'OpcodeWidth', val=>2, min=>1, step=>1, doc=>"Bus opcode width");
+//; my $cfg_op_width = parameter(name=>'OpcodeWidth', val=>2, min=>1, step=>1, doc=>"Bus opcode width");
 
 interface `mname`();
    logic [`$cfg_addr_width-1`:0] addr;
    logic [`$cfg_bus_width-1`:0]  data;
-  // logic [`#$cfg_op_width-1`:0] 	 op;
+   logic [`$cfg_op_width-1`:0] 	 op;
    
    modport cfgIn(//messages arriving from prev cfg node
     input 			 addr,
     input 			 data,
-   // input 			 op 			 
+    input 			 op 			 
 		   );
 
    modport cfgOut(// messages sent to next cfg node
     output 			 addr,
     output 			 data,
-   // output 			 op 			 
+    output 			 op 			 
 		   );
 endinterface: `mname`
