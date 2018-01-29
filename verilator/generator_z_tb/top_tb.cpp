@@ -371,12 +371,22 @@ int main(int argc, char **argv, char **env) {
             // DUT instantiation
             /////////////////////////////////////////////////////////
 
+            // // These happen on EVERY clock edge, pos and neg
+            // top->clk = clk;
+            // top->reset = reset;
+            // top->config_addr = config_addr;
+            // top->config_data = config_data;
+            // INWIRE = in_0_0;
+
+            // nbdev2 changed some names :(
             // These happen on EVERY clock edge, pos and neg
-            top->clk = clk;
-            top->reset = reset;
-            top->config_addr = config_addr;
-            top->config_data = config_data;
+            top->clk_in = clk;
+            top->reset_in = reset;
+            top->config_addr_in = config_addr;
+            top->config_data_in = config_data;
             INWIRE = in_0_0;
+
+
 
             ///always @(posedge clk) begin
             ///   $display ("%h + %h + %h + %h = %h (%h)", in_0_0, in_0_1, in_1_0,
