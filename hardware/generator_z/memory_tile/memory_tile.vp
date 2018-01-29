@@ -114,6 +114,8 @@ tile_id
   input reset;
 
   wire ___genesis_wire_`$global_signal_count`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${gen_mem_for_busname}`_`${control_busname}`_`${ddepth}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${mem_tile_height}`;
+  wire clk;
+
 //; ##############################################
 //; #
 //; # Generate config enables
@@ -437,7 +439,13 @@ tile_id
 //; #####################################
 //; ## clock_gating
 //; #####################################
-  assign clk = clk_in & cg_en;
+
+
+  // assign clk = clk_in & cg_en;
+  assign clk = clk_in;
+
+
+
 //; ##############################################
 //; #
 //; # Instantiate memory
