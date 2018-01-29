@@ -9,12 +9,16 @@ import os
 # must do
 # sts = Popen("mycmd" + " myarg", shell=True).wait()
 
-def my_syscall(cmd):
+def my_syscall(cmd, action="FAIL"):
     DBG=0
     sys.stdout.flush()
     import subprocess
     if DBG: print "okay here we go with", cmd
-    return subprocess.Popen(cmd, shell=True).wait()
+    err = subprocess.Popen(cmd, shell=True).wait()
+    if err and (action == "FAIL"):
+        assert False, "\nSubprocess call failed:\n%s" % cmd
+        # sys.exit(13)
+    return err
 
 VERBOSE = False # For real default value, see process_args() below
 GENERATED=False # Only need to generate CGRA ONCE (idiot)
@@ -209,7 +213,7 @@ def compare_outputs(tname, DBG=0):
         print "  Comparing %s and %s..." % (gold_out,cgra_out)
         print "  " + cmd
 
-    err = my_syscall(cmd)
+    err = my_syscall(cmd, "CONTINUE")
     if err:
         print "  OOPS thatsa no good: '%s' failed" % tname
         sys.exit(13)
@@ -307,7 +311,7 @@ def gen_output_file_gold(tname, DBG=0):
 
     if VERBOSE:
         print "  gold-model output file '%s':" % filename
-        my_syscall('od -t u1 ' + filename + " | egrep -v '^.......$' | sed 's/^/  /'")
+        my_syscall('od -t u1 ' + filename + " | egrep -v '^.......$' | sed 's/^/  /'", 'CONT')
         print ""
 
     return gold_out
@@ -321,7 +325,7 @@ def gen_output_file_cgra(tname, DBG=0):
 
     if VERBOSE:
         print "  Will use bsa file '%s.bsa' to generate '%s'" % (tname,cgra_out)
-    if DBG: my_syscall('(cd %s; ls -l run.csh)' % VERILATOR_DIR)
+    if DBG: my_syscall('(cd %s; ls -l run.csh)' % VERILATOR_DIR, 'CONT')
 
     # Calculate the appropriate delay e.g. '1,0' for PE ops or '9,0' for 9-deep lbuf.
     delay = find_delay(tname, DBG=0)
@@ -340,6 +344,9 @@ def gen_output_file_cgra(tname, DBG=0):
     else:             run_csh = './run.csh -v -nobuild'
     GENERATED=True
         
+    run_csh = './run.csh -v -trace utest.vcd'
+
+
     # echo "./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay"
     cmd = "%s -hackmem -config %s -input %s -output %s -delay %s"\
           % (run_csh, config, input, output, delay)
@@ -358,7 +365,7 @@ def gen_output_file_cgra(tname, DBG=0):
         print ""
 
     # (cd $v; ./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay ) || exit -1
-    bad_outcome = my_syscall('cd %s; %s%s' % (VERILATOR_DIR, cmd, savelog))
+    bad_outcome = my_syscall('cd %s; %s%s' % (VERILATOR_DIR, cmd, savelog), 'CONT')
     # if not VERBOSE: my_syscall('egrep ^run.csh %s' % logfile)
     sys.stdout.flush()
 
@@ -366,7 +373,7 @@ def gen_output_file_cgra(tname, DBG=0):
 
     if VERBOSE:
         print "  CGRA output file '%s':" % cgra_out
-        my_syscall('od -t u1 ' + cgra_out + " | egrep -v '^.......$' | sed 's/./  /'")
+        my_syscall('od -t u1 ' + cgra_out + " | egrep -v '^.......$' | sed 's/./  /'", 'CONT')
 
     return cgra_out
 
