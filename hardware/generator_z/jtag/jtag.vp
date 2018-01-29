@@ -7,7 +7,7 @@ config_addr_out,
 config_data_out,
 tdi,
 tdo,
-tms,
+tms
 );
 
   input  clk;
