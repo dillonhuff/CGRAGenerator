@@ -308,6 +308,7 @@ if ("$GENERATE" == "-nogen") then
 else
   # echo "run.csh: Building CGRA because you asked for it with '-gen'..."
   echo "run.csh: Building CGRA because it's the default..."
+  if ($?VERBOSE) echo "run.csh: ../../bin/generate.csh $VSWITCH"
   ../../bin/generate.csh $VSWITCH || exit -1
 endif
 

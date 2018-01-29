@@ -162,7 +162,7 @@ def do_one_test(test, DBG=0):
     if   os.path.exists(tname_op  + '.bsa'): tname = tname_op
     elif os.path.exists(tname_mem + '.bsa'): tname = tname_mem
     else:
-        assert False, 'Could not find bsa file'
+        assert False, 'Could not find bsa file "{op,mem}_%s.bsa"' % test
 
     print_raw_file_abbrev('INPUT ', 'nodelay', 'test_in.raw')
 
