@@ -479,7 +479,8 @@ tile_id
 
 
 
-  assign clk = clk_in & cg_en;
+  // assign clk = clk_in & cg_en;
+  assign clk = clk_in;
 
 
 
