@@ -1,25 +1,16 @@
+//; #///////////////////////////////////////////////////////////////////
+//; #// CGRA TOP generator 
+//; #//
+//; #//////////////////////////////////////////////////////////////////
 //; use POSIX;
-///////////////////////////////////////////////////////////////////
-// CGRA TOP generator 
-//
-//////////////////////////////////////////////////////////////////
-//; #global
-//; #<BUS_NAME>:<number of bits>b#<seg1_length>_<seg1_register_after_hops>:<seg2_length>_<seg2_register_after_hops>:...
-//;   my $bus_config = "BUS16:16b#1_4:1_4:1_4:1_4:1_4 BUS1:1b#1_4:1_4:1_4:1_4:1_4";
-//; if ($ENV{'CGRA_GEN_ALL_REG'}==1) {
-//;   $bus_config = "BUS16:16b#1_1:1_1:1_1:1_1:1_1 BUS1:1b#1_1:1_1:1_1:1_1:1_1";
-//; }
-//; my $all_segments_for_all_tiles = 1;
-//; # specify the number of global signals available for each pe/mem tile
-//; my $global_signal_count = 4;
-//; my $sides = 4;
-//; # for cb
-//; # IMP: ensure cb_connections length is equal to (num of tracks defined in bus_config)*2 + num of global signals
-//; #      eg: for 5 wires and 4 global signals, set cb_connections = "11111111111111" i.e. 5*2 + 4 = 14
-//; #      '1' bits to enable muxing of all wires passing through the CB.
-//; my $cb_connections = "11111111111111";
-//; # for sb
-//; my $sb_fs = "10000#10000#10000";
+
+//; #########################################
+//; #// Generator Configuration Start 
+//; ######################################### 
+
+//; # Specify the CGRA grid size as 8x8,16x16, or 64x64. You can generate additional sizes by modifying
+//; # the IO_count and basic_block_repeat_* variables below.
+//; my $grid_size = "8x8";
 //; #
 //; # for IOs
 //; # <number of bits> <number of bits> <number of bits> <number of bits>
@@ -34,71 +25,11 @@
 //; # resources or even wires. IOs are numbered clockwise i.e. IO0 will be at the top for the
 //; # right side, rightmost on the bottom side and so on.
 //; #
-//; my @IO_count = qw(32 32 32 32);
+//; my @IO_count = ();
+//; if ($grid_size == "8x8")   { @IO_count = qw(8 8 8 8); }
+//; if ($grid_size == "64x64") { @IO_count = qw(64 64 64 64); }
+//; if ($grid_size == "16x16") { @IO_count = qw(16 16 16 16); }
 //; #
-//; #
-//; #
-//; # SR 12/2017: want 8x8 grid!
-//; my $sr_grid_size = "default";
-//; $sr_grid_size = "8x8";
-//; # $sr_grid_size = "64x64";
-//; if ($sr_grid_size == "8x8") { @IO_count = qw(8 8 8 8); }
-//; if ($sr_grid_size == "64x64") { @IO_count = qw(64 64 64 64); }
-//; #
-//; #
-//; #
-//; my $tile_config;
-//; $tile_config->{ 'pe' } = {
-//;       type => 'pe_tile_new',
-//;       sides => $sides,
-//;       is_bidi => 0,
-//;       bus_config => $bus_config,
-//;       cb_connections => $cb_connections,
-//;       global_signal_count => $global_signal_count,
-//;       has_constant => 0,
-//;       tile_height => 1,
-//;       tile_width => 1,
-//;       reg_inputs => 1,
-//;       reg_out => 0, 
-//;       use_add => 1,
-//;       use_cntr => 1,
-//;       use_bool => 1,
-//;       use_shift => 1,
-//;       use_div => 0,
-//;       mult_mode => 1,
-//;       is_msb => 0,
-//;       en_double => 0,
-//;       lut_inps => 3,
-//;       sb_fs => $sb_fs,
-//;       all_segments_for_all_tiles => $all_segments_for_all_tiles
-//; };
-//; $tile_config->{ 'mem' } = {
-//;       type => 'memory_tile',
-//;       gen_mem_for_busname => 'BUS16',
-//;       control_busname => 'BUS1',
-//;       ddepth => 1024,
-//;       tile_height => 2,
-//;       tile_width => 1,
-//;       bus_config => $bus_config,
-//;       cb_connections => $cb_connections,
-//;       global_signal_count => $global_signal_count,
-//;       sb_fs => $sb_fs
-//; };
-//; $tile_config->{ 'io1' } = {
-//;       type => 'io1bit',
-//;       tile_height => 1,
-//;       tile_width => 1,
-//; };
-//; $tile_config->{ 'io16' } = {
-//;       type => 'io16bit',
-//;       tile_height => 1,
-//;       tile_width => 1,
-//; };
-//; $tile_config->{ 'empty' } = {
-//;       type => 'empty',
-//;       tile_height => 1,
-//;       tile_width => 1,
-//; };
 //; # Specify, in form of a AxB grid, the basic tile pattern that repeats. Each
 //; # grid node represents a unit tile (1x1) on the CGRA fabric. Assign a tile
 //; # type to each node. Tile types are listed above. If the width or height of
@@ -119,14 +50,101 @@
 //; #
 //; my $basic_block_repeat_y = 16;
 //; #
+//; if ($grid_size == "8x8")   { $basic_block_repeat_x =  2; $basic_block_repeat_y =  4; }
+//; if ($grid_size == "64x64") { $basic_block_repeat_x = 16; $basic_block_repeat_y = 32; }
+//; if ($grid_size == "16x16") { $basic_block_repeat_x =  4; $basic_block_repeat_y = 8; }
 //; #
 //; #
-//; # SR 12/2017: want 8x8 grid!
-//; if ($sr_grid_size == "8x8")   { $basic_block_repeat_x =  2; $basic_block_repeat_y =  4; }
-//; if ($sr_grid_size == "64x64") { $basic_block_repeat_x = 16; $basic_block_repeat_y = 32; }
+//; # Specify the bus configuration below. This parameter allows you to set the width, number, and segment length of buses.
+//; # eg: <BUS_NAME>:<number of bits>b#<seg1_length>_<seg1_register_after_hops>:<seg2_length>_<seg2_register_after_hops>:...
+//; my $bus_config = "BUS16:16b#1_4:1_4:1_4:1_4:1_4 BUS1:1b#1_4:1_4:1_4:1_4:1_4";
+//; if ($ENV{'CGRA_GEN_ALL_REG'}==1) {
+//;   $bus_config = "BUS16:16b#1_1:1_1:1_1:1_1:1_1 BUS1:1b#1_1:1_1:1_1:1_1:1_1";
+//; }
+//; # specify the number of global signals available for each pe/mem tile
+//; my $global_signal_count = 4;
 //; #
+//; # IMP: ensure cb_connections length is equal to (num of tracks defined in bus_config)*2 + num of global signals
+//; #      eg: for 5 wires and 4 global signals, set cb_connections = "11111111111111" i.e. 5*2 + 4 = 14
+//; #      '1' bits to enable muxing of all wires passing through the CB. Unpredictable behavior will result if this
+//; #      is not done correctly.
 //; #
+//; my $cb_connections = "11111111111111";
 //; #
+//; ###########################################
+//; # Restricted variables. Do not change.
+//; ###########################################
+//; my $all_segments_for_all_tiles = 1;
+//; my $sides = 4;
+//; my $sb_fs = "10000#10000#10000";
+//; ###########################################
+//; ###########################################
+//; #
+//; # Specify all tiles used in the CGRA, and their configuration parameters below. The configuration parameters will be passed 
+//; # by the top level generator to the tile generators automatically (no modifications to the top level generator are needed when
+//; # paramaters are added/removed/edited from the list of a tile's parameters). Some parameters like type, tile_width, tile_height
+//; # are used by the top level generator and must be defined for all tiles. These wont be passed to the tile genrators.
+//; # For a list and for details about a tile generator's parameters, refer to the generator's .vp file. The parameters are usually
+//; # defined at the top of the .vp file.
+//; #
+//; my $tile_config;
+//; $tile_config->{ 'pe' } = {
+//;       type => 'pe_tile_new',
+//;       tile_height => 1,
+//;       tile_width => 1,
+//;       sides => $sides,
+//;       is_bidi => 0,
+//;       bus_config => $bus_config,
+//;       cb_connections => $cb_connections,
+//;       global_signal_count => $global_signal_count,
+//;       has_constant => 0,
+//;       reg_inputs => 1,
+//;       reg_out => 0, 
+//;       use_add => 1,
+//;       use_cntr => 1,
+//;       use_bool => 1,
+//;       use_shift => 1,
+//;       use_div => 0,
+//;       mult_mode => 1,
+//;       is_msb => 0,
+//;       en_double => 0,
+//;       lut_inps => 3,
+//;       sb_fs => $sb_fs,
+//;       all_segments_for_all_tiles => $all_segments_for_all_tiles
+//; };
+//; $tile_config->{ 'mem' } = {
+//;       type => 'memory_tile',
+//;       tile_height => 2,
+//;       tile_width => 1,
+//;       gen_mem_for_busname => 'BUS16',
+//;       control_busname => 'BUS1',
+//;       ddepth => 1024,
+//;       bus_config => $bus_config,
+//;       cb_connections => $cb_connections,
+//;       global_signal_count => $global_signal_count,
+//;       sb_fs => $sb_fs
+//; };
+//; $tile_config->{ 'io1' } = {
+//;       type => 'io1bit',
+//;       tile_height => 1,
+//;       tile_width => 1,
+//; };
+//; $tile_config->{ 'io16' } = {
+//;       type => 'io16bit',
+//;       tile_height => 1,
+//;       tile_width => 1,
+//; };
+//; $tile_config->{ 'empty' } = {
+//;       type => 'empty',
+//;       tile_height => 1,
+//;       tile_width => 1,
+//; };
+//; 
+//; #####################################################
+//; # Done Generator Configuration
+//; #####################################################
+//; 
+//; 
 //; #####################################################
 //; #Populate bus track hash
 //; #####################################################

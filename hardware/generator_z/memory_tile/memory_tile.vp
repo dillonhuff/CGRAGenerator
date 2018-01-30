@@ -166,7 +166,7 @@ tile_id
 //; ##
 //; 
 //;  $intra_tile_addr+=1;
-//;  my $gout_output_count = 2; 
+//;  my $gout_output_count = 3; 
 //;  my $number_of_gout_select_bits_needed = int(ceil(log($gout_output_count)/log(2)));
 //; 
 //;   $tile_info_hash->{ 'gout' } = {
@@ -174,7 +174,7 @@ tile_id
 //;     mux_map => ""
 //;   };
   reg [`$number_of_gout_select_bits_needed - 1`:0] gout_sel;
-  always @(*) begin
+  always @(posedge clk_in) begin
     if (reset) begin
        gout_sel = `$number_of_gout_select_bits_needed`'d0;
     end else begin
@@ -420,7 +420,7 @@ tile_id
 //; ## global out signal
 //; ######################################################
 //; 
-//;   my @bit1_outputs = qw(valid almost_full);
+//;   my @bit1_outputs = qw(1'b0 valid almost_full);
 //;   my $count = 0;
   always @(*) begin
     case (gout_sel)
@@ -429,7 +429,8 @@ tile_id
       default: gout = `$mem_output`;
 //;      }
       `$number_of_gout_select_bits_needed`'d`$count`: gout = `$mem_output`;
-//;      my $str = "      <src sel=${count}>$mem_output</src>\n";
+//;      $mem_output=~s/1'b//;
+//;      my $str = "      <src sel='${count}'>$mem_output</src>\n";
 //;      $tile_info_hash->{ 'gout' }{ 'mux_map' } .= $str;
 //;      $count = $count + 1;
 //;    }
@@ -441,8 +442,7 @@ tile_id
 //; #####################################
 
 
-  // assign clk = clk_in & cg_en;
-  assign clk = clk_in;
+  assign clk = clk_in & cg_en;
 
 
 
