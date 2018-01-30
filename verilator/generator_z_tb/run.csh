@@ -659,7 +659,6 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   unset echo >& /dev/null
   echo -n " TIME NOW: "; date
 
-  set echo
   unset FAIL
   grep FAIL   $tmpdir/run.log.$$ && set FAIL
   grep %Error $tmpdir/run.log.$$ && set FAIL
