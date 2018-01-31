@@ -299,16 +299,11 @@ int main(int argc, char **argv, char **env) {
         unsigned int in_1_0;
         unsigned int in_1_1;
 
-        // for (clk=0; clk<2; clk++) {
-        // FIXME my clumsy way of making output happen on negedge(clk)
-        // instead of posedge.  The fix of course is to CLEAN UP THIS WHOLE FILE
-        for (clk=1; clk>=0; clk--) {
+        for (clk=0; clk<2; clk++) {
 
 #if VM_TRACE > 0
             // dump variables into VCD file
-            //tfp->dump (2*i+clk);
-            // timestamp must STRICTLY INCREASE over time
-            tfp->dump(2*i+(1-clk));
+            tfp->dump (2*i+clk);
 #endif
             if (clk==0) {
                 // Note "clk==0" makes reset go low on negedge of clock
@@ -343,14 +338,9 @@ int main(int argc, char **argv, char **env) {
                 }
             } // (!reset && !clk)
 
-            //if (!reset && tile_config_done && clk) { // posedge
-            //    // READ INPUT DATA - Change input data "on posedge"
-            //    // E.g. set config when clk==1, after posedge event processed
-
-            if (!reset && tile_config_done && !clk) { // negedge
-                // READ INPUT DATA - Change input data "on negedge"
-                // E.g. set config when clk==0, after negedge event processed
-
+            if (!reset && tile_config_done && clk) { // posedge
+                // READ INPUT DATA - Change input data "on posedge"
+                // E.g. set config when clk==1, after posedge event processed
                 in_0_0 = (unsigned int)fgetc(input_file);
                 // printf("Scanned input data %04x\n", in_0_0);
 
