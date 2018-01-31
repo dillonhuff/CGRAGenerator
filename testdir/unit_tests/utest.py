@@ -339,13 +339,18 @@ def gen_output_file_cgra(tname, DBG=0):
     global GENERATED
     if OPTIONS['nobuild']: GENERATED=True
     if OPTIONS['nogen']:   GENERATED=True
-    # GENERATED=True
-    if not GENERATED: run_csh = './run.csh -v'
-    else:             run_csh = './run.csh -v -nobuild'
-    GENERATED=True
-        
-    run_csh = './run.csh -v -trace utest.vcd'
 
+#     # GENERATED=True
+#     if not GENERATED: run_csh = './run.csh -v'
+#     else:             run_csh = './run.csh -v -nobuild'
+#     GENERATED=True
+#         
+#     if OPTIONS['trace']: run_csh = run.csh + ' -trace utest.vcd'
+
+    run_csh = './run.csh -v'
+    if GENERATED:          run_csh = './run.csh -v -nobuild'
+    elif OPTIONS['trace']: run_csh = './run.csh -v -trace utest.vcd'
+    GENERATED=True
 
     # echo "./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay"
     cmd = "%s -hackmem -config %s -input %s -output %s -delay %s"\
@@ -521,6 +526,7 @@ Where:
    --seed <s>     s  = any integer              DEFAULT=none
    --nogen        do not regenerate CGRA verilog
    --nobuild      do not regenerate bsb/bsa files
+   --trace        build a trace file "utest.vcd" in verilator directory
 
 Examples:
    %s <testname> --repeat 1000 --vectype rand --nvecs 10
@@ -544,6 +550,7 @@ Examples:
     OPTIONS['seed']    = False
     OPTIONS['nobuild'] = False
     OPTIONS['nogen']   = False
+    OPTIONS['trace']   = False
 
     # cgra_filename = get_default_cgra_info_filename()
     while (len(args) > 0):
@@ -552,21 +559,16 @@ Examples:
             print "VERBOSE=True"
             VERBOSE = True
         elif (args[0] == '--repeat'):
-            OPTIONS['repeat'] = args[1]
-            args = args[1:];
+            OPTIONS['repeat'] = args[1];  args = args[1:];
         elif (args[0] == '--vectype'):
-            OPTIONS['vectype'] = args[1];
-            args = args[1:];
+            OPTIONS['vectype'] = args[1]; args = args[1:];
         elif (args[0] == '--nvecs'):
-            OPTIONS['nvecs'] = int(args[1])
-            args = args[1:];
+            OPTIONS['nvecs'] = int(args[1]); args = args[1:];
         elif (args[0] == '--seed'):
-            OPTIONS['seed'] = int(args[1])
-            args = args[1:];
-        elif (args[0] == '--nobuild'):
-            OPTIONS['nobuild'] = True
-        elif (args[0] == '--nogen'):
-            OPTIONS['nogen'] = True
+            OPTIONS['seed'] = int(args[1]); args = args[1:];
+        elif (args[0] == '--nobuild'): OPTIONS['nobuild'] = True
+        elif (args[0] == '--nogen'):   OPTIONS['nogen'] = True
+        elif (args[0] == '--trace'):   OPTIONS['trace'] = True
         else:
             OPTIONS['tests'] = args[0];
         args = args[1:]
