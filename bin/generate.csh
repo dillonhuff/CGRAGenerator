@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+set echo
+
 # Generate a CGRA using generator's default "run.csh" script.
 
 # Script should be in CGROOT/bin
@@ -45,6 +47,7 @@ endif
 source $CGROOT/bin/genesis2_setup.csh
 if ($?VERBOSE) then
   echo -n "generate.csh: "; which Genesis2.pl
+endif
 
 ##############################################################################
 # Run the generator, but first clean up from prior runs.  Die if gen error.
