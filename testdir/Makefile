@@ -43,7 +43,7 @@ pw_gray_8x8:
 test_basic:
 	@./writelog.csh log1 -init
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" DELAY="0,0" \
-	          CONFIG="-config ../../bitstream/examples/pwv2_io.bs"
+	          CONFIG="-config ../../bitstream/examples/pwv2_nb2.bsa"
 	@echo
 	@./writelog.csh log1 -print
 
