@@ -14,6 +14,10 @@ addons:
 script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
+  #
+  # Make sure generator.csh (still) works. Apparently this is a thing we should do now.
+  - export CGRA_GEN_USE_MEM=1; ./bin/generate.csh -v || exit 13
+  #
   # - cd testdir; make test_all
   #
   # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
