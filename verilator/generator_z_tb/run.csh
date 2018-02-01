@@ -66,6 +66,10 @@ echo "run.csh: I think we are in branch '$branch'"
 # if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2_io.bs
 set config   = ../../bitstream/examples/pwv2_io.bs
 
+# Try a thing
+set config   = ../../bitstream/examples/pwv2_nb2.bs
+
+
 set DELAY = '0,0'
 
 # FIXED maybe
