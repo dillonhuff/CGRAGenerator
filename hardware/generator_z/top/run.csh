@@ -47,5 +47,7 @@ ls
 ls clean_up_cgra_inputs.csh
 ls remove_genesis_wires.csh
 
-source clean_up_cgra_inputs.csh
-source remove_genesis_wires.csh
+echo $PATH
+
+source ./clean_up_cgra_inputs.csh
+source ./remove_genesis_wires.csh
