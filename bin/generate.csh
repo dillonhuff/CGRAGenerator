@@ -61,23 +61,21 @@ cd $CGROOT/hardware/generator_z/top
     
     if ($?VERBOSE) then
       echo "";
-      echo "generator.csh: Generator $run looks like this:"; 
-      cat $run | awk '{print "    " $0}';
+      echo "generator.csh: Generator run.csh looks like this:"; 
+      cat run.csh | awk '{print "    " $0}';
       echo ""
-    endif
-
-    if (! $?VERBOSE) then
-      set logfile = /tmp/generate_log.$$
-      echo "Generator output to $logfile"
-      ./$run >& $logfile || exit -1
-    else
-      ./$run || exit -1
+      ./run.csh -v || exit -1
 
       ####################################################################
       # Use resulting top.v to print out information about what was built.
 
       $CGROOT/bin/find_cgra_info.csh .//genesis_verif/top.v || exit -1
       echo
+    else
+      set logfile = /tmp/generate_log.$$
+      echo "Generator output to $logfile"
+      ./run.csh >& $logfile || exit -1
+    else
     endif
 
     # New cgra_info is proof that something happened
