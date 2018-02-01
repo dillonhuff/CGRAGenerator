@@ -67,7 +67,7 @@ echo "run.csh: I think we are in branch '$branch'"
 set config   = ../../bitstream/examples/pwv2_io.bs
 
 # Try a thing
-set config   = ../../bitstream/examples/pwv2_nb2.bs
+set config   = ../../bitstream/examples/pwv2_nb2.bsa
 
 
 set DELAY = '0,0'
