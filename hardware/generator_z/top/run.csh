@@ -47,10 +47,5 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../global_controller/global_controller.vp \
   ../jtag/jtag.vp
 
-# ls
-# ls clean_up_cgra_inputs.csh
-# ls remove_genesis_wires.csh
-# echo $PATH
-
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh

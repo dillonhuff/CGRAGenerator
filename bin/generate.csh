@@ -1,7 +1,5 @@
 #!/bin/csh -f
 
-set echo
-
 # Generate a CGRA using generator's default "run.csh" script.
 
 # Script should be in CGROOT/bin
@@ -58,8 +56,6 @@ cd $CGROOT/hardware/generator_z/top
 
     # NOTE THIS IS THE RUN.CSH IN HARDWARE/GENERATOR_Z
     set run = run.csh
-
-    # "source" commands fail in run.csh w/o this path update :(
     set path = (. $path)
     
     if ($?VERBOSE) then
@@ -67,17 +63,17 @@ cd $CGROOT/hardware/generator_z/top
       echo "generator.csh: Generator run.csh looks like this:"; 
       cat run.csh | awk '{print "    " $0}';
       echo ""
-      ./run.csh -v || exit -1
+      run.csh -v || exit -1
 
       ####################################################################
       # Use resulting top.v to print out information about what was built.
 
-      $CGROOT/bin/find_cgra_info.csh .//genesis_verif/top.v || exit -1
+      $CGROOT/bin/find_cgra_info.csh genesis_verif/top.v || exit -1
       echo
     else
       set logfile = /tmp/generate_log.$$
       echo "Generator output to $logfile"
-      ./run.csh >& $logfile || exit -1
+      run.csh >& $logfile || exit -1
     else
     endif
 
