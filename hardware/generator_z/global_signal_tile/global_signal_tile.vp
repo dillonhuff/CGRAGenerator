@@ -32,7 +32,7 @@ wire ___genesis_wire_`${global_signal_count}`;
 
 //; my $config_bit_count = $global_signal_count;
  reg [`$config_bit_count-1`:0] config_reg;
- always @(posedge clk) begin
+ always @(posedge clk or posedge reset) begin
    if (reset==1'b1) begin
      config_reg <= {`$global_signal_count`'d0};
    end else begin

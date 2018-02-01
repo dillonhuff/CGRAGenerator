@@ -174,8 +174,8 @@ tile_id
 //;     mux_map => ""
 //;   };
   reg [`$number_of_gout_select_bits_needed - 1`:0] gout_sel;
-  always @(posedge clk_in) begin
-    if (reset) begin
+  always @(posedge clk_in or posedge reset) begin
+    if (reset==1'b1) begin
        gout_sel = `$number_of_gout_select_bits_needed`'d0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
@@ -442,8 +442,7 @@ tile_id
 //; #####################################
 
 
-  //assign clk = clk_in & cg_en;
-  assign clk = clk_in;
+  assign clk = clk_in & cg_en;
 
 
 

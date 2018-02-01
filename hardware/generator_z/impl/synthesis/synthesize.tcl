@@ -1,8 +1,9 @@
-set timing_db [list /nobackup/jbrunhav/synopsys_EDK2/synopsys_EDK2/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn45gsbwp_110a/tcbn45gsbwpwcl.db /nobackup/nikhil3/arm_mems/arm/tsmc/cln40g/sram_sp_hsc_rvt_hvt_rvt/r10p2/sram_512w_16b/sram_512w_16b_nldm_ss_0p81v_0p81v_m40c.db]
-set techfile "/nobackup/jbrunhav/synopsys_EDK2/synopsys_EDK2/TSMCHOME/digital/Back_End/milkyway/tcbn45gsbwp_110a/techfiles/HVH_0d5_0/tsmcn45_10lm7X2ZRDL.tf"
-set milkyway "/nobackup/jbrunhav/synopsys_EDK2/synopsys_EDK2/TSMCHOME/digital/Back_End/milkyway/tcbn45gsbwp_110a/frame_only_HVH_0d5_0/tcbn45gsbwp"
-set tluplus "/nobackup/jbrunhav/synopsys_EDK2/synopsys_EDK2/TSMCHOME/digital/Back_End/milkyway/tcbn45gsbwp_110a/techfiles/tluplus/cln45gs_1p10m+alrdl_cworst_top2.tluplus"
-set layermap "/nobackup/jbrunhav/synopsys_EDK2/synopsys_EDK2/TSMCHOME/digital/Back_End/milkyway/tcbn45gsbwp_110a/techfiles/tluplus/star.map_10M"
+set lib /cad/synopsys_EDK2/TSMCHOME
+set timing_db [list $lib/digital/Front_End/timing_power_noise/NLDM/tcbn45gsbwp_110a/tcbn45gsbwpwcl.db /nobackup/nikhil3/arm_mems/arm/tsmc/cln40g/sram_sp_hsc_rvt_hvt_rvt/r10p2/sram_512w_16b/sram_512w_16b_nldm_ss_0p81v_0p81v_m40c.db]
+set techfile "$lib/digital/Back_End/milkyway/tcbn45gsbwp_110a/techfiles/HVH_0d5_0/tsmcn45_10lm7X2ZRDL.tf"
+set milkyway "$lib/digital/Back_End/milkyway/tcbn45gsbwp_110a/frame_only_HVH_0d5_0/tcbn45gsbwp"
+set tluplus "$lib/digital/Back_End/milkyway/tcbn45gsbwp_110a/techfiles/tluplus/cln45gs_1p10m+alrdl_cworst_top2.tluplus"
+set layermap "$lib/digital/Back_End/milkyway/tcbn45gsbwp_110a/techfiles/tluplus/star.map_10M"
 set design_name "pe_tile_new_unq1"
 
 #########################################################
@@ -132,6 +133,7 @@ set_attribute [get_lib_cells */E*] dont_use true
 set constant_regs [filter_collection [all_fanout -flat -only_cells -from [get_ports {config* tile_id*}]] "is_sequential==true && is_hierarchical==false"]
 set_false_path -from [get_pins -of $constant_regs -filter "is_clock_pin==true"]
 set_false_path -to [get_pins -of $constant_regs -filter "is_data_pin==true"]
+set_false_path -through [get_pins sb*/* -filter "direction==out"] -through [get_pins cb_*/* -filter "direction==in"]
 #########################################################
 # Top-level full compile				#
 #########################################################

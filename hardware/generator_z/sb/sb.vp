@@ -91,7 +91,7 @@ config_en
   /* verilator lint_on UNUSED */
   
   //; my $config_addrs_needed = int(ceil($config_bit_count / 32.0));
-  always @(posedge clk) begin
+  always @(posedge clk or posedge reset) begin
     if (reset==1'b1) begin
 
    // 12/2017 Nikhil changed default to pe_output to avoid loops
@@ -179,7 +179,7 @@ config_en
 //; 
 //;       if ($registered[$j]==1) {
   reg [`$width-1`:0] out_`$i`_`$j`_id1;
-  always @(posedge clk) begin
+  always @(posedge clk or posedge reset) begin
     out_`$i`_`$j`_id1 <= out_`$i`_`$j`_i;
   end
 //;        $registered_config_bit_count++;

@@ -49,8 +49,8 @@ tile_id
   end
 
   reg io_bit;
-  always @(clk) begin
-    if (reset) begin
+  always @(posedge clk or posedge reset) begin
+    if (reset==1'b1) begin
        io_bit = 1'b0;
     end else begin
        if (config_en_pe==1'b1) begin

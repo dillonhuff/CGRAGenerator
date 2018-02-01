@@ -114,7 +114,7 @@ assign wen = (`$ENABLE_CHAIN`)?chain_wen_in:xwen;
 assign chain_out = data_out;
 assign chain_valid_out = valid;
 
-always @(posedge clk) begin
+always @(posedge clk or posedge reset) begin
   if (reset==1'b1) begin
     config_mem <= 32'd0;
   end else begin
@@ -128,7 +128,7 @@ always @(posedge clk) begin
   end
 end
 
-always @(posedge clk) begin
+always @(posedge clk or posedge reset) begin
   if (reset==1'b1) begin
     phase <= 1'b0;
   end else begin
@@ -241,7 +241,7 @@ always @(posedge clk or posedge reset) begin
   end
 end
 
-always @(posedge clk) begin
+always @(posedge clk or posedge reset) begin
   if (((fifo_count<<1)+input_count) >= (fifo_depth - `$ALMOST_FULL`)) begin
     almost_full <= 1'b1;
   end else begin
@@ -255,7 +255,7 @@ end
 wire mv_ram_to_output = `$backtick`MV_RAM_TO_OUTPUT;
 wire mv_input_to_output = `$backtick`MV_INPUT_TO_OUTPUT;
 
-always @(posedge clk) begin
+always @(posedge clk or posedge reset) begin
   int_valid <= int_ren_sync_to_read_phase || (~int_ren_sync_to_read_phase && int_ren==1'b1 && phase==`$READ` && (out_count >0));
   int_valid_d1 <= int_valid;
   //((out_count>0) || `$backtick`MV_RAM_TO_OUTPUT || `$backtick`MV_INPUT_TO_OUTPUT);
@@ -312,7 +312,7 @@ always @(posedge clk or posedge reset) begin
   end
 end
 
-always @(posedge clk) begin
+always @(posedge clk or posedge reset) begin
   int_ren_d1 <= int_ren;
 end
 
@@ -355,7 +355,7 @@ always @(posedge clk or posedge reset) begin
 end
 
 //NB: Data is available for registering during the WRITE phase
-always @(posedge clk) begin
+always @(posedge clk or posedge reset) begin
   if `$backtick`MV_RAM_TO_OUTPUT begin
     out_sr <= {mem_data_out1,mem_data_out0};
   end else if `$backtick`MV_INPUT_TO_OUTPUT begin
@@ -371,11 +371,11 @@ always @(posedge clk) begin
   end
 end
 
-always @(posedge clk) begin
+always @(posedge clk or posedge reset) begin
   data_out_d1 <= out_sr[`$dwidth*2 - 1`:`$dwidth`];
 end
 
-always @(posedge clk) begin
+always @(posedge clk or posedge reset) begin
   addr_d1 <= addr; 
 end
 
