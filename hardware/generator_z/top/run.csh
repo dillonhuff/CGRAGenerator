@@ -1,4 +1,8 @@
-#!/bin/sh -f
+#!/bin/bash -f
+
+# Haha guess what 'source' (below) does not work on travis script
+unless specify "bash" above!
+
 # To generate fabric with memories, do -
 # setenv CGRA_GEN_USE_MEM 1
 # 
@@ -43,11 +47,10 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../global_controller/global_controller.vp \
   ../jtag/jtag.vp
 
-ls
-ls clean_up_cgra_inputs.csh
-ls remove_genesis_wires.csh
+# ls
+# ls clean_up_cgra_inputs.csh
+# ls remove_genesis_wires.csh
+# echo $PATH
 
-echo $PATH
-
-source ./clean_up_cgra_inputs.csh
-source ./remove_genesis_wires.csh
+source clean_up_cgra_inputs.csh
+source remove_genesis_wires.csh
