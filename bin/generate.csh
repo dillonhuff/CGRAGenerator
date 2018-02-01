@@ -59,7 +59,7 @@ cd $CGROOT/hardware/generator_z/top
     # NOTE THIS IS THE RUN.CSH IN HARDWARE/GENERATOR_Z
     set run = run.csh
 
-    $ "source" commands fail in run.csh w/o this path update :(
+    # "source" commands fail in run.csh w/o this path update :(
     set path = (. $path)
     
     if ($?VERBOSE) then
