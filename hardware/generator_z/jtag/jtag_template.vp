@@ -52,6 +52,7 @@
 //; my $io_list = $self->force_param(IO_LIST => 
 //;		[	
 //;			{name => 'trst_n',	width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'tck',		width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'tms',		width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'tdi',		width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'tdo',		width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
