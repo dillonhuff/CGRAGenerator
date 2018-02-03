@@ -26,15 +26,15 @@
 /*******************************************************************************
  * Generation Control Definitions
  ******************************************************************************/
-//; include ("analog_defs.vph");
 
 /*******************************************************************************
  * Simulation Control Definitions
  ******************************************************************************/
 //; my $max_cyc = parameter(Name=>'MaxCycles', Val=>100000, Min=>1, Step=>1, 
 //;			    Doc=>'Max number of simulation cycles');
-//; my $design_name = parameter(Name=>'DesignName', Val=>'template', 
+//; my $design_name = parameter(Name=>'DesignName', Val=>'jtag_template', 
 //;				Doc=>'This is a generic top, so what is the design name to use?');
+//; my $IDCODE = $self->define_param(IDCODE => 1);
 
 
 /*******************************************************************************
@@ -65,8 +65,8 @@ module `mname`();
     * Instantiate DUT interface and DUT
     * *************************************************************************/
    //; # We use generate_base when there is for sure just one of X
-   //; my $dut_obj = generate_base('phy_top', 'dut', DesignName => $design_name);
-   //; my $dut_ifc_path = $dut_obj->get_param('IfcPtr');
+   //; my $dut_obj = generate_base('jtag_template', 'dut');
+   //; my $dut_ifc_path = $dut_obj->get_param('IFC');
    //; my $dut_ifc = clone($dut_ifc_path, 'dut_ifc');
    `$dut_ifc->instantiate` (.Clk(Clk), .Reset(Reset));
    

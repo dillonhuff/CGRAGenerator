@@ -33,41 +33,41 @@ program automatic `mname`(interface ifc);
    jtag_regfile_trans_t jtag_ofst_trans, jtag_rslt_trans;      
    task run_test;
       begin
+	 jdrv.ReadID(jtag_ofst_trans);
+	 
+	 // initialization of structs:
+	 jtag_ofst_trans.domain = tc_domain;
+	 jtag_ofst_trans.addr = 27'd1;
+	 jtag_ofst_trans.op = write;
+	 jtag_ofst_trans.data_out = '0;
+	 
+	 jtag_rslt_trans.domain = tc_domain;
+	 jtag_rslt_trans.addr = 27'd200;
+	 jtag_rslt_trans.op = read;
+	 jtag_rslt_trans.data_in = 0;
+
 	 @(posedge ifc.Clk);
-	 jtag_ofst_trans.data_in = 0;
+	 jtag_ofst_trans.data_in = 25;
 	 jtag_ofst_trans.done = 0;
 	 jdrv.Send(jtag_ofst_trans);
-	 ifc.cmp_pos_in = 0.096;
-	 ifc.cmp_neg_in = 0.104;
 
 	 jtag_rslt_trans.data_out = 0;
 	 jtag_rslt_trans.done = 0;
+	 ifc.config_data_from_gc = 16'd88
 	 jdrv.Send(jtag_rslt_trans);
 	 jtag_rslt_trans = jdrv.GetResult();
-	 $fdisplay(fd,"%t: %m: Trans 1: offset=0, pos=%f, neg=%f, output=%0x",  
-		   $time, ifc.cmp_pos_in, ifc.cmp_neg_in, jtag_rslt_trans.data_out);
+	 $fdisplay(fd,"%t: %m: Trans 1:  Address to GC=%f, Data to GC=%f, Data out from GC=%0x",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_rslt_trans.data_out);
 	 
 	 @(posedge ifc.Clk);
-	 ifc.cmp_pos_in = 0.098;
-	 ifc.cmp_neg_in = 0.102;
-
+	 ifc.config_data_from_gc = 16'd999;
+         jtag_rslt_trans.addr=27'd300
 	 jtag_rslt_trans.data_out = 0;
 	 jtag_rslt_trans.done = 0;
 	 jdrv.Send(jtag_rslt_trans);
 	 jtag_rslt_trans = jdrv.GetResult();
-	 $fdisplay(fd,"%t: %m: Trans 2: offset=0, pos=%f, neg=%f, output=%0x",  
-		   $time, ifc.cmp_pos_in, ifc.cmp_neg_in, jtag_rslt_trans.data_out);
-	 
-	 @(posedge ifc.Clk);
-	 ifc.cmp_pos_in = 0.100;
-	 ifc.cmp_neg_in = 0.100;
-
-	 jtag_rslt_trans.data_out = 0;
-	 jtag_rslt_trans.done = 0;
-	 jdrv.Send(jtag_rslt_trans);
-	 jtag_rslt_trans = jdrv.GetResult();
-	 $fdisplay(fd,"%t: %m: Trans 3: offset=0, pos=%f, neg=%f, output=%0x",  
-		   $time, ifc.cmp_pos_in, ifc.cmp_neg_in, jtag_rslt_trans.data_out);
+	 $fdisplay(fd,"%t: %m: Trans 2:  Address to GC=%f, Data to GC=%f, Data out from GC=%0x",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_rslt_trans.data_out);
 
       end
    endtask // run_test

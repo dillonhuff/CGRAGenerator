@@ -27,13 +27,15 @@
 //; my $design_name = $self->get_top_param('DesignName');
 //; my @design_objs  = $self->search_subinst(SNameRegex=>$design_name);
 //; my $design_obj = @design_objs[0];
-//; my $ifc_obj = $design_obj->get_param('IfcPtr');
+//; my $ifc_obj = $design_obj->get_param('IFC');
 //; my $ref_clk = parameter(Name=>'ReferenceClkName', Val=>'clk_slow');
 //; 
 //; # get cfg_bus object from cfg_and_dbg
 //; my @cfg_objs  = $self->search_subinst(From=>$design_obj, 
 //;                                       SNameRegex=>'cfg_and_dbg');
 //; my $cfg_obj = @cfg_objs[0];
+//; my $sc_cfg_bus = $cfg_obj->get_param('SC_CFG_BUS');
+//; my $tc_cfg_bus = $cfg_obj->get_param('TC_CFG_BUS');
 //; my $sc_cfg_ifc = $cfg_obj->get_param('SC_CFG_IFC_REF');
 //; my $tc_cfg_ifc = $cfg_obj->get_param('TC_CFG_IFC_REF');
 //;
@@ -44,17 +46,33 @@
 //; my $special_insts = $tap_obj->get_param('SPECIAL_INSTRUCTIONS');
 
 parameter jtag_inst_width = `$tap_obj->get_param('Width')`;
+
+//; if ($sc_cfg_bus =~ m/^(on|yes)$/i){
 parameter sc_bus_width  = `$sc_cfg_ifc->get_param('DataWidth')`;
 parameter sc_addr_width = `$sc_cfg_ifc->get_param('AddrWidth')`;
 parameter sc_op_width   = `$sc_cfg_ifc->get_param('OpcodeWidth')`;
+//; }
+//; else {
+parameter sc_bus_width = 0;
+parameter sc_addr_width = 0;
+parameter sc_op_width = 0;
+//;}
+
+//; if ($tc_cfg_bus =~ m/^(on|yes)$/i){
 parameter tc_bus_width  = `$tc_cfg_ifc->get_param('DataWidth')`;
 parameter tc_addr_width = `$tc_cfg_ifc->get_param('AddrWidth')`;
 parameter tc_op_width   = `$tc_cfg_ifc->get_param('OpcodeWidth')`;
+//;}
+//; else {
+parameter tc_bus_width = 0;
+parameter tc_addr_width = 0;
+parameter tc_op_width = 0;
+//;}
 parameter max_bus_width = max_int(max_int(sc_bus_width, tc_bus_width), 32);
 parameter max_addr_width = max_int(sc_addr_width, tc_addr_width);
 
 typedef enum {sc_domain, tc_domain} regfile_t;
-typedef enum logic [sc_op_width-1:0] {nop=0, read=1, write=2, ack=3} regfile_op_t;
+typedef enum logic [max_int(tc_op_width, sc_op_width)-1:0] {nop=0, write=1, read=2, set_base_reg=3, set_rw_count=4, burst_start=5, read_data=6, bypass=7} regfile_op_t;
 
 typedef struct {
    logic [max_bus_width-1:0] data_in;
