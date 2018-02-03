@@ -1,3 +1,4 @@
+#!/bin/bash
 # To generate fabric with memories, do -
 # setenv CGRA_GEN_USE_MEM 1
 # 
