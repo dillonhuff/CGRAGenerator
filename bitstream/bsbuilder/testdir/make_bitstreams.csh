@@ -55,7 +55,7 @@ foreach b ($bmarks)
   echo "  ../serpent.py $t/$map_dot -o $t/$bsb > \$t/$b.log.serpent"
   ../serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent || exit -1
 
-  echo "  cmp examples/$bsb $tmp/$bsb"
+  echo "  cmp $tmp/$bsb examples/$bsb"
   cmp examples/$bsb $tmp/$bsb || set result = 'FAILED'
   echo ""
 
@@ -74,9 +74,10 @@ foreach b ($bmarks)
   # ../bsbuilder.py -v < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $tmp/$bsa || exit -1
   ../bsbuilder.py < $tmp/$bsb > $tmp/$bsa || exit -1
 
-  echo "  cmp examples/$bsa $tmp/$bsa"
+  echo "  cmp $tmp/$bsa examples/$bsa"
   ls -l examples/$bsa $tmp/$bsa
   cmp examples/$bsa $tmp/$bsa || set result = 'FAILED'
+
 
   if ($?VERBOSE) then
     echo ''

@@ -1,16 +1,16 @@
-F1000000 00000002
+F100000B 00000002
 # data[(15, 0)] : init `data1` reg with const `2`
 
-FF000000 0002000B
+FF00000B 0002000B
 # data[(4, 0)] : alu_op = mul
 # data[(17, 16)]: data0: REG_BYPASS
 # data[(19, 18)]: data1: REG_CONST
 
-00020000 00000000
-# data[(3, 0)] : @ tile (0, 0) connect wire 0 (in_BUS16_S2_T0) to data0
+0002000B 00000000
+# data[(3, 0)] : @ tile (2, 2) connect wire 0 (in_BUS16_S2_T0) to data0
 
-00070000 00000003
-# data[(1, 0)] : @ tile (0, 0) connect wire 3 (pe_out_res) to out_BUS16_S0_T0
+0008000B 00000003
+# data[(1, 0)] : @ tile (2, 2) connect wire 3 (pe_out_res) to out_BUS16_S0_T0
 
-# INPUT  tile  0 (0,0) / in_BUS16_S2_T0 / wire_0_m1_BUS16_S0_T0
-# OUTPUT tile  0 (0,0) / out_BUS16_S0_T0 / wire_0_0_BUS16_S0_T0
+# INPUT  tile 11 (2,2) / in_BUS16_S2_T0 / wire_2_1_BUS16_S0_T0
+# OUTPUT tile 11 (2,2) / out_BUS16_S0_T0 / wire_2_2_BUS16_S0_T0
