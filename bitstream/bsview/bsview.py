@@ -793,6 +793,10 @@ def draw_pe(cr, opname, A, B):
 
 def drawtileno(cr, tileno):
 
+    if TILE_LIST[tileno].type == None:
+        sys.stderr.write('WARNING cannot/will not draw nonexistent tile 0x%02x\n' % tileno)
+        return
+
     cr.save()
     # stoopid keywords ghost number ghost-number ghost_number
     # Put a big ghost number in top-left corner of tile
@@ -2056,10 +2060,15 @@ class Tile:
 
         self.label          = ""     # E.g. "ADD", "MUL", "I/O"
         self.tileno         = tileno
-        self.type           = cgra_info.tiletype(tileno)
 
-        # (self.row,self.col) = rc
-        (self.row,self.col) = cgra_info.tileno2rc(tileno)
+        self.type = None
+        (self.row,self.col) = (-1,-1)
+        if cgra_info.tile_exists(tileno):
+            self.type = cgra_info.tiletype(tileno)
+            if self.type == 'gst': self.type = None
+
+        if self.type != None:
+            (self.row,self.col) = cgra_info.tileno2rc(tileno)
 
         # TODO could check to see that rc = cgra_info.tileno2rc(tileno)
         self.connectionlist = []
@@ -2603,6 +2612,8 @@ class Tile:
                     self.drawport(cr, wirename, options="ghost")
 
     def draw(self, cr):
+        if self.type == None: return
+
         cr.save()
 
         # If not zooming, draw relative to tile's col, row coords;
@@ -2775,18 +2786,45 @@ def initialize_tile_list(w, h):
     # Let set_inital_scale_factor() do this...
     set_initial_scale_factor(w,h)
 
-    DBG=0
+    DBG=9
     i = 0
     global TILE_LIST  
     if (DBG): print "Initializing tiles"
 
-    while cgra_info.tile_exists(i):
+#     while cgra_info.tile_exists(i):
+#         # rc = tileno2rc(i)
+#         # TILE_LIST.append(Tile(i,rc))
+#         TILE_LIST.append(Tile(i))
+#         if (DBG): print "%2s" % i,
+#         if (DBG and (i%16 == 15)): print ""
+#         i = i + 1
+
+    if DBG: (prev_row,prev_col) = (0,0)
+    for i in range(cgra_info.ntiles()):
         # rc = tileno2rc(i)
         # TILE_LIST.append(Tile(i,rc))
         TILE_LIST.append(Tile(i))
-        if (DBG): print "%2s" % i,
-        if (DBG and (i%16 == 15)): print ""
-        i = i + 1
+        if TILE_LIST[i].type:
+            (row,col) = (TILE_LIST[i].row, TILE_LIST[i].col)
+            if DBG:
+                # Print a pretty grid (see below)
+                if row != prev_row:
+                    print '';   prev_col = 0
+                while (prev_col+1) < col:
+                    print '--', ; prev_col = prev_col + 1
+                print "%02x" % i,
+                (prev_row,prev_col) = (row,col)
+
+                # Initializing tiles
+                # 00 -- 02 03 04 05 06 07 08 09 
+                # 0a -- 0b 0c 0d 0e 0f 10 11 12 -- 13 
+                # 14 -- 15 16 17 -- 18 19 1a -- -- 1b 
+                # 1c -- 1d 1e 1f 20 21 22 23 24 -- 25 
+                # 26 -- 27 28 29 -- 2a 2b 2c -- -- 2d 
+                # 2e -- 2f 30 31 32 33 34 35 36 -- 37 
+                # 38 -- 39 3a 3b -- 3c 3d 3e -- -- 3f 
+                # 40 -- 41 42 43 44 45 46 47 48 -- 49 
+                # 4a -- 4b 4c 4d -- 4e 4f 50 -- -- 51 
 
 
 def DOT_print_connection(t1, w1, t2, w2):
@@ -3129,6 +3167,7 @@ def DOT_wire2wire(tileno,line):
 
 def build_connections(tileno, connection):
     DBG = 0
+    if DBG: print 666, tileno, connection
 
     # Weed out comments e.g.
     # "# data[(14, 14)] : @ tile (0,..."
@@ -3173,9 +3212,7 @@ global LATCHES
 LATCHES = []
 
 def process_decoded_bitstream(bs):
-
     DBG=0
-
     # initialize_tile_list(4,4)
     global REQUESTED_SIZE
     (nrows,ncols) = REQUESTED_SIZE
@@ -3667,7 +3704,8 @@ def main():
         bsview.py -demo    # Runs through a couple built-in demos
         bsview.py --help   # Displays this help message
     ''' 
-    if (0): print "ARGS=%s" % str(sys.argv)
+    DBG=0
+    if DBG: print "ARGS=%s" % str(sys.argv)
     args = sys.argv[1:]  # argv[0] is command name
 
     # Default grid size is 8x8

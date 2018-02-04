@@ -376,9 +376,9 @@ def read_cgra_info(filename='', grid='8x8', verbose=False):
         sys.stdout.flush()
         filename = get_generated_cgra_info_filename()
         if filename != '':
-            sys.stderr.write("WARNING Found '%s'" % filename)
+            sys.stderr.write("WARNING Found '%s'\n" % filename)
         else:
-            sys.stderr.write("WARNING Could not find generated info; will default to local copy")
+            sys.stderr.write("WARNING Could not find generated info; will default to local copy\n")
         sys.stderr.flush()
 
     # If cannot open indicated config file (or if config file is blank), try default file
@@ -447,6 +447,7 @@ def tileno2rc(tileno):
 
         # Sometimes they decimal ('14') and sometimes they hex ('0xe')
         t = getnum(tile.attrib['tile_addr'])
+        if 0: print 666, '%02x' % t, '%02x' % getnum(tileno)
         r = getnum(tile.attrib['row'])
         c = getnum(tile.attrib['col'])
         if t == getnum(tileno): return (r,c)
@@ -491,9 +492,17 @@ def tiletype(tileno,DBG=0):
             return tile.attrib['type']
 
     sys.stdout.flush()
-    err = ("\n\nERROR Cannot find tile %d in cgra_info '%s'\n" % (tileno,CGRA_FILENAME))\
-          + ("ERROR Could not find type for tile %d" % tileno)
-    assert False, err
+    # err = ("\n\nERROR Cannot find tile %d in cgra_info '%s'\n" % (tileno,CGRA_FILENAME))\
+    #       + ("ERROR Could not find type for tile %d" % tileno)
+    # assert False, err
+
+    if (0):
+        warn = ("WARNING Cannot find tile %d in cgra_info.txt, " % tileno)\
+               + ("will assume type 'empty'\n")
+        sys.stderr.write(warn)
+    return 'empty'
+
+
 
 
 def mem_or_pe(tileno):
@@ -502,11 +511,11 @@ def mem_or_pe(tileno):
     # if   re.search("^mem", type): return 'mem'
     # elif re.search("^pe",  type): return 'pe'
 
-    if   type[0] == 'm': return 'mem'
-    elif type[0] == 'p': return 'pe'
+    if   type[0:3] == 'mem': return 'mem'
+    elif type[0:2] == 'pe':  return 'pe'
     else:
         # assert False, "unknown tile type '%s'" % type
-        sys.stderr.write("cgra_info.py (489) WARNING unknown tile type '%s'\n" % type)
+        # sys.stderr.write("cgra_info.py (489) WARNING unknown tile type '%s'\n" % type)
         return type
 
 def is_mem(tileno): return (mem_or_pe(tileno)=='mem')
