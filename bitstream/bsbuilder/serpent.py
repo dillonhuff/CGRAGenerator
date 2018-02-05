@@ -49,11 +49,20 @@ import packer
 GRID_WIDTH  = 8
 GRID_HEIGHT = GRID_WIDTH
 
-# INPUT always comes in on bus 'T0_in_s2t0'
-INPUT_TILENO = 0
+# # INPUT always comes in on bus 'T0_in_s2t0'
+# INPUT_TILENO = 0
+# INPUT_TILE   = INPUT_TILENO
+# INPUT_WIRE   = 'in_s2t0'
+# INPUT_WIRE_T = 'T0_in_s2t0'
+
+# New regime, input is T11_in_s2t0
+#FIXME should maybe search for first PE and make that the input tile
+INPUT_TILENO = 11
 INPUT_TILE   = INPUT_TILENO
 INPUT_WIRE   = 'in_s2t0'
-INPUT_WIRE_T = 'T0_in_s2t0'
+INPUT_WIRE_T = 'T11_in_s2t0'
+INPUT_TILE_PE_OUT = "T%d_pe_out" % INPUT_TILENO
+
 
 # Set this to True if a PE has been placed in the INPUT tile
 # FIXME is this the best way to do this!!?
@@ -103,6 +112,8 @@ Examples:
         else:
             dot_filename = args[0];
         args = args[1:]
+
+    assert dot_filename, '\n\nERROR Oops you forgot to specify a dotfile input\n'
 
 
 def nearest_mem_tile(node='INPUT', exclude = [], DBG=1):
@@ -1030,7 +1041,7 @@ def is_mem_tile(tileno): return cgra_info.mem_or_pe(tileno) == 'mem'
 def initialize_node_INPUT():
     input  = INPUT_WIRE_T
     output = INPUT_WIRE_T
-    tileno=0
+    tileno = INPUT_TILENO
 
     # Place 'name' in tile 'tileno' at location 'src'
     nodes['INPUT'].place(tileno, input, output)
@@ -1474,18 +1485,20 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
     # we'll put the PE in same tile with INPUT.
     # Note what if it's a reg-folded PE?
 
+       # and ('T0_pe_out' in resources[INPUT_TILENO])
     global INPUT_OCCUPIED
     if sname=='INPUT' \
        and is_pe(dname) \
-       and ('T0_pe_out' in resources[INPUT_TILENO])\
+       and (INPUT_TILE_PE_OUT in resources[INPUT_TILENO])\
        and not INPUT_OCCUPIED:
         place_pe_in_input_tile(dname)
         INPUT_OCCUPIED = True
         return True
 
+       # and ('T0_pe_out' in resources[INPUT_TILENO])\
     if sname=='INPUT' \
        and is_folded_reg(dname) \
-       and ('T0_pe_out' in resources[INPUT_TILENO])\
+       and (INPUT_TILE_PE_OUT in resources[INPUT_TILENO])\
        and not INPUT_OCCUPIED:
         place_folded_reg_in_input_tile(dname)
         # assert False, "TODO put reg-pe folded pair in INPUT tile :("
@@ -1759,7 +1772,10 @@ def place_pe_in_input_tile(dname):
         print "Connecting '%s' to '%s'" % (sname,dname)
 
     assert nodes['INPUT'].tileno == INPUT_TILE
-    nodes[dname].place(INPUT_TILE, input=False, output='T0_pe_out')
+    # nodes[dname].place(INPUT_TILE, input=False, output='T0_pe_out')
+    nodes[dname].place(INPUT_TILE, input=False, output=INPUT_TILE_PE_OUT)
+
+
 
     # INPUT_WIRE_T = 'T0_in_s2t0'
     # add_route(sname, dname, INPUT_TILE, 'T0_in_s2t0', 'choose_op')
@@ -2052,7 +2068,8 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
 
     cbegin = connect_beginpoint(snode, path[0],DBG)
     if not cbegin:
-        print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
+        err = "  Cannot connect beginpoint '%s' to path-begin '%s'?" % (snode, path[0])
+        assert False, err
         assert False, 'disaster could not find a path'
         return False
 

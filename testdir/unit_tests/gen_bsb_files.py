@@ -5,60 +5,60 @@ import sys
 import re
 import random
 
-
 # FIXME/TODO if tile 3 is memtile, use non-io templates etc.
 
-# OOPS with IO tiles included, first mem tile is...?  tile 14?
-# Replace 'DEPTH' with a decimal integer %03d
+# # OOPS with IO tiles included, first mem tile is...?  tile 14?
+# # Replace 'DEPTH' with a decimal integer %03d
+# MEM_TEMPLATE='''
+#   #DELAY DEPTH,DEPTH
+#   #
+#   T14_mem_DEPTH # (fifo_depth=DEPTH)
+#   self.in -> T14_in_s2t0 -> T14_mem_in
+#   T14_mem_out -> T14_out_s2t0 -> self.out
+# '''
+
+# Input from PE tile 11, output to mem tile T14
 MEM_TEMPLATE='''
   #DELAY DEPTH,DEPTH
   #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_out_s0t0
+  T12_in_s2t0 -> T12_out_s0t0
+  T13_in_s2t0 -> T13_out_s0t0
+  T14_in_s2t0 -> T14_mem_in
   T14_mem_DEPTH # (fifo_depth=DEPTH)
-  self.in -> T14_in_s2t0 -> T14_mem_in
-  T14_mem_out -> T14_out_s2t0 -> self.out
+  T14_mem_out -> T14_out_s1t1
+  T14_in_s7t1 -> T14_out_s5t1 -> self.out
 '''
 
+# # Input from PE tile 11, output to PE tile T11
+# MEM_TEMPLATE='''
+#   #DELAY DEPTH,DEPTH
+#   #
+#   self.in -> T11_in_s2t0
+#   T11_in_s2t0 -> T11_out_s0t0
+#   T12_in_s2t0 -> T12_out_s0t0
+#   T13_in_s2t0 -> T13_out_s0t0
+#   T14_in_s2t0 -> T14_mem_in
+#   T14_mem_DEPTH # (fifo_depth=DEPTH)
+#   T14_mem_out -> T14_out_s2t1
+#   T13_in_s0t1 -> T13_out_s2t1
+#   T12_in_s0t1 -> T12_out_s2t1
+#   T11_in_s0t1 -> T11_out_s2t1 -> self.out
+# '''
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# MEM_TEMPLATE='''
+#   #DELAY DEPTH,DEPTH
+#   #
+#   self.in -> T11_in_s2t0 -> T11_out_s0t0 -> T12_out_s0t0 -> T13_out_s0t0
+#   T14_in_s2t0 -> T14_mem_in
+#   T14_mem_DEPTH # (fifo_depth=DEPTH)
+#   T14_mem_out -> T14_out_s2t0 -> self.out
+# '''
 
 # Version for CGRA w/o IO tiles
 # Replace 'DEPTH' with a decimal integer %03d
-MEM_TEMPLATE='''
+MEM_TEMPLATE_OLD='''
   #DELAY DEPTH,DEPTH
   #
   T3_mem_DEPTH # (fifo_depth=DEPTH)
@@ -130,22 +130,41 @@ OP_TEMPLATE_OLD='''
 # os.getenv is equivalent, and can also give a default value instead of `None`
 # print os.getenv('KEY_THAT_MIGHT_EXIST', default_value)
 
-OP_TEMPLATE  =  OP_TEMPLATE_OLD
+if os.getenv('NO_IO_TILES'):
+    MEM_TEMPLATE = MEM_TEMPLATE_OLD
+    OP_TEMPLATE  =  OP_TEMPLATE_OLD
 
-# # Version for CGRA w/o IO tiles
-# # Replace OPNAME with name of operand e.g. 'add'
-# OP_TEMPLATE_OLD='''
-#   #DELAY 1,1
-#   #
-#   self.in -> T0_in_s2t0
-#   T0_in_s2t0 -> T0_op1
-#   T0_in_s2t0 -> T0_out_s1t0
-#   T0_out_s1t0 -> T0_op2 (r)
-#   T0_OPNAME(wire,reg)
-#   T0_pe_out -> T0_out_s0t1 -> self.out
-# '''
-# 
-# OP_TEMPLATE  =  OP_TEMPLATE_OLD
+
+# So what we gonna do is...
+# we gonna modify top_tb to send one-bit outputs
+# from pre-specified output wire like maybe "T4_out_s2t0.1",
+# to a separate output file something like CGRA_1bit.out
+
+# Use PEs to process input pixel(s) for LUT
+# Use EQ function
+LUT_TEMPLATE='''
+  # First we bring in 0/1 pixels and turn them into 0/1 bits
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1
+  T11_eq(const_1, wire)
+  T11_pe_out_res_p -> T11_out_s0t0.1
+
+  T12_bit0 <- T12_in_s2t0
+  T12_bit3 <- T12_in_s2t0 (r)
+  T12_LUT(wire,const_0,reg) <- 0x01
+  T12_pe_out_res_p -> T12_out_s1t0.1
+'''
+
+# Simple one to get us started
+LUT_TEMPLATE='''
+  T12_LUT(wire,const,reg) <- 0x01
+  T4_LUT <- 0xFF
+  T4_pe_out_res_p -> T4_out_s2t0.1
+'''
+
+
+
+
 
 
 # bsbuilder now has support for...

@@ -59,6 +59,7 @@ config_en
   //;  }
   //; }
 
+  wire ___genesis_wire_`${width}`_`${num_tracks}`_`${feedthrough_outputs}`_`${sides}`_`${registered_outputs}`_`${pe_output_count}`_`${is_bidi}`_`${sb_fs}`;
 //; # ############################################
 //; # Setup register for SB mux configuration
 //; # ############################################
@@ -90,7 +91,7 @@ config_en
   /* verilator lint_on UNUSED */
   
   //; my $config_addrs_needed = int(ceil($config_bit_count / 32.0));
-  always @(posedge clk) begin
+  always @(posedge clk or posedge reset) begin
     if (reset==1'b1) begin
 
    // Seems like the entire register should be initialized, not just a subset of the bits, yes?
@@ -163,16 +164,16 @@ config_en
 //;        }
 //;        for(my $k=0; $k<$pe_output_count; $k++) {
         `$number_of_config_bits_per_driven_output`'d`$sel`: out_`$i`_`$j`_i = pe_output_`$k`;
-
 //;          print SBINFO "          <src sel='$sel'>pe_output_${k}</src>\n";
 //;          $sel++;
 //;        }
+        default: out_`$i`_`$j`_i = 0;
     endcase
   end
 //; 
 //;       if ($registered[$j]==1) {
   reg [`$width-1`:0] out_`$i`_`$j`_id1;
-  always @(posedge clk) begin
+  always @(posedge clk or posedge reset) begin
     out_`$i`_`$j`_id1 <= out_`$i`_`$j`_i;
   end
 //;        $registered_config_bit_count++;

@@ -43,7 +43,9 @@ else if ("$1" == "-q") then
 endif
 
 source $CGROOT/bin/genesis2_setup.csh
-if ($?VERBOSE) which Genesis2.pl
+if ($?VERBOSE) then
+  echo -n "generate.csh: "; which Genesis2.pl
+endif
 
 ##############################################################################
 # Run the generator, but first clean up from prior runs.  Die if gen error.
@@ -54,26 +56,25 @@ cd $CGROOT/hardware/generator_z/top
 
     # NOTE THIS IS THE RUN.CSH IN HARDWARE/GENERATOR_Z
     set run = run.csh
+    set path = (. $path)
     
     if ($?VERBOSE) then
       echo "";
-      echo "Generator $run looks like this:"; 
-      cat $run | awk '{print "    " $0}';
+      echo "generator.csh: Generator run.csh looks like this:"; 
+      cat run.csh | awk '{print "    " $0}';
       echo ""
-    endif
-
-    if (! $?VERBOSE) then
-      set logfile = /tmp/generate_log.$$
-      echo "Generator output to $logfile"
-      ./$run >& $logfile || exit -1
-    else
-      ./$run || exit -1
+      run.csh -v || exit -1
 
       ####################################################################
       # Use resulting top.v to print out information about what was built.
 
-      $CGROOT/bin/find_cgra_info.csh .//genesis_verif/top.v || exit -1
+      $CGROOT/bin/find_cgra_info.csh genesis_verif/top.v || exit -1
       echo
+    else
+      set logfile = /tmp/generate_log.$$
+      echo "Generator output to $logfile"
+      run.csh >& $logfile || exit -1
+    else
     endif
 
     # New cgra_info is proof that something happened

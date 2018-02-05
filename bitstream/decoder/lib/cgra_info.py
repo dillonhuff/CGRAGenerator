@@ -148,39 +148,39 @@ def mem_decode(e,DDDDDDDD):
             mode[1] = "fifo"
             mode[2] = "sram"
             mode[3] = "INVALID MODE 3"
-            data = int(DDDDDDDD,16)
-            bith = int(se.attrib['bith'])
-            bitl = int(se.attrib['bitl'])
+            data = getnum(DDDDDDDD,16)
+            bith = getnum(se.attrib['bith'])
+            bitl = getnum(se.attrib['bitl'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : mode = %s" % (bith, bitl, mode[val])
 
         elif se.tag == 'tile_en':
-            data = int(DDDDDDDD,16)
-            bith = int(se.attrib['bit'])
-            bitl = int(se.attrib['bit'])
+            data = getnum(DDDDDDDD,16)
+            bith = getnum(se.attrib['bit'])
+            bitl = getnum(se.attrib['bit'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : tile_en = %d" % (bith, bitl, val)
 
         elif se.tag == 'almost_full_count':
             # IN: <almost_full_count bith='18' bitl='16'>0</almost_full_count>            
             # OUT: # data[(18, 16)] : almost_full_count = 0
-            data = int(DDDDDDDD,16)
-            bith = int(se.attrib['bith'])
-            bitl = int(se.attrib['bitl'])
+            data = getnum(DDDDDDDD,16)
+            bith = getnum(se.attrib['bith'])
+            bitl = getnum(se.attrib['bitl'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : almost_full_count = %d" % (bith, bitl, val)
 
         elif se.tag == 'chain_enable':
-            data = int(DDDDDDDD,16)
-            bith = int(se.attrib['bit'])
-            bitl = int(se.attrib['bit'])
+            data = getnum(DDDDDDDD,16)
+            bith = getnum(se.attrib['bit'])
+            bitl = getnum(se.attrib['bit'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : chain_enable = %d" % (bith, bitl, val)
 
         elif se.tag == 'fifo_depth':
-            data = int(DDDDDDDD,16)
-            bith = int(se.attrib['bith'])
-            bitl = int(se.attrib['bitl'])
+            data = getnum(DDDDDDDD,16)
+            bith = getnum(se.attrib['bith'])
+            bitl = getnum(se.attrib['bitl'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : fifo_depth = %d" % (bith, bitl, val)
 
@@ -210,7 +210,7 @@ def cb_decode(cb,tileno,DDDDDDDD):
 
         # HACK/WRONG/FIXME?
         configl = 0
-        sel_width = int(sw.text)
+        sel_width = getnum(sw.text)
         configh = sel_width - 1
 
     # FIXME every 'iter' should instead probably be a 'findall'!
@@ -223,8 +223,8 @@ def cb_decode(cb,tileno,DDDDDDDD):
         if DBG: print "  Found %s %s w/outwire %s" % (mux.tag, str(mux.attrib), outwire)
         for src in mux.iter('src'):
             if DBG: print "    Found %s %s" % (src.tag, str(src.attrib))
-            data = int(DDDDDDDD,16)
-            sel  = int(src.attrib['sel'])
+            data = getnum(DDDDDDDD,16)
+            sel  = getnum(src.attrib['sel'])
             wireno = sel
             if (data == sel):
                 inwire = src.text
@@ -260,16 +260,16 @@ def sb_decode(sb,RR,DDDDDDDD):
         # reg     = mux.attrib['reg']
         is_registered = False;
         if 'configr' in mux.attrib:
-            configr = int(mux.attrib['configr'])
+            configr = getnum(mux.attrib['configr'])
             regno = configr // 32
             regbit = configr % 32
             if DBG: print "    configr bit %3d = reg %d bit %2d" % (configr, regno, regbit)
 
-            if regno != int(RR,16):
+            if regno != getnum(RR,16):
                 if DBG: print "    wrong register\n"
             else:
                 mask = 1 << regbit
-                data = int(DDDDDDDD, 16)
+                data = getnum(DDDDDDDD, 16)
                 if (mask & data) != 0:
                     snk = mux.attrib['snk']
                     if DBG: print "*** Found registered output for '%s'" % snk
@@ -282,8 +282,8 @@ def sb_decode(sb,RR,DDDDDDDD):
                     
 
         # Process the connection
-        configh = int(mux.attrib['configh'])
-        configl = int(mux.attrib['configl'])
+        configh = getnum(mux.attrib['configh'])
+        configl = getnum(mux.attrib['configl'])
         snk     = mux.attrib['snk']
 
         # Check to see if this is the right register
@@ -291,7 +291,7 @@ def sb_decode(sb,RR,DDDDDDDD):
         regbit = configh  % 32
         if DBG: print "    configh bit %2d = reg %d bit %2d" % (configh, regno, regbit)
 
-        if regno != int(RR,16):
+        if regno != getnum(RR,16):
             if DBG: print "    wrong register"
         else:
             if DBG: print("    Found mux for output '%s'" % snk)
@@ -306,21 +306,21 @@ def sb_decode(sb,RR,DDDDDDDD):
 # #             if DBG: print("    mux mask 0x%x = (0x%x << %d)" \
 # #                           % (mask, field_mask, regbitl))
 # 
-#             data = int(DDDDDDDD, 16)
+#             data = getnum(DDDDDDDD, 16)
 #             if DBG: print("    data & mask = 0x%08x & 0x%08x = %08x"\
 #                           % (data, mask, data & mask))
 #             val = (data & mask) >> regbitl 
 #             if DBG: print("    val 0x%08x >> %d = %d"\
 #                           % (data & mask, regbitl, val))
 
-            data = int(DDDDDDDD, 16)
+            data = getnum(DDDDDDDD, 16)
             bith= configh % 32; bitl = configl % 32;
             val = extract_field(data, bith, bitl)
 
             outwire = mux.attrib['snk']
             for src in mux:
                 if DBG: print "      Found %s %s %s" % (src.tag, str(src.attrib), src.text)
-                sel = int(src.attrib['sel'])
+                sel = getnum(src.attrib['sel'])
                 if (sel == val):
                     inwire = src.text
                     if DBG: print "      ***Found inwire %s" % outwire
@@ -376,25 +376,34 @@ def read_cgra_info(filename='', grid='8x8', verbose=False):
         sys.stdout.flush()
         filename = get_generated_cgra_info_filename()
         if filename != '':
-            sys.stderr.write("WARNING Found '%s'" % filename)
+            sys.stderr.write("WARNING Found '%s'\n" % filename)
         else:
-            sys.stderr.write("WARNING Could not find generated info; will default to local copy")
+            sys.stderr.write("WARNING Could not find generated info; will default to local copy\n")
         sys.stderr.flush()
 
     # If cannot open indicated config file (or if config file is blank), try default file
     global CGRA
     import xml.etree.ElementTree
-    try:
-        if verbose: sys.stdout.write("Using config file '%s'\n\n" % filename)
+    if verbose: sys.stdout.write("Using config file '%s'\n\n" % filename)
+    if os.path.exists(filename):
         CGRA = xml.etree.ElementTree.parse(filename).getroot()
-        return
-    except:
-        sys.stderr.write("WARNING Could not open cgra_info file '%s'\n" % filename)
-        filename = get_local_cgra_info_filename()
-        sys.stderr.write("WARNING Will try using local copy '%s'\n" % filename)
-        CGRA = xml.etree.ElementTree.parse(filename).getroot()
-        sys.stderr.write("WARNING Loaded local copy '%s'\n\n" % filename)
 
+    else:
+        sys.stderr.write("WARNING cgra_info.py(392) "\
+                         +"Could not find cgra_info file '%s'\n" % filename)
+        filename = get_local_cgra_info_filename()
+        sys.stderr.write("WARNING cgra_info.py(392) "\
+                         +"Will try using local copy '%s'\n" % filename)
+        CGRA = xml.etree.ElementTree.parse(filename).getroot()
+        sys.stderr.write("WARNING cgra_info.py(392) "\
+                         +" Loaded local copy '%s'\n\n" % filename)
+
+    global CGRA_FILENAME
+    CGRA_FILENAME = filename
+    
+
+
+global CGRA_FILENAME
 def load_check():
     # if not CGRA:
     # FutureWarning: The behavior of this method will change in future
@@ -408,6 +417,13 @@ def ntiles():
     '''How many tiles?'''
     load_check()
     return len(CGRA.findall('tile')) # length = number of items in list
+
+def getnum(s, base=10):
+    '''s="14" => result=14; s="0x14" => result=20'''
+    if base==16:         return int(s,16)
+    elif type(s) != str: return s
+    elif s[0:2] == '0x': return int(s,16)
+    else:                return int(s)
 
 def tileno2rc(tileno):
     '''
@@ -428,10 +444,13 @@ def tileno2rc(tileno):
     load_check()
 
     for tile in CGRA.findall('tile'):
-        t = int(tile.attrib['tile_addr'])
-        r = int(tile.attrib['row'])
-        c = int(tile.attrib['col'])
-        if t == int(tileno): return (r,c)
+
+        # Sometimes they decimal ('14') and sometimes they hex ('0xe')
+        t = getnum(tile.attrib['tile_addr'])
+        if 0: print 666, '%02x' % t, '%02x' % getnum(tileno)
+        r = getnum(tile.attrib['row'])
+        c = getnum(tile.attrib['col'])
+        if t == getnum(tileno): return (r,c)
     print "WARNING Cannot find tile '%s' in cgra_info" % str(tileno)
     return (-1,-1)
 
@@ -445,9 +464,9 @@ def rc2tileno(row,col):
     DBG = 0
     # DBG = (row==1 and col==3)
     for tile in CGRA.findall('tile'):
-        t = int(tile.attrib['tile_addr'])
-        r = int(tile.attrib['row'])
-        c = int(tile.attrib['col'])
+        t = getnum(tile.attrib['tile_addr'])
+        r = getnum(tile.attrib['row'])
+        c = getnum(tile.attrib['col'])
         if DBG: print (r,c,row/2,col)
         if (r,c) == (row,col):
             return t
@@ -461,16 +480,29 @@ def rc2tileno(row,col):
           % (row,col)
 
 
-def tiletype(tileno):
-    # print "Looking for type of tile %d" % tileno
+def tiletype(tileno,DBG=0):
+    if DBG: print "Looking for type of tile %d" % tileno
     for tile in CGRA.findall('tile'):
-        t = tile.attrib['tile_addr']
-        if (t == str(tileno)):
+        if DBG: print tile.attrib['tile_addr'], tile.attrib['type']
+        t = getnum(tile.attrib['tile_addr'])
+        # if (t == str(tileno)):
+        if t == tileno:
+            if DBG: print "Found tile %d" % tileno
+            if DBG: print "type='%s'" % tile.attrib['type']
             return tile.attrib['type']
 
-    err = ("\n\nERROR Cannot find tile %d in cgra_info\n" % tileno)\
-          + ("ERROR Could not find type for tile %d" % tileno)
-    assert False, err
+    sys.stdout.flush()
+    # err = ("\n\nERROR Cannot find tile %d in cgra_info '%s'\n" % (tileno,CGRA_FILENAME))\
+    #       + ("ERROR Could not find type for tile %d" % tileno)
+    # assert False, err
+
+    if (0):
+        warn = ("WARNING Cannot find tile %d in cgra_info.txt, " % tileno)\
+               + ("will assume type 'empty'\n")
+        sys.stderr.write(warn)
+    return 'empty'
+
+
 
 
 def mem_or_pe(tileno):
@@ -479,17 +511,18 @@ def mem_or_pe(tileno):
     # if   re.search("^mem", type): return 'mem'
     # elif re.search("^pe",  type): return 'pe'
 
-    if   type[0] == 'm': return 'mem'
-    elif type[0] == 'p': return 'pe'
+    if   type[0:3] == 'mem': return 'mem'
+    elif type[0:2] == 'pe':  return 'pe'
     else:
-        assert False, 'unknown tile type'
-        return 'unknown'
+        # assert False, "unknown tile type '%s'" % type
+        # sys.stderr.write("cgra_info.py (489) WARNING unknown tile type '%s'\n" % type)
+        return type
 
 def is_mem(tileno): return (mem_or_pe(tileno)=='mem')
 
 def tile_exists(tileno):
     for tile in CGRA.findall('tile'):
-        t = int(tile.attrib['tile_addr'])
+        t = getnum(tile.attrib['tile_addr'])
         if (t == tileno):
             return True
     return False
@@ -513,18 +546,18 @@ def get_element(EE, TTTT):
         print "ERROR No CGRA data structure.  Did you call read_cgra_info()?"
         sys.exit(-1)
 
-    tileno = int(TTTT,16)
-    elemno = int(  EE,16)
+    tileno = getnum(TTTT,16)
+    elemno = getnum(  EE,16)
     if DBG: print "Looking up tile %d element %d" % (tileno, elemno)
     for tile in CGRA.findall('tile'):
-        t = int(tile.attrib['tile_addr'])
-        r = int(tile.attrib['row'])
-        c = int(tile.attrib['col'])
+        t = getnum(tile.attrib['tile_addr'])
+        r = getnum(tile.attrib['row'])
+        c = getnum(tile.attrib['col'])
         if DBG: print "Found tile %2s (r%s c%s)" % (t, r, c)
         if (t == tileno):
             for feature in tile:
                 if DBG: print "  Found feature %s" % feature.tag, ; print feature.attrib
-                fa = int(feature.attrib['feature_address'])
+                fa = getnum(feature.attrib['feature_address'])
                 if (fa == elemno): return feature
     return False
 
@@ -656,21 +689,27 @@ def get_encoding(tile,box,mux,msrc,DBG=0):
     DBG = max(DBG,0)
     parms={}
 
-    parms['tileno'] = int(tile.attrib['tile_addr'])
-    parms['fa']     = int(box.attrib['feature_address'])
-    parms['sel']    = int(msrc.attrib['sel'])
+    parms['tileno'] = getnum(tile.attrib['tile_addr'])
+    parms['fa']     = getnum(box.attrib['feature_address'])
+    parms['sel']    = getnum(msrc.attrib['sel'])
 
     # want sb/cb item 'sel_width':
     # <cb feature_address='4' bus='BUS1'>
     #     <sel_width>4</sel_width>
     assert box[0].tag == 'sel_width'
-    parms['sw'] = int(box[0].text)
+    parms['sw'] = getnum(box[0].text)
     # print '  ', box[0].tag, '=', sw
 
     if box.tag=='sb':
-        parms['configh']= int(mux.attrib['configh'])
-        parms['configl']= int(mux.attrib['configl'])
-        parms['configr']= int(mux.attrib['configr'])
+        parms['configh']= getnum(mux.attrib['configh'])
+        parms['configl']= getnum(mux.attrib['configl'])
+        try: parms['configr']= getnum(mux.attrib['configr'])
+        except:
+            errmsg = "\nERROR Cannot find 'configr' field in sb; " + \
+                     "did you forget to 'setenv CGRA_GEN_ALL_REG 1'?"
+            assert False, errmsg
+
+
     else:
         parms['configh']= (parms['sw'] - 1)
         parms['configl']= 0
@@ -719,7 +758,7 @@ def encode_parms(parms, DBG=0):
     assert regh==regl, 'select field crossed reg boundary!'
 
     addr = '%02X%02X%04X' % (regh, fa, tileno)
-    addr = int(addr,16)
+    addr = getnum(addr,16)
     if DBG: print 'select address is %08X' % addr
 
     # mask = (1<< (1+configh-configl)) - 1
@@ -732,7 +771,7 @@ def encode_parms(parms, DBG=0):
 
     regr = configr/32
     raddr = '%02X%02X%04X' % (regr, fa, tileno)
-    raddr = int(raddr,16)
+    raddr = getnum(raddr,16)
     if DBG: print 'reg address is %08X' % raddr
 
     rdata = 1 << (configr%32)
@@ -837,7 +876,7 @@ def find_sinks(tile, box, rdst, DBG=0):
      
 def get_tile(tileno):
     for tile in CGRA.findall('tile'):
-        t = int(tile.attrib['tile_addr'])
+        t = getnum(tile.attrib['tile_addr'])
         if t == tileno: return tile
     return -1
 
@@ -877,7 +916,7 @@ def parse_resource(r):
     '''
     parse = re.search('^T(\d+)_(.*)', r)
     if not parse: assert False, r
-    (tileno,resource) = (int(parse.group(1)), parse.group(2))
+    (tileno,resource) = (getnum(parse.group(1)), parse.group(2))
     return (tileno,resource)
 
 
@@ -893,7 +932,7 @@ def parse_canon(w):
 
     (dir,side,track) = (
         parse.group(1), parse.group(2), parse.group(3))
-    return (int(tileno),dir,int(side),int(track))
+    return (getnum(tileno),dir,int(side),int(track))
 
 
 def test_canon2global():
@@ -929,6 +968,7 @@ def canon2global(name, DBG=0):
 
     if dir=='out':
         if side>=4: r = r+1 # Right? RIGHT??
+        side = side%4 # oops don't forget
         gname = 'wire_%d_%d_BUS16_S%d_T%d' % (r,c,side,track)
     else:
         assert dir=='in'
@@ -1004,10 +1044,13 @@ def canon2cgra(name, DBG=0):
             # must know if top or bottom
             tb = 'top';
             if side>3: tb='bottom'
-            if   (tb == 'top')    and (side == '1'):
-                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (dnot,t)
-            elif (tb == 'bottom') and (side == '7'):
-                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (d,t)
+            if DBG>2: print "mem tile", tb, side
+            if   (tb == 'top')    and (side == 1):
+                # newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (dnot,t)
+                newname = 'sb_wire_%s_1_BUS16_3_%d' % (dnot,t)
+            elif (tb == 'bottom') and (side == 7):
+                # newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (d,t)
+                newname = 'sb_wire_%s_1_BUS16_3_%d' % (d,t)
             else:
                 # newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
                 # yes; sometimes; maybe; but better is:
@@ -1054,7 +1097,7 @@ def parse_cgra_wirename(w, DBG=0):
     parse = re.search('(in|out)_BUS16_S(\d+)_T(\d+)', w)
     if (parse):
         print 'parsed'
-        (dir,side,track) = (parse.group(1), int(parse.group(2)), int(parse.group(3)))
+        (dir,side,track) = (parse.group(1), getnum(parse.group(2)), getnum(parse.group(3)))
         rval = (dir,tb,side,track)
         if DBG: print rval
         return rval
@@ -1065,8 +1108,8 @@ def parse_cgra_wirename(w, DBG=0):
         if DBG: print '           # OH NO found non-ST wire name "%s"' % w
         dir = parse.group(1)
         tb  = parse.group(2)
-        side  = int(parse.group(3))
-        track = int(parse.group(4))
+        side  = getnum(parse.group(3))
+        track = getnum(parse.group(4))
         # w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
         if tb=='0': tb = 'top'
         else:
@@ -1082,8 +1125,8 @@ def parse_cgra_wirename(w, DBG=0):
         if DBG: print '           # OH NO found stupid sb_wire "%s"' % w
         dir = parse.group(1)
         tb  = 'bottom'
-        side  = int(parse.group(2))+4
-        track = int(parse.group(3))
+        side  = getnum(parse.group(2))+4
+        track = getnum(parse.group(3))
         # w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
         # if tb=='0': tb = 'top'
         # else      : tb = 'bottom'
@@ -1098,8 +1141,8 @@ def parse_cgra_wirename(w, DBG=0):
         if DBG: print '           # OH NO found ST wire name "%s"' % w
         dir = parse.group(1)
         tb  = parse.group(2)
-        side  = int(parse.group(3))
-        track = int(parse.group(4))
+        side  = getnum(parse.group(3))
+        track = getnum(parse.group(4))
         # w2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
         if tb=='0': tb = 'top'
         else:
@@ -1264,18 +1307,18 @@ def connect_within_tile(tileno, src, snk, DBG):
 #     DBG=0
 #     global CGRA
 #     if (CGRA == False): CGRA = read_cgra_info()
-#     tileno = int(TTTT,16)
-#     elemno = int(  EE,16)
+#     tileno = getnum(TTTT,16)
+#     elemno = getnum(  EE,16)
 #     print "FOO looking up tile %d element %d" % (tileno, elemno)
 #     for tile in CGRA.findall('tile'):
-#         t = int(tile.attrib['tile_addr'])
-#         r = int(tile.attrib['row'])
-#         c = int(tile.attrib['col'])
+#         t = getnum(tile.attrib['tile_addr'])
+#         r = getnum(tile.attrib['row'])
+#         c = getnum(tile.attrib['col'])
 #         if DBG: print "Found tile %2s (r%s c%s)" % (t, r, c)
 #         if (t == tileno):
 #             for feature in tile:
 #                 if DBG: print "  Found feature %s" % feature.tag, ; print feature.attrib
-#                 fa = int(feature.attrib['feature_address'])
+#                 fa = getnum(feature.attrib['feature_address'])
 #                 if (fa == elemno):
 #                     if (feature.tag == "sb"): return feature
 #                     else: return False;

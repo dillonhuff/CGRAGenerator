@@ -1,0 +1,49 @@
+//; use POSIX;
+//; my $dummy_value = parameter(Name=>'dummy_value', val=> 0, doc=>'dummy value. placeholder.'); 
+
+module `mname` (
+clk_in, reset_in,
+config_addr_in,
+config_data_in,
+config_addr_out,
+config_data_out,
+clk_out,
+reset_out,
+tdi,
+tdo,
+tms
+);
+
+  input  clk_in;
+  input  reset_in;
+  input  tdi;
+  input  tms;
+  input [31:0] config_addr_in;
+  input [31:0] config_data_in;
+
+  output reg [31:0] config_addr_out;
+  output reg [31:0] config_data_out;
+  output reg clk_out;
+  output reg reset_out;
+  output tdo;
+
+  wire [31:0] config_addr_jtag_out;
+  wire [31:0] config_data_jtag_out;
+//; my $jtag_obj = generate("jtag", "jtag_controller", dummy_value => 0);
+    `$jtag_obj->instantiate()` 
+    (
+      .clk(clk_in),
+      .reset(reset_in),
+      .tdi(tdi),
+      .tdo(tdo),
+      .tms(tms),
+      .config_addr_out(config_addr_jtag_out),
+      .config_data_out(config_data_jtag_out)
+    );
+  always @(*) begin
+    config_addr_out = config_addr_in;
+    config_data_out = config_data_in;
+    clk_out = clk_in;
+    reset_out = reset_in;
+  end
+endmodule

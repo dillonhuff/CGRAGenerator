@@ -1,0 +1,22 @@
+//; use POSIX;
+//; my $dummy_value = parameter(Name=>'dummy_value', val=> 0, doc=>'dummy value. placeholder.'); 
+
+module `mname` (
+clk, reset,
+config_addr_out,
+config_data_out,
+tdi,
+tdo,
+tms
+);
+
+  input  clk;
+  input  reset;
+  input  tdi;
+  input  tms;
+
+  output reg [31:0] config_addr_out;
+  output reg [31:0] config_data_out;
+  output tdo;
+
+endmodule

@@ -61,10 +61,14 @@ endif
 echo "run.csh: I think we are in branch '$branch'"
 
 # Default configuration bitstream
-set config   = ../../bitstream/examples/940/pw.bs
+# set config   = ../../bitstream/examples/940/pw.bs
+# if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2_io.bs
+# if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2_io.bs
+set config   = ../../bitstream/examples/pwv2_io.bs
 
-if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2.bs
-if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2.bs
+# Try a thing
+set config   = ../../bitstream/examples/pwv2_nb2.bsa
+
 
 set DELAY = '0,0'
 
@@ -112,7 +116,6 @@ endif
 echo config = $config 2
 
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
-
 
 
 # NO don't cleanup might want this later (for -nobuild)...
@@ -166,11 +169,7 @@ while ($#argv)
       set GENERATE = '-gen'; breaksw;
 
     case '-nobuild':
-      # set GENERATE = '-nogen'; unset BUILD; breaksw;
-      # FIXME
-      echo "haha sorry, in master branch -nobuild does NOTHING (for now)"
-      breaksw
-
+      set GENERATE = '-nogen'; unset BUILD; breaksw;
 
     case '-nogen':
       set GENERATE = '-nogen'; breaksw;
@@ -313,6 +312,7 @@ if ("$GENERATE" == "-nogen") then
 else
   # echo "run.csh: Building CGRA because you asked for it with '-gen'..."
   echo "run.csh: Building CGRA because it's the default..."
+  if ($?VERBOSE) echo "run.csh: ../../bin/generate.csh $VSWITCH"
   ../../bin/generate.csh $VSWITCH || exit -1
 endif
 
@@ -498,14 +498,22 @@ echo "run.csh: Build the simulator..."
     echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
     echo "%Warning3 See $tmpdir/verilator.out for full log."
     echo
-    cat $tmpdir/verilator.out \
-      | awk -f ./run-verilator-warning-filter.awk \
-      | head -n 40 
+
+    # This (head -n 40) can cause broken pipe error (!)
+    # awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out | head -n 40
+    awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out
+
   else
     echo "See $tmpdir/verilator.out for full log of verilator warnings."
   endif
 
-  if ($verilator_exit_status != 0) exit -1
+  if ($verilator_exit_status != 0) then
+    tail -40 $tmpdir/verilator.out
+    echo ""
+    echo "VERILATOR FAILED!"
+    echo "See $tmpdir/verilator.out for full log of verilator warnings."
+    exit -1
+  endif
 
   echo
   echo "run.csh: Build the testbench..."
@@ -535,6 +543,7 @@ echo "run.csh: Build the simulator..."
   if ($?VERBOSE) then
     cat $tmpdir/make_vtop.log; echo
   endif
+
 
 RUN_SIM:
 
@@ -638,16 +647,6 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   set quietfilter = (cat)
   set qf2         = (cat)
 
-  # Shouldn't have to do this except for I'm too stupid to get this right.
-  set nyb = '[0-9a-fA-F]'
-  set wrd = "$nyb$nyb$nyb$nyb$nyb$nyb$nyb$nyb"
-  set bad = `egrep -v "^$wrd $wrd" $config | head -1`
-  if ("$bad" != "") then
-    echo "ERROR run.csh: bad line in config file:"
-    echo "  '$bad'"
-    echo
-    exit -1
-  endif
 
   # FIXME note the '|| exit -1" below is USELESS
   if ($?VERBOSE) set echo
@@ -664,9 +663,8 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   unset echo >& /dev/null
   echo -n " TIME NOW: "; date
 
-
   unset FAIL
-  grep FAIL $tmpdir/run.log.$$ && set FAIL
+  grep FAIL   $tmpdir/run.log.$$ && set FAIL
   grep %Error $tmpdir/run.log.$$ && set FAIL
 
 

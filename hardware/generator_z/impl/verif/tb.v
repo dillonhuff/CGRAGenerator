@@ -117,12 +117,10 @@ end
 
 top dut(
 
-.clk(clk),
-.config_addr(config_addr),
-.config_data(config_data),
-.reset(reset),
-.wire_m1_2_BUS16_S1_T0({12'h0, count[3:0]}),
-.wire_m1_2_BUS1_S1_T0(wen)
+.clk_in(clk),
+.config_addr_in(config_addr),
+.config_data_in(config_data),
+.reset_in(reset)
 );
 
 endmodule

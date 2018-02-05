@@ -11,13 +11,18 @@ if (! -e $top) then
   exit -1
 endif
 
-echo
+echo "find_cgra_info.csh: built $top"
 echo "--------------------------------------------------------------------"
 echo "Here is what I built (it's supposed to look like an array of tiles)."
 echo
-echo "    --------------------------------------------"
 egrep '^//t' $top  | sed 's/^../    /'
-echo "    --------------------------------------------"
+
+egrep '^//(io1|[.][.][.])' $top | expand \
+  | sed 's/^..//' \
+  | sed 's/0x\(.\) /0x0\1/g' \
+  | sed 's/  / /g' | sed 's/  / /g'
+
+echo "--------------------------------------------------------------------"
 
 # E.g.
 #     --------------------------------------------
@@ -27,25 +32,25 @@ echo "    --------------------------------------------"
 #     t0#3_0#0    t0#3_1#0    t0#3_2#0    t0#3_3#0    
 #     -------------------------------------------
 
-echo ''
-echo 'Each tile is designated as <tile_type>#<tile_loc(x,y)>#<tile_section>'
-echo 'E.g. current default in top.vp calls stamp_pattern('top') where top is defined as'
-echo ''
+# echo ''
+# echo 'Each tile is designated as <tile_type>#<tile_loc(x,y)>#<tile_section>'
+# echo 'E.g. current default in top.vp calls stamp_pattern('top') where top is defined as'
+# echo ''
 
-egrep 'tile_pattern.*=' $work/top.pm
+# egrep 'tile_pattern.*=' $work/top.pm
 
 # echo '   $tile_pattern {'p1'} = "t0_1_1";'
 # echo '   $tile_pattern {'top'} = "p1_2_2";'
 
-echo ''
-echo ' resulting in a 4x4 grid of "t0" tiles, where each tile looks like'
-echo ''
-
-cat $work/top.pm | awk '            \
-  /all_segments/ {if (p==1) exit 0} \
-  /tile_config.*=/ {p=1}            \
-  p==1 {print "   " $0}            \
-'
+# echo ''
+# echo ' resulting in a 4x4 grid of "t0" tiles, where each tile looks like'
+# echo ''
+# 
+# cat $work/top.pm | awk '            \
+#   /all_segments/ {if (p==1) exit 0} \
+#   /tile_config.*=/ {p=1}            \
+#   p==1 {print "   " $0}            \
+# '
 
 
 
