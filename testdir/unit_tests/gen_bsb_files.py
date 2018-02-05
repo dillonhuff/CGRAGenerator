@@ -135,6 +135,33 @@ if os.getenv('NO_IO_TILES'):
     OP_TEMPLATE  =  OP_TEMPLATE_OLD
 
 
+# So what we gonna do is...
+# we gonna modify top_tb to send one-bit outputs
+# from pre-specified output wire like maybe "T4_out_s2t0.1",
+# to a separate output file something like CGRA_1bit.out
+
+# Use PEs to process input pixel(s) for LUT
+# Use EQ function
+LUT_TEMPLATE='''
+  # First we bring in 0/1 pixels and turn them into 0/1 bits
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_op1
+  T11_eq(const_1, wire)
+  T11_pe_out_res_p -> T11_out_s0t0.1
+
+  T12_bit0 <- T12_in_s2t0
+  T12_bit3 <- T12_in_s2t0 (r)
+  T12_LUT(wire,const_0,reg) <- 0x01
+  T12_pe_out_res_p -> T12_out_s1t0.1
+'''
+
+# Simple one to get us started
+LUT_TEMPLATE='''
+  T12_LUT(wire,const,reg) <- 0x01
+  T4_LUT <- 0xFF
+  T4_pe_out_res_p -> T4_out_s2t0.1
+'''
+
 
 
 
