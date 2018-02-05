@@ -52,7 +52,14 @@ if ($?has_io) then
     # Check config file for consistency/correctness (bsa_verify)
     grep . $config > /tmp/tmpconfig$$
     set cgra_info = ../../hardware/generator_z/top/cgra_info.txt
-    ../../testdir/bsa_verify.csh -v /tmp/tmpconfig$$ -cgra $cgra_info
+
+    unset FAIL
+    ../../testdir/bsa_verify.csh -v /tmp/tmpconfig$$ -cgra $cgra_info || set FAIL
+    if ($?FAIL) then
+        echo 'run-injectio.csh: bs decode FAILED; is this the right bitstream for the CGRA?'
+        echo
+        exit 13
+    endif
 
     # Pass config through unchanged, it's okay
     cp $config $config_io
@@ -70,11 +77,11 @@ else
 
     # NOTE decode.py -v is messy and should be avoided unless you're trying to debug
     echo "run-injectio: decode.py -cgra $cgra_info $config (after stripping comments)"
-    ../../bitstream/decoder/decode.py -cgra $cgra_info $tmpfile.0 > $tmpfile.1 || exit -1
+    ../../bitstream/decoder/decode.py -cgra $cgra_info $tmpfile.0 > $tmpfile.1 || exit 13
 
     # Returns a CLEAN bitstream with no bitstream-embedded I/O,
     # plus just two I/O comments at the end
-    run-stripio.csh $VSWITCH $tmpfile.1 -o $config_io || exit -1
+    run-stripio.csh $VSWITCH $tmpfile.1 -o $config_io || exit 13
     /bin/rm $tmpfile.*
 endif
 

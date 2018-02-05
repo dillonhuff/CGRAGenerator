@@ -543,21 +543,27 @@ def get_element(EE, TTTT):
     global CGRA
     # if (CGRA == False): CGRA = read_cgra_info()
     if (CGRA == False):
-        print "ERROR No CGRA data structure.  Did you call read_cgra_info()?"
+        print >> sys.stderr,  "ERROR No CGRA data structure.  Did you call read_cgra_info()?"
         sys.exit(-1)
 
     tileno = getnum(TTTT,16)
     elemno = getnum(  EE,16)
-    if DBG: print "Looking up tile %d element %d" % (tileno, elemno)
+    if DBG: print >> sys.stderr,  "Looking up tile 0x%02x element %d" % (tileno, elemno)
     for tile in CGRA.findall('tile'):
         t = getnum(tile.attrib['tile_addr'])
         r = getnum(tile.attrib['row'])
         c = getnum(tile.attrib['col'])
-        if DBG: print "Found tile %2s (r%s c%s)" % (t, r, c)
+        if DBG: print >> sys.stderr,  "Found tile %2s (r%s c%s)" % (t, r, c)
         if (t == tileno):
             for feature in tile:
-                if DBG: print "  Found feature %s" % feature.tag, ; print feature.attrib
-                fa = getnum(feature.attrib['feature_address'])
+                if DBG: print >> sys.stderr,  "  Found feature %s" % feature.tag, ; print >> sys.stderr,  feature.attrib
+
+                try: fa = getnum(feature.attrib['feature_address'])
+                except:
+                    err = "\n\nERROR "+\
+                          "Feature '%s' in tile 0x%02x has no 'feature_address'\n" % (feature.tag, tileno)
+                    assert False, err
+
                 if (fa == elemno): return feature
     return False
 

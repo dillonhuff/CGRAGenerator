@@ -15,12 +15,18 @@ echo "find_cgra_info.csh: built $top"
 echo "--------------------------------------------------------------------"
 echo "Here is what I built (it's supposed to look like an array of tiles)."
 echo
-egrep '^//t' $top  | sed 's/^../    /'
+egrep '^//t' $top  | sed 's/^../    /' | sed 's/\.\.\.\.\.\. /..... /g'
 
 egrep '^//(io1|[.][.][.])' $top | expand \
   | sed 's/^..//' \
   | sed 's/0x\(.\) /0x0\1/g' \
-  | sed 's/  / /g' | sed 's/  / /g'
+  | sed 's/0x//g' \
+  | sed 's/  / /g' | sed 's/  / /g' \
+  | sed 's/\.\.\.\.\.\. /..... /g' \
+  | sed 's/\.  \./. ./g'\
+  | sed 's/\(mem_..\) pe/\1  pe/g'
+
+
 
 echo "--------------------------------------------------------------------"
 

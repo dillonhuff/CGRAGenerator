@@ -10,7 +10,8 @@
 
 //; # Specify the CGRA grid size as 8x8,16x16, or 64x64. You can generate additional sizes by modifying
 //; # the IO_count and basic_block_repeat_* variables below.
-//; my $grid_size = "8x8";
+//; # my $grid_size = "8x8";
+//; my $grid_size = "16x16";
 //; #
 //; # for IOs
 //; # <number of bits> <number of bits> <number of bits> <number of bits>

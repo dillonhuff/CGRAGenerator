@@ -118,7 +118,8 @@ if ($?VERBOSE) echo $CGROOT/bitstream/decoder/decode.py $vswitch $bs -cgra $cgra
 # $CGROOT/bitstream/decoder/decode.py $vswitch $bs -cgra $cgra \
 $CGROOT/bitstream/decoder/decode.py -q $bs -cgra $cgra \
   | sed '/Summary/,$d' \
-  > /tmp/tmp$$.bsd
+  > /tmp/tmp$$.bsd \
+  || exit 13
 
 if ($?VERBOSE) set echo
 diff /tmp/tmp$$.{bsa,bsd}
