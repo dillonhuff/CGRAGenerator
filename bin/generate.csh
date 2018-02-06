@@ -12,8 +12,9 @@ setenv CGRA_GEN_ALL_REG 1
 
 # Not everyone has access to readlink -f
 unset no_readlink
-readlink -f >& /dev/null || set no_redlink
+readlink -f >& /dev/null || set no_readlink
 if ($?no_readlink) then
+  set scriptpath = "$0"
   set scriptpath = $scriptpath:h
   if ("$scriptpath" == "$0") then
     set scriptpath = `pwd`
@@ -28,10 +29,10 @@ else
 endif
 
 
-# Script lives in $CGROOT/bin/$0
-# Therefore scriptpath is "$CGROOT/bin"
-# Therefore CGROOT is $scriptpath:h
-set CGROOT = $scriptpath:h
+# # Script lives in $CGROOT/bin/$0
+# # Therefore scriptpath is "$CGROOT/bin"
+# # Therefore CGROOT is $scriptpath:h
+# set CGROOT = $scriptpath:h
 
 
 # echo "I think CGRAGenerator is here: $CGROOT"; exit

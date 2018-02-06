@@ -28,8 +28,9 @@ MAIN:
 
 # Not everyone has access to readlink -f
 unset no_readlink
-readlink -f || set no_redlink
+readlink -f >& /dev/null || set no_readlink
 if ($?no_readlink) then
+  set scriptpath = "$0"
   set scriptpath = $scriptpath:h
   if ("$scriptpath" == "$0") then
     set scriptpath = `pwd`
