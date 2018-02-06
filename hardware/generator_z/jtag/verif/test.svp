@@ -53,7 +53,7 @@ program automatic `mname`(interface ifc);
 
 	 jtag_rslt_trans.data_out = 0;
 	 jtag_rslt_trans.done = 0;
-	 ifc.config_data_from_gc = 16'd88
+	 ifc.config_data_from_gc = 16'd88;
 	 jdrv.Send(jtag_rslt_trans);
 	 jtag_rslt_trans = jdrv.GetResult();
 	 $fdisplay(fd,"%t: %m: Trans 1:  Address to GC=%f, Data to GC=%f, Data out from GC=%0x",  
@@ -61,7 +61,7 @@ program automatic `mname`(interface ifc);
 	 
 	 @(posedge ifc.Clk);
 	 ifc.config_data_from_gc = 16'd999;
-         jtag_rslt_trans.addr=27'd300
+         jtag_rslt_trans.addr=27'd300;
 	 jtag_rslt_trans.data_out = 0;
 	 jtag_rslt_trans.done = 0;
 	 jdrv.Send(jtag_rslt_trans);
@@ -96,7 +96,7 @@ program automatic `mname`(interface ifc);
    task init_test();
       begin
 	 // read user input
-	 ProcessArgs();
+	 //ProcessArgs();
 	 rnd0 = $random(seed); // initial the random number generator
 	 
 	 // init the environment
@@ -112,6 +112,7 @@ program automatic `mname`(interface ifc);
    /****************************************************************************
     * Other Tasks:
     * *************************************************************************/
+/*
    task ProcessArgs;
       begin
          // if this is a "+wave" run, it must record all signals
@@ -147,6 +148,6 @@ program automatic `mname`(interface ifc);
          $vcdplusmemoff(0,        top);
       end
    endtask // CaptureMemoriesOff
-   
+  */ 
 endprogram : `mname`
   

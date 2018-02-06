@@ -110,8 +110,6 @@
  //;					      AddrWidth => $tc_cfg_addr_width,
  //;					      OpcodeWidth => $tc_cfg_op_width);
  //; my $tc_gc2jtag_ifc = $self->clone_inst($tc_jtag2gc_ifc, 'tc_gc2jtag_ifc'); 
-`$tc_jtag2gc_ifc->get_module_name()` `$tc_jtag2gc_ifc->get_instance_name()`();
-`$tc_gc2jtag_ifc->get_module_name()` `$tc_gc2jtag_ifc->get_instance_name()`();
 
 module `$self->get_module_name()`
   (
@@ -134,13 +132,15 @@ module `$self->get_module_name()`
    // Connect Forward the reset and clock inputs to the global controller
    assign ifc.reset_to_gc = ifc.trst_n;
    assign ifc.clk_to_gc = ifc.tck;
+   `$tc_jtag2gc_ifc->get_module_name()` `$tc_jtag2gc_ifc->get_instance_name()`();
+   `$tc_gc2jtag_ifc->get_module_name()` `$tc_gc2jtag_ifc->get_instance_name()`();
    //The opcode is the upper 3 address bits to the gc
    assign ifc.config_addr_to_gc = {`$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.op,
                                `$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.addr};
    assign ifc.config_data_to_gc = `$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.data;
-   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgin.data = ifc.config_data_from_gc;
-   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgin.addr = 0;
-   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgin.op = 7;//Set to Bypass so that input data_rd reg is always enabled. Is this ok?
+   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn.data = ifc.config_data_from_gc;
+   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn.addr = 0;
+   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn.op = 7;//Set to Bypass so that input data_rd reg is always enabled. Is this ok?
 
    //;
    //;
