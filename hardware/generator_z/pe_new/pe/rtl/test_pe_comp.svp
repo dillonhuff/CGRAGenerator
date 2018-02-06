@@ -1,9 +1,9 @@
-//; my $use_add   = parameter(Name=>'use_add', val=> 2, List=>[2, 1, 0], doc=>'0 - no adders, 1 - simple ADDs, 2 - SAD');
+//; my $use_add   = parameter(Name=>'use_add', val=> 1, List=>[2, 1, 0], doc=>'0 - no adders, 1 - simple ADDs, 2 - SAD');
 //; my $use_cntr  = parameter(Name=>'use_cntr', val=> 1, List=>[1, 0],  doc=>'0 - no counter mode, 1 - enable counter mode');
-//; my $use_bool  = parameter(Name=>'use_bool', Val=>1, List=>[1, 0], Doc=>"0 - no booleans, 1 - simple gates");
+//; my $use_bool  = parameter(Name=>'use_bool', Val=> 1, List=>[1, 0], Doc=>"0 - no booleans, 1 - simple gates");
 //; my $use_shift = parameter(Name=>'use_shift', val=> 1, List=>[1, 0], doc=>'Use shift operations');
 //; my $mult_mode = parameter(Name=>'mult_mode', val=> 2, List=>[2, 1, 0], doc=>'Use MAD(2) or MULT(1) or None(0)');
-//; my $use_div   = parameter(Name=>'use_div', val=> 1, List=>[1, 0],  doc=>'0 - no divide, 1 - enable iterrative divide');
+//; my $use_div   = parameter(Name=>'use_div', val=> 0, List=>[1, 0],  doc=>'0 - no divide, 1 - enable iterrative divide');
 //;
 //; my $use_abs     = parameter(Name=>'use_abs', val=> 1, List=>[1, 0],  doc=>'0 - no ABS, 1 - enable ABS');
 //; my $use_max_min = parameter(Name=>'use_max_min', val=> 1, List=>[1, 0],  doc=>'0 - no max/min, 1 - enable max/min');
@@ -12,18 +12,28 @@
 //; my $en_opt   = parameter(Name=>'en_opt', val=> 1, List=>[1, 0], doc=>'Use shifter area optimization?');
 //; my $en_trick = parameter(Name=>'en_trick', val=> 0, List=>[1, 0], doc=>'Shiter sharing trick in double presition');
 //;
+//; my $en_ovfl = parameter(Name=>'en_ovfl', val=> 1, List=>[1, 0], doc=>'Enable overflow signals?');
+//;
 //;
 //; my $is_msb    = parameter(Name=>'is_msb', val=> 0, List=>[1, 0], doc=>'1 - MSB in 32b mode, 0 - LSB result');
 //; my $en_double = parameter(Name=>'en_double', val=> 0, List=>[1, 0], doc=>'1 - 32b supported, 0 - No 32b support');
+//;
+//; my $get_carry = parameter(Name=>'get_carry', val=> 1, List=>[1, 0], doc=>'1 - output carry, 0 - No carry');
 //;
 //; my $debug     = $self->parameter(name=>'debug', val=> 0, List=>[1, 0], doc=>'Generate extra code for debug');
 //;
 //; my $use_sad   = $use_add > 1;
 //;
 //; my $use_c_input = ($use_sad > 0) or ($mult_mode > 1);
+
 /*
 $use_add  = `$use_add `
 */
+
+//; my $filename = "PECOMP".$self->mname();
+//; open(COMPINFO, ">$filename") or die "Couldn't open file $filename, $!";
+//; my $pecomp_info_hash;
+
 module   `mname`  #(
   parameter DataWidth = 16
 ) (
@@ -45,12 +55,15 @@ module   `mname`  #(
   input                         cmpr_eq_in,
 //;   } elsif($en_double) {
   input                          res_p_msb,
-  output logic [`$use_add -1`:0]             carry_out,
   output logic                   cmpr_eq_out,
 //;   }
 //; }
+//; if(($use_add > 0) & ($get_carry | ($en_double & !$is_msb))) {
+  output logic [`$use_add -1`:0]             carry_out,
+//;}
+
 //; if($use_cntr) {
-  output logic [DataWidth-1:0]   cntr_next,
+  //output logic [DataWidth-1:0]   cntr_next,
   output logic                   cntr_en,
 //;}
 //; if($use_div) {
@@ -67,48 +80,126 @@ module   `mname`  #(
 //; if($en_double & $mult_mode > 0) {
   output logic [2*DataWidth-1:0] mult_res,
 //;}
+//; if($en_ovfl) {
+  output logic                   ovfl,
+//;}
   output logic                   res_p
 );
 
 localparam DATA_MSB      = DataWidth - 1;
 
 localparam PE_ADD_OP     = 6'h0;
+//; $pecomp_info_hash->{ 'add' } = {
+//;   opcode => '00',
+//;   result => 'op_a+op_b+op_d',
+//;   predicate => '(op_a+op_b+op_d)>=2^16'
+//; };
+
 localparam PE_SUB_OP     = 6'h1;
+//; $pecomp_info_hash->{ 'sub' } = {
+//;   opcode => '01',
+//;   result => 'op_a+~op_b+1'
+//; };
+
 //; if($use_abs) {
 localparam PE_ABS_OP     = 6'h3;
+//; $pecomp_info_hash->{ 'abs' } = {
+//;   opcode => '03',
+//;   result => '(op_a<0)?(0-op_a):op_a'
+//; };
 //; }
 
 localparam PE_GTE_MAX_OP = 6'h4;
+//; $pecomp_info_hash->{ 'gte_max' } = {
+//;   opcode => '04',
+//;   result => '(op_a>=op_b)?op_a:op_b'
+//; };
 localparam PE_LTE_MIN_OP = 6'h5;
+//; $pecomp_info_hash->{ 'lte_min' } = {
+//;   opcode => '05',
+//;   result => '(op_a<=op_b)?op_a:op_b'
+//; };
 localparam PE_EQ_OP      = 6'h6;
+//; $pecomp_info_hash->{ 'eq' } = {
+//;   opcode => '06',
+//;   result => 'op_a+op_b'
+//; };
 
 localparam PE_SEL_OP     = 6'h8;
+//; $pecomp_info_hash->{ 'sel' } = {
+//;   opcode => '08',
+//;   result => 'op_d?op_a:op_b'
+//; };
 
 //; if($use_shift > 0) {
 localparam PE_RSHFT_OP   = 6'hF;
+//; $pecomp_info_hash->{ 'rshft' } = {
+//;   opcode => '0f',
+//;   result => 'op_a>>op_b[3:0]'
+//; };
 localparam PE_LSHFT_OP   = 6'h11;
+//; $pecomp_info_hash->{ 'lshft' } = {
+//;   opcode => '11',
+//;   result => 'op_a<<op_b[3:0]'
+//; };
 //; }
 
 //; if($mult_mode > 0) {
 localparam PE_MULT_0_OP  = 6'hB;
+//; $pecomp_info_hash->{ 'mult_0' } = {
+//;   opcode => '0b',
+//;   result => '(op_a*op_b)[15:0]'
+//; };
 localparam PE_MULT_1_OP  = 6'hC;
+//; $pecomp_info_hash->{ 'mult_1' } = {
+//;   opcode => '0c',
+//;   result => '(op_a*op_b)[23:8]'
+//; };
 localparam PE_MULT_2_OP  = 6'hD;
+//; $pecomp_info_hash->{ 'mult_2' } = {
+//;   opcode => '0d',
+//;   result => '(op_a*op_b)[31:16]'
+//; };
 //;   if($use_relu){
 localparam PE_RELU       = 6'hE;
+//; $pecomp_info_hash->{ 'relu' } = {
+//;   opcode => '0e',
+//;   result => '(op_a<0)?(op_a*W)[31:16]:op_a'
+//; };
 //;   }
 //; }
 
 //; if($use_bool) {
 localparam PE_OR_OP      = 6'h12;
+//; $pecomp_info_hash->{ 'or' } = {
+//;   opcode => '12',
+//;   result => 'op_a|op_b'
+//; };
 localparam PE_AND_OP     = 6'h13;
+//; $pecomp_info_hash->{ 'and' } = {
+//;   opcode => '13',
+//;   result => 'op_a&op_b'
+//; };
 localparam PE_XOR_OP     = 6'h14;
+//; $pecomp_info_hash->{ 'xor' } = {
+//;   opcode => '14',
+//;   result => 'op_a^op_b'
+//; };
 //; }
 
 //; if($use_cntr) {
 localparam PE_CNTR_OP    = 6'h18;
+//; $pecomp_info_hash->{ 'cntr' } = {
+//;   opcode => '18',
+//;   result => 'cnt[t]'
+//; };
 //; }
 //; if($use_div) {
 localparam PE_DIV_OP     = 6'h19;
+//; $pecomp_info_hash->{ 'div' } = {
+//;   opcode => '19',
+//;   result => 'op_a/op_b'
+//; };
 //; }
 //; if(($en_double==0) &$mult_mode > 0) {
 logic [2*DataWidth-1:0] mult_res;
@@ -141,8 +232,8 @@ logic [DATA_MSB:0]  add_a     [ADD_MSB:0];
 logic [DATA_MSB:0]  add_b     [ADD_MSB:0];
 logic               add_c_in  [ADD_MSB:0];
 
-logic [DATA_MSB:0]  add_res   [ADD_MSB:0];
-logic               add_c_out [ADD_MSB:0];
+wire  [DATA_MSB:0]  add_res   [ADD_MSB:0];
+wire                add_c_out [ADD_MSB:0];
 
 
 genvar ggg;
@@ -162,7 +253,7 @@ generate
       .c_out (add_c_out[ggg])
     );
 
-//; if($en_double & !$is_msb) {
+//; if($get_carry | ($en_double & !$is_msb)) {
   assign carry_out[ggg] = add_c_out[ggg];
 //;}
   end
@@ -298,6 +389,27 @@ assign diff_sign = add_res[0][DATA_MSB];
 //;}
 
 
+//; if($en_ovfl & $use_add > 0) {
+localparam DataMSB = DataWidth-1;
+logic [ADD_MSB:0] ovfl_add_signed;
+
+assign ovfl_add_signed[0] = (op_a[DataMSB] == op_b[DataMSB]) &
+                            (op_a[DataMSB] != add_res[0][DataMSB]);
+//;   if($use_add > 1) {
+assign ovfl_add_signed[1] = (add_res[0][DataMSB] == op_c[DataMSB]) &
+                            (op_c[DataMSB] != add_res[1][DataMSB]);
+//;   }
+
+logic  ovfl_sub_signed;
+always_comb begin
+  ovfl_sub_signed = ((op_a[DataMSB] != op_b[DataMSB]) & (op_a[DataMSB] != add_res[0][DataMSB]));
+//; if($use_add > 1) {
+  ovfl_sub_signed = ovfl_sub_signed | ovfl_add_signed[1];
+//; }
+end
+
+//; }
+
 always_comb begin : proc_alu
 //; if($use_add > 0) {
   add_a[0] = op_a;
@@ -318,11 +430,14 @@ always_comb begin : proc_alu
 //;}
 
 //; if($use_cntr) {
-  cntr_next   = add_res[0];
+//  cntr_next   = add_res[0];
 //;}
 //; if($use_div & !$is_msb) {
   div_co      = {DataWidth{1'b0}};
 //; }
+//; if($en_ovfl) {
+  ovfl = 1'b0;
+//;}
 
 
   unique case (op_code[5:0])
@@ -340,6 +455,9 @@ always_comb begin : proc_alu
 //; if($use_sad) {
         res_p_w     = add_c_out[0] | add_c_out[1];
 //;}
+//; if($en_ovfl) {
+        ovfl        = (is_signed) ? (|ovfl_add_signed) : res_p_w;
+//;}
       end
     PE_SUB_OP: begin
         add_b[0]    = ~op_b;
@@ -350,6 +468,9 @@ always_comb begin : proc_alu
 //;   }
 //;} else {
         add_c_in[0] = 1'b1;
+//;}
+//; if($en_ovfl) {
+        ovfl        = (is_signed) ? ovfl_sub_signed : 1'b0;
 //;}
       end
 //; if($use_abs) {
@@ -366,6 +487,11 @@ always_comb begin : proc_alu
         add_c_in[1] = diff_sign;
 //;     }
 
+//; if($en_ovfl) {
+        ovfl        = (add_res[0][DATA_MSB] & (~|add_res[0][DATA_MSB-1:0])) |
+                      res_w[DATA_MSB];
+//;}
+
         res_p_w     = diff_sign;
 //;   } else {
         add_a[0]    = ~op_a;
@@ -379,6 +505,10 @@ always_comb begin : proc_alu
         add_c_in[0] = 1'b1;
         res_p_w     = op_a[DATA_MSB];
 //;     }
+
+//; if($en_ovfl) {
+        ovfl        = res_w[DATA_MSB];
+//;}
 
         res_w       = diff_sign ? op_a : add_res[0];
 //;   }
@@ -437,14 +567,35 @@ always_comb begin : proc_alu
     PE_MULT_0_OP: begin
         res_w   = mult_res[DATA_MSB:0];
         res_p_w = mult_c_out;
+//; if($en_ovfl) {
+        if (is_signed) begin
+          ovfl = (op_a[DATA_MSB] == op_b[DATA_MSB]) ?
+                                    mult_res[DATA_MSB] :
+                                    ~mult_res[DATA_MSB] & |{op_a, op_b};
+        end else begin
+          ovfl = |mult_res[2*DataWidth-1:DataWidth];
+        end
+//;}
       end
     PE_MULT_1_OP: begin
         res_w   = mult_res[3*DataWidth/2-1:DataWidth/2];
         res_p_w = mult_c_out;
+//; if($en_ovfl) {
+        if (is_signed) begin
+          ovfl = (op_a[DATA_MSB] == op_b[DATA_MSB]) ?
+                                    mult_res[DATA_MSB] :
+                                    ~mult_res[DATA_MSB] & |{op_a, op_b};
+        end else begin
+          ovfl = |mult_res[2*DataWidth-1:3*DataWidth/2];
+        end
+//;}
       end
     PE_MULT_2_OP: begin
         res_w   = mult_res[2*DataWidth-1:DataWidth];
         res_p_w = mult_c_out;
+//; if($en_ovfl) {
+        ovfl = 1'b0;
+//;}
       end
 
 //;   if($use_relu) {
@@ -476,8 +627,9 @@ always_comb begin : proc_alu
         add_b[0]    = op_b;
         add_c_in[0] = 1'b0;
 
-        res_w       = op_b; // Current counter value
-        cntr_next   = add_res[0];
+        //res_w       = op_b; // Current counter value
+	res_w       = add_res[0];
+        //cntr_next   = add_res[0];
 //; if($use_sad) {
         res_p_w     = ~|(op_b ^ op_c); // Done counting
 //; } else {
@@ -513,8 +665,15 @@ end
 assign res   = res_w;
 assign res_p = res_p_w;
 
+//;#######################################################################
+//;## Generate PECOMP info
+//;##
+//;#######################################################################
+//;foreach my $operation (sort { $pecomp_info_hash->{$a}{'opcode'} cmp $pecomp_info_hash->{$b}{'opcode'} } keys(%$pecomp_info_hash))  {
+//;  my $value = $pecomp_info_hash->{$operation};
+//;# print COMPINFO "            <op sel='0x$value->{'opcode'}' name='$operation'> pe_out_result=$value->{'result'}, pe_out_result_p=$value->{'predicate'} </op> \n";
+//;  print COMPINFO "            <op sel='0x$value->{'opcode'}' name='$operation'> pe_out_result=$value->{'result'} </op> \n";
+//;# print COMPINFO "            <op sel='0x$value->{'opcode'}' name='$operation'>  </op> \n";
+//;}
+//;close COMPINFO;
 endmodule
-
-
-
-
