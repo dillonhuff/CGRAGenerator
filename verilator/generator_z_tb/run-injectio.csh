@@ -47,7 +47,7 @@ egrep '# (IN|OUT)PUT' $config && set has_io
 if ($?has_io) then
     set VERBOSE
     echo "Looks like config file already has embedded IO comments."
-    echo "Test it for correctness, otherwise leave it unchanged."
+    echo "run-cinjectio.csh: Test it for correctness, otherwise leave it unchanged."
 
     # Check config file for consistency/correctness (bsa_verify)
     grep . $config > /tmp/tmpconfig$$

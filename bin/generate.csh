@@ -10,17 +10,23 @@
 setenv CGRA_GEN_ALL_REG 1
 ##############################################################################
 
-# Find out where we live
-# set scriptpath = "$0" # No good if symlinks exist maybe
-set scriptpath = `readlink -f $0`
-set scriptpath = $scriptpath:h
+# Not everyone has access to readlink -f
+unset no_readlink
+readlink -f >& /dev/null || set no_redlink
+if ($?no_readlink) then
+  set scriptpath = $scriptpath:h
+  if ("$scriptpath" == "$0") then
+    set scriptpath = `pwd`
+    set CGROOT = `cd $scriptpath:h; pwd`
+  else
+    set CGROOT = `cd $scriptpath/..; pwd`
+  endif
+else
+  # set scriptpath = "$0" # No good if symlinks exist maybe
+  set scriptpath = `readlink -f $0`
+  set scriptpath = $scriptpath:h
+endif
 
-# if ("$scriptpath" == "$0") then
-#   set scriptpath = `pwd`
-#   set CGROOT = `cd $scriptpath:h; pwd`
-# else
-#   set CGROOT = `cd $scriptpath/..; pwd`
-# endif
 
 # Script lives in $CGROOT/bin/$0
 # Therefore scriptpath is "$CGROOT/bin"
