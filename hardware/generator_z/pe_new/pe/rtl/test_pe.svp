@@ -335,16 +335,14 @@ logic res_lut;
 
   .op_a_in  (op_d_p),
   .op_b_in  (op_e_p),
-//; if($lut_extra_inp){
+  //; if($lut_extra_inp){
   .op_c_in  (`$lut_c_inp`),
-//;}
-
+  //; }
   .res      (res_lut)
 );
+  // assign res_p_w = op_code[8] ? res_lut : comp_res_p;
 
-  assign res_p_w = op_code[8] ? res_lut : comp_res_p;
-//;} else {
-
+//;} else {  # if(!$use_lut)
   assign res_p_w = comp_res_p;
 //;}
 
@@ -360,9 +358,16 @@ always_ff @(posedge clk or negedge rst_n) begin
   end
 end
 //; } else {
+  //; if ($use_lut) {
+  assign res   = comp_res;
+  assign res_p = op_code[8] ? res_lut : comp_res_p;
+  //; } else {
   assign res   = comp_res;
   assign res_p = res_p_w;
-//;}
+  //; }
+
+
+//;} # if($reg_out)
 
 endmodule
 
