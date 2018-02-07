@@ -44,12 +44,65 @@
  *			  make it immutable
  * ****************************************************************************/
 // ACTUAL GENESIS2 PARAMETERIZATIONS
-
 //; # Now, let's decide upon the parameters of the configuration bus:
 //; my $tc_cfg_bus_width =  $self->define_param(TESTCLK_CFG_BUS_WIDTH => 16);
 //; my $tc_cfg_addr_width =  $self->define_param(TESTCLK_CFG_ADDR_WIDTH => 27);
 //; my $tc_cfg_op_width = $self->define_param(TESTCLK_CFG_OPCODE_WIDTH => 3);
 //; my $IDCODE = $self->define_param(IDCODE => 1);
+//; my $io_list = $self->force_param(IO_LIST => 
+//;		[	
+//;			{name => 'trst_n',	width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'tck',		width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'tms',		width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'tdi',		width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'tdo',		width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'tdo_en',	width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'clk_to_gc',	width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'reset_to_gc',	width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'config_data_from_gc',	width => $tc_cfg_bus_width,  direction => 'in', bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'config_data_to_gc',	width => $tc_cfg_bus_width,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'config_addr_to_gc',	width => $tc_cfg_addr_width+$tc_cfg_op_width,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'}
+//;		]);
+//; my $num_ios = scalar(@{$io_list});
+//;
+//;# Verify correctness of IO parameters:
+//; my $cnt = 0;
+//; foreach my $io (@{$io_list}){
+//;   $self->error("IO $cnt is missing it's name!") 
+//;	unless defined $io->{name};
+//;   $self->error("IO $io->{name} (IO\# $cnt) is missing its width!") 
+//;	unless defined $io->{width};
+//;   $self->error("IO $io->{name} (IO\# $cnt) has an illegal width -->$io->{width}<--!") 
+//;	if ($io->{width} < 1);
+//;   $self->error("IO $io->{name} (IO\# $cnt) is missing its direction!") 
+//;	unless defined $io->{direction};
+//;   $self->error("IO $io->{name} (IO\# $cnt) has an invalid direction -->$io->{direction}<--! ".
+//;		   "(allowed values: in/out)") 
+//;	unless ($io->{direction} =~ m/^(in|out)$/i);
+//;   $self->error("IO $io->{name} (IO\# $cnt) does not specify whether it's on the boundary scan!") 
+//;	unless defined $io->{bsr};
+//;   $self->error("IO $io->{name} (IO\# $cnt) has an invalid bsr flag -->$io->{bsr}<--! ".
+//;		   "(allowed values: yes/no)") 
+//;	unless ($io->{bsr} =~ m/^(yes|no)$/i);
+//;   $self->error("IO $io->{name} (IO\# $cnt) does not specify pad type (analog/digital)!") 
+//;	unless defined $io->{pad};
+//;   $self->error("IO $io->{name} (IO\# $cnt) has an invalid pad flag -->$io->{pad}<--! ".
+//;		   "(allowed values: analog/digital)") 
+//;	unless ($io->{pad} =~ m/^(anl|analog|dig)/i);
+//;   $self->error("IO $io->{name} (IO\# $cnt) does not specify pad orientation (left, right, top, bottom)!") 
+//;	unless defined $io->{orientation};
+//;   $self->error("IO $io->{name} (IO\# $cnt) has an invalid pad orientation -->$io->{orientation}<--!".
+//;		   "(allowed values: left, right, top, bottom)") 
+//;	unless ($io->{orientation} =~ m/^(left|right|top|bottom)$/i);
+//;   $cnt++;
+//; } # end of "foreach my $io..."
+//;
+//;
+//; # First we create an interface for this chip
+//; my $ifc = $self->unique_inst('template_ifc', 'ifc', IO_LIST => $io_list);
+//;
+//; # this would enable others to use this interface
+//; $self->define_param('IFC' => $ifc);
 
    //  Config interfaces for system and test clock domainds (DO I NEED SYS_CLK_IFC??)
  //; my $tc_jtag2gc_ifc = $self->unique_inst('cfg_ifc', 'tc_jtag2gc_ifc',
@@ -57,24 +110,11 @@
  //;					      AddrWidth => $tc_cfg_addr_width,
  //;					      OpcodeWidth => $tc_cfg_op_width);
  //; my $tc_gc2jtag_ifc = $self->clone_inst($tc_jtag2gc_ifc, 'tc_gc2jtag_ifc'); 
-`$tc_jtag2gc_ifc->get_module_name()` `$tc_jtag2gc_ifc->get_instance_name()`();
-`$tc_gc2jtag_ifc->get_module_name()` `$tc_gc2jtag_ifc->get_instance_name()`();
-//Opcodes from Global Controller Spec
-//
 
 module `$self->get_module_name()`
   (
    // main IOs
-   input tck,
-   input trst_n,
-   input tdi,
-   input tms,
-   input [`$tc_cfg_bus_width-1`:0] config_data_from_gc, 
-   output tdo,
-   output clk_to_gc,
-   output reset_to_gc,
-   output [`$tc_cfg_addr_width-1`:0] config_addr_to_gc,
-   output [`$tc_cfg_bus_width-1`:0] config_data_to_gc, 
+   `$ifc->get_module_name()`.des ifc,
    // Signals for the Boundary Scan Register (these are not chip IOs though)
     output 				bsr_tdi,
     output 				bsr_sample,
@@ -90,15 +130,17 @@ module `$self->get_module_name()`
    // Reset to the test clock domain (this is different than the trst signal)
    logic 				test_logic_reset;
    // Connect Forward the reset and clock inputs to the global controller
-   assign reset_to_gc = trst_n;
-   assign clk_to_gc = tck;
+   assign ifc.reset_to_gc = ifc.trst_n;
+   assign ifc.clk_to_gc = ifc.tck;
+   `$tc_jtag2gc_ifc->get_module_name()` `$tc_jtag2gc_ifc->get_instance_name()`();
+   `$tc_gc2jtag_ifc->get_module_name()` `$tc_gc2jtag_ifc->get_instance_name()`();
    //The opcode is the upper 3 address bits to the gc
-   assign config_addr_to_gc = {`$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.op,
+   assign ifc.config_addr_to_gc = {`$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.op,
                                `$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.addr};
-   assign config_data_to_gc = `$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.data;
-   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgin.data = config_data_from_gc;
-   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgin.addr = 0;
-   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgin.op = 7;//Set to Bypass so that input data_rd reg is always enabled
+   assign ifc.config_data_to_gc = `$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.data;
+   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn.data = ifc.config_data_from_gc;
+   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn.addr = 0;
+   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn.op = 7;//Set to Bypass so that input data_rd reg is always enabled. Is this ok?
 
    //;
    //;
@@ -116,12 +158,12 @@ module `$self->get_module_name()`
    `$cfg_dbg->get_module_name()` `$cfg_dbg->get_instance_name()`
      (
       // JTAG signals
-      .tms(tms),
-      .tck(tck),
-      .trst_n(trst_n),
-      .tdi(tdi),
-      .tdo(tdo),
-      .tdo_en(tdo_en),
+      .tms(ifc.tms),
+      .tck(ifc.tck),
+      .trst_n(ifc.trst_n),
+      .tdi(ifc.tdi),
+      .tdo(ifc.tdo),
+      .tdo_en(ifc.tdo_en),
       
       // BSR interface //Do I need this? Don't think so
       .bsr_extest(bsr_extest),

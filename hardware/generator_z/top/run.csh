@@ -1,5 +1,4 @@
-#!/bin/bash -f
-
+#!/bin/bash
 # To generate fabric with memories, do -
 # setenv CGRA_GEN_USE_MEM 1
 # 
@@ -42,7 +41,14 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../memory_core/memory_core.vp \
   ../memory_core/mem.vp \
   ../global_controller/global_controller.vp \
-  ../jtag/jtag.vp
+  \
+  ../jtag/jtag.svp \
+  ../jtag/Template/src/digital/template_ifc.svp \
+  ../jtag/Template/src/digital/cfg_ifc.svp \
+  ../jtag/Template/src/digital/flop.svp \
+  ../jtag/Template/src/digital/tap.svp \
+  ../jtag/Template/src/digital/reg_file.svp \
+  ../jtag/Template/src/digital/cfg_and_dbg.svp
 
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
