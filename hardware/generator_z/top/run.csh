@@ -1,7 +1,6 @@
-#!/bin/bash -f
+#!/bin/bash
 
-# Haha guess what 'source' (below) does not work on travis script
-unless specify "bash" above!
+# Haha guess what 'source' (below) does not work on travis script unless specify "bash" above!
 
 # To generate fabric with memories, do -
 # setenv CGRA_GEN_USE_MEM 1
