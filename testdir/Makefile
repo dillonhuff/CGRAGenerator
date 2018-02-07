@@ -40,10 +40,11 @@ pw_gray_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
 	CONFIG="-config ../../bitstream/examples/pwv2.bs"
 
+# Use run.csh built-in default config
 test_basic:
 	@./writelog.csh log1 -init
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" DELAY="0,0" \
-	          CONFIG="-config ../../bitstream/examples/pwv2_nb2.bsa"
+	          CONFIG=""
 	@echo
 	@./writelog.csh log1 -print
 
