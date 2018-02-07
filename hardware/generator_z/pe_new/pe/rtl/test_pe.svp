@@ -17,9 +17,17 @@
 //; my $use_max_min = parameter(Name=>'use_max_min', val=> 1, List=>[1, 0],  doc=>'0 - no max/min, 1 - enable max/min');
 //; my $use_relu    = parameter(Name=>'use_relu', val=> 1, List=>[1, 0],  doc=>'0 - no relu, 1 - enable relu');
 //;
+//; my $get_carry = parameter(Name=>'get_carry', val=> 1, List=>[1, 0], doc=>'1 - output carry, 0 - No carry');
+//;
 //; my $debug = $self->parameter(name=>'debug', val=> 0, List=>[1, 0], doc=>'Generate extra code for debug');
 //;
 //; my $use_flip  = $self->parameter(name=>'use_flip', val=> 0, List=>[1, 0], doc=>'Add option to flip inputs?');
+//;
+//; my $use_acc  = $self->parameter(name=>'use_acc', val=> 0, List=>[1, 0], doc=>'Enable accumulation?');
+//;
+//; my $en_ovfl = parameter(Name=>'en_ovfl', val=> 1, List=>[1, 0], doc=>'Enable overflow signals?');
+//;
+//; my $en_debug = parameter(Name=>'en_debug', val=> 1, List=>[1, 0], doc=>'Enable debuging registers?');
 //;
 //;
 //; my $lut_inps  = parameter(Name=>'lut_inps',
@@ -30,6 +38,23 @@
 //; my $use_lut  = ($lut_inps > 1);
 //;
 //; my $use_c_input = ($use_add > 1) or ($mult_mode > 1) or ($lut_inps > 3);
+
+//; my $filename = "PE".$self->mname();
+//; open(PEINFO, ">$filename") or die "Couldn't open file $filename, $!";
+//; my $pe_info_hash;
+//; my $opcode_alu_bitl = 0;
+//; my $opcode_alu_bith = 6;
+//; my $opcode_flip_bitl = 8;
+//; my $opcode_flip_bith = 8;
+//; my $opcode_acc_en_bitl = 9;
+//; my $opcode_acc_en_bith = 9;
+//; my $opcode_irq_en_bitl = 10;
+//; my $opcode_irq_en_bith = 11;
+//; my $opcode_flag_sel_bitl = 12;
+//; my $opcode_flag_sel_bith = 15;
+
+//; my $rename_hash;
+
 /*
 use_add   = `$use_add  `
 mult_mode = `$mult_mode`
@@ -96,7 +121,10 @@ module   `mname`  #(
 //; if($en_double & $mult_mode > 0) {
   output logic [2*DataWidth-1:0] mult_res,
 //;}
-  output logic                  res_p
+//; if($en_debug) {
+  output logic                   irq,
+//;}
+  output logic                   res_p
 );
 
 logic  [DataWidth-1:0]        op_a;
@@ -112,6 +140,11 @@ logic [DataWidth-1:0] comp_res;
 logic                 comp_res_p;
 logic                 res_p_w;
 
+//; if(($use_add > 0) & ($get_carry & !($en_double & !$is_msb))) {
+  logic [`$use_add -1`:0]             carry_out;
+//;}
+
+
 //; if($reg_inputs) {
 
 
@@ -122,11 +155,12 @@ always_ff @(posedge clk or negedge rst_n) begin
   if(~rst_n) begin
     inp_code <= 'h0;
     op_code  <= 'h0;
-  end else if(cfg_en && (&cfg_a)) begin
+  end else if(cfg_en && (&cfg_a)) begin // (&cfg_a) means cfg_a == 8'hFF
     inp_code <= cfg_d[31:16];
     op_code  <= cfg_d[15:0];
   end
 end
+
 
 logic [15:0] nc_inp_code;
 assign nc_inp_code = inp_code;
@@ -146,19 +180,62 @@ assign nc_op_code = op_code;
   .res        (op_a)
 );
 
+//; $pe_info_hash->{ '2_reg_a' } = {
+//;   address => '0xff',
+//;   out => 'a',
+//;   bitl => 16,
+//;   bith => 17,
+//;   mname => $op_a_r->mname()
+//; };
+
+//; $pe_info_hash->{ '3_init_a' } = {
+//;   address => '0xf0',
+//;   out => 'a',
+//;   bitl => 0,
+//;   bith => 15,
+//; };
+
 //; my $op_b_r = clone($op_a_r, 'test_opt_reg_b');
 
 logic                 op_b_ld;
 logic [DataWidth-1:0] op_b_val;
+//; if($use_acc) {
+
+logic en_acc;
+assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
+//; }
 
 //; if($use_cntr) {
   logic cntr_en;
-  logic [DataWidth-1:0] cntr_next;
+  //logic [DataWidth-1:0] cntr_next;
+//; }
 
-  assign op_b_ld  = (cfg_en && (cfg_a == 8'hF1)) | (clk_en & cntr_en);
+//;
+//;my $b_en_acc = '';
+//;my $b_acc_rst = '';
+//;
+//;if ($use_cntr) {
+//;  $b_en_acc = 'cntr_en';
+//;  $b_acc_rst = '(cntr_en & comp_res_p)';
+//;}
+//;
+//;if ($use_acc) {
+//;  if ($use_cntr) {
+//;    $b_en_acc  = $b_en_acc  . '|';
+//;    $b_acc_rst = $b_acc_rst . '|';
+//;  }
+//;
+//;  $b_en_acc  = $b_en_acc  . 'en_acc';
+//;  $b_acc_rst = $b_acc_rst . '(en_acc & op_d_p)';
+//;}
+//;
+
+
+//; if($use_cntr | $use_acc) {
+  assign op_b_ld  = (cfg_en && (cfg_a == 8'hF1)) | (clk_en & (`$b_en_acc`));
   assign op_b_val = cfg_en ?
                     cfg_d[DataWidth-1:0] :
-                    (comp_res_p ? {DataWidth{1'b0}}: cntr_next);
+                    (`$b_acc_rst` ? {DataWidth{1'b0}}: comp_res);
 
 //;} else {
   assign op_b_ld  = cfg_en && (cfg_a == 8'hF1);
@@ -178,6 +255,20 @@ logic [DataWidth-1:0] op_b_val;
   .res        (op_b)
 );
 
+//; $pe_info_hash->{ '2_reg_b' } = {
+//;   address => '0xff',
+//;   out => 'b',
+//;   bitl => 18,
+//;   bith => 19,
+//;   mname => $op_b_r->mname()
+//; };
+//; $pe_info_hash->{ '3_init_b' } = {
+//;   address => '0xf1',
+//;   out => 'b',
+//;   bitl => 0,
+//;   bith => 15,
+//; };
+
 
 //; if($use_c_input) {
 //;   my $op_c_r = clone($op_a_r, 'test_opt_reg_c');
@@ -192,6 +283,19 @@ logic [DataWidth-1:0] op_b_val;
   .data_in    (data2),//op_c_in),
   .res        (op_c)
 );
+//; $pe_info_hash->{ '2_reg_c' } = {
+//;   address => '0xff',
+//;   out => 'c',
+//;   bitl => 20,
+//;   bith => 21,
+//;   mname => $op_c_r->mname()
+//; };
+//; $pe_info_hash->{ '3_init_c' } = {
+//;   address => '0xf2',
+//;   out => 'c',
+//;   bitl => 0,
+//;   bith => 15,
+//; };
 //; }
 
 
@@ -208,6 +312,19 @@ logic [DataWidth-1:0] op_b_val;
   .res        (op_d_p)
 );
 
+//; $pe_info_hash->{ '2_reg_d' } = {
+//;   address => '0xff',
+//;   out => 'd',
+//;   bitl => 24,
+//;   bith => 25,
+//;   mname => $op_d_r->mname()
+//; };
+//; $pe_info_hash->{ '3_init_d' } = {
+//;   address => '0xf3',
+//;   out => 'd',
+//;   bitl => 0,
+//;   bith => 0,
+//; };
 
 //;my $op_e_r = clone($op_a_r, 'test_opt_reg_e');
 `$op_e_r->mname()` #(.DataWidth(1)) `$op_e_r->iname()`
@@ -222,6 +339,19 @@ logic [DataWidth-1:0] op_b_val;
   .res        (op_e_p)
 );
 
+//; $pe_info_hash->{ '2_reg_e' } = {
+//;   address => '0xff',
+//;   out => 'e',
+//;   bitl => 26,
+//;   bith => 27,
+//;   mname => $op_e_r->mname()
+//; };
+//; $pe_info_hash->{ '3_init_e' } = {
+//;   address => '0xf4',
+//;   out => 'e',
+//;   bitl => 0,
+//;   bith => 0,
+//; };
 
 //;my $op_f_r = clone($op_a_r, 'test_opt_reg_f');
 `$op_f_r->mname()` #(.DataWidth(1)) `$op_f_r->iname()`
@@ -236,6 +366,20 @@ logic [DataWidth-1:0] op_b_val;
   .res        (op_f_p)
 );
 
+//; $pe_info_hash->{ '2_reg_f' } = {
+//;   address => '0xff',
+//;   out => 'f',
+//;   bitl => 28,
+//;   bith => 29,
+//;   mname => $op_f_r->mname()
+//; };
+//; $pe_info_hash->{ '3_init_f' } = {
+//;   address => '0xf5',
+//;   out => 'f',
+//;   bitl => 0,
+//;   bith => 0,
+//; };
+
 //;} else {
 assign op_a = data0;//op_a_in;
 assign op_b = data1;//op_b_in;
@@ -248,7 +392,12 @@ assign op_d_p = bit0;//op_d_p_in;
 
 //; if ($use_flip){
 logic flip_inputs;
-assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'double' mode
+assign flip_inputs = op_code[`$opcode_flip_bitl`:`$opcode_flip_bith`]; // WARNING:: 'Flip' is not supported for 'double' mode
+//;}
+
+//; if($en_ovfl) {
+logic V;
+
 //;}
 
 
@@ -257,11 +406,12 @@ assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'doubl
 //;                         "use_div" => $use_div, "is_msb"=>$is_msb, "en_double"=>$en_double,
 //;                         "use_relu" => $use_relu, "en_opt"=>$en_opt, "en_trick"=>$en_trick,
 //;                         "use_abs"=>$use_abs, "use_max_min"=>$use_max_min,
+//;                         "get_carry" => $get_carry, "en_ovfl" => $en_ovfl,
 //;                         "debug"=>$debug);
 
 `$pe_comp->instantiate()`
 (
-  .op_code (op_code[8:0]),
+  .op_code (op_code[7:0]),
 
 //; if($use_flip) {
   .op_a     (flip_inputs ? op_b : op_a),
@@ -285,10 +435,12 @@ assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'doubl
   .cmpr_eq_in  (cmpr_eq_in),
 //;   } else {
   .res_p_msb   (res_p_msb  ),
-  .carry_out   (carry_out  ),
   .cmpr_eq_out (cmpr_eq_out),
 //;   }
 //; }
+//; if(($use_add > 0) & ($get_carry | ($en_double & !$is_msb))) {
+  .carry_out   (carry_out  ),
+//;}
 
 //; if($use_div) {
   .div_oper    (div_oper),
@@ -303,17 +455,104 @@ assign flip_inputs = op_code[9]; // WARNING:: 'Flip' is not supported for 'doubl
 
 //; if($use_cntr) {
   .cntr_en  (cntr_en),
-  .cntr_next(cntr_next),
+  //.cntr_next(cntr_next),
 //;}
   .res      (comp_res),
 //; if($en_double & $mult_mode > 0) {
   .mult_res (mult_res),
 //;}
+//; if($en_ovfl) {
+  .ovfl     (V),
+//;}
   .res_p    (comp_res_p)
 );
 
+//; $pe_info_hash->{ '1_pe_comp' } = {
+//;   address => '0xff',
+//;   bitl => $opcode_alu_bitl,
+//;   bith => $opcode_alu_bith,
+//;   mname => $pe_comp->mname()
+//; };
+
+
+logic result_flag;
 //; if($use_lut) {
 logic res_lut;
+//; }
+
+//; if($get_carry) {
+    logic Z;
+    logic N;
+    logic C;
+
+//; 	  if(!$en_ovfl) {
+   logic V;
+   assign V = 1'b0;
+//;	    }
+
+    logic [3:0] flag_sel;
+
+    assign flag_sel = op_code[`$opcode_flag_sel_bith`: `$opcode_flag_sel_bitl`];
+
+    assign C = carry_out[`$use_add -1`];
+    assign Z = ~|comp_res;
+    assign N = comp_res[DataWidth-1];
+
+    localparam PE_FLAG_EQ = 4'h0;
+    localparam PE_FLAG_NE = 4'h1;
+    localparam PE_FLAG_CS = 4'h2;
+    localparam PE_FLAG_CC = 4'h3;
+    localparam PE_FLAG_MI = 4'h4;
+    localparam PE_FLAG_PL = 4'h5;
+    localparam PE_FLAG_VS = 4'h6;
+    localparam PE_FLAG_VC = 4'h7;
+    localparam PE_FLAG_HI = 4'h8;
+    localparam PE_FLAG_LS = 4'h9;
+    localparam PE_FLAG_GE = 4'hA;
+    localparam PE_FLAG_LT = 4'hB;
+    localparam PE_FLAG_GT = 4'hC;
+    localparam PE_FLAG_LE = 4'hD;
+//; if($use_lut) {
+    localparam PE_FLAG_LUT = 4'hE;
+//; }
+    localparam PE_FLAG_PE  = 4'hF;
+
+    always_comb begin
+        case (flag_sel)
+            PE_FLAG_EQ  : result_flag = Z;
+            PE_FLAG_NE  : result_flag = ~Z;
+            PE_FLAG_CS  : result_flag = C;
+            PE_FLAG_CC  : result_flag = ~C;
+            PE_FLAG_MI  : result_flag = N;
+            PE_FLAG_PL  : result_flag = ~N;
+            PE_FLAG_VS  : result_flag = V;
+            PE_FLAG_VC  : result_flag = ~V;
+            PE_FLAG_HI  : result_flag = C & ~Z;
+            PE_FLAG_LS  : result_flag = ~C | Z;
+            PE_FLAG_GE  : result_flag = (N == V);
+            PE_FLAG_LT  : result_flag = (N != V);
+            PE_FLAG_GT  : result_flag = ~Z & (N == V);
+            PE_FLAG_LE  : result_flag = Z | (N != V);
+//; if($use_lut) {
+            PE_FLAG_LUT : result_flag = res_lut;
+//; }
+            PE_FLAG_PE  : result_flag = comp_res_p;
+
+            default     : result_flag = comp_res_p;
+        endcase
+    end
+
+
+    //assign result_flag = |({Z,N, C, comp_res_p} & flag_mask);
+//; } else {
+    assign result_flag = comp_res_p;
+//; }
+
+
+
+
+//; if($use_lut) {
+//;#logic res_lut;
 
 //; my $lut           = generate_base('test_lut', 'test_lut', "lut_inps"=>$lut_inps);
 //; my $lut_extra_inp = $lut->get_param('lut_inps') > 2;
@@ -342,11 +581,28 @@ logic res_lut;
   .res      (res_lut)
 );
 
-  assign res_p_w = op_code[8] ? res_lut : comp_res_p;
+//; 	 if($get_carry) {
+  assign res_p_w = result_flag;
+//;	 } else {
+  assign res_p_w = op_code[12] ? res_lut : result_flag;//comp_res_p;
+//;	 }
+
+
 //;} else {
 
-  assign res_p_w = comp_res_p;
+  assign res_p_w = result_flag;//comp_res_p;
 //;}
+
+//; my $res_w = 'comp_res';
+//;
+//; if($use_cntr & $use_acc) {
+//;  $res_w = '(cntr_en | en_acc) ? op_b : comp_res';
+//; } elsif($use_cntr) {
+//;  $res_w = '(cntr_en) ? op_b : comp_res';
+//; } elsif($use_cntr) {
+//;  $res_w = '(en_acc) ? op_b : comp_res';
+//; }
+//;
 
 
 //; if($reg_out) {
@@ -355,17 +611,100 @@ always_ff @(posedge clk or negedge rst_n) begin
     res   <= 16'h0;
     res_p <= 1'b0;
   end else begin
-    res   <= comp_res;
+    res   <= `$res_w`;
     res_p <= res_p_w;
   end
 end
 //; } else {
-  assign res   = comp_res;
+  assign res   = `$res_w`;
   assign res_p = res_p_w;
 //;}
 
+//; if($en_debug) {
+
+logic irq_data;
+logic irq_bit;
+
+//; my $debug_d = generate_base('test_debug_reg', 'test_debug_data');
+`$debug_d->mname()` #(.DataWidth(DataWidth)) `$debug_d->iname()`
+(
+  .cfg_clk   (clk),
+  .cfg_rst_n (rst_n),
+  .cfg_d     (cfg_d),
+  .cfg_en    (cfg_en && (cfg_a == 8'hE0)),
+
+  .data_in   (res),
+
+  .debug_irq (irq_data)
+);
+
+//; my $debug_b = clone($debug_d, 'test_debug_bit');
+`$debug_b->mname()` #(.DataWidth(1)) `$debug_b->iname()`
+(
+  .cfg_clk   (clk),
+  .cfg_rst_n (rst_n),
+  .cfg_d     (cfg_d),
+  .cfg_en    (cfg_en && (cfg_a == 8'hE1)),
+
+  .data_in   (res_p),
+
+  .debug_irq (irq_bit)
+);
+
+logic [1:0] irq_en;
+assign irq_en = op_code[`$opcode_irq_en_bith` :`$opcode_irq_en_bitl` ];
+
+assign irq = |({irq_data,irq_bit} & irq_en);
+
+//;}
+
+//; $rename_hash = {
+//;   wire_a => 'data0',
+//;   wire_b => 'data1',
+//;   wire_c => 'data2',
+//;   wire_d => 'bit0',
+//;   wire_e => 'bit1',
+//;   wire_f => 'bit2'
+//; };
+
+//;#######################################################################
+//;## Generate pe info
+//;##
+//;#######################################################################
+//;foreach my $feature (sort keys %$pe_info_hash)  {
+//;  my $value = $pe_info_hash->{$feature};
+//;################### PEs
+//;  if ($feature=~m/1_pe_comp/) {
+//;    print PEINFO "        <opcode reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>\n";
+//;    my $filename = "PECOMP".$value->{'mname'};
+//;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
+//;    while (<INP>) {
+//;      my $line = $_;
+//;      print PEINFO $line;
+//;    }
+//;    close INP;
+//;    print PEINFO "        </opcode>\n"
+//;  }
+//;################### REGs
+//;  if ($feature=~m/2_reg/) {
+//;    print PEINFO "        <mux reg_address='$value->{'address'}' snk='op_$value->{'out'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>\n";
+//;    my $filename = "REGMODE".$value->{'mname'};
+//;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
+//;    while (<INP>) {
+//;      my $line = $_;
+//;      $line=~s/OUTNAME/$value->{'out'}/g;
+//;      while ( my ($find, $replace) = each($rename_hash) ) {
+//;         $line=~s/>$find</>$replace</g;
+//;         $line=~s/'$find'/'$replace'/g;
+//;      }
+//;      print PEINFO $line;
+//;    }
+//;    close INP;
+//;    print PEINFO "        </mux>\n"
+//;  }
+//;  if ($feature=~m/3_init/) {
+//;    print PEINFO "        <reg reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>reg_$value->{'out'}</reg>\n";
+//;  }
+//;}
+//;close PEINFO;
 endmodule
-
-
-
-

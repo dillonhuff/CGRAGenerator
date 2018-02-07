@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////
-// CGRA PE generator 
+// CGRA PE generator
 //
 // (C) Stanford University
 // Please do not remove this header
@@ -10,7 +10,7 @@
 //; my $all_segments_for_all_tiles =  parameter(Name=>'all_segments_for_all_tiles', val=> "1", doc=>'stagger or overlap segments');
 //; my $global_signal_count = parameter(Name=>'global_signal_count', val=> "4", doc=>'number of global signals supported');
 //; # for sb
-//; my $sides = parameter(Name=>'sides', val=> 4, doc=>'number of edges for a SB'); 
+//; my $sides = parameter(Name=>'sides', val=> 4, doc=>'number of edges for a SB');
 //; my $feedthrough_outputs = parameter(Name=>'feedthrough_outputs', val=> "11000", doc=>'binary vector for feedthrough output config. Affects all sides. MSB corresponds to output 0 eg: 00000010 means output 7 is feedthrough. Length in bits = num_tracks.');
 //; my $registered_outputs = parameter(Name=>'registered_outputs', val=> "00110", doc=>'binary vector for registered output config. Affects all sides. MSB corresponds to output 0. Registering feedthrough outputs is ignored.');
 //; my $is_bidi = parameter(Name=>'is_bidi', val=> 0, doc=>'1 if SB pins are bidi. TBD.');
@@ -18,7 +18,7 @@
 
 //; # for cb
 //; my $cb_connections = parameter(Name=>'cb_connections', val=> "1111111111", doc=>'binary vector for specifying tracks that are muxed. MSB corresponds to track 0 eg: 1011 means tracks 0, 2, 3 are muxed to produce output for PE. Length in bits = num_tracks.');
-//; my $has_constant = parameter(Name=>'has_constant', val=> 1, doc=>'set to 1 if the CB has a register to supply a constant '); 
+//; my $has_constant = parameter(Name=>'has_constant', val=> 1, doc=>'set to 1 if the CB has a register to supply a constant ');
 
 //; # for pe
 //; my $reg_inputs = parameter(Name=>'reg_inputs', val=> 1, List=>[1, 0], doc=>'Add register on the inputs');
@@ -230,7 +230,7 @@ tile_id
 //; ##
 //; ## Instantiate the CB
 //; ##
-//; my $xside; 
+//; my $xside;
 //; if ($input_count % 2 == 0) {
 //;  $xside = 2;
 //; } else {
@@ -368,7 +368,7 @@ tile_id
 //; ##
 //; ## 1-bit SB
 //; ##
-//; 
+//;
 //; $feedthrough_outputs =~ m/BUS1:(\S+)/;
 //; my $bus_feedthrough_outputs = $1;
 //; $registered_outputs =~ m/BUS1:(\S+)/;
@@ -429,16 +429,16 @@ tile_id
 //; #####################################
 //; ## global out signal
 //; #####################################
-//; 
+//;
 //;  $intra_tile_addr+=1;
 //;  my $gout_output_count = $output_count + 1;
 //;  my $number_of_gout_select_bits_needed = int(ceil(log($gout_output_count)/log(2)));
-//; 
+//;
 //;   $tile_info_hash->{ 'gout' } = {
 //;     address => $intra_tile_addr,
 //;     mux_map => ""
 //;   };
-//; if ($number_of_gout_select_bits_needed > 0) {  
+//; if ($number_of_gout_select_bits_needed > 0) {
   reg [`$number_of_gout_select_bits_needed - 1`:0] gout_sel;
   always @(posedge clk_in or posedge reset) begin
     if (reset==1'b1) begin
@@ -490,7 +490,7 @@ tile_id
 //; # Generate PE
 //; #############################################################
 
-//;my $pe = generate('test_pe', 'test_pe', reg_inputs => $reg_inputs, 
+//;my $pe = generate('test_pe', 'test_pe', reg_inputs => $reg_inputs,
 //;                   reg_out => $reg_out, use_add => $use_add,
 //;                   use_cntr => $use_cntr, use_bool => $use_bool, use_shift => $use_shift,
 //;                   mult_mode => $mult_mode, use_div => $use_div, is_msb => $is_msb,
@@ -531,33 +531,12 @@ tile_id
 //;  }
 //; }
 );
-//; $tile_info_hash->{ 'pe' }{'reg_inputs'} = $reg_inputs;
-//; $tile_info_hash->{ 'pe' }{'reg_out'} = $reg_out;   
-//; $tile_info_hash->{ 'pe' }{'use_add'} = $use_add;  
-//; $tile_info_hash->{ 'pe' }{'use_cntr'} = $use_cntr; 
-//; $tile_info_hash->{ 'pe' }{'use_bool'} = $use_bool; 
-//; $tile_info_hash->{ 'pe' }{'use_shift'} = $use_shift;
-//; $tile_info_hash->{ 'pe' }{'mult_mode'} = $mult_mode;
-//; $tile_info_hash->{ 'pe' }{'use_div'} = $use_div;  
-//; $tile_info_hash->{ 'pe' }{'is_msb'} = $is_msb;   
-//; $tile_info_hash->{ 'pe' }{'en_double'} = $en_double;
-//; $tile_info_hash->{ 'pe' }{'lut_inps'} = $lut_inps;
-//;
-//;
-//;
-//;
-//;
-//;
-//;
-//;
-//;
-//;
-//;
+//; $tile_info_hash->{ 'pe' }{'mname'} = $pe->mname();
 //;
 //;
 //;
 //;#######################################################################
-//;## Generate tile connectivity, and pe info 
+//;## Generate tile connectivity, and pe info
 //;##
 //;#######################################################################
 //;foreach my $feature (sort keys %$tile_info_hash)  {
@@ -565,17 +544,14 @@ tile_id
 //;################### PEs
 //;  if ($feature=~m/pe/) {
 //;    print TILEINFO "    <pe feature_address='$value->{'address'}'>\n";
-//;    foreach my $param_name (sort keys %$value) {
-//;      my $param_value = $value->{$param_name};
-//;      if ($param_name!~m/address/) {
-//;        print TILEINFO "        <$param_name> $param_value </$param_name>\n";
-//;      }
+//;    my $filename = "PE".$value->{'mname'};
+//;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
+//;    while (<INP>) {
+//;      my $line = $_;
+//;      print TILEINFO $line;
 //;    }
+//;    close INP;
 //;    print TILEINFO "    </pe>\n"
-//;  }
-//;################### OPCODEs
-//;  if ($feature=~m/opcode/) {
-//;    print TILEINFO "    <opcode feature_address='$value->{'address'}'></opcode>\n";
 //;  }
 //;################### CBs
 //;  if ($feature=~m/cb/) {
@@ -595,7 +571,7 @@ tile_id
 //;    print TILEINFO "    </cb>\n"
 //;  }
 //;################### SBs
-//;  if ($feature=~m/sb/) {
+//;  if ($feature=~m/sb_/) {
 //;    print TILEINFO "    <sb feature_address='$value->{'address'}' bus='$value->{'bus'}'>\n";
 //;    my $filename = "SB".$value->{'mname'};
 //;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
