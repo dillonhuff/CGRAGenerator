@@ -1,0 +1,67 @@
+/*************************************************************************
+ ** From Perforce:
+ **
+ ** $Id: $
+ ** $DateTime: $
+ ** $Change: $
+ ** $Author: $
+ *************************************************************************/
+
+
+
+/* *****************************************************************************
+ * File: cfg_ifc.vp
+ * 
+ * Description:
+ *    Basic interface for the JTAG
+ * 
+ * REQUIRED GENESIS PARAMETERS:
+ * ----------------------------
+ *    * NONE
+ * 
+ * 
+ * Inputs:
+ * -------
+ * 
+ * Outputs:
+ * --------
+ * 
+ * 
+ * Change bar:
+ * -----------
+ * Date          Author   Description
+ * Oct 11, 2010  zasgar  init version
+ * 
+ * ****************************************************************************/
+
+interface `mname`(input logic Clk);
+   logic tck;
+   logic tms;
+   logic trst_n;
+   logic tdi;
+   logic tdo;
+   logic tdo_en;
+   
+   
+   modport chip(// From the JTAG controller
+		      input tck,
+		      input tms,
+		      input trst_n,
+		      input tdi,
+		      output tdo,
+		      output tdo_en
+		      );
+   
+   
+   modport tb(
+	      output tck,
+	      output tms,
+	      output trst_n,
+	      output tdi,
+	      input tdo,
+	      input tdo_en,
+	      input Clk
+	      );
+   
+		  
+endinterface: `mname`
