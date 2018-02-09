@@ -173,9 +173,9 @@ endclass: `mname`
    // task Send sends a single jtag to regfile transaction
    task `mname`::Send(jtag_regfile_trans_t new_trans);
       cur_trans = new_trans;
-// COMMENTING OUT SYSCLK DOMAIN STUFF
-/******************
-      // first which regfile is it going to?
+      
+//; if ($sc_cfg_bus =~ m/^(on|yes)$/i){
+// first which regfile is it going to?
       if (cur_trans.domain == sc_domain) begin
 	 // send address
 	 ShiftIR(sc_cfg_addr, jtag_inst_width);
@@ -204,7 +204,8 @@ endclass: `mname`
 	    ShiftDR(cur_trans.op, sc_op_width);  
 	 end	 
       end
-***************************************************/      
+//; }
+//; if ($tc_cfg_bus =~ m/^(on|yes)$/i){
       // first which regfile is it going to?
       if (cur_trans.domain == tc_domain) begin
 	 // send address
@@ -234,6 +235,7 @@ endclass: `mname`
 	    ShiftDR(cur_trans.op, tc_op_width);  
 	 end	 
       end
+//; }
       
       if (this.svf_file)
 	$fdisplay(this.svf_file, "RUNTEST IDLE 10 TCK IDLE;\n");

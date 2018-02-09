@@ -432,7 +432,7 @@ module `mname`
    logic [`$tc_cfg_bus_width-1`:0] tc_data_rd;
    logic 			   tc_data_rd_en;
    assign 			   tc_data_rd_en = (tc_cfgRep.op == `$tc_cfg_op_width`'d`$tc_bypassop`)? 
-						   1'b1: 1'b0; //CHANGE THIS TO A DIFFERENT OP TO ALLOW FOR READS??
+						   1'b1: 1'b0;
    `$tc_data_rd_reg->get_module_name()` `$tc_data_rd_reg->get_instance_name()` 
      (.dout(tc_data_rd),	.din(tc_cfgRep.data),
       .Clk(tck),	.en(tc_data_rd_en),      

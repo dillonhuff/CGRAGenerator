@@ -45,9 +45,9 @@
  * ****************************************************************************/
 // ACTUAL GENESIS2 PARAMETERIZATIONS
 //; # Now, let's decide upon the parameters of the configuration bus:
-//; my $tc_cfg_bus_width =  $self->define_param(TESTCLK_CFG_BUS_WIDTH => 16);
-//; my $tc_cfg_addr_width =  $self->define_param(TESTCLK_CFG_ADDR_WIDTH => 27);
-//; my $tc_cfg_op_width = $self->define_param(TESTCLK_CFG_OPCODE_WIDTH => 3);
+//; my $sc_cfg_bus_width =  $self->define_param(SYSCLK_CFG_BUS_WIDTH => 16);
+//; my $sc_cfg_addr_width =  $self->define_param(SYSCLK_CFG_ADDR_WIDTH => 27);
+//; my $sc_cfg_op_width = $self->define_param(SYSCLK_CFG_OPCODE_WIDTH => 3);
 //; my $IDCODE = $self->define_param(IDCODE => 1);
 //; my $io_list = $self->force_param(IO_LIST => 
 //;		[	
@@ -59,9 +59,9 @@
 //;			{name => 'tdo_en',	width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'clk_to_gc',	width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'reset_to_gc',	width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
-//;			{name => 'config_data_from_gc',	width => $tc_cfg_bus_width,  direction => 'in', bsr => 'no',  pad => 'digital', orientation => 'right'},
-//;			{name => 'config_data_to_gc',	width => $tc_cfg_bus_width,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
-//;			{name => 'config_addr_to_gc',	width => $tc_cfg_addr_width+$tc_cfg_op_width,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'}
+//;			{name => 'config_data_from_gc',	width => $sc_cfg_bus_width,  direction => 'in', bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'config_data_to_gc',	width => $sc_cfg_bus_width,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'config_addr_to_gc',	width => $sc_cfg_addr_width+$sc_cfg_op_width,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'}
 //;		]);
 //; my $num_ios = scalar(@{$io_list});
 //;
@@ -104,26 +104,17 @@
 //; # this would enable others to use this interface
 //; $self->define_param('IFC' => $ifc);
 
-   //  Config interfaces for system and test clock domainds (DO I NEED SYS_CLK_IFC??)
- //; my $tc_jtag2gc_ifc = $self->unique_inst('cfg_ifc', 'tc_jtag2gc_ifc',
- //;					      DataWidth => $tc_cfg_bus_width, 
- //;					      AddrWidth => $tc_cfg_addr_width,
- //;					      OpcodeWidth => $tc_cfg_op_width);
- //; my $tc_gc2jtag_ifc = $self->clone_inst($tc_jtag2gc_ifc, 'tc_gc2jtag_ifc'); 
+   //  Config interfaces for system and test clock domainds
+ //; my $sc_jtag2gc_ifc = $self->unique_inst('cfg_ifc', 'sc_jtag2gc_ifc',
+ //;					      DataWidth => $sc_cfg_bus_width, 
+ //;					      AddrWidth => $sc_cfg_addr_width,
+ //;					      OpcodeWidth => $sc_cfg_op_width);
+ //; my $sc_gc2jtag_ifc = $self->clone_inst($sc_jtag2gc_ifc, 'sc_gc2jtag_ifc'); 
 
 module `$self->get_module_name()`
   (
    // main IOs
-   `$ifc->get_module_name()`.des ifc,
-   // Signals for the Boundary Scan Register (these are not chip IOs though)
-    output 				bsr_tdi,
-    output 				bsr_sample,
-    output 				bsr_intest,
-    output 				bsr_extest,
-    output 				bsr_update_en,
-    output 				bsr_capture_en,
-    output 				bsr_shift_dr,
-    input 				bsr_tdo
+   `$ifc->get_module_name()`.des ifc
    );
 
 
@@ -132,24 +123,24 @@ module `$self->get_module_name()`
    // Connect Forward the reset and clock inputs to the global controller
    assign ifc.reset_to_gc = ifc.trst_n;
    assign ifc.clk_to_gc = ifc.tck;
-   `$tc_jtag2gc_ifc->get_module_name()` `$tc_jtag2gc_ifc->get_instance_name()`();
-   `$tc_gc2jtag_ifc->get_module_name()` `$tc_gc2jtag_ifc->get_instance_name()`();
+   `$sc_jtag2gc_ifc->get_module_name()` `$sc_jtag2gc_ifc->get_instance_name()`();
+   `$sc_gc2jtag_ifc->get_module_name()` `$sc_gc2jtag_ifc->get_instance_name()`();
    //The opcode is the upper 3 address bits to the gc
-   assign ifc.config_addr_to_gc = {`$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.op,
-                               `$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.addr};
-   assign ifc.config_data_to_gc = `$tc_jtag2gc_ifc->get_instance_name()`.cfgOut.data;
-   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn.data = ifc.config_data_from_gc;
-   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn.addr = 0;
-   assign `$tc_gc2jtag_ifc->get_instance_name()`.cfgIn.op = 7;//Set to Bypass so that input data_rd reg is always enabled. Is this ok?
+   assign ifc.config_addr_to_gc = {`$sc_jtag2gc_ifc->get_instance_name()`.cfgOut.op,
+                               `$sc_jtag2gc_ifc->get_instance_name()`.cfgOut.addr};
+   assign ifc.config_data_to_gc = `$sc_jtag2gc_ifc->get_instance_name()`.cfgOut.data;
+   assign `$sc_gc2jtag_ifc->get_instance_name()`.cfgIn.data = ifc.config_data_from_gc;
+   assign `$sc_gc2jtag_ifc->get_instance_name()`.cfgIn.addr = 0;
+   assign `$sc_gc2jtag_ifc->get_instance_name()`.cfgIn.op = 7;//Set to Bypass so that input data_rd reg is always enabled. Is this ok?
 
    //;
    //;
    //;
    //; # Create the JTAG to reg-files controller object
    //; my $cfg_dbg = $self->unique_inst('cfg_and_dbg', 'cfg_and_dbg',
-   //;					SC_CFG_BUS => 'no', 
-   //;					TC_CFG_BUS => 'yes', TC_CFG_IFC_REF => $tc_jtag2gc_ifc,
-   //;					TC_CFG_OPCODES => {nop => 0, write => 1, read => 2, set_base_reg => 3, 
+   //;					SC_CFG_BUS => 'yes', 
+   //;					TC_CFG_BUS => 'no', SC_CFG_IFC_REF => $sc_jtag2gc_ifc,
+   //;					SC_CFG_OPCODES => {nop => 0, write => 1, read => 2, set_base_reg => 3, 
    //;                                                 set_rw_count => 4, burst_start => 5, read_data => 6, bypass => 7} 
    //;					);#Should this really be bypass??
    //;
@@ -163,22 +154,13 @@ module `$self->get_module_name()`
       .trst_n(ifc.trst_n),
       .tdi(ifc.tdi),
       .tdo(ifc.tdo),
-      .tdo_en(ifc.tdo_en),
+      .tdo_en(ifc.tdo_en), 
       
-      // BSR interface //Do I need this? Don't think so
-      .bsr_extest(bsr_extest),
-      .bsr_intest(bsr_intest),
-      .bsr_sample(bsr_sample),
-      .bsr_capture_en(bsr_capture_en),
-      .bsr_shift_dr(bsr_shift_dr),
-      .bsr_update_en(bsr_update_en),
-      .bsr_tdo(bsr_tdo),
-      
-      
-      // signals to the jtag clocked global controller
-      .tc_cfgReq(`$tc_jtag2gc_ifc->get_instance_name()`.cfgOut),
-      .tc_cfgRep(`$tc_gc2jtag_ifc->get_instance_name()`.cfgIn),
-      .test_logic_reset(test_logic_reset)
+      // signals to the System-clocked global controller
+      .sc_cfgReq(`$sc_jtag2gc_ifc->get_instance_name()`.cfgOut),
+      .sc_cfgRep(`$sc_gc2jtag_ifc->get_instance_name()`.cfgIn),
+      .Reset(ifc.Reset),
+      .Clk(ifc.Clk)
       );
    
 endmodule // `$self->get_module_name()`
