@@ -118,8 +118,6 @@ module `$self->get_module_name()`
    );
 
 
-   // Reset to the test clock domain (this is different than the trst signal)
-   logic 				test_logic_reset;
    // Connect Forward the reset and clock inputs to the global controller
    assign ifc.reset_to_gc = ifc.Reset;
    assign ifc.clk_to_gc = ifc.tck;
@@ -145,6 +143,7 @@ module `$self->get_module_name()`
    //;					);#Should this really be bypass??
    //;
 			
+   logic bsr_tdi, bsr_sample, bsr_extest, bsr_intest, bsr_update_en, bsr_shift_dr, bsr_capture_en, bsr_tdo;
    // Instantiate the JTAG to reg-files controller
    `$cfg_dbg->get_module_name()` `$cfg_dbg->get_instance_name()`
      (
@@ -156,6 +155,16 @@ module `$self->get_module_name()`
       .tdo(ifc.tdo),
       .tdo_en(ifc.tdo_en), 
       
+      // Boundary Scan Signals (not used in this design. Only connected to supress warnings)
+      .bsr_tdi(bsr_tdi),
+      .bsr_sample(bsr_sample),
+      .bsr_intest(bsr_intest),
+      .bsr_extest(bsr_extest),
+      .bsr_update_en(bsr_update_en),
+      .bsr_capture_en(bsr_capture_en),
+      .bsr_shift_dr(bsr_shift_dr),
+      .bsr_tdo(bsr_tdo),
+
       // signals to the System-clocked global controller
       .sc_cfgReq(`$sc_jtag2gc_ifc->get_instance_name()`.cfgOut),
       .sc_cfgRep(`$sc_gc2jtag_ifc->get_instance_name()`.cfgIn),

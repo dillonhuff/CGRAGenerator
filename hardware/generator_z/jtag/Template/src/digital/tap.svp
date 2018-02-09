@@ -162,7 +162,11 @@ module `$self->get_module_name()`
    //  instructions     width      Instruction register output
    //  sync_capture_en  1 bit	   Output Enable for synchronous capture, active low
    //  sync_update_dr   1 bit	   Output Enables updating new data in synchronous_mode,
-   //				     active highd
+   //				     active high
+
+   //Signals not used in sync mode. Only included to supress warnings
+   logic clock_dr, update_dr;
+
    DW_tap #(
 	    // system verilog parameterization:
 	    .width(`$width`),
@@ -183,9 +187,9 @@ module `$self->get_module_name()`
 		   .test(1'b0),
 		   
 		   //outputs
-		   .clock_dr(/*not used in sync mode*/),
+		   .clock_dr(clock_dr/*not used in sync mode*/),
 		   .shift_dr(shift_dr),
-		   .update_dr(/*not used in sync mode*/),
+		   .update_dr(update_dr/*not used in sync mode*/),
 		   .tdo(tdo),
 		   .tdo_en(tdo_en),
 		   .tap_state(tap_state),
