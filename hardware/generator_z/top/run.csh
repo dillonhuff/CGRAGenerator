@@ -51,5 +51,9 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../jtag/Template/src/digital/reg_file.svp \
   ../jtag/Template/src/digital/cfg_and_dbg.svp
 
+
+cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+
+
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
