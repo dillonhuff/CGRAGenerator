@@ -10,7 +10,7 @@ module `mname` (
 p2f_in,
 p2f_out,
 f2p_in,
-f2p_out,
+f2p_out
 );
 
 input  [`$width - 1`:0] p2f_in;
