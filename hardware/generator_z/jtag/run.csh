@@ -1,4 +1,4 @@
-Genesis2.pl -parse -generate -top jtag_template -input  jtag_template.svp \
+Genesis2.pl -parse -generate -top jtag -input  jtag.svp \
 						        Template/src/digital/template_ifc.svp \
 							Template/src/digital/cfg_ifc.svp \
 						        Template/src/digital/flop.svp \

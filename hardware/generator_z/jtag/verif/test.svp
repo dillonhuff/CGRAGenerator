@@ -36,12 +36,12 @@ program automatic `mname`(interface ifc);
 	 jdrv.ReadID(jtag_ofst_trans);
 	 
 	 // initialization of structs:
-	 jtag_ofst_trans.domain = tc_domain;
+	 jtag_ofst_trans.domain = sc_domain;
 	 jtag_ofst_trans.addr = 27'd1;
 	 jtag_ofst_trans.op = write;
 	 jtag_ofst_trans.data_out = '0;
 	 
-	 jtag_rslt_trans.domain = tc_domain;
+	 jtag_rslt_trans.domain = sc_domain;
 	 jtag_rslt_trans.addr = 27'd200;
 	 jtag_rslt_trans.op = read;
 	 jtag_rslt_trans.data_in = 0;
@@ -83,7 +83,7 @@ program automatic `mname`(interface ifc);
       fd = $fopen("test.log","w");
       
       $display("%t:\t*************************START*****************************",$time);
-      @(negedge ifc.Reset);
+      @(posedge ifc.Reset);
       repeat (10) @(posedge ifc.Clk);
       run_test;
       repeat (10) @(posedge ifc.Clk);
