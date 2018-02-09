@@ -121,7 +121,7 @@ module `$self->get_module_name()`
    // Reset to the test clock domain (this is different than the trst signal)
    logic 				test_logic_reset;
    // Connect Forward the reset and clock inputs to the global controller
-   assign ifc.reset_to_gc = ifc.trst_n;
+   assign ifc.reset_to_gc = ifc.Reset;
    assign ifc.clk_to_gc = ifc.tck;
    `$sc_jtag2gc_ifc->get_module_name()` `$sc_jtag2gc_ifc->get_instance_name()`();
    `$sc_gc2jtag_ifc->get_module_name()` `$sc_gc2jtag_ifc->get_instance_name()`();
