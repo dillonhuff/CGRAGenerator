@@ -33,7 +33,7 @@ tck
   wire [31:0] config_data_jtag_out;
 //; my $jtag_obj = generate("jtag", "jtag_controller");
 //; my $jtag_ifc_path = $jtag_obj -> get_param('IFC');
-//; my $jtag_ifc = clone($dut_ifc_path, 'jtag_ifc');
+//; my $jtag_ifc = clone($jtag_ifc_path, 'jtag_ifc');
 `$jtag_ifc -> instantiate` (.Clk(clk_in), .Reset(reset_in));
 `jtag_obj -> instantiate` (.ifc(`$jtag_ifc->iname()`);
     (
