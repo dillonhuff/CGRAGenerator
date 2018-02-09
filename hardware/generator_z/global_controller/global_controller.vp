@@ -35,17 +35,16 @@ tck
 //; my $jtag_ifc_path = $jtag_obj -> get_param('IFC');
 //; my $jtag_ifc = clone($jtag_ifc_path, 'jtag_ifc');
 `$jtag_ifc -> instantiate` (.Clk(clk_in), .Reset(reset_in));
-`jtag_obj -> instantiate` (.ifc(`$jtag_ifc->iname()`);
-    (
-      assign `$jtag_ifc->iname()`.tdi(tdi);
-      assign `$jtag_ifc->iname()`.tdo(tdo);
-      assign `$jtag_ifc->iname()`.tms(tms);
-      assign `$jtag_ifc->iname()`.config_addr_to_gc(config_addr_jtag_out);
-      assign `$jtag_ifc->iname()`.config_data_to_gc(config_data_jtag_out);
-      assign `$jtag_ifc->iname()`.config_data_from_gc(config_data_in);
-      assign `$jtag_ifc->iname()`.trst_n(trst_n);
-      assign `$jtag_ifc->iname()`.tck(tck); 
-    );
+`$jtag_obj -> instantiate` (.ifc(`$jtag_ifc->iname()`));
+
+      assign `$jtag_ifc->iname()`.tdi=tdi;
+      assign `$jtag_ifc->iname()`.tdo=tdo;
+      assign `$jtag_ifc->iname()`.tms=tms;
+      assign `$jtag_ifc->iname()`.config_addr_to_gc=config_addr_jtag_out;
+      assign `$jtag_ifc->iname()`.config_data_to_gc=config_data_jtag_out;
+      assign `$jtag_ifc->iname()`.config_data_from_gc=config_data_in;
+      assign `$jtag_ifc->iname()`.tck=tck; 
+    
   always @(*) begin
     config_addr_out = config_addr_in;
     config_data_out = config_data_in;
