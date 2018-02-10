@@ -140,7 +140,7 @@ localparam PE_RSHFT_OP   = 6'hF;
 localparam PE_LSHFT_OP   = 6'h11;
 //; $pecomp_info_hash->{ 'lshft' } = {
 //;   opcode => '11',
-//;   result => 'op_a lsht op_b[3:0]'
+//;   result => 'op_a lshft op_b[3:0]'
 //; };
 //; }
 
