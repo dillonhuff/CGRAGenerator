@@ -98,49 +98,57 @@ localparam PE_ADD_OP     = 6'h0;
 localparam PE_SUB_OP     = 6'h1;
 //; $pecomp_info_hash->{ 'sub' } = {
 //;   opcode => '01',
-//;   result => 'op_a+~op_b+1'
+//;   result => 'op_a+~op_b+1',
+//;   predicate => '(op_a+~op_b+1) gte 2^16'
 //; };
 
 //; if($use_abs) {
 localparam PE_ABS_OP     = 6'h3;
 //; $pecomp_info_hash->{ 'abs' } = {
 //;   opcode => '03',
-//;   result => '(op_a lt 0)?(0-op_a):op_a'
+//;   result => '(op_a lt 0)?(0-op_a):op_a',
+//;   predicate => 'op_a[15]'
 //; };
 //; }
 
 localparam PE_GTE_MAX_OP = 6'h4;
 //; $pecomp_info_hash->{ 'gte_max' } = {
 //;   opcode => '04',
-//;   result => '(op_a gte op_b)?op_a:op_b'
+//;   result => '(op_a gte op_b)?op_a:op_b',
+//;   predicate => 'op_a gte op_b'
 //; };
 localparam PE_LTE_MIN_OP = 6'h5;
 //; $pecomp_info_hash->{ 'lte_min' } = {
 //;   opcode => '05',
-//;   result => '(op_a lte op_b)?op_a:op_b'
+//;   result => '(op_a lte op_b)?op_a:op_b',
+//;   predicate => 'op_a lte op_b'
 //; };
 localparam PE_EQ_OP      = 6'h6;
 //; $pecomp_info_hash->{ 'eq' } = {
 //;   opcode => '06',
-//;   result => 'op_a+op_b'
+//;   result => 'op_a+op_b',
+//;   predicate => 'op_a === op_b'
 //; };
 
 localparam PE_SEL_OP     = 6'h8;
 //; $pecomp_info_hash->{ 'sel' } = {
 //;   opcode => '08',
-//;   result => 'op_d?op_a:op_b'
+//;   result => 'op_d?op_a:op_b',
+//;   predicate => '(op_a+op_b) gte 2^16'
 //; };
 
 //; if($use_shift > 0) {
 localparam PE_RSHFT_OP   = 6'hF;
 //; $pecomp_info_hash->{ 'rshft' } = {
 //;   opcode => '0f',
-//;   result => 'op_a rshft op_b[3:0]'
+//;   result => 'op_a rshft op_b[3:0]',
+//;   predicate => '(op_a+op_b) gte 2^16'
 //; };
 localparam PE_LSHFT_OP   = 6'h11;
 //; $pecomp_info_hash->{ 'lshft' } = {
 //;   opcode => '11',
-//;   result => 'op_a lshft op_b[3:0]'
+//;   result => 'op_a lshft op_b[3:0]',
+//;   predicate => '(op_a+op_b) gte 2^16'
 //; };
 //; }
 
@@ -148,23 +156,27 @@ localparam PE_LSHFT_OP   = 6'h11;
 localparam PE_MULT_0_OP  = 6'hB;
 //; $pecomp_info_hash->{ 'mult_0' } = {
 //;   opcode => '0b',
-//;   result => '(op_a*op_b)[15:0]'
+//;   result => '(op_a*op_b)[15:0]',
+//;   predicate => '(op_a*op_b+op_c) gte 2^16'
 //; };
 localparam PE_MULT_1_OP  = 6'hC;
 //; $pecomp_info_hash->{ 'mult_1' } = {
 //;   opcode => '0c',
-//;   result => '(op_a*op_b)[23:8]'
+//;   result => '(op_a*op_b)[23:8]',
+//;   predicate => '(op_a*op_b+op_c) gte 2^24'
 //; };
 localparam PE_MULT_2_OP  = 6'hD;
 //; $pecomp_info_hash->{ 'mult_2' } = {
 //;   opcode => '0d',
-//;   result => '(op_a*op_b)[31:16]'
+//;   result => '(op_a*op_b)[31:16]',
+//;   predicate => '0'
 //; };
 //;   if($use_relu){
 localparam PE_RELU       = 6'hE;
 //; $pecomp_info_hash->{ 'relu' } = {
 //;   opcode => '0e',
-//;   result => '(op_a lt 0)?(op_a*W)[31:16]:op_a'
+//;   result => '(op_a lt 0)?(op_a*W)[31:16]:op_a',
+//;   predicate => 'op_a[15]'
 //; };
 //;   }
 //; }
@@ -173,17 +185,20 @@ localparam PE_RELU       = 6'hE;
 localparam PE_OR_OP      = 6'h12;
 //; $pecomp_info_hash->{ 'or' } = {
 //;   opcode => '12',
-//;   result => 'op_a|op_b'
+//;   result => 'op_a|op_b',
+//;   predicate => '(op_a+op_b) gte 2^16'
 //; };
 localparam PE_AND_OP     = 6'h13;
 //; $pecomp_info_hash->{ 'and' } = {
 //;   opcode => '13',
-//;   result => 'op_a and op_b'
+//;   result => 'op_a and op_b',
+//;   predicate => '(op_a+op_b) gte 2^16'
 //; };
 localparam PE_XOR_OP     = 6'h14;
 //; $pecomp_info_hash->{ 'xor' } = {
 //;   opcode => '14',
-//;   result => 'op_a^op_b'
+//;   result => 'op_a^op_b',
+//;   predicate => '(op_a+op_b) gte 2^16'
 //; };
 //; }
 
@@ -191,14 +206,16 @@ localparam PE_XOR_OP     = 6'h14;
 localparam PE_CNTR_OP    = 6'h18;
 //; $pecomp_info_hash->{ 'cntr' } = {
 //;   opcode => '18',
-//;   result => 'cnt[t]'
+//;   result => 'cnt[t]',
+//;   predicate => 'tc=(op_b==tc_val)'
 //; };
 //; }
 //; if($use_div) {
 localparam PE_DIV_OP     = 6'h19;
 //; $pecomp_info_hash->{ 'div' } = {
 //;   opcode => '19',
-//;   result => 'op_a/op_b'
+//;   result => 'op_a/op_b',
+//;   predicate => '(op_a+op_b) gte 2^16'
 //; };
 //; }
 //; if(($en_double==0) &$mult_mode > 0) {
@@ -671,9 +688,10 @@ assign res_p = res_p_w;
 //;#######################################################################
 //;foreach my $operation (sort { $pecomp_info_hash->{$a}{'opcode'} cmp $pecomp_info_hash->{$b}{'opcode'} } keys(%$pecomp_info_hash))  {
 //;  my $value = $pecomp_info_hash->{$operation};
-//;# print COMPINFO "            <op sel='0x$value->{'opcode'}' name='$operation'> pe_out_result=$value->{'result'}, pe_out_result_p=$value->{'predicate'} </op> \n";
-//;  print COMPINFO "            <op sel='0x$value->{'opcode'}' name='$operation'> pe_out_result=$value->{'result'} </op> \n";
-//;# print COMPINFO "            <op sel='0x$value->{'opcode'}' name='$operation'>  </op> \n";
+//;  print COMPINFO "            <op sel='0x$value->{'opcode'}' name='$operation'>\n";
+//;  print COMPINFO "                pe_out_res=$value->{'result'}\n";
+//;  print COMPINFO "                comp_res_p=$value->{'predicate'}\n";
+//;  print COMPINFO "            </op> \n";
 //;}
 //;close COMPINFO;
 endmodule
