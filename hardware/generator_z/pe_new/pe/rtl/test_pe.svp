@@ -180,7 +180,7 @@ assign nc_op_code = op_code;
   .res        (op_a)
 );
 
-//; $pe_info_hash->{ '2_reg_a' } = {
+//; $pe_info_hash->{ '3_reg_a' } = {
 //;   address => '0xff',
 //;   out => 'a',
 //;   bitl => 16,
@@ -188,7 +188,7 @@ assign nc_op_code = op_code;
 //;   mname => $op_a_r->mname()
 //; };
 
-//; $pe_info_hash->{ '3_init_a' } = {
+//; $pe_info_hash->{ '4_init_a' } = {
 //;   address => '0xf0',
 //;   out => 'a',
 //;   bitl => 0,
@@ -255,14 +255,14 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .res        (op_b)
 );
 
-//; $pe_info_hash->{ '2_reg_b' } = {
+//; $pe_info_hash->{ '3_reg_b' } = {
 //;   address => '0xff',
 //;   out => 'b',
 //;   bitl => 18,
 //;   bith => 19,
 //;   mname => $op_b_r->mname()
 //; };
-//; $pe_info_hash->{ '3_init_b' } = {
+//; $pe_info_hash->{ '4_init_b' } = {
 //;   address => '0xf1',
 //;   out => 'b',
 //;   bitl => 0,
@@ -283,14 +283,14 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .data_in    (data2),//op_c_in),
   .res        (op_c)
 );
-//; $pe_info_hash->{ '2_reg_c' } = {
+//; $pe_info_hash->{ '3_reg_c' } = {
 //;   address => '0xff',
 //;   out => 'c',
 //;   bitl => 20,
 //;   bith => 21,
 //;   mname => $op_c_r->mname()
 //; };
-//; $pe_info_hash->{ '3_init_c' } = {
+//; $pe_info_hash->{ '4_init_c' } = {
 //;   address => '0xf2',
 //;   out => 'c',
 //;   bitl => 0,
@@ -312,14 +312,14 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .res        (op_d_p)
 );
 
-//; $pe_info_hash->{ '2_reg_d' } = {
+//; $pe_info_hash->{ '3_reg_d' } = {
 //;   address => '0xff',
 //;   out => 'd',
 //;   bitl => 24,
 //;   bith => 25,
 //;   mname => $op_d_r->mname()
 //; };
-//; $pe_info_hash->{ '3_init_d' } = {
+//; $pe_info_hash->{ '4_init_d' } = {
 //;   address => '0xf3',
 //;   out => 'd',
 //;   bitl => 0,
@@ -339,14 +339,14 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .res        (op_e_p)
 );
 
-//; $pe_info_hash->{ '2_reg_e' } = {
+//; $pe_info_hash->{ '3_reg_e' } = {
 //;   address => '0xff',
 //;   out => 'e',
 //;   bitl => 26,
 //;   bith => 27,
 //;   mname => $op_e_r->mname()
 //; };
-//; $pe_info_hash->{ '3_init_e' } = {
+//; $pe_info_hash->{ '4_init_e' } = {
 //;   address => '0xf4',
 //;   out => 'e',
 //;   bitl => 0,
@@ -366,14 +366,14 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .res        (op_f_p)
 );
 
-//; $pe_info_hash->{ '2_reg_f' } = {
+//; $pe_info_hash->{ '3_reg_f' } = {
 //;   address => '0xff',
 //;   out => 'f',
 //;   bitl => 28,
 //;   bith => 29,
 //;   mname => $op_f_r->mname()
 //; };
-//; $pe_info_hash->{ '3_init_f' } = {
+//; $pe_info_hash->{ '4_init_f' } = {
 //;   address => '0xf5',
 //;   out => 'f',
 //;   bitl => 0,
@@ -474,6 +474,13 @@ logic V;
 //;   mname => $pe_comp->mname()
 //; };
 
+//; $pe_info_hash->{ '2_predicate' } = {
+//;   address => '0xff',
+//;   bitl => $opcode_flag_sel_bitl,
+//;   bith => $opcode_flag_sel_bith
+//; };
+
+//; my $res_flag_hash;
 
 logic result_flag;
 //; if($use_lut) {
@@ -512,10 +519,75 @@ logic res_lut;
     localparam PE_FLAG_LT = 4'hB;
     localparam PE_FLAG_GT = 4'hC;
     localparam PE_FLAG_LE = 4'hD;
+//; $res_flag_hash->{'PE_FLAG_EQ'} = {
+//;    sel => "4'h0",
+//;    equ => 'Z'
+//; };
+//; $res_flag_hash->{'PE_FLAG_NE'} = {
+//;    sel => "4'h1",
+//;    equ => '~Z'
+//; };
+//; $res_flag_hash->{'PE_FLAG_CS'} = {
+//;    sel => "4'h2",
+//;    equ => 'C'
+//; };
+//; $res_flag_hash->{'PE_FLAG_CC'} = {
+//;    sel => "4'h3",
+//;    equ => '~C'
+//; };
+//; $res_flag_hash->{'PE_FLAG_MI'} = {
+//;    sel => "4'h4",
+//;    equ => 'N'
+//; };
+//; $res_flag_hash->{'PE_FLAG_PL'} = {
+//;    sel => "4'h5",
+//;    equ => '~N'
+//; };
+//; $res_flag_hash->{'PE_FLAG_VS'} = {
+//;    sel => "4'h6",
+//;    equ => 'V'
+//; };
+//; $res_flag_hash->{'PE_FLAG_VC'} = {
+//;    sel => "4'h7",
+//;    equ => '~V'
+//; };
+//; $res_flag_hash->{'PE_FLAG_HI'} = {
+//;    sel => "4'h8",
+//;    equ => 'C and ~Z'
+//; };
+//; $res_flag_hash->{'PE_FLAG_LS'} = {
+//;    sel => "4'h9",
+//;    equ => '~C or Z'
+//; };
+//; $res_flag_hash->{'PE_FLAG_GE'} = {
+//;    sel => "4'hA",
+//;    equ => 'N==V'
+//; };
+//; $res_flag_hash->{'PE_FLAG_LT'} = {
+//;    sel => "4'hB",
+//;    equ => 'N!=V'
+//; };
+//; $res_flag_hash->{'PE_FLAG_GT'} = {
+//;    sel => "4'hC",
+//;    equ => '~Z and (N==V)'
+//; };
+//; $res_flag_hash->{'PE_FLAG_LE'} = {
+//;    sel => "4'hD",
+//;    equ => 'Z or (N!=V)'
+//; };
+
 //; if($use_lut) {
     localparam PE_FLAG_LUT = 4'hE;
+//; $res_flag_hash->{'PE_FLAG_LUT'} = {
+//;    sel => "4'hE",
+//;    equ => 'lut code'
+//; };
 //; }
     localparam PE_FLAG_PE  = 4'hF;
+//; $res_flag_hash->{'PE_FLAG_PE'} = {
+//;    sel => "4'hf",
+//;    equ => 'comp_res_p'
+//; };
 
     always_comb begin
         case (flag_sel)
@@ -583,14 +655,17 @@ logic res_lut;
 
 //; 	 if($get_carry) {
   assign res_p_w = result_flag;
+//; $pe_info_hash->{'2_predicate'}{'value'} = $res_flag_hash;   
 //;	 } else {
   assign res_p_w = op_code[12] ? res_lut : result_flag;//comp_res_p;
+//; $pe_info_hash->{'2_predicate'}{'value'} = 'res_lut';
+//; #if(op_code[12]==1) {$pe_info_hash->{'2_predicate'}{'value'} = 'res_lut';}
 //;	 }
 
 
 //;} else {
-
   assign res_p_w = result_flag;//comp_res_p;
+//; $pe_info_hash->{'2_predicate'}{'value'} = 'res_lut';
 //;}
 
 //; my $res_w = 'comp_res';
@@ -685,8 +760,22 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //;    close INP;
 //;    print PEINFO "        </opcode>\n"
 //;  }
+//;################### Predicate
+//;  if ($feature=~m/2_predicate/) {
+//;    print PEINFO "        <predicate reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>\n";
+//;    if($value->{'value'} ==  'res_lut') {
+//;       print PEINFO "            res_p = res_lut\n"
+//;    }
+//;    else {
+//;       foreach my $flag (sort { $res_flag_hash->{$a}{'sel'} cmp $res_flag_hash->{$b}{'sel'} } keys(%$res_flag_hash))  {
+//;       my $flag_value = $res_flag_hash->{$flag};
+//;       print PEINFO "            <src sel='$flag_value->{'sel'}' res_p=$flag_value->{'equ'}>\n";
+//;       }
+//;    }
+//;    print PEINFO "        </predicate>\n"
+//;  }
 //;################### REGs
-//;  if ($feature=~m/2_reg/) {
+//;  if ($feature=~m/3_reg/) {
 //;    print PEINFO "        <mux reg_address='$value->{'address'}' snk='op_$value->{'out'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>\n";
 //;    my $filename = "REGMODE".$value->{'mname'};
 //;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
@@ -702,7 +791,7 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //;    close INP;
 //;    print PEINFO "        </mux>\n"
 //;  }
-//;  if ($feature=~m/3_init/) {
+//;  if ($feature=~m/4_init/) {
 //;    print PEINFO "        <reg reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>reg_$value->{'out'}</reg>\n";
 //;  }
 //;}
