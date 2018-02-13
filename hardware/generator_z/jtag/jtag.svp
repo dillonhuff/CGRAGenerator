@@ -56,7 +56,6 @@
 //;			{name => 'tms',		width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'tdi',		width => 1,  direction => 'in',  bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'tdo',		width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
-//;			{name => 'tdo_en',	width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'clk_to_gc',	width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'reset_to_gc',	width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'config_data_from_gc',	width => $sc_cfg_bus_width,  direction => 'in', bsr => 'no',  pad => 'digital', orientation => 'right'},
@@ -142,8 +141,9 @@ module `$self->get_module_name()`
    //;                                                 set_rw_count => 4, burst_start => 5, read_data => 6, bypass => 7} 
    //;					);#Should this really be bypass??
    //;
-			
-   logic bsr_tdi, bsr_sample, bsr_extest, bsr_intest, bsr_update_en, bsr_shift_dr, bsr_capture_en, bsr_tdo;
+   
+   //These signals aren't used. Only included to avoid warnings.			
+   logic bsr_tdi, bsr_sample, bsr_extest, bsr_intest, bsr_update_en, bsr_shift_dr, bsr_capture_en, bsr_tdo, tdo_en;
    // Instantiate the JTAG to reg-files controller
    `$cfg_dbg->get_module_name()` `$cfg_dbg->get_instance_name()`
      (
@@ -153,7 +153,7 @@ module `$self->get_module_name()`
       .trst_n(ifc.trst_n),
       .tdi(ifc.tdi),
       .tdo(ifc.tdo),
-      .tdo_en(ifc.tdo_en), 
+      .tdo_en(tdo_en), 
       
       // Boundary Scan Signals (not used in this design. Only connected to supress warnings)
       .bsr_tdi(bsr_tdi),
