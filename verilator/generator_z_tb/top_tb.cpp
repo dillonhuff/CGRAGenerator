@@ -393,8 +393,8 @@ int main(int argc, char **argv, char **env) {
                 (top->pad_S0_T15 <<  0) |
                 0;
 
-            printf("OUT pad00=%d ", top->pad_S0_T0);
-            printf("pad30=%d\n", top->pad_S3_T0);
+            //printf("OUT pad00=%d ", top->pad_S0_T0);
+            //printf("pad30=%d\n", top->pad_S3_T0);
 
             // if (! printed_something) { printf("\n"); }
         } // for (clk)

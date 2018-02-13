@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+unset IO_HACK
+
 set VERBOSE
 
 # Build a tmp space for intermediate files
@@ -337,8 +339,6 @@ set config_io = $tmpdir/${croot}io
 
 # Are you kidding me
 set path = ($path .)
-# which run-injectio.csh
-# ls -l run-injectio.csh
 
 # Use decoder to produce an annotated bitstream WITH I/O COMMENTS
 echo "run.csh: run-injectio.csh $config -o $config_io"
@@ -531,7 +531,7 @@ echo "run.csh: Build the simulator..."
   echo
   echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
   echo "make $vtop -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
-  /bin/rm obj_dir/Vtop
+  if (-e obj_dir/Vtop) /bin/rm obj_dir/Vtop
 
   make \
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
