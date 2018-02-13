@@ -1,7 +1,5 @@
 #!/bin/csh -f
 
-unset IO_HACK
-
 set VERBOSE
 
 # Build a tmp space for intermediate files
@@ -340,25 +338,8 @@ set config_io = $tmpdir/${croot}io
 # Are you kidding me
 set path = ($path .)
 
-if ($?IO_HACK) then
-  # Use decoder to produce an annotated bitstream WITH I/O COMMENTS
-  echo "run.csh: run-injectio.csh $config -o $config_io"
-  run-injectio.csh $VSWITCH $config -o $config_io || exit 13
-
-  # Find IO wires.  This is what we're looking for:
-  #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
-  #     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
-  #     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
-
-  set inwires =  `egrep '^# INPUT  tile' $config_io | awk '{print $NF}'`
-  set outwires = `egrep '^# OUTPUT tile' $config_io | awk '{print $NF}'`
-else
-  echo "run.csh: SKIP run-injectio.csh hack b/c IO_HACK not set"
-  cp $config $config_io
-endif
-
 # Clean up config file for verilator use
-grep -v '#' $config_io | grep . > $tmpdir/tmpconfig
+grep -v '#' $config | grep . > $tmpdir/tmpconfig
 set config = $tmpdir/tmpconfig
 
 if ($?VERBOSE) then
@@ -368,23 +349,6 @@ if ($?VERBOSE) then
   tail $config
 endif
 
-if ($?IO_HACK) then
-  if ($?VERBOSE) then
-    echo ""
-    echo '------------------------------------------------------------------------'
-    echo "BEGIN find input and output wires"
-    echo ""
-    echo "  USING I/O WIRE NAMES DERIVED FROM BITSTREAM"
-    echo ""
-    echo "  inwires  = $inwires"
-    echo "  outwires = $outwires"
-    echo
-    echo "END find input and output wires"
-    echo ""
-    echo '------------------------------------------------------------------------'
-  endif
-endif
-
 set vdir = ../../hardware/generator_z/top/genesis_verif
 if (! -e $vdir) then
   echo "ERROR: Could not find vfile directory"
@@ -392,30 +356,6 @@ if (! -e $vdir) then
   echo "Maybe build it by doing something like:"
   echo "    (cd $vdir:h; ./run.csh; popd) |& tee tmp.log"
   exit -1
-endif
-
-if ($?IO_HACK) then
-  ##################################################################################
-  # echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
-
-    # E.g. bname = 'pointwise/gray_small'
-    set iname = $input:t; set iname = $iname:r
-    set bname = $config:t; set bname = "$bname:r/$iname:r"
-
-    echo ''
-    echo BENCHMARK $bname
-    echo "run.csh: Inserting IO wirenames into verilog top module '$vdir/top.v'..."
-    echo "inwire '$inwires', outwire '$outwires'"
-
-    ./run-wirehack.csh \
-        -inwires "$inwires" \
-        -outwires "$outwires" \
-        -vtop "$vdir/top.v" > $tmpdir/wirehack.log
-
-    if ($?VERBOSE) cat $tmpdir/wirehack.log
-
-  # echo END top.v manipulation
-  ##################################################################################
 endif
 
 echo ''
@@ -529,32 +469,23 @@ echo "run.csh: Build the simulator..."
   echo
   echo "run.csh: Build the testbench..."
 
-if ($?IO_HACK) then
-  set iohack = "-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
-else
-  set iohack = ""
-endif
-
   if ($?VERBOSE) then
     echo
     echo "make \"
-    echo "  VM_USER_CFLAGS='$iohack' \"
     echo "  -j -C obj_dir/ -f $vtop.mk $vtop"
   endif
 
   echo
-  echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
-  echo "make $vtop $iohack"
   if (-e obj_dir/Vtop) /bin/rm obj_dir/Vtop
 
+  echo "make $vtop -j -C obj_dir/ -f $vtop.mk $vtop"
   make \
-    VM_USER_CFLAGS="$iohack" \
     -j -C obj_dir/ -f $vtop.mk $vtop \
     >& $tmpdir/make_vtop.log \
     || set ERROR
 
   if ($?ERROR) then
-    cat $tmpdir/make_vtop.log; exit -1
+    cat $tmpdir/make_vtop.log; exit 13
   endif
 
   if ($?VERBOSE) then
