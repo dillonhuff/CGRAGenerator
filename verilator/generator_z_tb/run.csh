@@ -64,10 +64,9 @@ echo "run.csh: I think we are in branch '$branch'"
 # set config   = ../../bitstream/examples/940/pw.bs
 # if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2_io.bs
 # if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2_io.bs
-set config   = ../../bitstream/examples/pwv2_io.bs
 
-# Try a thing
-set config   = ../../bitstream/examples/pwv2_nb2.bsa
+# set config   = ../../bitstream/examples/pwv2_io.bs
+# set config   = ../../bitstream/examples/pwv2_nb2.bsa
 set config   = ../../bitstream/examples/pw2_sixteen.bsa
 
 
@@ -80,8 +79,11 @@ set DELAY = '0,0'
 # echo .${config}.
 # echo $DELAY
 
+# gray_small (100K cycles) still too big for 16x16
+# set input     = io/gray_small.png
+set input     = io/conv_bw_in.png
+set input     = io/input_10x10_1to100.png
 
-set input     = io/gray_small.png
 set output    = $tmpdir/output.raw
 set nclocks   = "1M"
 unset tracefile
