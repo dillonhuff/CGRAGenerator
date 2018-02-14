@@ -50,6 +50,10 @@ test_basic:
 
 test_unit:
 	./unit_tests/utest
+# 	./unit_tests/utest.py lbuf09 lbuf10 add mul
+#       tmpdir=`mktemp -d /tmp/utest-XXX`; cd $tmpdir;
+
+
 
 test_all:
 	make hackdiff_test 2>&1 | tee $(TEMPDIR)/hackdiff_test.log

@@ -561,7 +561,7 @@ Examples:
             OPTIONS['tests'].append(args[0]);
         args = args[1:]
 
-    if len(OPTIONS['tests']) == 0:
+    if (len(OPTIONS['tests']) == 0) or (OPTIONS['tests'] == ['all']):
         OPTIONS['tests'] = LBUF_LIST + BINARY_OPS
         # FIXME FIXME FIXME
         print "WARNING utest.py skipping 'abs' test b/c verilog broken maybe\n"

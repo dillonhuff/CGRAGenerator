@@ -22,6 +22,7 @@ script:
   #
   # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
   - cd testdir; make test_basic
+  - cd testdir; make test_unit
   # - cd testdir; make SILENT=TRUE test_all
   
 
