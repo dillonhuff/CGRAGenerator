@@ -527,6 +527,7 @@ Where:
    --nogen        do not regenerate CGRA verilog
    --nobuild      do not regenerate bsb/bsa files
    --trace        build a trace file "utest.vcd" in verilator directory
+   -v             VERBOSE output
 
 Examples:
    %s <testname> --repeat 1000 --vectype rand --nvecs 10

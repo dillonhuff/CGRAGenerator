@@ -16,6 +16,13 @@
 #define CLOSETRACE
 #endif
 
+void write_output(
+                  FILE *output_file,
+                  unsigned int pads_in,
+                  unsigned int pads_out,
+                  char *what_i_did,
+                  int print_result);
+
 int main(int argc, char **argv, char **env) {
     char *config_filename = NULL;
     char  *input_filename = NULL;
@@ -323,7 +330,7 @@ int main(int argc, char **argv, char **env) {
                     } // (input_filename == NULL) {} else {
                     else {
                         if (final_delay_so_far == 0) { printf("\n"); }
-                        printf("One more (349): delay_out=%d, final_delay_so_far=%d",
+                        printf("One more (333): delay_out=%d, final_delay_so_far=%d",
                                delay_out, final_delay_so_far);
                         pads_in = 0;
                         // final_delay_so_far++; // This happnes later, see below.
@@ -422,33 +429,16 @@ int main(int argc, char **argv, char **env) {
             }
             else sprintf(what_i_did, "...");
 
+            //printf("initial_delay_so_far=%d; delay_in=%d\n", initial_delay_so_far, delay_in);
             // Output to output file if specified.
             if (initial_delay_so_far == delay_in) {
-                // write_output(output_file, what_i_did, pads_in, print_result)
-                if (output_file != NULL) {
-                    // print_result = (delay_in > 0) && (i < 40)
-
-                    // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
-                    // char c = (char)(OUTWIRE & 0xff);
-
-                    // printf("\nemit %d to output file\n", c);
-                    fputc(pads_out & 0xff, output_file);
-                    if ((delay_in > 0) && (i < 40)) {
-                        sprintf(what_i_did, "Input %d => result %d => OUT", 
-                                pads_in,
-                                pads_out
-                                );
-                    }
-                } // output_file != NULL
-                else {
-                    initial_delay_so_far++;
-                }
+                int print_result = (delay_in > 0) && (i < 40);
+                write_output(output_file, pads_in, pads_out, what_i_did, print_result);
+            } else {
+                initial_delay_so_far++;
             }
         }
-        if (nprints==1) {
-            printf("\n");
-        }
-
+        if (nprints==1) { printf("\n"); }
 
         if (i <= 60) {
             // printf("cy.clk %05d.%d: ", i, top->clk);
@@ -460,7 +450,7 @@ int main(int argc, char **argv, char **env) {
         if (input_filename != NULL) {
             if (feof(input_file)) {
                 if (final_delay_so_far == delay_out) {
-                    printf("\n\nINFO Simulation ran for %d cycles (446)\n\n", i);
+                    printf("\n\nINFO Simulation ran for %d cycles (453)\n\n", i);
                     // fclose(input_file);
                     // if (output_file) { fclose(output_file); }
                     if (input_file)       { fclose(input_file ); }
@@ -469,10 +459,10 @@ int main(int argc, char **argv, char **env) {
                     CLOSETRACE
                     exit(0);
                 }
-                else {
-                    printf("One more (446): delay_out=%d, final_delay_so_far=%d\n", delay_out, final_delay_so_far);
-                        final_delay_so_far++;
-                }
+                //else {
+                //    printf("One more (446): delay_out=%d, final_delay_so_far=%d\n", delay_out, final_delay_so_far);
+                //        final_delay_so_far++;
+                //}
             }
         }
     } // for (i)
@@ -487,3 +477,31 @@ int main(int argc, char **argv, char **env) {
     }
     CLOSETRACE
 } // main()
+
+void write_output(
+                  FILE *output_file,
+                  unsigned int pads_in,
+                  unsigned int pads_out,
+                  char *what_i_did,
+                  int print_result)
+{
+    if (output_file != NULL) {
+        // print_result = (delay_in > 0) && (i < 40)
+        
+        // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
+        // char c = (char)(OUTWIRE & 0xff);
+        
+        // printf("\nemit %d to output file\n", pads_out & 0xff);
+        fputc(pads_out, output_file);
+        if (print_result) {
+            sprintf(what_i_did, "Input %d => result %d => OUT", 
+                    pads_in,
+                    pads_out
+                    );
+        }
+    } // output_file != NULL
+}
+
+
+
+
