@@ -288,8 +288,19 @@ def main ():
     # plus input and output files 'lbuf10_{input,output}.raw'
 
     if VERBOSE: print "gen_bsb_files.py:"
-    for testname in OP_LIST:   build_optest(testname)
-    for testname in LBUF_LIST: build_lbuftest(testname)
+
+
+    tests = sys.argv[1:] # [0] is the command name
+    if len(tests) == 0:      tests = OP_LIST+LBUF_LIST
+    elif tests[0] == 'all':  tests = OP_LIST+LBUF_LIST
+    elif tests[0] == '-all': tests = OP_LIST+LBUF_LIST
+
+    # for testname in OP_LIST:   build_optest(testname)
+    # for testname in LBUF_LIST: build_lbuftest(testname)
+
+    for testname in tests:
+        if testname in OP_LIST:   build_optest(testname)
+        if testname in LBUF_LIST: build_lbuftest(testname)
 
 def build_optest(testname):
     bsb = re.sub('OPNAME','%s' % testname, OP_TEMPLATE)

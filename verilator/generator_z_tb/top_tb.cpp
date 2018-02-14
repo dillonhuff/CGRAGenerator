@@ -330,7 +330,7 @@ int main(int argc, char **argv, char **env) {
                     } // (input_filename == NULL) {} else {
                     else {
                         if (final_delay_so_far == 0) { printf("\n"); }
-                        printf("One more (333): delay_out=%d, final_delay_so_far=%d",
+                        printf("One more (333): delay_out=%d, final_delay_so_far=%d; ",
                                delay_out, final_delay_so_far);
                         pads_in = 0;
                         // final_delay_so_far++; // This happens later, see below.
