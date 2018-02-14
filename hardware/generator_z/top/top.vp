@@ -11,6 +11,7 @@
 //; # Specify the CGRA grid size as 8x8,16x16, or 64x64. You can generate additional sizes by modifying
 //; # the IO_count and basic_block_repeat_* variables below.
 //; # my $grid_size = "8x8";
+//; # my $grid_size = "64x64";
 //; my $grid_size = "16x16";
 //; #
 //; # for IOs
@@ -455,11 +456,11 @@ wire reset;
 //;     if ($tile_type=~m/io/) {
 //;       $io_side = $tile_grid{"${key}_side"};
 //;       $io_count = $tile_grid{"${key}_count"};
-//;       if ($io_side==0) {$io_gcount = $io_count + $IO_count[0] + $IO_count[1] + $IO_count[3];}
-//;       if ($io_side==2) {$io_gcount = $io_count + $IO_count[3];}
-//;       if ($io_side==3) {$io_gcount = $io_count + $IO_count[3] + $IO_count[0];}
-//;       if ($io_side==1) {$io_gcount = $io_count + 0;}
-//;       $io_group = int($io_gcount/16);
+//;       if ($io_side==0) {$io_count = $io_count + $IO_count[0] + $IO_count[1] + $IO_count[3];}
+//;       if ($io_side==2) {$io_count = $io_count + $IO_count[3];}
+//;       if ($io_side==3) {$io_count = $io_count + $IO_count[3] + $IO_count[0];}
+//;       if ($io_side==1) {$io_count = $io_count + 0;}
+//;       $io_group = int($io_count/16);
 //;     }
 //;     my $options = "";
 //;     my $tile_addr_hex = sprintf("%X", $tile_addr);
