@@ -333,7 +333,7 @@ int main(int argc, char **argv, char **env) {
                         printf("One more (333): delay_out=%d, final_delay_so_far=%d",
                                delay_out, final_delay_so_far);
                         pads_in = 0;
-                        // final_delay_so_far++; // This happnes later, see below.
+                        // final_delay_so_far++; // This happens later, see below.
                     }
                 }
 
@@ -459,10 +459,10 @@ int main(int argc, char **argv, char **env) {
                     CLOSETRACE
                     exit(0);
                 }
-                //else {
-                //    printf("One more (446): delay_out=%d, final_delay_so_far=%d\n", delay_out, final_delay_so_far);
-                //        final_delay_so_far++;
-                //}
+                else {
+                    //    printf("One more (446): delay_out=%d, final_delay_so_far=%d\n", delay_out, final_delay_so_far);
+                    final_delay_so_far++;
+                }
             }
         }
     } // for (i)
