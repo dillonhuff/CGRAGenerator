@@ -97,8 +97,8 @@ def main():
     if OPTIONS['nobuild']:
         print "Skipping bsb/bsa file generation b/c '--nobuild'"
     else:
-        # Build all bsb and bsa files
-        my_syscall(mydir+'/gen_bsb_files.py')
+        # Build only requested bsb and bsa files
+        my_syscall(mydir+'/gen_bsb_files.py ' + ' '.join(OPTIONS['tests']))
 
         print ""
         sys.stdout.flush()
@@ -137,20 +137,7 @@ def do_one_round():
     gen_input_file()
     print ""
 
-    t = OPTIONS['tests']
-    # if t == 'all': tests = ['add','mul','lbuf09', 'lbuf10']
-    if t == 'all':
-        tests = LBUF_LIST + BINARY_OPS
-        # FIXME FIXME FIXME
-        print "WARNING utest.py skipping 'abs' test b/c verilog broken maybe\n"
-        tests.remove('abs')
-
-    # Do the broken one FIRST
-    # if t == 'all': tests = ['lbuf09', 'lbuf10', 'add', 'abs', 'eq','lte','gte'] + tests
-
-    else: tests = t.split(",")
-
-    for test in tests:
+    for test in OPTIONS['tests']:
         do_one_test(test)
         print ""
 
@@ -544,7 +531,7 @@ Examples:
 
     global OPTIONS
     OPTIONS = {}
-    OPTIONS['tests']   = 'all'
+    OPTIONS['tests']   = []
     OPTIONS['repeat']  = 1
     OPTIONS['vectype'] = 'random'
     OPTIONS['nvecs']   = 10
@@ -571,8 +558,14 @@ Examples:
         elif (args[0] == '--nogen'):   OPTIONS['nogen'] = True
         elif (args[0] == '--trace'):   OPTIONS['trace'] = True
         else:
-            OPTIONS['tests'] = args[0];
+            OPTIONS['tests'].append(args[0]);
         args = args[1:]
+
+    if len(OPTIONS['tests']) == 0:
+        OPTIONS['tests'] = LBUF_LIST + BINARY_OPS
+        # FIXME FIXME FIXME
+        print "WARNING utest.py skipping 'abs' test b/c verilog broken maybe\n"
+        OPTIONS['tests'].remove('abs')
 
     if VERBOSE: print OPTIONS
 
