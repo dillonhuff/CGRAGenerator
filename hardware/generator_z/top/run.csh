@@ -62,8 +62,13 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../global_signal_tile/global_signal_tile.vp \
   \
   ../memory_tile/memory_tile.vp \
-  ../memory_core/memory_core.vp \
+  ../memory_core/input_sr.vp \
+  ../memory_core/output_sr.vp \
+  ../memory_core/linebuffer_control.vp \
+  ../memory_core/fifo_control.vp \
   ../memory_core/mem.vp \
+  ../memory_core/memory_core.vp \
+  \
   ../global_controller/global_controller.vp \
   \
   ../jtag/jtag.svp \

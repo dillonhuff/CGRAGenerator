@@ -9,110 +9,104 @@
 
 
 //; my $dwidth   = parameter(Name=>'dwidth', val=> 16, doc=>'word width');
-//; my $ddepth   = parameter(Name=>'ddepth', val=> 512, doc=>'number of words in the memory');
+//; my $ddepth   = parameter(Name=>'ddepth', val=> 1024, doc=>'number of words in the memory');
 
-//; my $READ      = "1'b0";
-//; my $WRITE     = "1'b1";
-//; my $MODE_LB = "config_mem[1:0]==2'd0";
-//; my $MODE_FIFO = "config_mem[1:0]==2'd1";
-//; my $MODE_RAM  = "config_mem[1:0]==2'd2";
-//; my $TILE_EN   = "config_mem[2]==1'b1";
-//; my $FIFO_DEPTH = "config_mem[15:3]";
-//;# NB: Programmable almost full, up to 8 clock cycles
-//; my $ALMOST_FULL = "config_mem[18:16]";
-//; my $ENABLE_CHAIN = "config_mem[19]==1'b1";
+//; my $awidth = int(ceil(log($ddepth)/log(2)));
+
 module `mname`(
 clk,
+reset,
 config_addr,
 config_data,
 config_en,
-xdata_in,
+data_in,
 data_out,
+wen_in,
+ren_in,
+valid_out,
 chain_in,
 chain_out,
-addr,
-addr_w,
-xwen,
 chain_wen_in,
-ren,
-valid,
 chain_valid_out,
 almost_full,
-reset
+almost_empty,
+addr_in
 );
 
 input clk;
+input reset;
+input config_en;
+input wen_in;
+input ren_in;
+input chain_wen_in;
 input [31:0] config_addr;
 input [31:0] config_data;
-input config_en;
-input [`$dwidth - 1`:0] xdata_in;
-input [`$dwidth - 1`:0] addr;
-input [`$dwidth - 1`:0] addr_w;
-output reg [`$dwidth - 1`:0] data_out;
+input [`$dwidth - 1`:0] data_in;
 input [`$dwidth - 1`:0] chain_in;
-output [`$dwidth - 1`:0] chain_out;
-input xwen;
-input chain_wen_in;
-output chain_valid_out;
-input ren;
-output reg valid;
-output reg almost_full;
-input reset;
+input [`$dwidth - 1`:0] addr_in;
 
-reg int_valid;
-reg int_valid_d1;
+output chain_valid_out;
+output [`$dwidth - 1`:0] chain_out;
+output reg valid_out;
+output reg almost_full;
+output reg almost_empty;
+output reg [`$dwidth - 1`:0] data_out;
+
+wire  [2:0] mode;
+wire  [2:0] tile_en;
+wire [13:0] depth;
+wire  [3:0] almost_count;
+wire        enable_chain;
+
 wire gclk;
-wire [`$dwidth - 1`:0] data_in;
-reg phase;
-reg [31:0] config_mem;
-reg [`$dwidth - 1`:0] mem_data_in0;
-reg [`$dwidth - 1`:0] mem_data_in1;
+wire wen_in_int;
+wire mem_cen0;
+wire mem_cen1;
+
+wire lb_valid_out;
+wire fifo_valid_out;
+wire lb_almost_full;
+wire fifo_almost_full;
+wire lb_almost_empty;
+wire fifo_almost_empty;
+wire lb_wen;
+wire lb_ren;
+wire fifo_wen;
+wire fifo_ren;
+
+wire [`$dwidth - 1`:0] data_in_int;
 wire [`$dwidth - 1`:0] mem_data_out0;
 wire [`$dwidth - 1`:0] mem_data_out1;
-reg [`$dwidth - 1`:0] fifo_wr_addr;
-reg [`$dwidth - 1`:0] fifo_rd_addr;
-reg [`$dwidth - 1`:0] fifo_count;
-reg [`$dwidth - 1`:0] lb_ren_count;
 
-wire wen;
-wire int_ren;
-reg  int_ren_sync_to_read_phase;
-reg  [`$dwidth - 1`:0] int_ren_sync_to_read_phase_count;
-reg  int_ren_d1;
-wire int_wen;
-wire int_cen;
-reg  lb_ren;
-reg [1:0] lb_ren_state;
-reg [1:0] out_count;
-wire [12:0] fifo_depth;
-wire [12:0] fifo_depthm1;
-wire [12:0] fifo_depthm4;
-reg WENHACK;
+wire [`$dwidth - 1`:0] lb_addr;
+wire [`$dwidth - 1`:0] fifo_addr;
+wire [`$dwidth*2 - 1`:0] lb_mem_data_out;
+wire [`$dwidth*2 - 1`:0] fifo_mem_data_out;
+wire [`$dwidth - 1`:0] lb_out;
+wire [`$dwidth - 1`:0] fifo_out;
 
-
+reg [`$dwidth - 1`:0] mem_data_in0;
+reg [`$dwidth - 1`:0] mem_data_in1;
+reg [31:0] config_mem;
 reg [`$dwidth - 1`:0] mem_addr;
-reg [`$dwidth - 1`:0] addr_d1;
-reg [`$dwidth*3 - 1`:0] in_sr;
-reg [1:0] input_count;
-reg [`$dwidth*2 - 1`:0] out_sr;
-reg [`$dwidth - 1`:0] data_out_d1;
-reg out_delay;
-reg mv_to_ram;
-reg mv_to_out;
+reg mem_ren0;
+reg mem_wen0;
+reg mem_ren1;
+reg mem_wen1;
+reg sram_sel;
 
-assign gclk = clk & (`$TILE_EN`);
-assign data_in = (`$ENABLE_CHAIN`)?chain_in:xdata_in;
+assign mode = config_mem[1:0];
+assign tile_en = config_mem[2];
+assign depth = config_mem[15:3];
+assign almost_count = config_mem[19:16];
+assign enable_chain = config_mem[19];
 
-//;# NB: Up to 8K memory supported per tile
-assign fifo_depth = config_mem[15:3];
-assign fifo_depthm1 = fifo_depth - `$dwidth`'d1;
-assign fifo_depthm4 = fifo_depth - `$dwidth`'d4;
-// At the last minute, run.csh can modify line below
-// to read "asssign  wen = WENHACK" instead
-assign wen = (`$ENABLE_CHAIN`)?chain_wen_in:xwen;
+assign gclk = clk & (tile_en==1'b1);
 
+assign data_in_int = (enable_chain==1'b1)?chain_in:data_in;
+assign wen_in_int = (enable_chain==1'b1)?chain_wen_in:wen_in;
 assign chain_out = data_out;
-assign chain_valid_out = valid;
+assign chain_valid_out = valid_out;
 
 always @(posedge clk or posedge reset) begin
   if (reset==1'b1) begin
@@ -128,278 +122,121 @@ always @(posedge clk or posedge reset) begin
   end
 end
 
-always @(posedge clk or posedge reset) begin
-  if (reset==1'b1) begin
-    phase <= 1'b0;
-  end else begin
-    phase <= ~phase;
-  end
-end
-
-assign int_wen = (`$MODE_FIFO`||`$MODE_LB`)?mv_to_ram:wen;
-assign int_ren = (`$MODE_LB`)?lb_ren:ren;
-assign int_cen = int_wen | int_ren;
-
-wire [`$dwidth - 1`:0] fifo_d;
-assign fifo_d = (fifo_depth>>1);
-
-always @(posedge clk or posedge reset) begin
-  if (reset==1'b1) begin
-    fifo_wr_addr <= 0;
-    fifo_rd_addr <= 0;
-    fifo_count <= 0;
-  end else begin
-    if (`$MODE_FIFO`||`$MODE_LB`) begin
-      if (int_wen==1'b1 && phase==`$WRITE`) begin
-        if (fifo_count < fifo_d) begin
-          fifo_count <= fifo_count + 1;
-          if (fifo_wr_addr < (fifo_d  - `$dwidth`'d1)) begin
-            fifo_wr_addr <= fifo_wr_addr + 1;
-          end else begin
-            fifo_wr_addr <= 0;
-          end
-        end
-      end else if (int_ren==1'b1 && phase==`$READ`) begin
-        if (fifo_count>0) begin 
-          fifo_count <= fifo_count - 1;
-          if (fifo_rd_addr < (fifo_d  - `$dwidth`'d1)) begin
-            fifo_rd_addr <= fifo_rd_addr + 1;
-          end else begin
-            fifo_rd_addr <= 0;
-          end
-        end
-      end
-    end 
-  end
-end
 
 always @(*) begin
-  if (`$MODE_RAM`) begin
-    mem_addr <= addr;
-  end else begin
-    mem_addr <= (phase==`$READ`)?fifo_rd_addr:fifo_wr_addr;
-  end
-end
-
-`$backtick`define MV_TO_RAM (phase==`$READ` && (input_count > 2'd1 || (input_count==2'd1 && wen)))
-`$backtick`define MV_TO_OUT (int_ren && fifo_count==0 && input_count > 2'd0)
-`$backtick`define MV (`$backtick`MV_TO_RAM || `$backtick`MV_TO_OUT)
-
-always @(posedge clk or posedge reset) begin
-  if (reset==1'b1) begin
-    input_count <= 2'd0;
-  end else begin
-    if (wen==1'b1 && ~(mv_to_ram|mv_to_out)) begin
-      //$display ("case 1 (does this work?)");
-      in_sr <= {in_sr[`$dwidth*2 - 1`:0],data_in};
-      `$backtick`xassert(input_count==2'd3, "error: input_count increasing beyond 3")
-      input_count <= input_count + 2'd1;
-    end else if (wen==1'b1 && (mv_to_ram|mv_to_out)) begin
-      //$display ("case 2 (does this work?)");
-      in_sr[`$dwidth*2 - 1`:0] <= {in_sr[`$dwidth - 1`:0],data_in};
-      `$backtick`xassert(input_count==2'd0, "error: input_count decreasing beyond 0. case 1.")
-      input_count <= input_count - 2'd1;
-    end else if (wen==1'b0 && (mv_to_ram)) begin
-      //$display ("case 3 (does this work?)");
-      `$backtick`xassert(input_count<2'd2, "error: input_count decreasing beyond 0. case 2.")    
-      input_count <= input_count - 2'd2;
-    end else if (wen==1'b0 && (mv_to_out)) begin
-      //$display ("case 4 (does this work?)");
-      input_count <= 0;
-    //end else begin
-      //$display("Wait, what?");
-      //$display("The value of wen is: %b", wen) ;
-      //$display("The value of mv_to_ram is: %b", mv_to_ram) ;
-      //$display("The value of mv_to_out is: %b", mv_to_out) ;
-      //$display("mv_to_ram|mv_to_out is: %b", mv_to_ram|mv_to_out) ;
-      //$display("~(mv_to_ram|mv_to_out) is: %b", ~(mv_to_ram|mv_to_out)) ;
+  case (mode)
+    2'd0: begin
+      mem_wen0 <= lb_wen;
+      mem_ren0 <= lb_ren;
+      mem_wen1 <= lb_wen;
+      mem_ren1 <= lb_ren;
+      mem_addr <= lb_addr;
+      {mem_data_in1,mem_data_in0} <= lb_mem_data_out;
+      data_out <= lb_out; 
+      valid_out <= lb_valid_out;
+      almost_full <= lb_almost_full;
+      almost_empty <= lb_almost_empty;
     end
-  end
-end
-
-always @(posedge clk or posedge reset) begin
-  if (reset==1'b1) begin
-    mv_to_ram <= 1'b0;
-  end else begin
-    if `$backtick`MV_TO_RAM begin
-      mv_to_ram <= 1'b1;
-    end else begin
-      mv_to_ram <= 1'b0;
+    2'd1: begin
+      mem_wen0 <= fifo_wen;
+      mem_ren0 <= fifo_ren;
+      mem_wen1 <= fifo_wen;
+      mem_ren1 <= fifo_ren;
+      mem_addr <= fifo_addr;
+      {mem_data_in1,mem_data_in0} <= fifo_mem_data_out;
+      data_out <= fifo_out;
+      valid_out <= fifo_valid_out;
+      almost_full <= fifo_almost_full;
+      almost_empty <= fifo_almost_empty;
     end
-  end
-end
-
-always @(posedge clk or posedge reset) begin
-  if (reset==1'b1) begin
-    mv_to_out <= 1'b0;
-  end else begin
-    if `$backtick`MV_TO_OUT begin
-      mv_to_out <= 1'b1;
-    end else begin
-      mv_to_out <= 1'b0;
+    2'd2: begin
+      mem_wen0 <= ~addr_in[`$awidth - 1`];
+      mem_ren0 <= 1'b1;
+      mem_wen1 <= addr_in[`$awidth - 1`];
+      mem_ren1 <= 1'b1;
+      mem_addr <= addr_in;      
+      mem_data_in0 <= data_in;
+      mem_data_in1 <= data_in;
+      data_out <= (sram_sel==1'b1)?mem_data_in1:mem_data_in0;
+      valid_out <= 1'b1;  
+      almost_full <= 1'b0; 
+      almost_empty <= 1'b0; 
     end
-  end
-end
-
-always @(posedge clk or posedge reset) begin
-  if (((fifo_count<<1)+input_count) >= (fifo_depth - `$ALMOST_FULL`)) begin
-    almost_full <= 1'b1;
-  end else begin
-    almost_full <= 1'b0;
-  end
-end
-
-`$backtick`define MV_RAM_TO_OUTPUT (int_ren_sync_to_read_phase && phase && ~mv_to_out)
-`$backtick`define MV_INPUT_TO_OUTPUT (int_ren_sync_to_read_phase && phase && mv_to_out)
-
-wire mv_ram_to_output = `$backtick`MV_RAM_TO_OUTPUT;
-wire mv_input_to_output = `$backtick`MV_INPUT_TO_OUTPUT;
-
-always @(posedge clk or posedge reset) begin
-  int_valid <= int_ren_sync_to_read_phase || (~int_ren_sync_to_read_phase && int_ren==1'b1 && phase==`$READ` && (out_count >0));
-  int_valid_d1 <= int_valid;
-  //((out_count>0) || `$backtick`MV_RAM_TO_OUTPUT || `$backtick`MV_INPUT_TO_OUTPUT);
-end
-
-always @(*) begin
-  valid <= (out_delay==1'b1)?int_valid_d1:int_valid;
-end
-
-always @(posedge clk or posedge reset) begin
-   if (reset==1'b1) begin
-     WENHACK = 1'b0;
-   end else if (data_in != 16'b0) begin
-     WENHACK = 1'b1;
-   end
-end
-
-always @(posedge clk or posedge reset) begin
-   if (reset==1'b1) begin
-     lb_ren_state <= 2'd0;
-     lb_ren_count <= 2'd0;
-   end else begin
-     if ((((fifo_count<<1)+input_count)>=(fifo_depthm4)) && lb_ren_state==2'd0 ) begin
-       lb_ren_state <= 2'd1;
-       lb_ren_count <= out_count;
-     //NB: Disabling LB items count check when restarting row output. Since we hide latency by early reading of fifo,
-     //  : sufficient data does not get accumulated for the next line to start (for the continuous streaming case).
-     end else if ((lb_ren_count>=(fifo_depthm1)) && lb_ren_state==2'd1 && ((((fifo_count<<1)+input_count)>=fifo_depth)|1'b1)) begin
-       lb_ren_count <= out_count;     
-     end else if ((lb_ren_count>=(fifo_depthm1)) && lb_ren_state==2'd1 && ((((fifo_count<<1)+input_count)<fifo_depth)|1'b1)) begin
-       lb_ren_state <= 2'd0;
-     end else if (lb_ren_state==2'd1) begin
-       lb_ren_count <= lb_ren_count + `$dwidth`'d1;
-     end
-   end
-end
-
-always @(*) begin
-  lb_ren <= (lb_ren_state==2'd1);
-end
-
-always @(posedge clk or posedge reset) begin
-  if (reset==1'b1) begin
-    int_ren_sync_to_read_phase <= 1'b0;
-    int_ren_sync_to_read_phase_count <= `$dwidth`'d0;
-  end else if ((int_ren_sync_to_read_phase == 1'b1) && (int_ren_sync_to_read_phase_count >= fifo_depthm1)) begin
-    int_ren_sync_to_read_phase <= int_ren;
-    int_ren_sync_to_read_phase_count <= out_count; 
-  end else if ((int_ren_sync_to_read_phase == 1'b0) && phase == `$READ`) begin 
-    int_ren_sync_to_read_phase <= int_ren;
-    int_ren_sync_to_read_phase_count <= out_count;    
-  end else if (int_ren_sync_to_read_phase == 1'b1) begin
-    int_ren_sync_to_read_phase_count <= int_ren_sync_to_read_phase_count + `$dwidth`'d1;        
-  end
-end
-
-always @(posedge clk or posedge reset) begin
-  int_ren_d1 <= int_ren;
-end
-
-always @(posedge clk or posedge reset) begin
-  if (reset==1'b1) begin
-    out_delay <= 1'b0;
-  end else begin
-    if (int_ren_d1==1'b0 && int_ren==1'b1 && phase == `$READ`) begin
-      out_delay <= 1'b1;
-    end else if (int_ren_d1==1'b0 && int_ren==1'b1 && phase == `$WRITE`) begin
-      out_delay <= 1'b0;
+    default: begin
+      mem_wen0 <= 1'b0; 
+      mem_ren0 <= 1'b0;
+      mem_wen1 <= 1'b0; 
+      mem_ren1 <= 1'b1;
+      mem_addr <= `$dwidth`'d0;      
+      mem_data_in0 <= `$dwidth`'d0;
+      mem_data_in1 <= `$dwidth`'d0;
+      data_out <= `$dwidth`'d0;
+      valid_out <= 1'b0;
+      almost_full <= 1'b0;
+      almost_empty <= 1'b0;
     end
-  end
+  endcase
 end
 
-always @(*) begin
-  if (`$MODE_FIFO`||`$MODE_LB`) begin
-    if (input_count==2'd3) begin
-      {mem_data_in1,mem_data_in0} <= {in_sr[`$dwidth*3 - 1`:`$dwidth*1`]};
-    end else begin 
-      {mem_data_in1,mem_data_in0} <= {in_sr[`$dwidth*2 - 1`:`$dwidth*0`]};
-    end
-  end else begin
-      {mem_data_in1,mem_data_in0} <= {data_in,data_in};
-  end
+always @(posedge clk) begin
+  sram_sel <= addr_in[`$awidth - 1`];
 end
 
-always @(posedge clk or posedge reset) begin
-  if (reset==1'b1) begin
-    out_count <= 2'd0;
-  end else begin
-    if `$backtick`MV_RAM_TO_OUTPUT begin
-      out_count <= out_count + 2'd2 - 2'd1;
-    end else if `$backtick`MV_INPUT_TO_OUTPUT begin
-      out_count <= input_count - 2'd1;
-    end else if (int_ren_sync_to_read_phase==1'b1 || (~int_ren_sync_to_read_phase && int_ren==1'b1 && phase==`$READ` && (out_count >0))) begin
-      if (out_count>0) out_count <= out_count - 2'd1;
-    end    
-  end
-end
+assign mem_cen0 = mem_wen0 | mem_ren0;
+assign mem_cen1 = mem_wen1 | mem_ren1;
 
-//NB: Data is available for registering during the WRITE phase
-always @(posedge clk or posedge reset) begin
-  if `$backtick`MV_RAM_TO_OUTPUT begin
-    out_sr <= {mem_data_out1,mem_data_out0};
-  end else if `$backtick`MV_INPUT_TO_OUTPUT begin
-    if (input_count==2'd1) begin
-      out_sr[`$dwidth*2 - 1`:`$dwidth*1`] <= {in_sr[`$dwidth - 1`:0]};
-    end else if (input_count==2'd2) begin
-      out_sr <= {in_sr[`$dwidth*2 - 1`:0]};
-    end else begin
-      out_sr <= {in_sr[`$dwidth*3 - 1`:`$dwidth*1`]};      
-    end
-  end else if (int_valid) begin
-      out_sr <= (out_sr << `$dwidth`);
-  end
-end
+//; my $lb = generate('linebuffer_control', 'linebuffer_control', dwidth => $dwidth, ddepth => $ddepth );
+//; my $fifo = generate('fifo_control', 'fifo_control', dwidth => $dwidth, ddepth => $ddepth );
 
-always @(posedge clk or posedge reset) begin
-  data_out_d1 <= out_sr[`$dwidth*2 - 1`:`$dwidth`];
-end
+`$lb->instantiate()`
+(
+.clk(gclk),
+.reset(reset),
+.data_in(data_in_int),
+.wen(wen_in_int),
+.data_out(lb_out),
+.stall_read(ren_in),
+.valid(lb_valid_out),
+.almost_full(lb_almost_full),
+.almost_empty(lb_almost_empty),
+.almost_count(almost_count),
+.depth(depth),
+.addr_to_mem(lb_addr),
+.data_to_mem(lb_mem_data_out),
+.data_from_mem({mem_data_out1,mem_data_out0}),
+.wen_to_mem(lb_wen),
+.ren_to_mem(lb_ren)
+);
 
-always @(posedge clk or posedge reset) begin
-  addr_d1 <= addr; 
-end
+`$fifo->instantiate()`
+(
+.clk(gclk),
+.reset(reset),
+.data_in(data_in_int),
+.wen(wen_in_int),
+.data_out(fifo_out),
+.stall_read(ren_in),
+.valid(fifo_valid_out),
+.almost_full(fifo_almost_full),
+.almost_empty(fifo_almost_empty),
+.almost_count(almost_count),
+.depth(depth),
+.addr_to_mem(fifo_addr),
+.data_to_mem(fifo_mem_data_out),
+.data_from_mem({mem_data_out1,mem_data_out0}),
+.wen_to_mem(fifo_wen),
+.ren_to_mem(fifo_ren)
+);
 
-//; my $awidth = int(ceil(log($ddepth)/log(2)));
 //; my $mem = generate('mem', 'mem', dwidth => $dwidth, awidth => ($awidth-1) );
-
-always @(*) begin
-  if (`$MODE_FIFO` || `$MODE_LB`) begin
-    data_out = (out_delay==1'b1)?data_out_d1:out_sr[`$dwidth*2 - 1`:`$dwidth`];
-  end else begin
-    data_out = (addr_d1[`$awidth-1`]==1'b1)?mem_data_out1:mem_data_out0;
-  end
-end
-
-
-
 //; my $mem_obj = clone($mem, 'mem_inst0');
 `$mem_obj->instantiate()`
 (
 .data_out(mem_data_out0),
 .data_in(mem_data_in0),
 .clk(gclk),
-.cen(int_cen),
-.wen(int_wen),
+.cen(mem_cen0),
+.wen(mem_wen0),
 .addr(mem_addr[`$awidth - 2`:0])
 );
 
@@ -409,8 +246,8 @@ end
 .data_out(mem_data_out1),
 .data_in(mem_data_in1),
 .clk(gclk),
-.cen(int_cen),
-.wen(int_wen),
+.cen(mem_cen1),
+.wen(mem_wen1),
 .addr(mem_addr[`$awidth - 2`:0])
 );
 endmodule
@@ -418,9 +255,9 @@ endmodule
 //;my $filename = "MEM".$self->mname();
 //;open(MEMINFO, ">$filename") or die "Couldn't open file $filename, $!";
 //;print MEMINFO "       <mode bith='1' bitl='0'>00</mode>\n";
-//;print MEMINFO "       <tile_en bit='2'>0</tile_en>\n";
-//;print MEMINFO "       <fifo_depth bith='15' bitl='3'>0</fifo_depth>\n";
-//;print MEMINFO "       <almost_full_count bith='18' bitl='16'>0</almost_full_count>\n";
-//;print MEMINFO "       <chain_enable bit='19'>0</chain_enable>\n";
+//;print MEMINFO "       <tile_en bith='2' bitl='2'>0</tile_en>\n";
+//;print MEMINFO "       <depth bith='15' bitl='3'>0</depth>\n";
+//;print MEMINFO "       <almost_count bith='19' bitl='16'>0</almost_count>\n";
+//;print MEMINFO "       <chain_enable bith='20' bitl='20'>0</chain_enable>\n";
 //; close MEMINFO;
 
