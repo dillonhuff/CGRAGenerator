@@ -235,6 +235,7 @@ tile_id
 //;     } elsif ($bus eq $control_busname) {
     .pe_output_0(valid),
     .pe_output_1(almost_full),
+    .pe_output_2(almost_empty),
 //;     }
 //;     for(my $i=0; $i<$sides; $i++) {
 //;       for(my $j=0; $j<$num_tracks; $j++) {
@@ -254,6 +255,7 @@ tile_id
 //;     } elsif ($bus eq $control_busname) {
 //;       $rename_hash->{ "sb_".$row."_".$bus }{'pe_output_0'} = 'valid';
 //;       $rename_hash->{ "sb_".$row."_".$bus }{'pe_output_1'} = 'almost_full';
+//;       $rename_hash->{ "sb_".$row."_".$bus }{'pe_output_2'} = 'almost_empty';
 //;     }
 //;   }
 //; }
@@ -320,7 +322,7 @@ tile_id
 //; my $num_tracks_1b = $bus_num_tracks_hash{ $control_busname };
 //; my $cb_1b = generate('cb', 'cb_ctl', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
 //; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>1, feedthrough_outputs=>$cb_connections, default_value=>'1');
-//; my @mem_inputs = ("BUS16#wdata","BUS16#waddr","BUS16#raddr","BUS1#ren","BUS1#wen");
+//; my @mem_inputs = ("BUS16#wdata","BUS16#waddr","BUS1#ren","BUS1#wen");
 //; my @non_mem_inputs = ("BUS1#cg_en");
 //; my $input_count=0;
 //; my $num_tracks;
@@ -420,7 +422,7 @@ tile_id
 //; ## global out signal
 //; ######################################################
 //; 
-//;   my @bit1_outputs = qw(1'b0 valid almost_full);
+//;   my @bit1_outputs = qw(1'b0 valid almost_full almost_empty);
 //;   my $count = 0;
   always @(*) begin
     case (gout_sel)
@@ -463,22 +465,22 @@ tile_id
   `$mem_core->instantiate()`
   (
       .clk(clk),
+      .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
       .config_en(config_en_mem),
-      .xdata_in(wdata),
+      .data_in(wdata),
       .data_out(rdata),
+      .addr_in(waddr),
+      .wen_in(wen),
+      .ren_in(ren),
+      .valid_out(valid),
       .chain_in(chain_in),
       .chain_out(chain_out),
-      .addr(raddr),
-      .addr_w(waddr),
-      .xwen(wen),
       .chain_wen_in(chain_wen_in),
-      .ren(ren),
-      .valid(valid),
       .chain_valid_out(chain_valid_out),
       .almost_full(almost_full),
-      .reset(reset)
+      .almost_empty(almost_empty)
    );
 
 
