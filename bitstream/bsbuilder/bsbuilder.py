@@ -282,7 +282,7 @@ def process_input(line):
     # (tileno,lhs) = striptile(wire)
     # (tileno,lhs) = cgra_info.parse_resource(wire)
 
-    assert wire == 'T21_s2t0', "\nERROR %s;\n'self.in' can only connect to T21_s2t0\n\n" % line
+    assert wire == 'T21_in_s2t0', "\nERROR %s;\n'self.in' can only connect to T21_in_s2t0\n\n" % line
 
     (tileno, dir, side, track) = cgra_info.parse_canon(wire)
     (r,c) = cgra_info.tileno2rc(tileno)
@@ -320,8 +320,10 @@ def bs_connection(tileno, line, DBG=0):
     reg = parse.group(3)
     assert reg=='r' or reg==None
 
-    (t,lhs) = striptile(lhs); assert t == -1 or t == tileno, 'wrong tile!?'
-    (t,rhs) = striptile(rhs); assert t == -1 or t == tileno, 'wrong tile!?'
+    (t,lhs) = striptile(lhs); assert t == -1 or t == tileno, \
+              "'%s': wrong lhs tile '%s' should be -1 or %s\n" % (line, t, tileno)
+    (t,rhs) = striptile(rhs); assert t == -1 or t == tileno, \
+              "'%s': wrong lhs tile '%s' should be -1 or %s\n" % (line, t, tileno)
     if DBG>1: print "# lhs '%s', rhs '%s', reg '%s'" % (lhs,rhs,reg)
 
     # Connect lhs to rhs
