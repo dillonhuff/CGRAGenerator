@@ -48,7 +48,8 @@ test_basic:
 	@echo
 	@./writelog.csh log1 -print
 
-
+test_unit:
+	./unit_tests/utest
 
 test_all:
 	make hackdiff_test 2>&1 | tee $(TEMPDIR)/hackdiff_test.log
