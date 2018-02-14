@@ -31,6 +31,25 @@ MEM_TEMPLATE='''
   T14_in_s7t1 -> T14_out_s5t1 -> self.out
 '''
 
+# 16x16 grid w/ io pads
+# Input must come in to T21_s2t0, output from T24_s0t0
+# Input from PE tile 11, output to mem tile T14
+MEM_TEMPLATE='''
+  #DELAY DEPTH,DEPTH
+  #
+  self.in -> T11_in_s2t0
+  T11_in_s2t0 -> T11_out_s0t0
+  T12_in_s2t0 -> T12_out_s0t0
+  T13_in_s2t0 -> T13_out_s0t0
+  T14_in_s2t0 -> T14_mem_in
+  T14_mem_DEPTH # (fifo_depth=DEPTH)
+  T14_mem_out -> T14_out_s1t1
+  T14_in_s7t1 -> T14_out_s5t1 -> self.out
+'''
+
+
+
+
 # # Input from PE tile 11, output to PE tile T11
 # MEM_TEMPLATE='''
 #   #DELAY DEPTH,DEPTH

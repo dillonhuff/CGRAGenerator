@@ -668,17 +668,21 @@ def find_mux(tile, src, snk, DBG=0):
                         if src == owsrc:
                             return get_encoding(tile,bb,mux,msrc,DBG-1)
 
-    if DBG:
+    # if DBG:
+    if True:
         # Provide helpful messages about why we failed
-        sys.stderr.write("\n\nCannot connect '%s' to '%s'\n\n" % (src,snk))
+        errmsg = "\nTile %s: Cannot connect '%s' to '%s'\n" %\
+                         (tile.attrib['tile_addr'], src,snk)
 
         rlist = find_sources(tile, 'sb', src) + find_sources(tile, 'cb', src)
         rlist = '\n    '.join(rlist)
-        sys.stderr.write("%s can connect to\n    %s\n\n" % (src, rlist))
+        errmsg = errmsg + "%s can connect to\n    %s\n" % (src, rlist)
 
         rlist = find_sinks(tile, 'sb', snk) + find_sinks(tile, 'cb', snk)
         rlist = '\n    '.join(rlist)
-        sys.stderr.write("%s can connect to\n    %s\n" % (snk, rlist))
+        errmsg = errmsg + "%s can connect to\n    %s\n" % (snk, rlist)
+
+        assert False, errmsg
 
     # Note find_mux must be allowed to fail gracefully
     # as that e.g. triggers a retry in the serpent PNR

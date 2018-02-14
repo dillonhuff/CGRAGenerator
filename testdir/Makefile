@@ -48,6 +48,9 @@ test_basic:
 	@echo
 	@./writelog.csh log1 -print
 
+test_unit:
+	./unit_tests/utest
+
 
 
 test_all:
