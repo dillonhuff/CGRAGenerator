@@ -116,8 +116,6 @@ if ($#argv == 1) then
   endif
 endif
 
-echo config = $config 2
-
 # TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
 
@@ -248,16 +246,11 @@ endif
 # # 
 # if ("$branch" == "srdev" || "$branch" == "avdev") then
 #   if ("$config" == "../../bitstream/examples/pwv1.bs") then
-#     echo
-#     echo '  SRDEV TRAVIS hack'
-#     echo '  SRDEV TRAVIS hack'
 #     echo '  SRDEV TRAVIS hack'
 #     echo '  pwv1 was requested; using pwv2 instead...'
-#     echo ''
 #     set config = ../../bitstream/examples/pwv2.bs
 #   endif
 # endif
-# 
 ##############################################################################
 ##############################################################################
 ##############################################################################
@@ -285,6 +278,18 @@ if (! -e $config) then
   echo "run.csh: ERROR Cannot find config file '$config'"
   exit -1
 endif
+
+unset io_hack
+grep -i ffffffff $config > /tmp/tmp && set io_hack
+if ($?io_hack) then
+  echo 'ERROR config file $config appears to use old-style io:'
+  cat /tmp/tmp; /bin/rm /tmp/tmp
+  echo 'ERROR no longer support io hack, use pads instead'
+  echo
+  exit 13
+endif
+
+
 
 # Turn nclocks into an integer.
 set nclocks = `echo $nclocks | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
