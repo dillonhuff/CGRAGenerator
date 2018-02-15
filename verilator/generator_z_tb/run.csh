@@ -282,9 +282,9 @@ endif
 unset io_hack
 grep -i ffffffff $config > /tmp/tmp && set io_hack
 if ($?io_hack) then
-  echo 'ERROR config file $config appears to use old-style io:'
+  echo 'ERROR Config file $config appears to be trying to use the old I/O hack:'
   cat /tmp/tmp; /bin/rm /tmp/tmp
-  echo 'ERROR no longer support io hack, use pads instead'
+  echo 'ERROR We no longer support I/O hacks, please use I/O pads instead'
   echo
   exit 13
 endif
