@@ -21,10 +21,11 @@ script:
   # - cd testdir; make test_all
   #
   # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
-  - cd testdir
+  - pushd testdir
   -   make test_basic
   -   make test_unit
-  # - cd testdir; make SILENT=TRUE test_all
+  # - make SILENT=TRUE test_all
+  - popd
   
 # ##############################################################################
 # # NOTES
