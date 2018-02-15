@@ -11,6 +11,11 @@ addons:
       - verilator
     # - build-essential
 
+before_install:
+  - pip install --upgrade pip
+  - pip install requests[security]
+  - pip install numpy
+
 script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
