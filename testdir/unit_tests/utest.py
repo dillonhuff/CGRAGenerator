@@ -23,13 +23,28 @@ def my_syscall(cmd, action="FAIL"):
 VERBOSE = False # For real default value, see process_args() below
 GENERATED=False # Only need to generate CGRA ONCE (idiot)
 
+
+
 # Script dir is maybe '$gen/testdir/unit_tests'
 mypath = os.path.realpath(__file__)
 mydir  = os.path.dirname(mypath)
+# global PYPAT_DIR
+# PYPAT_DIR = mydir + '/../../../pe'
+# sys.path.insert(0, PYPAT_DIR)
+# import pe 
+
+# cmd = "cd %s; test -d pe || echo no pe (yet)" % mydir
+# print cmd
+my_syscall("cd %s; test -d pe || echo 'WARNING no pe (yet); i will install'" % mydir)
+my_syscall("cd %s; test -d pe || echo 'git clone https://github.com/phanrahan/pe.git'" % mydir)
+my_syscall("cd %s; test -d pe || git clone https://github.com/phanrahan/pe.git" % mydir)
+
 global PYPAT_DIR
-PYPAT_DIR = mydir + '/../../../pe'
+PYPAT_DIR = mydir + '/pe'
 sys.path.insert(0, PYPAT_DIR)
-import pe 
+import pe
+
+
 
 # print pe.isa.add()(1,2)
 # print pe.isa.eq()(1,2)
