@@ -40,6 +40,8 @@ my_syscall("cd %s; test -d pe || echo 'git clone https://github.com/phanrahan/pe
 my_syscall("cd %s; test -d pe || git clone https://github.com/phanrahan/pe.git" % mydir)
 
 # Pat's stuff needs numpy
+my_syscall("pip list | grep numpy || pip install --upgrade pip")
+my_syscall("pip list | grep numpy || pip install requests[security]")
 my_syscall("pip list | grep numpy || pip install numpy")
 
 global PYPAT_DIR
