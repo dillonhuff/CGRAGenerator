@@ -39,6 +39,9 @@ my_syscall("cd %s; test -d pe || echo 'WARNING no pe (yet); i will install'" % m
 my_syscall("cd %s; test -d pe || echo 'git clone https://github.com/phanrahan/pe.git'" % mydir)
 my_syscall("cd %s; test -d pe || git clone https://github.com/phanrahan/pe.git" % mydir)
 
+# Pat's stuff needs numpy
+my_syscall("pip list | grep numpy || pip install numpy")
+
 global PYPAT_DIR
 PYPAT_DIR = mydir + '/pe'
 sys.path.insert(0, PYPAT_DIR)
