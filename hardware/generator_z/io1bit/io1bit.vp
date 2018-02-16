@@ -59,8 +59,17 @@ tile_id
     end
   end
 
-  assign pad = (io_bit==1'b1)?f2p:1'bz;
+  //assign pad = (io_bit==1'b1)?f2p:1'bz;
+  //assign p2f = pad;
+
+// mname = `mname` = `$self->mname()`
+//; if (mname eq "io1bit_unq1" || mname eq "io1bit_unq2") {
   assign p2f = pad;
+//; } else {
+  assign pad = f2p;
+//; }
+
+
 endmodule
 
 //;print TILEINFO "        <io_group>$io_group</io_group>\n";
