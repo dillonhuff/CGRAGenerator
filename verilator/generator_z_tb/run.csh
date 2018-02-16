@@ -489,6 +489,9 @@ echo "run.csh: Build the simulator..."
     | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
   echo
 
+  verilator --version
+  g++ --version
+
   verilator $myswitches -Wall $myswitches --cc --exe $testbench \
     -y $vdir $vfiles --top-module $top \
     >& $tmpdir/verilator.out
