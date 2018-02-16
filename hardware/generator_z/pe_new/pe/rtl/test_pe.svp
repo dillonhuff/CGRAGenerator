@@ -15,7 +15,7 @@
 //;
 //; my $use_abs     = parameter(Name=>'use_abs', val=> 1, List=>[1, 0],  doc=>'0 - no ABS, 1 - enable ABS');
 //; my $use_max_min = parameter(Name=>'use_max_min', val=> 1, List=>[1, 0],  doc=>'0 - no max/min, 1 - enable max/min');
-//; my $use_relu    = parameter(Name=>'use_relu', val=> 1, List=>[1, 0],  doc=>'0 - no relu, 1 - enable relu');
+//; my $use_relu    = parameter(Name=>'use_relu', val=> 0, List=>[1, 0],  doc=>'0 - no relu, 1 - enable relu');
 //;
 //; my $get_carry = parameter(Name=>'get_carry', val=> 1, List=>[1, 0], doc=>'1 - output carry, 0 - No carry');
 //;
