@@ -5,6 +5,8 @@
 # @Caleb: For providing registers on all outputs of all SBs, do-
 # setenv CGRA_GEN_ALL_REG 1
 
+export CGRA_GEN_ALL_REG=1
+
 # Genesis2.pl -parse -generate -top top -input\
 
 if [ -d genesis_verif ]; then
