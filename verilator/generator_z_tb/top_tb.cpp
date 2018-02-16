@@ -16,32 +16,12 @@
 #define CLOSETRACE
 #endif
 
-// This is not really used anymore, I think...
-//int set_rando(
-//              unsigned int *in_0_0,
-//              unsigned int *in_0_1,
-//              unsigned int *in_1_0,
-//              unsigned int *in_1_1
-//              ) {
-//    // add4, no input file, use four rando's
-//    in_0_0 = random() & 0xffff;
-//    in_0_1 = random() & 0xffff;
-//    in_1_0 = random() & 0xffff;
-//    in_1_1 = random() & 0xffff;
-//    
-//    // add4 emulating mul2, no input file, use rando
-//    in_0_0 = random() & 0xffff;
-//    in_0_1 = in_0_0;
-//    in_1_0 = 0;
-//    in_1_1 = 0;
-//    
-//    // add4 w/input file
-//    // in_0_0 = (unsigned int)fgetc(input_file);
-//    // in_0_1 = (unsigned int)fgetc(input_file);
-//    // in_1_0 = (unsigned int)fgetc(input_file);
-//    // in_1_1 = (unsigned int)fgetc(input_file);
-//    // // printf("Scanned input data %04x %04x %04x %04x\n", in_0_0, in_0_1, in_1_0, in_1_1);
-//}
+void write_output(
+                  FILE *output_file,
+                  unsigned int pads_in,
+                  unsigned int pads_out,
+                  char *what_i_did,
+                  int print_result);
 
 int main(int argc, char **argv, char **env) {
     char *config_filename = NULL;
@@ -74,6 +54,8 @@ int main(int argc, char **argv, char **env) {
 
     int initial_delay_so_far = 0;
     int final_delay_so_far = 0;
+
+    int ntimes_printed = 0;
 
     for (int i=1; i< argc; i++) {
         // printf("    arg%d is maybe %s\n", i, argv[i]);
@@ -153,23 +135,6 @@ int main(int argc, char **argv, char **env) {
     if (1) { printf("NOTE REQUESTED OUTPUT  END DELAY OF %d CYCLES\n", delay_out); }
     printf("\n");
 
-    /*
-    // Let's try reading from the input file
-
-    unsigned int in_0_0 = (unsigned int)fgetc(input_file);
-    unsigned int in_0_1 = (unsigned int)fgetc(input_file);
-    unsigned int in_1_0 = (unsigned int)fgetc(input_file);
-    unsigned int in_1_1 = (unsigned int)fgetc(input_file);
-
-    printf("Found four 8-bit input pixels 0x%04x 0x%04x 0x%04x 0x%04x\n",
-           in_0_0,
-           in_0_1,
-           in_1_0,
-           in_1_1);
-    */
-
-    // exit(-1);
-
     /////////////////////////////////////////////////////////
     // Clock and reset
     /////////////////////////////////////////////////////////
@@ -223,6 +188,9 @@ int main(int argc, char **argv, char **env) {
     unsigned int config_addr;
     unsigned int config_data;
 
+    unsigned int pads_out; // 16-bit output value
+    unsigned int pads_in;  // 16-bit  input value
+
     int tile_config_done;
 
     ///    initial begin
@@ -275,7 +243,9 @@ int main(int argc, char **argv, char **env) {
         //     else if (i>0)  printf("%dK...", i/1000);
         //     fflush(stdout);
         // }
-        if ( (i%100000) == 0 ) {
+        //if ( (i%100000) == 0 ) { NOT ENOUGH for 16x16 maybe...
+        //if ( (i%1000) == 0 ) {
+        if ( (i%5000) == 0 ) {
             printf("Executed %dK cycles...\n", i/1000); fflush(stdout);
         }
 
@@ -293,11 +263,6 @@ int main(int argc, char **argv, char **env) {
     
 //        if (i>4) { reset = 0; } else { sprintf(what_i_did, "reset=1"); }
 //        if (i==4) { sprintf(what_i_did, "reset=0\n"); }
-
-        unsigned int in_0_0;
-        unsigned int in_0_1;
-        unsigned int in_1_0;
-        unsigned int in_1_1;
 
         // for (clk=0; clk<2; clk++) {
         // FIXME my clumsy way of making output happen on negedge(clk)
@@ -351,8 +316,8 @@ int main(int argc, char **argv, char **env) {
                 // READ INPUT DATA - Change input data "on negedge"
                 // E.g. set config when clk==0, after negedge event processed
 
-                in_0_0 = (unsigned int)fgetc(input_file);
-                // printf("Scanned input data %04x\n", in_0_0);
+                pads_in = (unsigned int)fgetc(input_file);
+                // printf("Scanned input data %04x\n", pads_in);
 
                 if (feof(input_file)) {
                     if (final_delay_so_far == delay_out) {
@@ -365,10 +330,10 @@ int main(int argc, char **argv, char **env) {
                     } // (input_filename == NULL) {} else {
                     else {
                         if (final_delay_so_far == 0) { printf("\n"); }
-                        printf("One more (349): delay_out=%d, final_delay_so_far=%d",
+                        printf("One more (333): delay_out=%d, final_delay_so_far=%d; ",
                                delay_out, final_delay_so_far);
-                        in_0_0 = 0;
-                        // final_delay_so_far++; // This happnes later, see below.
+                        pads_in = 0;
+                        // final_delay_so_far++; // This happens later, see below.
                     }
                 }
 
@@ -386,7 +351,6 @@ int main(int argc, char **argv, char **env) {
             // top->reset = reset;
             // top->config_addr = config_addr;
             // top->config_data = config_data;
-            // INWIRE = in_0_0;
 
             // nbdev2 changed some names :(
             // These happen on EVERY clock edge, pos and neg
@@ -394,17 +358,50 @@ int main(int argc, char **argv, char **env) {
             top->reset_in = reset;
             top->config_addr_in = config_addr;
             top->config_data_in = config_data;
-            INWIRE = in_0_0;
 
+            //            top->pad_S3_T0 = clk;
+            //            top->pad_S0_T0 = clk;
 
+            // For 16x16 grid, input byte should show up in tile pe_0x15 side 2
+            // (only sides 2 and 1 connect to ALU inputs :( )
+            top->pad_S2_T8  = (pads_in & 0x80) ? 1 : 0;
+            top->pad_S2_T9  = (pads_in & 0x40) ? 1 : 0;
+            top->pad_S2_T10 = (pads_in & 0x20) ? 1 : 0;
+            top->pad_S2_T11 = (pads_in & 0x10) ? 1 : 0;
+            top->pad_S2_T12 = (pads_in & 0x08) ? 1 : 0;
+            top->pad_S2_T13 = (pads_in & 0x04) ? 1 : 0;
+            top->pad_S2_T14 = (pads_in & 0x02) ? 1 : 0;
+            top->pad_S2_T15 = (pads_in & 0x01) ? 1 : 0;
 
             ///always @(posedge clk) begin
-            ///   $display ("%h + %h + %h + %h = %h (%h)", in_0_0, in_0_1, in_1_0,
-            ///   in_1_1, dut.wire_0_1_BUS16_S0_T4 ,in_0_0+in_0_1+in_1_0+in_1_1);
+            ///   $display ("%h + %h + %h + %h = %h (%h)", pads_in, in_0_1, in_1_0,
+            ///   in_1_1, dut.wire_0_1_BUS16_S0_T4 ,pads_in+in_0_1+in_1_0+in_1_1);
             // printf("  top:clk,reset = %d,%d, ", top->clk, top->reset);
 
             // PROCESS THE NEXT ROUND OF VERILOG EVENTS (posedge, negedge, repeat...)
             top->eval ();
+
+            pads_out = 
+                (top->pad_S0_T0  << 15) |
+                (top->pad_S0_T1  << 14) |
+                (top->pad_S0_T2  << 13) |
+                (top->pad_S0_T3  << 12) |
+                (top->pad_S0_T4  << 11) |
+                (top->pad_S0_T5  << 10) |
+                (top->pad_S0_T6  <<  9) |
+                (top->pad_S0_T7  <<  8) |
+                (top->pad_S0_T8  <<  7) |
+                (top->pad_S0_T9  <<  6) |
+                (top->pad_S0_T10 <<  5) |
+                (top->pad_S0_T11 <<  4) |
+                (top->pad_S0_T12 <<  3) |
+                (top->pad_S0_T13 <<  2) |
+                (top->pad_S0_T14 <<  1) |
+                (top->pad_S0_T15 <<  0) |
+                0;
+
+            //printf("OUT pad00=%d ", top->pad_S0_T0);
+            //printf("pad30=%d\n", top->pad_S3_T0);
 
             // if (! printed_something) { printf("\n"); }
         } // for (clk)
@@ -417,46 +414,31 @@ int main(int argc, char **argv, char **env) {
                     // If delay zero, assume we're doing the 2x thing (oh so terrible)
                     // 
                     // Queue up output in "what_i_did" buffer, to display later
-                    // INWIRE and OUTWIRE get set by sed script in run.csh maybe
                     sprintf(what_i_did, "Two times %d = %d  *%s*", 
-                            INWIRE,
-                            OUTWIRE,
-                            OUTWIRE == 2*INWIRE ? "PASS" : "FAIL"
+                            pads_in,
+                            pads_out,
+                            pads_out == 2*pads_in ? "PASS" : "FAIL"
                             );
                 }
                 else {
                     sprintf(what_i_did, "Input %d => result %d", 
-                            INWIRE,
-                            OUTWIRE
+                            pads_in,
+                            pads_out
                             );
                 }
             }
             else sprintf(what_i_did, "...");
 
+            //printf("initial_delay_so_far=%d; delay_in=%d\n", initial_delay_so_far, delay_in);
             // Output to output file if specified.
-            if (output_file != NULL) {
-                if (initial_delay_so_far == delay_in) {
-                    // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
-                    char c = (char)(OUTWIRE & 0xff);
-                    // printf("\nemit %d to output file\n", c);
-                    fputc(c, output_file);
-                    if ((delay_in > 0) && (i < 40)) {
-                        sprintf(what_i_did, "Input %d => result %d => OUT", 
-                                INWIRE,
-                                OUTWIRE
-                                );
-                    }
-
-                }
-                else {
-                    initial_delay_so_far++;
-                }
+            if (initial_delay_so_far == delay_in) {
+                int print_result = (delay_in > 0) && (i < 40);
+                write_output(output_file, pads_in, pads_out, what_i_did, print_result);
+            } else {
+                initial_delay_so_far++;
             }
         }
-        if (nprints==1) {
-            printf("\n");
-        }
-
+        if (nprints==1) { printf("\n"); }
 
         if (i <= 60) {
             // printf("cy.clk %05d.%d: ", i, top->clk);
@@ -468,7 +450,7 @@ int main(int argc, char **argv, char **env) {
         if (input_filename != NULL) {
             if (feof(input_file)) {
                 if (final_delay_so_far == delay_out) {
-                    printf("\n\nINFO Simulation ran for %d cycles (446)\n\n", i);
+                    printf("\n\nINFO Simulation ran for %d cycles (453)\n\n", i);
                     // fclose(input_file);
                     // if (output_file) { fclose(output_file); }
                     if (input_file)       { fclose(input_file ); }
@@ -478,9 +460,8 @@ int main(int argc, char **argv, char **env) {
                     exit(0);
                 }
                 else {
-                    //printf("One more (446): delay_out=%d, final_delay_so_far=%d\n",
-                    //delay_out, final_delay_so_far);
-                        final_delay_so_far++;
+                    //    printf("One more (446): delay_out=%d, final_delay_so_far=%d\n", delay_out, final_delay_so_far);
+                    final_delay_so_far++;
                 }
             }
         }
@@ -497,74 +478,30 @@ int main(int argc, char **argv, char **env) {
     CLOSETRACE
 } // main()
 
-/////////////////////////////////////////////////////////
-// Data generation 
-/////////////////////////////////////////////////////////
+void write_output(
+                  FILE *output_file,
+                  unsigned int pads_in,
+                  unsigned int pads_out,
+                  char *what_i_did,
+                  int print_result)
+{
+    if (output_file != NULL) {
+        // print_result = (delay_in > 0) && (i < 40)
+        
+        // char c = (char)(top->wire_0_1_BUS16_S0_T4 & 0xff);
+        // char c = (char)(OUTWIRE & 0xff);
+        
+        // printf("\nemit %d to output file\n", pads_out & 0xff);
+        fputc(pads_out, output_file);
+        if (print_result) {
+            sprintf(what_i_did, "Input %d => result %d => OUT", 
+                    pads_in,
+                    pads_out
+                    );
+        }
+    } // output_file != NULL
+}
 
-///  reg [15:0] pe_output_0;
-///  reg [15:0] in_0_0;
-///  wire [15:0] out_0_0;
-///  reg [15:0] in_0_1;
-///  wire [15:0] out_0_1;
-///  reg [15:0] in_0_2;
-///  wire [15:0] out_0_2;
-///  reg [15:0] in_0_3;
-///  wire [15:0] out_0_3;
-///  reg [15:0] in_0_4;
-///  wire [15:0] out_0_4;
-///  reg [15:0] in_1_0;
-///  wire [15:0] out_1_0;
-///  reg [15:0] in_1_1;
-///  wire [15:0] out_1_1;
-///  reg [15:0] in_1_2;
-///  wire [15:0] out_1_2;
-///  reg [15:0] in_1_3;
-///  wire [15:0] out_1_3;
-///  reg [15:0] in_1_4;
-///  wire [15:0] out_1_4;
-///  reg [15:0] in_2_0;
-///  wire [15:0] out_2_0;
-///  reg [15:0] in_2_1;
-///  wire [15:0] out_2_1;
-///  reg [15:0] in_2_2;
-///  wire [15:0] out_2_2;
-///  reg [15:0] in_2_3;
-///  wire [15:0] out_2_3;
-///  reg [15:0] in_2_4;
-///  wire [15:0] out_2_4;
-///  reg [15:0] in_3_0;
-///  wire [15:0] out_3_0;
-///  reg [15:0] in_3_1;
-///  wire [15:0] out_3_1;
-///  reg [15:0] in_3_2;
-///  wire [15:0] out_3_2;
-///  reg [15:0] in_3_3;
-///  wire [15:0] out_3_3;
-///  reg [15:0] in_3_4;
-///  wire [15:0] out_3_4;
-///
-///
-///always @(posedge clk) begin
-///  pe_output_0 <= $random;
-///  in_0_0 <= $random;
-///  in_0_1 <= $random;
-///  in_0_2 <= $random;
-///  in_0_3 <= $random;
-///  in_0_4 <= $random;
-///  in_1_0 <= $random;
-///  in_1_1 <= $random;
-///  in_1_2 <= $random;
-///  in_1_3 <= $random;
-///  in_1_4 <= $random;
-///  in_2_0 <= $random;
-///  in_2_1 <= $random;
-///  in_2_2 <= $random;
-///  in_2_3 <= $random;
-///  in_2_4 <= $random;
-///  in_3_0 <= $random;
-///  in_3_1 <= $random;
-///  in_3_2 <= $random;
-///  in_3_3 <= $random;
-///  in_3_4 <= $random;
-///end
+
+
 
