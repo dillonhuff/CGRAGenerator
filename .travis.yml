@@ -14,7 +14,7 @@ addons:
 script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
-  - cd verilator/generator_z_tb; run.csh
+  - cd verilator/generator_z_tb; ./run.csh
 
 #   #
 #   # Make sure generator.csh (still) works. Apparently this is a thing we should do now.
