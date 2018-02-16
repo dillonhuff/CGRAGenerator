@@ -1,13 +1,9 @@
 #!/bin/bash
-# To generate fabric with memories, do -
-# setenv CGRA_GEN_USE_MEM 1
-# 
-# @Caleb: For providing registers on all outputs of all SBs, do-
-# setenv CGRA_GEN_ALL_REG 1
 
+# @Caleb: For providing registers on all outputs of all SBs, do-
+# setenv CGRA_GEN_ALL_REG 1 (csh syntax)
 export CGRA_GEN_ALL_REG=1
 
-# Genesis2.pl -parse -generate -top top -input\
 
 if [ -d genesis_verif ]; then
   rm -rf genesis_verif
