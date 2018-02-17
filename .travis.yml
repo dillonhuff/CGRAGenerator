@@ -21,7 +21,8 @@ script:
   # - cd testdir; make test_all
   #
   # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
-  - cd testdir; make SILENT=FALSE test_basic
+  - cd testdir
+  - travis_wait make SILENT=FALSE test_basic
   # - cd testdir; make SILENT=TRUE test_all
   
 
