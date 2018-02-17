@@ -1,6 +1,6 @@
 #!/bin/csh -f
 
-./my_travis_wait.csh 30 &
+./my_travis_wait.csh 60 &
 
 set VERBOSE
 
@@ -544,7 +544,7 @@ echo "run.csh: Build the simulator..."
   make \
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
     -j -C obj_dir/ -f $vtop.mk $vtop \
-    >& $tmpdir/make_vtop.log \
+    |& tee $tmpdir/make_vtop.log \
     || set ERROR
 
   if ($?ERROR) then
