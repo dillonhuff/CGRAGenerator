@@ -54,11 +54,14 @@ rm $tmpdir/tmp
 #   "* (HEAD detached at 09a4672)"
 #   "  master"
 
+unset TRAVIS
 # Travis branch comes up as 'detached' :(
 #   * (HEAD detached at a220e19)
 #     master
 if (`expr "$branch" : ".*detached"`) then
   set branch = `git branch | grep -v '^*' | awk '{print $1}'`
+  echo "run.csh: I think we are running from travis"
+  set TRAVIS
 endif
 echo "run.csh: I think we are in branch '$branch'"
 
@@ -492,7 +495,9 @@ echo "run.csh: Build the simulator..."
   echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
   echo
 
-  set opt = '-O0'
+  # set opt = '-O0'
+  if (! $?TRAVIS) set opt = '-O0'
+
   echo verilator $opt -Wall $myswitches --cc --exe $testbench \
     -y $vdir $vfiles --top-module $top \
     | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
