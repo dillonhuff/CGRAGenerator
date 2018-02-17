@@ -22,6 +22,10 @@ script:
   #
   # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
   - cd testdir
+  - which bash
+  - travis_wait which bash
+  - travis_wait bash -c 'sleep 200'
+  - travis_wait bash -c 'which make'
   - travis_wait 'make SILENT=FALSE test_basic'
   # - cd testdir; make SILENT=TRUE test_all
   
