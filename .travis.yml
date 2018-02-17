@@ -22,7 +22,6 @@ script:
   #
   # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
   - cd testdir
-  - travis_wait 30 sleep 1800 &
   - make SILENT=FALSE test_basic
   # - cd testdir; make SILENT=TRUE test_all
   

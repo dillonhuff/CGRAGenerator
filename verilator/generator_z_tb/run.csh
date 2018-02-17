@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+./my_travis_wait.csh 30 &
+
 set VERBOSE
 
 # Build a tmp space for intermediate files
