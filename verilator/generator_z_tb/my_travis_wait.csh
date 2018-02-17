@@ -5,6 +5,6 @@ set i = 0
 
 while ($i < $max)
   echo MY TRAVIS WAIT $i/$max
-  sleep 0
+  sleep 60
   @ i = $i + 1
 end
