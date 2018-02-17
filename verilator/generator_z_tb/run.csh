@@ -483,16 +483,20 @@ echo "run.csh: Build the simulator..."
 
   # build C++ project
 
+
   echo
-  echo verilator -Wall $myswitches --cc --exe $testbench \
+  echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+  echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+  echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+  echo
+
+  set opt = '-O0'
+  echo verilator $opt -Wall $myswitches --cc --exe $testbench \
     -y $vdir $vfiles --top-module $top \
     | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
   echo
 
-  verilator --version
-  g++ --version
-
-  verilator $myswitches -Wall $myswitches --cc --exe $testbench \
+  verilator $opt $myswitches -Wall $myswitches --cc --exe $testbench \
     -y $vdir $vfiles --top-module $top \
     >& $tmpdir/verilator.out
 
