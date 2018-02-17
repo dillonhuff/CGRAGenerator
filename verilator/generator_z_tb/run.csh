@@ -498,7 +498,8 @@ echo "run.csh: Build the simulator..."
 
   verilator $opt $myswitches -Wall $myswitches --cc --exe $testbench \
     -y $vdir $vfiles --top-module $top \
-    >& $tmpdir/verilator.out
+    |& awk -f ./run-verilator-warning-filter.awk \
+    |& tee $tmpdir/verilator.out
 
   set verilator_exit_status = $status
 
@@ -508,9 +509,9 @@ echo "run.csh: Build the simulator..."
     echo "%Warning3 See $tmpdir/verilator.out for full log."
     echo
 
-    # This (head -n 40) can cause broken pipe error (!)
-    # awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out | head -n 40
-    awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out
+    # # This (head -n 40) can cause broken pipe error (!)
+    # # awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out | head -n 40
+    # awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out
 
   else
     echo "See $tmpdir/verilator.out for full log of verilator warnings."
@@ -542,7 +543,7 @@ echo "run.csh: Build the simulator..."
   make \
     VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
     -j -C obj_dir/ -f $vtop.mk $vtop \
-    >& $tmpdir/make_vtop.log \
+    |& tee $tmpdir/make_vtop.log \
     || set ERROR
 
   if ($?ERROR) then

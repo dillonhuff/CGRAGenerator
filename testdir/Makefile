@@ -43,7 +43,8 @@ pw_gray_8x8:
 # Use run.csh built-in default config
 test_basic:
 	@./writelog.csh log1 -init
-	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" DELAY="0,0" \
+#	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" DELAY="0,0"
+	make test TEMPDIR=$(TEMPDIR) IMAGE="input_10x10_1to100" DELAY="0,0" \
 	          CONFIG=""
 	@echo
 	@./writelog.csh log1 -print
