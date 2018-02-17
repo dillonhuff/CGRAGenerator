@@ -245,7 +245,10 @@ int main(int argc, char **argv, char **env) {
         // }
         //if ( (i%100000) == 0 ) { NOT ENOUGH for 16x16 maybe...
         //if ( (i%1000) == 0 ) {
-        if ( (i%5000) == 0 ) {
+
+        // if ( (i%5000) == 0 ) {
+        // 5000 no good when compiling -O0 maybe...
+        if ( (i%500) == 0 ) {
             printf("Executed %dK cycles...\n", i/1000); fflush(stdout);
         }
 
