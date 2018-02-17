@@ -496,6 +496,7 @@ echo "run.csh: Build the simulator..."
   echo
 
   # set opt = '-O0'
+  set opt = ''
   if (! $?TRAVIS) set opt = '-O0'
 
   echo verilator $opt -Wall $myswitches --cc --exe $testbench \
