@@ -498,7 +498,7 @@ echo "run.csh: Build the simulator..."
 
   verilator $opt $myswitches -Wall $myswitches --cc --exe $testbench \
     -y $vdir $vfiles --top-module $top \
-    >& tee $tmpdir/verilator.out
+    >& $tmpdir/verilator.out
 
   set verilator_exit_status = $status
 
