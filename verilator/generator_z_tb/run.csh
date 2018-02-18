@@ -122,8 +122,6 @@ if ($#argv == 1) then
   endif
 endif
 
-# TODO: could create a makefile that produces a VERY SIMPLE run.csh
-# given all these parms...(?)
 
 
 # NO don't cleanup might want this later (for -nobuild)...
@@ -256,7 +254,6 @@ endif
 #     set config = ../../bitstream/examples/pwv2.bs
 #   endif
 # endif
-# 
 ##############################################################################
 
 
@@ -441,17 +438,19 @@ echo "run.csh: Build the simulator..."
 
   # build C++ project
 
+  ########################################################################
+  # O0 hack for nbdev3 and beyond: only runs on kiwi if opt OFF
 
-  echo
-  echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-  echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-  echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-  echo
-
-  # set opt = '-O0'
   set opt = ''
-  if (! $?TRAVIS) set opt = '-O0'
+  if (! $?TRAVIS) then
+    set opt = '-O0'
+    echo
+    echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+    echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+    echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+  endif
 
+  echo
   echo verilator $opt -Wall $myswitches --cc --exe $testbench \
     -y $vdir $vfiles --top-module $top \
     | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
