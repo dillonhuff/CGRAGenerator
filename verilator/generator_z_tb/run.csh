@@ -1,5 +1,8 @@
 #!/bin/csh -f
 
+# Can use this to extend time on travis
+# ./my_travis_wait.csh 60 &
+
 set VERBOSE
 
 # Build a tmp space for intermediate files
@@ -48,14 +51,13 @@ git branch | grep '^*' >    $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
 rm $tmpdir/tmp
 
-# In travis, 'git branch' returns something like
-#   "* (HEAD detached at 09a4672)"
-#   "  master"
-
+unset TRAVIS
 # Travis branch comes up as 'detached' :(
 #   * (HEAD detached at a220e19)
 #     master
 if (`expr "$branch" : ".*detached"`) then
+  echo "run.csh: I think we are running from travis"
+  set TRAVIS
   set branch = `git branch | grep -v '^*' | awk '{print $1}'`
 endif
 echo "run.csh: I think we are in branch '$branch'"
@@ -81,8 +83,12 @@ set DELAY = '0,0'
 
 # gray_small (100K cycles) still too big for 16x16
 # set input     = io/gray_small.png
+
+# pointwise w/'conv_bw' takes 4000 cycles to complete
 set input     = io/conv_bw_in.png
-set input     = io/input_10x10_1to100.png
+
+if ("$branch" == "sixteen") set input = io/input_10x10_1to100.png
+
 
 set output    = $tmpdir/output.raw
 set nclocks   = "1M"
@@ -116,7 +122,6 @@ if ($#argv == 1) then
   endif
 endif
 
-# TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
 
 # NO don't cleanup might want this later (for -nobuild)...
@@ -237,8 +242,6 @@ endif
 
 
 ##############################################################################
-##############################################################################
-##############################################################################
 # # Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
 # 
 # # # Set config conditionally depending on current branch
@@ -251,8 +254,6 @@ endif
 #     set config = ../../bitstream/examples/pwv2.bs
 #   endif
 # endif
-##############################################################################
-##############################################################################
 ##############################################################################
 
 
@@ -276,7 +277,7 @@ endif
 
 if (! -e $config) then
   echo "run.csh: ERROR Cannot find config file '$config'"
-  exit -1
+  exit 13
 endif
 
 unset io_hack
