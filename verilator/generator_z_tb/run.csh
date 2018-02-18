@@ -1,6 +1,7 @@
 #!/bin/csh -f
 
-./my_travis_wait.csh 60 &
+# Can use this to extend time on travis
+# ./my_travis_wait.csh 60 &
 
 set VERBOSE
 
@@ -50,18 +51,14 @@ git branch | grep '^*' >    $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
 rm $tmpdir/tmp
 
-# In travis, 'git branch' returns something like
-#   "* (HEAD detached at 09a4672)"
-#   "  master"
-
 unset TRAVIS
 # Travis branch comes up as 'detached' :(
 #   * (HEAD detached at a220e19)
 #     master
 if (`expr "$branch" : ".*detached"`) then
-  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
   echo "run.csh: I think we are running from travis"
   set TRAVIS
+  set branch = `git branch | grep -v '^*' | awk '{print $1}'`
 endif
 echo "run.csh: I think we are in branch '$branch'"
 
@@ -86,7 +83,12 @@ set DELAY = '0,0'
 
 # gray_small (100K cycles) still too big for 16x16
 # set input     = io/gray_small.png
+
+# pointwise w/'conv_bw' takes 4000 cycles to complete
 set input     = io/conv_bw_in.png
+
+if ("$branch" == "sixteen") set input = io/input_10x10_1to100.png
+
 
 set output    = $tmpdir/output.raw
 set nclocks   = "1M"
@@ -120,9 +122,8 @@ if ($#argv == 1) then
   endif
 endif
 
-echo config = $config 2
-
-# TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
+# TODO: could create a makefile that produces a VERY SIMPLE run.csh
+# given all these parms...(?)
 
 
 # NO don't cleanup might want this later (for -nobuild)...
@@ -243,8 +244,6 @@ endif
 
 
 ##############################################################################
-##############################################################################
-##############################################################################
 # # Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
 # 
 # # # Set config conditionally depending on current branch
@@ -252,18 +251,12 @@ endif
 # # 
 # if ("$branch" == "srdev" || "$branch" == "avdev") then
 #   if ("$config" == "../../bitstream/examples/pwv1.bs") then
-#     echo
-#     echo '  SRDEV TRAVIS hack'
-#     echo '  SRDEV TRAVIS hack'
 #     echo '  SRDEV TRAVIS hack'
 #     echo '  pwv1 was requested; using pwv2 instead...'
-#     echo ''
 #     set config = ../../bitstream/examples/pwv2.bs
 #   endif
 # endif
 # 
-##############################################################################
-##############################################################################
 ##############################################################################
 
 
@@ -287,8 +280,20 @@ endif
 
 if (! -e $config) then
   echo "run.csh: ERROR Cannot find config file '$config'"
-  exit -1
+  exit 13
 endif
+
+unset io_hack
+grep -i ffffffff $config > /tmp/tmp && set io_hack
+if ($?io_hack) then
+  echo 'ERROR Config file $config appears to be trying to use the old I/O hack:'
+  cat /tmp/tmp; /bin/rm /tmp/tmp
+  echo 'ERROR We no longer support I/O hacks, please use I/O pads instead'
+  echo
+  exit 13
+endif
+
+
 
 # Turn nclocks into an integer.
 set nclocks = `echo $nclocks | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
@@ -341,23 +346,9 @@ set config_io = $tmpdir/${croot}io
 
 # Are you kidding me
 set path = ($path .)
-# which run-injectio.csh
-# ls -l run-injectio.csh
-
-# Use decoder to produce an annotated bitstream WITH I/O COMMENTS
-echo "run.csh: run-injectio.csh $config -o $config_io"
-run-injectio.csh $VSWITCH $config -o $config_io || exit -1
-
-# Find IO wires.  This is what we're looking for:
-#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
-#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
-#     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
-
-set inwires =  `egrep '^# INPUT  tile' $config_io | awk '{print $NF}'`
-set outwires = `egrep '^# OUTPUT tile' $config_io | awk '{print $NF}'`
 
 # Clean up config file for verilator use
-grep -v '#' $config_io | grep . > $tmpdir/tmpconfig
+grep -v '#' $config | grep . > $tmpdir/tmpconfig
 set config = $tmpdir/tmpconfig
 
 if ($?VERBOSE) then
@@ -367,22 +358,6 @@ if ($?VERBOSE) then
   tail $config
 endif
 
-if ($?VERBOSE) then
-    echo ""
-    echo '------------------------------------------------------------------------'
-    echo "BEGIN find input and output wires"
-    echo ""
-    echo "  USING I/O WIRE NAMES DERIVED FROM BITSTREAM"
-    echo ""
-    echo "  inwires  = $inwires"
-    echo "  outwires = $outwires"
-    echo
-    echo "END find input and output wires"
-    echo ""
-    echo '------------------------------------------------------------------------'
-endif
-
-
 set vdir = ../../hardware/generator_z/top/genesis_verif
 if (! -e $vdir) then
   echo "ERROR: Could not find vfile directory"
@@ -391,28 +366,6 @@ if (! -e $vdir) then
   echo "    (cd $vdir:h; ./run.csh; popd) |& tee tmp.log"
   exit -1
 endif
-
-##################################################################################
-# echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
-
-    # E.g. bname = 'pointwise/gray_small'
-    set iname = $input:t; set iname = $iname:r
-    set bname = $config:t; set bname = "$bname:r/$iname:r"
-
-    echo ''
-    echo BENCHMARK $bname
-    echo "run.csh: Inserting IO wirenames into verilog top module '$vdir/top.v'..."
-    echo "inwire '$inwires', outwire '$outwires'"
-
-    ./run-wirehack.csh \
-        -inwires "$inwires" \
-        -outwires "$outwires" \
-        -vtop "$vdir/top.v" > $tmpdir/wirehack.log
-
-    if ($?VERBOSE) cat $tmpdir/wirehack.log
-
-# echo END top.v manipulation
-##################################################################################
 
 echo ''
 echo '------------------------------------------------------------------------'
@@ -538,23 +491,20 @@ echo "run.csh: Build the simulator..."
   if ($?VERBOSE) then
     echo
     echo "make \"
-    echo "  VM_USER_CFLAGS='-DINWIRE=top->$inwires -DOUTWIRE=top->$outwires' \"
     echo "  -j -C obj_dir/ -f $vtop.mk $vtop"
   endif
 
   echo
-  echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
-  echo "make $vtop -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
-  /bin/rm obj_dir/Vtop
+  if (-e obj_dir/Vtop) /bin/rm obj_dir/Vtop
 
+  echo "make $vtop -j -C obj_dir/ -f $vtop.mk $vtop"
   make \
-    VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
     -j -C obj_dir/ -f $vtop.mk $vtop \
-    |& tee $tmpdir/make_vtop.log \
+    >& $tmpdir/make_vtop.log \
     || set ERROR
 
   if ($?ERROR) then
-    cat $tmpdir/make_vtop.log; exit -1
+    cat $tmpdir/make_vtop.log; exit 13
   endif
 
   if ($?VERBOSE) then
