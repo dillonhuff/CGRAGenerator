@@ -441,13 +441,23 @@ echo "run.csh: Build the simulator..."
   ########################################################################
   # O0 hack for nbdev3 and beyond: only runs on kiwi if opt OFF
 
+  set branch = `git rev-parse --abbrev-ref HEAD`
   set opt = ''
-  if (! $?TRAVIS) then
-    set opt = '-O0'
-    echo
-    echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-    echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-    echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+  if (! $?TRAVIS && "$branch" == "nbdev3") then
+    # set opt = '-O0'
+    # echo
+    # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+    # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+    # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+
+    # OMG -O0 is SOO SLOWWW let's just disable luts instead
+    set hwdir = $vdir/../..
+    echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + nbdev3"
+    echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + nbdev3"
+    echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + nbdev3"
+    echo cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv
+    cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv
+
   endif
 
   echo

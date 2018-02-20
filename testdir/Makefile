@@ -7,9 +7,11 @@ HARDWARE_TOP  :=  ../hardware/generator_z/top
 
 SILENT := FALSE
 ifeq ($(SILENT), TRUE)
-       QUIET := -q
+	QUIET := -q
+	VSWITCH :=
 else
-       QUIET :=
+	QUIET :=
+	VSWITCH := -v
 endif
 # $(warning OUTPUT = "$(OUTPUT)")
 
@@ -33,9 +35,12 @@ test_basic:
 	@echo
 	@./writelog.csh log1 -print
 
+update_cgra:
+	cd $(HARDWARE_TOP); ./run.csh
+
 test_unit:
-	cd $(HARDWARE_TOP); make cgra_info.txt
-	./unit_tests/utest
+	make update_cgra
+	./unit_tests/utest $(VSWITCH)
 
 
 

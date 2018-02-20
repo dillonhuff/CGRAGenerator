@@ -13,6 +13,14 @@ if [ -d genesis_verif ]; then
   rm -rf genesis_verif
 fi
 
+# Let's do this in run.csh instead...
+# branch=`git rev-parse --abbrev-ref HEAD`
+# if [[ `hostname` == "kiwi" && "$branch" == "nbdev3" ]]; then
+#   echo kiwi branch nbdev3 means must use no-opt or disable luts
+# fi
+
+
+
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   top.vp \
   \
@@ -59,3 +67,8 @@ cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
+
+if [ `hostname` == "kiwi" ]; then
+  xmllint --noout cgra_info.txt |& head -n 20
+fi
+

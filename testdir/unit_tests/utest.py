@@ -158,7 +158,10 @@ def do_one_round():
 # E.g. test = 'add'
 # bsa files have names like 'mem_lbuf09.bsa', 'op_add.bsa'
 def do_one_test(test, DBG=0):
-    print "Testing '%s'" % test
+
+    msg = 'trace is OFF'
+    if OPTIONS['trace']: msg = 'trace is ON'
+    print "Testing '%s' (%s)" % (test, msg)
 
     # Find bsa file
     tname_op  = 'op_'  + test
@@ -569,6 +572,7 @@ Examples:
         elif (args[0] == '--nobuild'): OPTIONS['nobuild'] = True
         elif (args[0] == '--nogen'):   OPTIONS['nogen'] = True
         elif (args[0] == '--trace'):   OPTIONS['trace'] = True
+        elif (args[0] == '-trace'):    OPTIONS['trace'] = True
         else:
             OPTIONS['tests'] = args[0];
         args = args[1:]
