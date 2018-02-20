@@ -520,7 +520,6 @@ logic res_lut;
     localparam PE_FLAG_GT = 4'hC;
     localparam PE_FLAG_LE = 4'hD;
 //; $res_flag_hash->{'PE_FLAG_EQ'} = {
-<<<<<<< a8889f842fffbf2fa5a3a699d3403b7e64a48bc0
 //;    sel => "0x0",
 //;    equ => 'Z'
 //; };
@@ -574,61 +573,6 @@ logic res_lut;
 //; };
 //; $res_flag_hash->{'PE_FLAG_LE'} = {
 //;    sel => "0xd",
-=======
-//;    sel => "4'h0",
-//;    equ => 'Z'
-//; };
-//; $res_flag_hash->{'PE_FLAG_NE'} = {
-//;    sel => "4'h1",
-//;    equ => '~Z'
-//; };
-//; $res_flag_hash->{'PE_FLAG_CS'} = {
-//;    sel => "4'h2",
-//;    equ => 'C'
-//; };
-//; $res_flag_hash->{'PE_FLAG_CC'} = {
-//;    sel => "4'h3",
-//;    equ => '~C'
-//; };
-//; $res_flag_hash->{'PE_FLAG_MI'} = {
-//;    sel => "4'h4",
-//;    equ => 'N'
-//; };
-//; $res_flag_hash->{'PE_FLAG_PL'} = {
-//;    sel => "4'h5",
-//;    equ => '~N'
-//; };
-//; $res_flag_hash->{'PE_FLAG_VS'} = {
-//;    sel => "4'h6",
-//;    equ => 'V'
-//; };
-//; $res_flag_hash->{'PE_FLAG_VC'} = {
-//;    sel => "4'h7",
-//;    equ => '~V'
-//; };
-//; $res_flag_hash->{'PE_FLAG_HI'} = {
-//;    sel => "4'h8",
-//;    equ => 'C and ~Z'
-//; };
-//; $res_flag_hash->{'PE_FLAG_LS'} = {
-//;    sel => "4'h9",
-//;    equ => '~C or Z'
-//; };
-//; $res_flag_hash->{'PE_FLAG_GE'} = {
-//;    sel => "4'hA",
-//;    equ => 'N==V'
-//; };
-//; $res_flag_hash->{'PE_FLAG_LT'} = {
-//;    sel => "4'hB",
-//;    equ => 'N!=V'
-//; };
-//; $res_flag_hash->{'PE_FLAG_GT'} = {
-//;    sel => "4'hC",
-//;    equ => '~Z and (N==V)'
-//; };
-//; $res_flag_hash->{'PE_FLAG_LE'} = {
-//;    sel => "4'hD",
->>>>>>> add condition flag to cgra_info
 //;    equ => 'Z or (N!=V)'
 //; };
 
@@ -637,9 +581,6 @@ logic res_lut;
 //; $res_flag_hash->{'PE_FLAG_LUT'} = {
 <<<<<<< a8889f842fffbf2fa5a3a699d3403b7e64a48bc0
 //;    sel => "0xe",
-=======
-//;    sel => "4'hE",
->>>>>>> add condition flag to cgra_info
 //;    equ => 'lut code'
 //; };
 //; }
@@ -647,9 +588,6 @@ logic res_lut;
 //; $res_flag_hash->{'PE_FLAG_PE'} = {
 <<<<<<< a8889f842fffbf2fa5a3a699d3403b7e64a48bc0
 //;    sel => "0xf",
-=======
-//;    sel => "4'hf",
->>>>>>> add condition flag to cgra_info
 //;    equ => 'comp_res_p'
 //; };
 
@@ -719,7 +657,6 @@ logic res_lut;
 
 //; 	 if($get_carry) {
   assign res_p_w = result_flag;
-//; $pe_info_hash->{'2_predicate'}{'value'} = $res_flag_hash;   
 //;	 } else {
   assign res_p_w = op_code[12] ? res_lut : result_flag;//comp_res_p;
 <<<<<<< a8889f842fffbf2fa5a3a699d3403b7e64a48bc0
@@ -731,16 +668,12 @@ logic res_lut;
 //;    sel => "0x1",
 //;    equ => 'res_lut'
 //; };
-=======
-//; $pe_info_hash->{'2_predicate'}{'value'} = 'res_lut';
->>>>>>> add condition flag to cgra_info
 //; #if(op_code[12]==1) {$pe_info_hash->{'2_predicate'}{'value'} = 'res_lut';}
 //;	 }
 
 
 //;} else {
   assign res_p_w = result_flag;//comp_res_p;
-//; $pe_info_hash->{'2_predicate'}{'value'} = 'res_lut';
 //;}
 
 //; my $res_w = 'comp_res';
@@ -844,19 +777,6 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //;       print PEINFO "            <src sel='$flag_value->{'sel'}'>$flag_value->{'equ'}</src>\n";
 //;    }
 //;    print PEINFO "        </mux>\n"
-=======
-//;    print PEINFO "        <predicate reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>\n";
-//;    if($value->{'value'} ==  'res_lut') {
-//;       print PEINFO "            res_p = res_lut\n"
-//;    }
-//;    else {
-//;       foreach my $flag (sort { $res_flag_hash->{$a}{'sel'} cmp $res_flag_hash->{$b}{'sel'} } keys(%$res_flag_hash))  {
-//;       my $flag_value = $res_flag_hash->{$flag};
-//;       print PEINFO "            <src sel='$flag_value->{'sel'}' res_p=$flag_value->{'equ'}>\n";
-//;       }
-//;    }
-//;    print PEINFO "        </predicate>\n"
->>>>>>> add condition flag to cgra_info
 //;  }
 //;################### REGs
 //;  if ($feature=~m/3_reg/) {
