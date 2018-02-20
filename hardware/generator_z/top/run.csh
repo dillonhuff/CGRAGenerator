@@ -1,12 +1,11 @@
 #!/bin/bash
-
-# Haha guess what 'source' (below) does not work on travis script unless specify "bash" above!
-
 # To generate fabric with memories, do -
 # setenv CGRA_GEN_USE_MEM 1
 # 
 # @Caleb: For providing registers on all outputs of all SBs, do-
 # setenv CGRA_GEN_ALL_REG 1
+
+export CGRA_GEN_ALL_REG=1
 
 # Genesis2.pl -parse -generate -top top -input\
 
@@ -48,3 +47,7 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
 
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
+
+if [ `hostname` == "kiwi" ]; then
+  xmllint cgra_info.txt |& head -n 20
+fi

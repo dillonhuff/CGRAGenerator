@@ -17,6 +17,7 @@ import random
 #   T14_mem_out -> T14_out_s2t0 -> self.out
 # '''
 
+# 8x8 grid w/ io pads
 # Input from PE tile 11, output to mem tile T14
 MEM_TEMPLATE='''
   #DELAY DEPTH,DEPTH
