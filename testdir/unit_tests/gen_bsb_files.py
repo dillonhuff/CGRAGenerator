@@ -17,6 +17,7 @@ import random
 #   T14_mem_out -> T14_out_s2t0 -> self.out
 # '''
 
+# 8x8 grid w/ io pads
 # Input from PE tile 11, output to mem tile T14
 MEM_TEMPLATE='''
   #DELAY DEPTH,DEPTH
@@ -32,19 +33,34 @@ MEM_TEMPLATE='''
 '''
 
 # 16x16 grid w/ io pads
-# Input must come in to T21_s2t0, output from T24_s0t0
-# Input from PE tile 11, output to mem tile T14
+# Input must come in to T21_s2t0, output from T36_s0t0
+# Input from PE tile 21 (0x15), output to mem tile T36 (0x24)
+# PE: 21, 22, 23 MEM: 24
 MEM_TEMPLATE='''
   #DELAY DEPTH,DEPTH
   #
-  self.in -> T11_in_s2t0
-  T11_in_s2t0 -> T11_out_s0t0
-  T12_in_s2t0 -> T12_out_s0t0
-  T13_in_s2t0 -> T13_out_s0t0
-  T14_in_s2t0 -> T14_mem_in
-  T14_mem_DEPTH # (fifo_depth=DEPTH)
-  T14_mem_out -> T14_out_s1t1
-  T14_in_s7t1 -> T14_out_s5t1 -> self.out
+  self.in -> T21_in_s2t0
+  T21_in_s2t0 -> T21_out_s0t0
+  T22_in_s2t0 -> T22_out_s0t0
+  T23_in_s2t0 -> T23_out_s0t0
+  T24_in_s2t0 -> T24_mem_in
+  T24_mem_DEPTH # (fifo_depth=DEPTH)
+  T24_mem_out -> T24_out_s0t0
+  #
+  T25_in_s2t0 -> T25_out_s0t0
+  T26_in_s2t0 -> T26_out_s0t0
+  T27_in_s2t0 -> T27_out_s0t0
+  T28_in_s2t0 -> T28_out_s0t0
+  #
+  T29_in_s2t0 -> T29_out_s0t0
+  T30_in_s2t0 -> T30_out_s0t0
+  T31_in_s2t0 -> T31_out_s0t0
+  T32_in_s2t0 -> T32_out_s0t0
+  #
+  T33_in_s2t0 -> T33_out_s0t0
+  T34_in_s2t0 -> T34_out_s0t0
+  T35_in_s2t0 -> T35_out_s0t0
+  T36_in_s2t0 -> T36_out_s0t0 -> self.out
 '''
 
 
@@ -115,6 +131,7 @@ OP_TEMPLATE='''
   T11_pe_out -> T11_out_s0t1 -> self.out
 '''
 
+# 8x8 grid w/ io tiles
 # Input from PE tile 11, output to mem tile T14
 OP_TEMPLATE='''
   #DELAY 1,1
@@ -131,6 +148,45 @@ OP_TEMPLATE='''
   T14_in_s7t1 -> T14_out_s5t1 -> self.out
 '''
 
+# 16x16 grid w/ io pads
+# Input must come in to T21_s2t0, output from T36_s0t0
+# Input from PE tile 21 (0x15), output to mem tile T36 (0x24)
+# PE: 21, 22, 23 MEM: 24
+OP_TEMPLATE='''
+  #DELAY 1,1
+  #
+  self.in -> T21_in_s2t0
+  T21_in_s2t0 -> T21_op1
+  T21_in_s2t0 -> T21_out_s1t0
+  T21_out_s1t0 -> T21_op2 (r)
+  T21_OPNAME(wire,reg)
+  T21_pe_out -> T21_out_s0t0
+  #
+  T22_in_s2t0 -> T22_out_s0t0
+  T23_in_s2t0 -> T23_out_s0t0
+  T24_in_s2t0 -> T24_out_s0t0
+  #
+  T25_in_s2t0 -> T25_out_s0t0
+  T26_in_s2t0 -> T26_out_s0t0
+  T27_in_s2t0 -> T27_out_s0t0
+  T28_in_s2t0 -> T28_out_s0t0
+  #
+  T29_in_s2t0 -> T29_out_s0t0
+  T30_in_s2t0 -> T30_out_s0t0
+  T31_in_s2t0 -> T31_out_s0t0
+  T32_in_s2t0 -> T32_out_s0t0
+  #
+  T33_in_s2t0 -> T33_out_s0t0
+  T34_in_s2t0 -> T34_out_s0t0
+  T35_in_s2t0 -> T35_out_s0t0
+  T36_in_s2t0 -> T36_out_s0t0 -> self.out
+'''
+
+
+
+
+
+
 # Version for CGRA w/o IO tiles
 # Replace OPNAME with name of operand e.g. 'add'
 OP_TEMPLATE_OLD='''
@@ -143,6 +199,10 @@ OP_TEMPLATE_OLD='''
   T0_OPNAME(wire,reg)
   T0_pe_out -> T0_out_s0t1 -> self.out
 '''
+
+
+
+
 
 # using get will return `None` if a key is not present rather than raise a `KeyError`
 # print os.environ.get('KEY_THAT_MIGHT_EXIST')
@@ -230,8 +290,19 @@ def main ():
     # plus input and output files 'lbuf10_{input,output}.raw'
 
     if VERBOSE: print "gen_bsb_files.py:"
-    for testname in OP_LIST:   build_optest(testname)
-    for testname in LBUF_LIST: build_lbuftest(testname)
+
+    # Run only specified tests, default to ALL tests
+    tests = sys.argv[1:] # [0] is the command name
+    if len(tests) == 0:      tests = OP_LIST+LBUF_LIST
+    elif tests[0] == 'all':  tests = OP_LIST+LBUF_LIST
+    elif tests[0] == '-all': tests = OP_LIST+LBUF_LIST
+
+    # for testname in OP_LIST:   build_optest(testname)
+    # for testname in LBUF_LIST: build_lbuftest(testname)
+
+    for testname in tests:
+        if testname in OP_LIST:   build_optest(testname)
+        if testname in LBUF_LIST: build_lbuftest(testname)
 
 def build_optest(testname):
     bsb = re.sub('OPNAME','%s' % testname, OP_TEMPLATE)
