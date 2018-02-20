@@ -31,10 +31,11 @@ BEGIN {
 /Signal unoptimizable.*sb_wide.out/ { ignore = "TRUE"; next; }
 /Signal unoptimizable.*sb_1b.out/   { ignore = "TRUE"; next; }
 
-$0 == "XXX" { # This is turned off (for now)
+# $0 == "XXX" { # This is turned off (for now)
+{
     print
     nprinted++
     if (nprinted > 40) { exit }
 }
-{ print }
+# { print }
 # awk -f ~/bin/awk-examples/verilator-warning-filter.awk /tmp/verilator.out | less

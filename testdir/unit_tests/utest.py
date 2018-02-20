@@ -23,13 +23,34 @@ def my_syscall(cmd, action="FAIL"):
 VERBOSE = False # For real default value, see process_args() below
 GENERATED=False # Only need to generate CGRA ONCE (idiot)
 
+
+
 # Script dir is maybe '$gen/testdir/unit_tests'
 mypath = os.path.realpath(__file__)
 mydir  = os.path.dirname(mypath)
+# global PYPAT_DIR
+# PYPAT_DIR = mydir + '/../../../pe'
+# sys.path.insert(0, PYPAT_DIR)
+# import pe 
+
+# cmd = "cd %s; test -d pe || echo no pe (yet)" % mydir
+# print cmd
+my_syscall("cd %s; test -d pe || echo 'WARNING no pe (yet); i will install'" % mydir)
+my_syscall("cd %s; test -d pe || echo 'git clone https://github.com/phanrahan/pe.git'" % mydir)
+my_syscall("cd %s; test -d pe || git clone https://github.com/phanrahan/pe.git" % mydir)
+
+# DO THIS IN .travis.yml INSTEAD!
+# # Pat's stuff needs numpy
+# my_syscall("pip list | grep numpy || pip install --upgrade pip")
+# my_syscall("pip list | grep numpy || pip install requests[security]")
+# my_syscall("pip list | grep numpy || pip install numpy")
+
 global PYPAT_DIR
-PYPAT_DIR = mydir + '/../../../pe'
+PYPAT_DIR = mydir + '/pe'
 sys.path.insert(0, PYPAT_DIR)
-import pe 
+import pe
+
+
 
 # print pe.isa.add()(1,2)
 # print pe.isa.eq()(1,2)
@@ -97,8 +118,8 @@ def main():
     if OPTIONS['nobuild']:
         print "Skipping bsb/bsa file generation b/c '--nobuild'"
     else:
-        # Build all bsb and bsa files
-        my_syscall(mydir+'/gen_bsb_files.py')
+        # Build only requested bsb and bsa files
+        my_syscall(mydir+'/gen_bsb_files.py ' + ' '.join(OPTIONS['tests']))
 
         print ""
         sys.stdout.flush()
@@ -137,20 +158,7 @@ def do_one_round():
     gen_input_file()
     print ""
 
-    t = OPTIONS['tests']
-    # if t == 'all': tests = ['add','mul','lbuf09', 'lbuf10']
-    if t == 'all':
-        tests = LBUF_LIST + BINARY_OPS
-        # FIXME FIXME FIXME
-        print "WARNING utest.py skipping 'abs' test b/c verilog broken maybe\n"
-        tests.remove('abs')
-
-    # Do the broken one FIRST
-    # if t == 'all': tests = ['lbuf09', 'lbuf10', 'add', 'abs', 'eq','lte','gte'] + tests
-
-    else: tests = t.split(",")
-
-    for test in tests:
+    for test in OPTIONS['tests']:
         do_one_test(test)
         print ""
 
@@ -530,6 +538,7 @@ Where:
    --nogen        do not regenerate CGRA verilog
    --nobuild      do not regenerate bsb/bsa files
    --trace        build a trace file "utest.vcd" in verilator directory
+   -v             VERBOSE output
 
 Examples:
    %s <testname> --repeat 1000 --vectype rand --nvecs 10
@@ -546,7 +555,7 @@ Examples:
 
     global OPTIONS
     OPTIONS = {}
-    OPTIONS['tests']   = 'all'
+    OPTIONS['tests']   = []
     OPTIONS['repeat']  = 1
     OPTIONS['vectype'] = 'random'
     OPTIONS['nvecs']   = 10
@@ -574,8 +583,14 @@ Examples:
         elif (args[0] == '--trace'):   OPTIONS['trace'] = True
         elif (args[0] == '-trace'):    OPTIONS['trace'] = True
         else:
-            OPTIONS['tests'] = args[0];
+            OPTIONS['tests'].append(args[0]);
         args = args[1:]
+
+    if (len(OPTIONS['tests']) == 0) or (OPTIONS['tests'] == ['all']):
+        OPTIONS['tests'] = LBUF_LIST + BINARY_OPS
+        # FIXME FIXME FIXME
+        print "WARNING utest.py skipping 'abs' test b/c verilog broken maybe\n"
+        OPTIONS['tests'].remove('abs')
 
     if VERBOSE: print OPTIONS
 

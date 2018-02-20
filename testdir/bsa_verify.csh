@@ -19,12 +19,31 @@ USAGE:
 
 MAIN:
 
-# mydir myscript scriptdir
-set scriptpath = `readlink -f $0`
-set scriptpath = $scriptpath:h
+# # mydir myscript scriptdir
+# set scriptpath = `readlink -f $0`
+# set scriptpath = $scriptpath:h
+# 
+# set CGROOT = `cd $scriptpath/..; pwd`
+# # echo "I think CGRAGenerator is here: $CGROOT"; exit
 
-set CGROOT = `cd $scriptpath/..; pwd`
-# echo "I think CGRAGenerator is here: $CGROOT"; exit
+# Not everyone has access to readlink -f
+unset no_readlink
+readlink -f >& /dev/null || set no_readlink
+if ($?no_readlink) then
+  set scriptpath = "$0"
+  set scriptpath = $scriptpath:h
+  if ("$scriptpath" == "$0") then
+    set scriptpath = `pwd`
+    set CGROOT = `cd $scriptpath:h; pwd`
+  else
+    set CGROOT = `cd $scriptpath/..; pwd`
+  endif
+else
+  # set scriptpath = "$0" # No good if symlinks exist maybe
+  set scriptpath = `readlink -f $0`
+  set scriptpath = $scriptpath:h
+endif
+
 
 unset VERBOSE;
 
@@ -118,7 +137,8 @@ if ($?VERBOSE) echo $CGROOT/bitstream/decoder/decode.py $vswitch $bs -cgra $cgra
 # $CGROOT/bitstream/decoder/decode.py $vswitch $bs -cgra $cgra \
 $CGROOT/bitstream/decoder/decode.py -q $bs -cgra $cgra \
   | sed '/Summary/,$d' \
-  > /tmp/tmp$$.bsd
+  > /tmp/tmp$$.bsd \
+  || exit 13
 
 if ($?VERBOSE) set echo
 diff /tmp/tmp$$.{bsa,bsd}
