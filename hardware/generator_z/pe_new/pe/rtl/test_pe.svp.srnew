@@ -544,7 +544,7 @@ logic res_lut;
     end
 
 
-    //assign res_p = |({Z,N, C, comp_res_p} & flag_mask);
+    //assign result_flag = |({Z,N, C, comp_res_p} & flag_mask);
 //; } else {
     assign res_p = comp_res_p;
 //; }
@@ -622,8 +622,8 @@ always_ff @(posedge clk or negedge rst_n) begin
   end
 end
 //; } else {
+  assign res   = `$res_w`;
   //Rewritten to make verilator work SR 2/2018
-  //assign res   = `$res_w`;
   //assign res_p = res_p_w;
 //;}
 

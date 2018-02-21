@@ -264,100 +264,92 @@ test_pe_comp_unq1  test_pe_comp
   .res      (comp_res),
   .ovfl     (V),
   .res_p    (comp_res_p)
-
-
-//   .res      (res),
-//   .ovfl     (V),
-//   .res_p    (res_p)
-
-
-
 );
 
 
 
-// logic result_flag;
-// logic res_lut;
-// 
-//     logic Z;
-//     logic N;
-//     logic C;
-// 
-// 
-//     logic [3:0] flag_sel;
-// 
-//     assign flag_sel = op_code[15: 12];
-// 
-//     assign C = carry_out[0];
-//     assign Z = ~|comp_res;
-//     assign N = comp_res[DataWidth-1];
-// 
-//     localparam PE_FLAG_EQ = 4'h0;
-//     localparam PE_FLAG_NE = 4'h1;
-//     localparam PE_FLAG_CS = 4'h2;
-//     localparam PE_FLAG_CC = 4'h3;
-//     localparam PE_FLAG_MI = 4'h4;
-//     localparam PE_FLAG_PL = 4'h5;
-//     localparam PE_FLAG_VS = 4'h6;
-//     localparam PE_FLAG_VC = 4'h7;
-//     localparam PE_FLAG_HI = 4'h8;
-//     localparam PE_FLAG_LS = 4'h9;
-//     localparam PE_FLAG_GE = 4'hA;
-//     localparam PE_FLAG_LT = 4'hB;
-//     localparam PE_FLAG_GT = 4'hC;
-//     localparam PE_FLAG_LE = 4'hD;
-//     localparam PE_FLAG_LUT = 4'hE;
-//     localparam PE_FLAG_PE  = 4'hF;
-// 
-//     always_comb begin
-//         case (flag_sel)
-//             PE_FLAG_EQ  : result_flag = Z;
-//             PE_FLAG_NE  : result_flag = ~Z;
-//             PE_FLAG_CS  : result_flag = C;
-//             PE_FLAG_CC  : result_flag = ~C;
-//             PE_FLAG_MI  : result_flag = N;
-//             PE_FLAG_PL  : result_flag = ~N;
-//             PE_FLAG_VS  : result_flag = V;
-//             PE_FLAG_VC  : result_flag = ~V;
-//             PE_FLAG_HI  : result_flag = C & ~Z;
-//             PE_FLAG_LS  : result_flag = ~C | Z;
-//             PE_FLAG_GE  : result_flag = (N == V);
-//             PE_FLAG_LT  : result_flag = (N != V);
-//             PE_FLAG_GT  : result_flag = ~Z & (N == V);
-//             PE_FLAG_LE  : result_flag = Z | (N != V);
-//             PE_FLAG_LUT : result_flag = res_lut;
-//             PE_FLAG_PE  : result_flag = comp_res_p;
-// 
-//             default     : result_flag = comp_res_p;
-//         endcase
-//     end
-// 
-// 
-//     //assign result_flag = |({Z,N, C, comp_res_p} & flag_mask);
-// 
-// 
-// 
-// 
-// 
-// 
-// // test_lut #(.DataWidth(1)) test_lut
-// // (
-// //   .cfg_clk  (clk),
-// //   .cfg_rst_n(rst_n),
-// //   .cfg_d    (cfg_d),
-// //   .cfg_a    (cfg_a),
-// //   .cfg_en   (cfg_en),
-// // 
-// //   .op_a_in  (op_d_p),
-// //   .op_b_in  (op_e_p),
-// //   .op_c_in  (op_f_p),
-// // 
-// //   .res      (res_lut)
-// // );
+logic result_flag;
+logic res_lut;
+
+    logic Z;
+    logic N;
+    logic C;
+
+
+    logic [3:0] flag_sel;
+
+    assign flag_sel = op_code[15: 12];
+
+    assign C = carry_out[0];
+    assign Z = ~|comp_res;
+    assign N = comp_res[DataWidth-1];
+
+    localparam PE_FLAG_EQ = 4'h0;
+    localparam PE_FLAG_NE = 4'h1;
+    localparam PE_FLAG_CS = 4'h2;
+    localparam PE_FLAG_CC = 4'h3;
+    localparam PE_FLAG_MI = 4'h4;
+    localparam PE_FLAG_PL = 4'h5;
+    localparam PE_FLAG_VS = 4'h6;
+    localparam PE_FLAG_VC = 4'h7;
+    localparam PE_FLAG_HI = 4'h8;
+    localparam PE_FLAG_LS = 4'h9;
+    localparam PE_FLAG_GE = 4'hA;
+    localparam PE_FLAG_LT = 4'hB;
+    localparam PE_FLAG_GT = 4'hC;
+    localparam PE_FLAG_LE = 4'hD;
+    localparam PE_FLAG_LUT = 4'hE;
+    localparam PE_FLAG_PE  = 4'hF;
+
+
+    always_comb begin
+        case (flag_sel)
+            PE_FLAG_EQ  : res_p = Z;
+            PE_FLAG_NE  : res_p = ~Z;
+            PE_FLAG_CS  : res_p = C;
+            PE_FLAG_CC  : res_p = ~C;
+            PE_FLAG_MI  : res_p = N;
+            PE_FLAG_PL  : res_p = ~N;
+            PE_FLAG_VS  : res_p = V;
+            PE_FLAG_VC  : res_p = ~V;
+            PE_FLAG_HI  : res_p = C & ~Z;
+            PE_FLAG_LS  : res_p = ~C | Z;
+            PE_FLAG_GE  : res_p = (N == V);
+            PE_FLAG_LT  : res_p = (N != V);
+            PE_FLAG_GT  : res_p = ~Z & (N == V);
+            PE_FLAG_LE  : res_p = Z | (N != V);
+            PE_FLAG_LUT : res_p = res_lut;
+            PE_FLAG_PE  : res_p = comp_res_p;
+            default     : res_p = comp_res_p;
+        endcase
+    end
+
+
+    //assign result_flag = |({Z,N, C, comp_res_p} & flag_mask);
+
+
+
+
+
+
+
+test_lut #(.DataWidth(1)) test_lut
+(
+  .cfg_clk  (clk),
+  .cfg_rst_n(rst_n),
+  .cfg_d    (cfg_d),
+  .cfg_a    (cfg_a),
+  .cfg_en   (cfg_en),
+
+  .op_a_in  (op_d_p),
+  .op_b_in  (op_e_p),
+  .op_c_in  (op_f_p),
+
+  .res      (res_lut)
+);
+
 
   assign res   = comp_res;
-//  assign res_p = comp_res_p;
-
 
 logic irq_data;
 logic irq_bit;
