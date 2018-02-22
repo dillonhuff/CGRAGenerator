@@ -187,6 +187,7 @@ tile_id
   wire [`$bus_width-1`:0] rdata;
   wire valid;
   wire almost_full;
+  wire almost_empty;
 //; ##############################################
 //; #
 //; # Create Intra Tile Wires For SBs
