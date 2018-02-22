@@ -20,6 +20,13 @@ fi
 # fi
 
 
+echo
+echo WARNING Swapping in 'srnew' LUTs
+echo WARNING Swapping in 'srnew' LUTs
+echo WARNING Swapping in 'srnew' LUTs
+echo cp ../pe_new/pe/rtl/test_pe.svp.srnew ../pe_new/pe/rtl/test_pe.svp 
+cp ../pe_new/pe/rtl/test_pe.svp.srnew ../pe_new/pe/rtl/test_pe.svp 
+echo
 
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   top.vp \
@@ -61,8 +68,23 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../jtag/Template/src/digital/reg_file.svp \
   ../jtag/Template/src/digital/cfg_and_dbg.svp
 
+echo
+echo WARNING Restoring original LUT code
+echo WARNING Restoring original LUT code
+echo WARNING Restoring original LUT code
+echo git checkout ../pe_new/pe/rtl/test_pe.svp
+git checkout ../pe_new/pe/rtl/test_pe.svp
+echo
 
+
+
+echo
+echo WARNING Swapping stub in place of DW_tap
+echo WARNING Swapping stub in place of DW_tap
+echo WARNING Swapping stub in place of DW_tap
+echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+echo
 
 
 source clean_up_cgra_inputs.csh

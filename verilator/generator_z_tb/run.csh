@@ -438,33 +438,46 @@ echo "run.csh: Build the simulator..."
 
   # build C++ project
 
-  ########################################################################
-  # O0 hack for nbdev3 and beyond: only runs on kiwi if opt OFF
-
-  set branch = `git rev-parse --abbrev-ref HEAD`
   set opt = ''
-  if (! $?TRAVIS && "$branch" == "nbdev3") then
-    # set opt = '-O0'
-    # echo
-    # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-    # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-    # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
 
-    # OMG -O0 is SOO SLOWWW let's just disable luts instead
-    set hwdir = $vdir/../..
-    echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + nbdev3"
-    echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + nbdev3"
-    echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + nbdev3"
-    echo cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv
-    cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv
-
-  endif
+# Hey HEY built a test_pe that maybe has working LUTs for kiwi;
+# new LUT code gets swapped in by top/run.csh
+#
+#   ########################################################################
+#   # O0 hack for nbdev3 and beyond: only runs on kiwi if opt OFF
+# 
+#   set opt = ''
+#   set branch = `git rev-parse --abbrev-ref HEAD`
+#   set badbranch = nbdev3
+#   if (! $?TRAVIS && "$branch" == "$badbranch") then
+# 
+#     # OMG -O0 is SOO SLOWWW let's just disable luts instead
+#     # set opt = '-O0'
+#     # echo
+#     # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+#     # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+#     # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
+# 
+#     set hwdir = $vdir/../..
+#     echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + $badbranch"
+#     echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + $badbranch"
+#     echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + $badbranch"
+#     echo
+#     echo diff $vdir/test_pe_unq1.sv $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut
+#     diff $vdir/test_pe_unq1.sv $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut
+# #     echo
+# #     echo cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv
+# #     cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv || exit 13
+# 
+#   endif
 
   echo
   echo verilator $opt -Wall $myswitches --cc --exe $testbench \
     -y $vdir $vfiles --top-module $top \
     | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
   echo
+
+  # verilator --version; g++ --version
 
   verilator $opt $myswitches -Wall $myswitches --cc --exe $testbench \
     -y $vdir $vfiles --top-module $top \
