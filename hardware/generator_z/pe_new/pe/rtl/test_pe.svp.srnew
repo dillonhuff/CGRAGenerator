@@ -477,6 +477,8 @@ logic V;
 //; };
 
 
+//NEWCHANGES to test
+//FIXME don't need result flag anymore
 logic result_flag;
 //; if($use_lut) {
 logic res_lut;
@@ -546,7 +548,12 @@ logic res_lut;
 
     //assign result_flag = |({Z,N, C, comp_res_p} & flag_mask);
 //; } else {
+
     assign res_p = comp_res_p;
+
+    //if not get_carry then no result flag
+
+
 //; }
 
 
@@ -588,7 +595,15 @@ logic res_lut;
 //;	 } else {
   FIXME I had to break this to make verilator work SR 2/2018
   FIXME If we ever turn get_carry off this will have to be fixed!
+
   assign res_p_w = op_code[12] ? res_lut : result_flag;//comp_res_p;
+
+  //NEWCHANGES to test
+  //NEWCHANGES NOTE maybe could do this instead YES
+  assign res_p = op_code[12] ? res_lut : comp_res_p;
+
+
+
 //;	 }
 
 
