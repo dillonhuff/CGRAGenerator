@@ -95,10 +95,10 @@ echo
 echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
 echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
 echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
-echo 'grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v'
-grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v > /tmp/tmp$$
-diff genesis_verif/memory_tile_unq1.v /tmp/tmp$$
-mv  /tmp/tmp$$ genesis_verif/memory_tile_unq1.v
+#echo 'grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v'
+#grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v > /tmp/tmp$$
+#diff genesis_verif/memory_tile_unq1.v /tmp/tmp$$
+#mv  /tmp/tmp$$ genesis_verif/memory_tile_unq1.v
 
 echo 
 
