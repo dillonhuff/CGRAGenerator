@@ -32,6 +32,6 @@ Genesis2.pl                                        \
     -inputlist                                                                                      \
         ${VER_DIR}/${DESIGN}_tb.vpf \
     -generate  \
-    -top ${DESIGN}_tb                                                                                    \
+    -top ${DESIGN}_comp_tb                                                                                    \
     -depend genesis_sources.list                                                                    \
     -product genesis_vlog.verif.vf                                                                        \

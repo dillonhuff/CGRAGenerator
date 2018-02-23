@@ -124,7 +124,8 @@ module   `mname`  #(
 //; if($en_debug) {
   output logic                   irq,
 //;}
-  output logic                   res_p
+  output logic                   res_p,
+  output logic [DataWidth-1:0]  read_data
 );
 
 logic  [DataWidth-1:0]        op_a;
@@ -326,6 +327,7 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
 //;   bith => 0,
 //; };
 
+//; if($use_lut && ( $lut_inps == 3)) {
 //;my $op_e_r = clone($op_a_r, 'test_opt_reg_e');
 `$op_e_r->mname()` #(.DataWidth(1)) `$op_e_r->iname()`
 (
@@ -379,7 +381,7 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
 //;   bitl => 0,
 //;   bith => 0,
 //; };
-
+//; }
 //;} else {
 assign op_a = data0;//op_a_in;
 assign op_b = data1;//op_b_in;
@@ -754,6 +756,32 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //;   wire_e => 'bit1',
 //;   wire_f => 'bit2'
 //; };
+
+
+/*****************************************************
+Read Data Mux
+*****************************************************/
+always_comb begin 
+    case (cfg_a) 
+//; if($reg_inputs) {
+        8'hF0 : read_data = op_a;
+        8'hF1 : read_data = op_b;
+//; if($use_c_input) {
+        8'hF2 : read_data = op_c;
+//; }
+        8'hF3 : read_data = {15'h0, op_d_p};
+//; if($use_lut && ($lut_inps == 3)) {
+        8'hF4 : read_data = {15'h0, op_e_p};
+        8'hF5 : read_data = {15'h0, op_f_p};
+//; }
+//; }
+//; if($reg_out) {
+        8'h00 : read_data = res;
+        8'h01 : read_data = {15'h0, res_p};
+//; }        
+        default : read_data = 16'h0;
+    endcase
+end
 
 //;#######################################################################
 //;## Generate pe info
