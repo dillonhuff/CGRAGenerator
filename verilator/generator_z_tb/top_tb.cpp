@@ -301,6 +301,14 @@ int main(int argc, char **argv, char **env) {
                 if (!feof(config_data_file)) {
                     // printf("scanned config data %08X %08X\n", config_addr_i, config_data_i);
                     sprintf(what_i_did, "scanned config data %08X %08X", config_addr_i, config_data_i);
+
+
+                    // In the future, addresses will come in looking like this:
+                    // TTTTFFRR
+                    // and we will need to rearrange them to look like
+                    // RRFFTTTT
+
+
                     config_addr = config_addr_i;
                     config_data = config_data_i;
                 } else {
