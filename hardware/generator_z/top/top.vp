@@ -334,7 +334,9 @@ config_addr_in,
 config_data_in,
 tdi,
 tdo,
-tms
+tms,
+tck,
+trst_n
 );
 
 //;open(INFO, ">cgra_info.txt") or die "Couldn't open file cgra_info.txt, $!";
@@ -346,6 +348,8 @@ tms
   input [31:0] config_data_in;
   input tdi;
   input tms;
+  input tck;
+  input trst_n;
   output tdo;
    // --------------------------------------
    // PLACEHOLDERS FOR VERILATOR INPUT WIRES
@@ -377,7 +381,9 @@ wire [31:0] config_addr;
 wire [31:0] config_data;
 wire clk;
 wire reset;
-
+//CONFIG_HACK. ONCE GC IS DONE SEND ADDR AND DATA IN THROUGH JTAG
+assign config_addr = config_addr_in;
+assign config_data = config_data_in;
 //; my $global_controller_obj = generate("global_controller", "global_controller", dummy_value => 0);
     `$global_controller_obj->instantiate()` 
     (
@@ -385,13 +391,14 @@ wire reset;
       .clk_out(clk),
       .reset_in(reset_in),
       .reset_out(reset),
-      .config_addr_in(config_addr_in),
-      .config_addr_out(config_addr),
-      .config_data_in(config_data_in),
-      .config_data_out(config_data),
+      .config_addr_out(),//config_addr),
+      .config_data_in(),//config_data_in),
+      .config_data_out(),//config_data),
       .tdi(tdi),
       .tdo(tdo),
-      .tms(tms)
+      .tms(tms),
+      .tck(tck),
+      .trst_n(trst_n)
     );
 
 // FIXME Note there are LOTS of unused wires being created below!

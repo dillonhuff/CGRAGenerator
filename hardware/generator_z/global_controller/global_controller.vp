@@ -85,14 +85,15 @@ trst_n
   parameter wr_rd_delay_reg = 5'd16;
   parameter rd_rd_delay_reg = 5'd17;
 
-  //STATES
+  //STATES FOR IGNORING INCOMING INSTRUCTIONS
   parameter ready = 2'd0;
   parameter reading = 2'd1;
   parameter resetting = 2'd2;
   parameter advancing_clk = 2'd3;
 
   reg [1:0] state;
-  reg [1:0] next_state;
+ 
+  //STATES FOR SWITCHING CLKS
   
 
   reg stalled;
@@ -103,20 +104,24 @@ trst_n
   reg [`$cfg_bus_width-1`:0] TST;
   reg [`$cfg_bus_width-1`:0] counter;
   reg [`$cfg_bus_width-1`:0] rd_delay_reg;
+  reg [5:0] clk_switch_counter;
   assign op = config_addr_jtag_out[`$addr_width-1`:`$addr_width-$cfg_op_width`];
   always @(*) begin
-    clk = (sys_clk_activated) ? clk_in : tck;
-    clk_out = (stalled & (state != advancing_clk)) ? 0 : clk;
-    reset_out = (state==resetting) ? 1 : reset_in;
+    	clk = (sys_clk_activated) ? clk_in : tck;
+    	clk_out = (stalled & (state != advancing_clk)) ? 0 : clk;
+   	reset_out = (state==resetting) ? 1 : reset_in;
   end
   reg [2:0] sync_counter;
   //Clock switcher block (Always on system_clk)
   always @ (posedge clk_in or posedge reset_in) begin
-	if (reset_in==1)
-		sys_clk_activated <= 0;	
+	if (reset_in==1) begin
+		sys_clk_activated <= 1;
+		clk_switch_counter <= 0;
+	end	
 	else if (!sys_clk_activated) begin
 		//Deactivate clk to rest of GC
 		//Connect rest of GC to sys_clk (fast clk)
+		if(	
 	end	
   end
 		
@@ -144,7 +149,6 @@ trst_n
 			write_config: begin
 				config_addr_out <= config_addr_jtag_out;
 				config_data_out <= config_data_jtag_out; 
-				config_data_jtag_in <= config_data_in;	
 			end
 			read_config: begin
 				config_addr_out <= config_addr_jtag_out;
