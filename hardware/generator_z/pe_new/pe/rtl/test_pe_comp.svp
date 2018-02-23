@@ -345,12 +345,18 @@ always_comb begin
     PE_MULT_0_OP  : pe_oper = Mult0_Op;
     PE_MULT_1_OP  : pe_oper = Mult1_Op;
     PE_MULT_2_OP  : pe_oper = Mult2_Op;
+//; if($use_relu) {
     PE_RELU       : pe_oper = Relu_Op;
+//; }
     PE_OR_OP      : pe_oper = Or_Op;
     PE_AND_OP     : pe_oper = And_Op;
     PE_XOR_OP     : pe_oper = Xor_Op;
+//; if($use_cntr) {
     PE_CNTR_OP    : pe_oper = Cntr_Op;
+//; }
+//; if($use_div) {
     PE_DIV_OP     : pe_oper = Div_Op;
+//; }
     default       : pe_oper = InvalidOp;
   endcase
 end

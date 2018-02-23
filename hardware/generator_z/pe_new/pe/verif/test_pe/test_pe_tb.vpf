@@ -1,6 +1,2 @@
 ./test_pe_tb.svp
-../../../test_lb/rtl/test_mem.svp
-../../../test_lb/rtl/test_mem_dp.svp
-../../../test_lb/rtl/test_fifo.svp
-../../../test_lb/rtl/test_lb.svp
 

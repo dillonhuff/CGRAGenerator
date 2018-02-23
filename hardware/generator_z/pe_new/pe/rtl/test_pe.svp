@@ -653,10 +653,7 @@ logic res_lut;
   .res      (res_lut)
 );
 
-//; 	 if($get_carry) {
-  assign res_p_w = result_flag;
-//;	 } else {
-  assign res_p_w = op_code[12] ? res_lut : result_flag;//comp_res_p;
+//; 	 if(!$get_carry) {
 //; $res_flag_hash->{'COMP_FLAG'} = {
 //;    sel => "0x0",
 //;    equ => 'comp_res_p'
@@ -665,14 +662,10 @@ logic res_lut;
 //;    sel => "0x1",
 //;    equ => 'res_lut'
 //; };
-//; #if(op_code[12]==1) {$pe_info_hash->{'2_predicate'}{'value'} = 'res_lut';}
 //;	 }
 
 
-//;} else {
-  assign res_p_w = result_flag;//comp_res_p;
-//;}
-
+//;} 
 //; my $res_w = 'comp_res';
 //;
 //; if($use_cntr & $use_acc) {
@@ -686,6 +679,11 @@ logic res_lut;
 
 
 //; if($reg_out) {
+//; 	 if(!$get_carry && $use_lut) {
+    assign res_p_w = op_code[12] ? res_lut : result_flag;//comp_res_p;
+//; } else {
+    assign res_p_w = result_flag;
+//; }
 always_ff @(posedge clk or negedge rst_n) begin
   if(~rst_n) begin
     res   <= 16'h0;
@@ -696,8 +694,18 @@ always_ff @(posedge clk or negedge rst_n) begin
   end
 end
 //; } else {
-  assign res   = `$res_w`;
-  assign res_p = res_p_w;
+    assign res   = `$res_w`;
+//; 	 if(!$get_carry && $use_lut) {
+    always_comb begin
+        res_p_w = op_code[12] ? res_lut : result_flag;//comp_res_p
+        res_p = res_p_w;
+    end
+//; } else {
+    always_comb begin
+        res_p_w = result_flag;
+        res_p = res_p_w;
+    end
+//; }
 //;}
 
 //; if($en_debug) {
