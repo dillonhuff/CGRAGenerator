@@ -16,7 +16,7 @@
  * Date          Author   Description
  * Mar 30, 2010  shacham  init version  --  
  * May 20, 2014  jingpu   Add Async mode, change to active low reset
- * 
+ * Feb 20, 2018  ajcars   Change back to active high reset 
  * ****************************************************************************/
 
 
@@ -29,11 +29,11 @@
 //; my $default = parameter(Name=>'Default', Val=>0, Doc=>'Default value for the register');
 //; my $width = parameter(Name=>'Width', Val=>1, Min=>1, Step=>1, Doc=>'Signal width');
 //; $default = sprintf("%d'h%x",$width,$default);
-//; my $sync = parameter(Name=>"SyncMode", Val=>"Sync",
+//; my $sync = parameter(Name=>"SyncMode", Val=>"ASync",
 //;		         List=>["Sync", "ASync"],
 //;		         Doc=>"Sync or ASync flops?");
 //; my $async_str = "";
-//; $async_str = "or negedge Reset" if $sync eq 'ASync';
+//; $async_str = "or posedge Reset" if $sync eq 'ASync';
 
 module `mname`(
 	       //inputs
@@ -70,7 +70,7 @@ module `mname`(
 
    //; if ($type =~ m/^RFlop$/) {
    always_ff @(posedge Clk `$async_str`) begin
-      if (!Reset) 
+      if (Reset) 
 	dout <= `$default`;
       else
 	dout <= din; 
@@ -79,7 +79,7 @@ module `mname`(
    
    //; if ($type =~ m/^REFlop$/) {
    always_ff @(posedge Clk `$async_str`) begin
-      if (!Reset) 
+      if (Reset) 
 	dout <= `$default`;
       else if (en)
 	dout <= din;

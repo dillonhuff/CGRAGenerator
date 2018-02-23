@@ -1,9 +1,15 @@
 //; use POSIX;
+//; my $jtag_obj = generate("jtag", "jtag_controller");
+//; my $jtag_ifc_path = $jtag_obj -> get_param('IFC');
+//; my $jtag_ifc = clone($jtag_ifc_path, 'jtag_ifc');
+//; my $cfg_bus_width = $jtag_obj -> get_param('SYSCLK_CFG_BUS_WIDTH');
+//; my $cfg_addr_width = $jtag_obj -> get_param('SYSCLK_CFG_ADDR_WIDTH');
+//; my $cfg_op_width = $jtag_obj -> get_param('SYSCLK_CFG_OPCODE_WIDTH');
+//; my $addr_width = $cfg_addr_width + $cfg_op_width; #address and op concatenated in port
 //; my $dummy_value = parameter(Name=>'dummy_value', val=> 0, doc=>'dummy value. placeholder.'); 
 
 module `mname` (
 clk_in, reset_in,
-config_addr_in,
 config_data_in,
 config_addr_out,
 config_data_out,
@@ -12,7 +18,8 @@ reset_out,
 tdi,
 tdo,
 tms,
-tck
+tck,
+trst_n
 );
   
   input  tck;
@@ -20,35 +27,196 @@ tck
   input  reset_in;
   input  tdi;
   input  tms;
-  input [31:0] config_addr_in;
-  input [31:0] config_data_in;
+  input  trst_n;
+  input [`$cfg_bus_width-1`:0] config_data_in;
 
-  output reg [31:0] config_addr_out;
-  output reg [31:0] config_data_out;
+  output reg [`$addr_width-1`:0] config_addr_out;
+  output reg [`$cfg_bus_width-1`:0] config_data_out;
   output reg clk_out;
   output reg reset_out;
   output tdo;
 
-  wire [31:0] config_addr_jtag_out;
-  wire [31:0] config_data_jtag_out;
-//; my $jtag_obj = generate("jtag", "jtag_controller");
-//; my $jtag_ifc_path = $jtag_obj -> get_param('IFC');
-//; my $jtag_ifc = clone($jtag_ifc_path, 'jtag_ifc');
-`$jtag_ifc -> instantiate` (.Clk(clk_in), .Reset(reset_in));
-`$jtag_obj -> instantiate` (.ifc(`$jtag_ifc->iname()`));
+  wire [`$addr_width-1`:0] config_addr_jtag_out;
+  wire [`$cfg_bus_width-1`:0] config_data_jtag_out;
+  wire [`$cfg_bus_width-1`:0] config_data_jtag_in;
+  wire [`$cfg_op_width-1`:0] op;
+  reg clk;
+  //separate op out from address field
+`$jtag_ifc -> instantiate` (.Clk(clk), .Reset(reset_in));
+`$jtag_obj -> instantiate` (.ifc(`$jtag_ifc->iname()`),
+			    .bsr_tdi(),
+			    .bsr_sample(),
+			    .bsr_intest(),
+			    .bsr_extest(),
+			    .bsr_update_en(),
+			    .bsr_capture_en(),
+		 	    .bsr_shift_dr(),
+			    .bsr_tdo()
+			    );
 
+//Connect signals to jtag_ifc ports
+      assign `$jtag_ifc->iname()`.tck=tck;
       assign `$jtag_ifc->iname()`.tdi=tdi;
       assign `$jtag_ifc->iname()`.tdo=tdo;
       assign `$jtag_ifc->iname()`.tms=tms;
-      assign `$jtag_ifc->iname()`.config_addr_to_gc=config_addr_jtag_out;
-      assign `$jtag_ifc->iname()`.config_data_to_gc=config_data_jtag_out;
-      assign `$jtag_ifc->iname()`.config_data_from_gc=config_data_in;
-      assign `$jtag_ifc->iname()`.tck=tck; 
-    
+      assign `$jtag_ifc->iname()`.trst_n=trst_n;
+      assign `$jtag_ifc->iname()`.config_data_from_gc=config_data_jtag_in;
+      assign config_addr_jtag_out = `$jtag_ifc->iname()`.config_addr_to_gc;
+      assign config_data_jtag_out = `$jtag_ifc->iname()`.config_data_to_gc;
+
+ 
+  //OPCODES
+  parameter NOP = `$cfg_op_width`'d0;
+  parameter write_config =`$cfg_op_width`'d1;
+  parameter read_config = `$cfg_op_width`'d2;
+  //parameter set_base_reg = `$cfg_op_width`'d3;
+  //parameter set_rw_and_count = `$cfg_op_width`'d4;
+  //parameter burst_start = `$cfg_op_width`'d5;
+  parameter read_data = 5'd6;
+  parameter write_A050 = 5'd7;
+  parameter write_TST = 5'd8;
+  parameter read_TST = 5'd9;
+  parameter global_reset = 5'd10;
+  parameter reset_tile = 5'd11; 
+  parameter stall = 5'd12;
+  parameter advance_clk = 5'd13;
+  parameter resume_clk = 5'd14;
+  parameter sys_clk_on = 5'd15;
+  parameter wr_rd_delay_reg = 5'd16;
+  parameter rd_rd_delay_reg = 5'd17;
+
+  //STATES
+  parameter ready = 2'd0;
+  parameter reading = 2'd1;
+  parameter resetting = 2'd2;
+  parameter advancing_clk = 2'd3;
+
+  reg [1:0] state;
+  reg [1:0] next_state;
+  
+
+  reg stalled;
+  reg pulsing;
+  reg sys_clk_activated;
+  reg clk_switch_request;
+  reg gl_reset;
+  reg [`$cfg_bus_width-1`:0] TST;
+  reg [`$cfg_bus_width-1`:0] counter;
+  reg [`$cfg_bus_width-1`:0] rd_delay_reg;
+  assign op = config_addr_jtag_out[`$addr_width-1`:`$addr_width-$cfg_op_width`];
   always @(*) begin
-    config_addr_out = config_addr_in;
-    config_data_out = config_data_in;
-    clk_out = clk_in;
-    reset_out = reset_in;
+    clk = (sys_clk_activated) ? clk_in : tck;
+    clk_out = (stalled & (state != advancing_clk)) ? 0 : clk;
+    reset_out = (state==resetting) ? 1 : reset_in;
   end
+  reg [2:0] sync_counter;
+  //Clock switcher block (Always on system_clk)
+  always @ (posedge clk_in or posedge reset_in) begin
+	if (reset_in==1)
+		sys_clk_activated <= 0;	
+	else if (!sys_clk_activated) begin
+		//Deactivate clk to rest of GC
+		//Connect rest of GC to sys_clk (fast clk)
+	end	
+  end
+		
+ 
+  always @ (posedge clk or posedge reset_in) begin
+    	if (reset_in==1) begin
+		stalled <= 0;
+		pulsing <= 0;
+       		clk_switch_request <= 0;
+		rd_delay_reg <= 16;
+		counter <= 0;
+		config_addr_out <= 0;
+		config_data_out <= 0;
+		config_data_jtag_in <= 0;
+    	end
+
+    	else begin
+    		if (state==ready) begin
+    			case(op)
+			NOP: begin
+				config_addr_out <= {op,config_addr_out[`$cfg_addr_width-1`:0]};
+				config_data_out <= config_data_out;
+				config_data_jtag_in <= config_data_jtag_in;	
+			end
+			write_config: begin
+				config_addr_out <= config_addr_jtag_out;
+				config_data_out <= config_data_jtag_out; 
+				config_data_jtag_in <= config_data_in;	
+			end
+			read_config: begin
+				config_addr_out <= config_addr_jtag_out;
+				config_data_out <= config_data_jtag_out; 
+				config_data_jtag_in <= config_data_in;
+				counter <= rd_delay_reg;
+				state <= reading;
+			end
+			read_data: begin
+				config_addr_out <= config_addr_jtag_out;
+				config_data_out <= config_data_jtag_out; 
+				config_data_jtag_in <= config_data_in;
+				counter <= rd_delay_reg;
+				state <= reading;
+			end
+			write_A050: begin
+				config_data_jtag_in <= `$cfg_bus_width`'hA050;
+			end
+			write_TST: begin
+				TST <= config_data_jtag_out;
+			end
+			read_TST: begin
+				config_data_jtag_in <= TST;
+			end
+			global_reset: begin
+				state <= resetting;
+				counter <= (config_data_jtag_out > 0) ? config_data_jtag_out : `$cfg_bus_width`'d20;
+			end
+			reset_tile: begin
+				config_addr_out <= config_addr_jtag_out;
+				config_data_out <= config_data_jtag_out; 
+			end
+			stall: begin
+				stalled <= 1;
+			end			
+			advance_clk: begin
+				if (stalled) begin
+					counter <= config_data_jtag_out;
+					state <= advancing_clk;	
+				end
+			end
+			resume_clk: begin
+				stalled <= 0;
+			end
+			sys_clk_on: begin
+				clk_switch_request <= 1;//CHANGE THIS! NEED TO MAKE SURE CLK IS HELD LOW FOR A FEW CYCLES FIRST
+			end
+			wr_rd_delay_reg: begin
+				rd_delay_reg <= config_data_jtag_out;
+			end
+			rd_rd_delay_reg: begin
+				config_data_jtag_in <= rd_delay_reg;
+			end
+			default: begin
+				config_addr_out <= {NOP,config_addr_out[`$cfg_addr_width-1`:0]};
+				config_data_out <= config_data_out;
+				config_data_jtag_in <= config_data_jtag_in;	
+			end
+			endcase
+		end
+		//Counter for any state that needs to block incoming instructions
+		else begin
+			config_addr_out <= {NOP,config_addr_out[`$cfg_addr_width-1`:0]};
+			if (counter > 0) begin
+				counter <= counter-1;
+			end
+			else
+				state <= ready;
+			
+		end    	
+  	end
+  end
+	
+
 endmodule
