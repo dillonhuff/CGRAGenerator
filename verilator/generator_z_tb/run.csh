@@ -438,7 +438,6 @@ echo "run.csh: Build the simulator..."
 
   # build C++ project
 
-<<<<<<< e71b19e7e0f45760ed9cca8bf51b552ee75df756
   set opt = ''
 
 # Hey HEY built a test_pe that maybe has working LUTs for kiwi;
@@ -471,31 +470,6 @@ echo "run.csh: Build the simulator..."
 # #     cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv || exit 13
 # 
 #   endif
-=======
-  ########################################################################
-  # O0 hack for nbdev3 and beyond: only runs on kiwi if opt OFF
-
-  set opt = ''
-  set branch = `git rev-parse --abbrev-ref HEAD`
-  set badbranch = nbdev4
-  if (! $?TRAVIS && "$branch" == "$badbranch") then
-
-    # OMG -O0 is SOO SLOWWW let's just disable luts instead
-    # set opt = '-O0'
-    # echo
-    # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-    # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-    # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-
-    set hwdir = $vdir/../..
-    echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + $badbranch"
-    echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + $badbranch"
-    echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + $badbranch"
-    echo cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv
-    cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv || exit 13
-
-  endif
->>>>>>> bringing in line w/ nbdev3
 
   echo
   echo verilator $opt -Wall $myswitches --cc --exe $testbench \
