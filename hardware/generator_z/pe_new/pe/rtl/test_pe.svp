@@ -579,14 +579,12 @@ logic res_lut;
 //; if($use_lut) {
     localparam PE_FLAG_LUT = 4'hE;
 //; $res_flag_hash->{'PE_FLAG_LUT'} = {
-<<<<<<< a8889f842fffbf2fa5a3a699d3403b7e64a48bc0
 //;    sel => "0xe",
 //;    equ => 'lut code'
 //; };
 //; }
     localparam PE_FLAG_PE  = 4'hF;
 //; $res_flag_hash->{'PE_FLAG_PE'} = {
-<<<<<<< a8889f842fffbf2fa5a3a699d3403b7e64a48bc0
 //;    sel => "0xf",
 //;    equ => 'comp_res_p'
 //; };
@@ -659,7 +657,6 @@ logic res_lut;
   assign res_p_w = result_flag;
 //;	 } else {
   assign res_p_w = op_code[12] ? res_lut : result_flag;//comp_res_p;
-<<<<<<< a8889f842fffbf2fa5a3a699d3403b7e64a48bc0
 //; $res_flag_hash->{'COMP_FLAG'} = {
 //;    sel => "0x0",
 //;    equ => 'comp_res_p'
@@ -770,7 +767,6 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //;  }
 //;################### Predicate
 //;  if ($feature=~m/2_predicate/) {
-<<<<<<< a8889f842fffbf2fa5a3a699d3403b7e64a48bc0
 //;    print PEINFO "        <mux reg_address='$value->{'address'}' snk='res_p' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>\n";
 //;    foreach my $flag (sort { $res_flag_hash->{$a}{'sel'} cmp $res_flag_hash->{$b}{'sel'} } keys(%$res_flag_hash))  {
 //;       my $flag_value = $res_flag_hash->{$flag};
