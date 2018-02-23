@@ -68,7 +68,7 @@ cd $CGROOT/hardware/generator_z/top
     if ($?VERBOSE) then
       echo "";
       echo "generator.csh: Generator run.csh looks like this:"; 
-      cat run.csh | awk '{print "    " $0}';
+      cat run.csh | sed -n '/^Genesis/,/echo/p' | awk '{print "    " $0}';
       echo ""
       run.csh -v || exit -1
 

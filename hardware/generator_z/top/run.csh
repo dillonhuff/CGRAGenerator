@@ -21,11 +21,17 @@ fi
 
 
 echo
-echo WARNING Swapping in 'srnew' LUTs
-echo WARNING Swapping in 'srnew' LUTs
-echo WARNING Swapping in 'srnew' LUTs
+echo HACKWARNING Swapping in 'srnew' LUTs
+echo HACKWARNING Swapping in 'srnew' LUTs
+echo HACKWARNING Swapping in 'srnew' LUTs
 echo cp ../pe_new/pe/rtl/test_pe.svp.srnew ../pe_new/pe/rtl/test_pe.svp 
 cp ../pe_new/pe/rtl/test_pe.svp.srnew ../pe_new/pe/rtl/test_pe.svp 
+echo
+
+echo
+echo HACKWARNING IO pads are hardwired outputs=side0,1 inputs=2,3
+echo HACKWARNING IO pads are hardwired outputs=side0,1 inputs=2,3
+echo HACKWARNING IO pads are hardwired outputs=side0,1 inputs=2,3
 echo
 
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
@@ -69,9 +75,9 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../jtag/Template/src/digital/cfg_and_dbg.svp
 
 echo
-echo WARNING Restoring original LUT code
-echo WARNING Restoring original LUT code
-echo WARNING Restoring original LUT code
+echo HACKWARNING Restoring original LUT code
+echo HACKWARNING Restoring original LUT code
+echo HACKWARNING Restoring original LUT code
 echo git checkout ../pe_new/pe/rtl/test_pe.svp
 git checkout ../pe_new/pe/rtl/test_pe.svp
 echo
@@ -79,9 +85,9 @@ echo
 
 
 echo
-echo WARNING Swapping stub in place of DW_tap
-echo WARNING Swapping stub in place of DW_tap
-echo WARNING Swapping stub in place of DW_tap
+echo HACKWARNING Swapping stub in place of DW_tap
+echo HACKWARNING Swapping stub in place of DW_tap
+echo HACKWARNING Swapping stub in place of DW_tap
 echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 echo
@@ -90,7 +96,29 @@ echo
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
 
+echo
+echo HACKWARNING Adding IO constraints to cgra_info.txt
+echo HACKWARNING Adding IO constraints to cgra_info.txt
+echo HACKWARNING Adding IO constraints to cgra_info.txt
+grep -v '/CGRA' cgra_info.txt > /tmp/tmp.$$
+cat << eof >> /tmp/tmp.$$
+
+  <BOARD>
+    <!-- Sides 0,1,2,3 are right, bottom, left, top respectively -->
+    <input >side2_group2</input>
+    <input >side3_group3</input>
+    <output>side0_group0</output>
+    <output>side1_group1</output>
+  </BOARD>
+
+</CGRA>
+eof
+mv /tmp/tmp.$$ cgra_info.txt
+echo
+
 if [ `hostname` == "kiwi" ]; then
+  echo Checking cgra_info for errors...
+  echo xmllint --noout cgra_info.txt
   xmllint --noout cgra_info.txt |& head -n 20
 fi
 
