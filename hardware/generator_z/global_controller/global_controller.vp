@@ -121,7 +121,6 @@ trst_n
 	else if (!sys_clk_activated) begin
 		//Deactivate clk to rest of GC
 		//Connect rest of GC to sys_clk (fast clk)
-		if(	
 	end	
   end
 		
