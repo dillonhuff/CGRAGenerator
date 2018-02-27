@@ -64,7 +64,7 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../memory_tile/memory_tile.vp \
   ../memory_core/memory_core.vp \
   ../memory_core/mem.vp \
-  ../global_controller/global_controller.vp \
+  ../global_controller/global_controller.svp \
   \
   ../jtag/jtag.svp \
   ../jtag/Template/src/digital/template_ifc.svp \
