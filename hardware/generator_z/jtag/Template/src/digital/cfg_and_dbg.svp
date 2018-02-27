@@ -142,6 +142,9 @@ module `mname`
     output 				logic bsr_shift_dr,
     input 				logic bsr_tdo,
 
+    //Is global controller running on sys clk? or still on test clk?
+    input	 logic sys_clk_activated,
+
 
     input        logic  tms,          	// JTAG Test Mode Select
     input        logic  tck,          	// JTAG Test Clock
@@ -304,7 +307,7 @@ module `mname`
    // Qualify the instruction
    logic [3:0] inst_update_qual;
    logic       inst_update_qualified;
-   assign inst_update_qualified = (inst_update_qual==4'b1110)?1'b1:1'b0;
+   assign inst_update_qualified = ((sys_clk_activated & inst_update_qual==4'b1110) | (!sys_clk_activated & inst_update_qual[3]==1)) ? 1'b1:1'b0;
    //; my $inst_update_reg = generate('flop', 'inst_update_reg', 
    //;					     Type => 'RFlop',
    //;					     Default => 0,

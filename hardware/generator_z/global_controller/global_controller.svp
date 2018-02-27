@@ -42,9 +42,11 @@ trst_n
   wire [`$cfg_op_width-1`:0] op;
   reg clk;
   reg clk_domain;
+  reg sys_clk_activated;
   //separate op out from address field
 `$jtag_ifc -> instantiate` (.Clk(clk), .Reset(reset_in));
 `$jtag_obj -> instantiate` (.ifc(`$jtag_ifc->iname()`),
+			    .sys_clk_activated(sys_clk_activated),
 			    .bsr_tdi(),
 			    .bsr_sample(),
 			    .bsr_intest(),
@@ -97,9 +99,7 @@ trst_n
   reg all_stalled_sys;
   reg cgra_stalled;
   reg pulsing;
-  reg sys_clk_activated;
   reg clk_switch_request;
-  reg gl_reset;
   reg [`$cfg_bus_width-1`:0] TST;
   reg [`$cfg_bus_width-1`:0] counter;
   reg [`$cfg_bus_width-1`:0] rd_delay_reg;
