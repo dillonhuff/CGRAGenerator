@@ -1,0 +1,10 @@
+// Use e.g. JSON.minify to remove comments: https://github.com/getify/JSON.minify
+{
+  // set groups 0 and 1 (right and bottom sides) as output
+  0 : "out",
+  1 : "out",
+
+  // set groups 2 and 3 (left  and top    sides) as input
+  2 : "in",  
+  3 : "in"
+}
