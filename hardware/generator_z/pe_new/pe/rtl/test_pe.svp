@@ -758,28 +758,68 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //; };
 
 
-/*****************************************************
-Read Data Mux
-*****************************************************/
-always_comb begin 
-    case (cfg_a) 
+//;###################################################
+//;# Read Data Mux
+//;###################################################
+//; $pe_info_hash->{ '5_read' } = {
+//;   out => 'read_data'
+//; };
+//; my $read_data_hash;
+
 //; if($reg_inputs) {
-        8'hF0 : read_data = op_a;
-        8'hF1 : read_data = op_b;
+//; $read_data_hash->{'op_code'} = {
+//;   src => 'FF',
+//;   data => 'op_code'
+//; };
+//; $read_data_hash->{'inp_code'} = {
+//;   src => 'FE',
+//;   data => 'inp_code'
+//; };
+//; $read_data_hash->{'op_a'} = {
+//;   src => 'F0',
+//;   data => 'op_a'
+//; };
+//; $read_data_hash->{'op_b'} = {
+//;   src => 'F1',
+//;   data => 'op_b'
+//; };
 //; if($use_c_input) {
-        8'hF2 : read_data = op_c;
+//; $read_data_hash->{'op_c'} = {
+//;   src => 'F2',
+//;   data => 'op_c'
+//; };
 //; }
-        8'hF3 : read_data = {15'h0, op_d_p};
+//; $read_data_hash->{'op_d'} = {
+//;   src => 'E0',
+//;   data => 'op_d_p'
+//; };
 //; if($use_lut && ($lut_inps == 3)) {
-        8'hF4 : read_data = {15'h0, op_e_p};
-        8'hF5 : read_data = {15'h0, op_f_p};
+//; $read_data_hash->{'op_e'} = {
+//;   src => 'E1',
+//;   data => 'op_e_p'
+//; };
+//; $read_data_hash->{'op_f'} = {
+//;   src => 'E2',
+//;   data => 'op_f_p'
+//; };
 //; }
 //; }
 //; if($reg_out) {
-        8'h00 : read_data = res;
-        8'h01 : read_data = {15'h0, res_p};
+//; $read_data_hash->{'res'} = {
+//;   src => 'D0',
+//;   data => 'res'
+//; };
+//; $read_data_hash->{'res_p'} = {
+//;   src => 'D1',
+//;   data => 'res_p'
+//; };
 //; }        
-        default : read_data = 16'h0;
+always_comb begin 
+    case (cfg_a) 
+//; foreach my $key (sort { $read_data_hash->{$a}{'src'} cmp $read_data_hash->{$b}{'src'} } keys(%$read_data_hash))  {
+        8'h`$read_data_hash->{$key}->{'src'}` : read_data = `$read_data_hash->{$key}->{'data'}`;
+//; }
+        default : read_data = 'h0;
     endcase
 end
 
@@ -829,6 +869,14 @@ end
 //;  }
 //;  if ($feature=~m/4_init/) {
 //;    print PEINFO "        <reg reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>reg_$value->{'out'}</reg>\n";
+//;  }
+//;################### Read Data 
+//;  if ($feature=~m/5_rea/) {
+//;    print PEINFO "        <mux snk='$value->{'out'}'>\n";
+//;    foreach my $key (sort { $read_data_hash->{$a}{'src'} cmp $read_data_hash->{$b}{'src'} } keys(%$read_data_hash))  {
+//;       print PEINFO "            <src sel='$read_data_hash->{$key}->{'src'}'>$read_data_hash->{$key}->{'data'}</src>\n";
+//;    }
+//;    print PEINFO "        </mux>\n"
 //;  }
 //;}
 //;close PEINFO;
