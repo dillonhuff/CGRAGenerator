@@ -674,7 +674,7 @@ logic res_lut;
 //;  $res_w = '(cntr_en | en_acc) ? op_b : comp_res';
 //; } elsif($use_cntr) {
 //;  $res_w = '(cntr_en) ? op_b : comp_res';
-//; } elsif($use_cntr) {
+//; } elsif($use_acc) {
 //;  $res_w = '(en_acc) ? op_b : comp_res';
 //; }
 //;
