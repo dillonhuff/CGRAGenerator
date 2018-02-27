@@ -20,19 +20,6 @@ fi
 # fi
 
 
-echo
-echo HACKWARNING Swapping in 'srnew' LUTs
-echo HACKWARNING Swapping in 'srnew' LUTs
-echo HACKWARNING Swapping in 'srnew' LUTs
-echo cp ../pe_new/pe/rtl/test_pe.svp.srnew ../pe_new/pe/rtl/test_pe.svp 
-cp ../pe_new/pe/rtl/test_pe.svp.srnew ../pe_new/pe/rtl/test_pe.svp 
-echo
-
-echo
-echo HACKWARNING IO pads are hardwired outputs=side0,1 inputs=2,3
-echo HACKWARNING IO pads are hardwired outputs=side0,1 inputs=2,3
-echo HACKWARNING IO pads are hardwired outputs=side0,1 inputs=2,3
-echo
 
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   top.vp \
@@ -74,15 +61,6 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../jtag/Template/src/digital/reg_file.svp \
   ../jtag/Template/src/digital/cfg_and_dbg.svp
 
-echo
-echo HACKWARNING Restoring original LUT code
-echo HACKWARNING Restoring original LUT code
-echo HACKWARNING Restoring original LUT code
-echo git checkout ../pe_new/pe/rtl/test_pe.svp
-git checkout ../pe_new/pe/rtl/test_pe.svp
-echo
-
-
 
 echo
 echo HACKWARNING Swapping stub in place of DW_tap
@@ -91,7 +69,6 @@ echo HACKWARNING Swapping stub in place of DW_tap
 echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 echo
-
 
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh

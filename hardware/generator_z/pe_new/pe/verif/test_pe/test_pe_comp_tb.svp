@@ -1,5 +1,3 @@
-//; include("ipu_header.svph");
-//; include("gen_mode_defs.svph");
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Test bench for PE compute.
@@ -378,7 +376,6 @@ end
   .op_d_p (op_d_p_in),
 
 //; if($dut->get_param('use_cntr') > 0) {
-  .cntr_next (),
   .cntr_en   (),
 //;}
 //; if($dut->get_param('use_div') > 0) {
