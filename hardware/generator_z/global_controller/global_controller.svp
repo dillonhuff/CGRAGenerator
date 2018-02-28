@@ -143,6 +143,7 @@ trst_n
 		pulsing <= 0;
        		clk_switch_request <= 0;
 		rd_delay_reg <= 16;
+		TST <= 0;
 		counter <= 0;
 		config_addr_out <= 0;
 		config_data_out <= 0;
@@ -164,14 +165,12 @@ trst_n
 			read_config: begin
 				config_addr_out <= config_addr_jtag_out;
 				config_data_out <= config_data_jtag_out; 
-				config_data_jtag_in <= config_data_in;
 				counter <= rd_delay_reg-1;
 				state <= reading;
 			end
 			read_data: begin
 				config_addr_out <= config_addr_jtag_out;
 				config_data_out <= config_data_jtag_out; 
-				config_data_jtag_in <= config_data_in;
 				counter <= rd_delay_reg-1;
 				state <= reading;
 			end
@@ -226,8 +225,11 @@ trst_n
 			if (counter > 0) begin
 				counter <= counter-1;
 			end
-			else
+			else begin
 				state <= ready;
+				if (state == reading) 
+					config_data_jtag_in <= config_data_in;
+			end
 		end    	
   	end
   end

@@ -72,7 +72,7 @@ parameter max_bus_width = max_int(max_int(sc_bus_width, tc_bus_width), 32);
 parameter max_addr_width = max_int(sc_addr_width, tc_addr_width);
 
 typedef enum {sc_domain, tc_domain} regfile_t;
-typedef enum logic [max_int(tc_op_width, sc_op_width)-1:0] {nop=0, write=1, read=2, set_base_reg=3, set_rw_count=4, burst_start=5, read_data=6, wr_A050=7, wr_TST=8, rd_tst=9, global_reset=10, reset_tile=11, stall=12, advance_clk=13, resume_clk=14, sys_clk_on=15, wr_rd_delay_reg=16, rd_rd_delay_reg=17} regfile_op_t;
+typedef enum logic [max_int(tc_op_width, sc_op_width)-1:0] {nop=0, write=1, read=2, set_base_reg=3, set_rw_count=4, burst_start=5, read_data=6, wr_A050=7, wr_TST=8, rd_TST=9, global_reset=10, reset_tile=11, stall=12, advance_clk=13, resume_clk=14, sys_clk_on=15, wr_rd_delay_reg=16, rd_rd_delay_reg=17} regfile_op_t;
 
 typedef struct {
    logic [max_bus_width-1:0] data_in;
@@ -183,7 +183,7 @@ endclass: `mname`
 
 	 // read or write changes the order of data vs op
 	 // for reads, first send instructions then get data
-	 if (cur_trans.op == read | cur_trans.op == read_data | cur_trans.op == rd_tst | cur_trans.op == rd_rd_delay_reg) begin
+	 if (cur_trans.op == read | cur_trans.op == read_data | cur_trans.op == rd_TST | cur_trans.op == rd_rd_delay_reg) begin
 	    // send instruction
 	    ShiftIR(sc_cfg_inst, jtag_inst_width);
 	    ShiftDR(cur_trans.op, sc_op_width);
