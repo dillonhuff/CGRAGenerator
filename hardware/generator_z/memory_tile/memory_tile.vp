@@ -220,7 +220,7 @@ tile_id
 //;   if ($bus eq $gen_mem_for_busname) {
 //;     $sb_hash{ $bus } = generate('sb', 'sb1', width => $bus_width, num_tracks => $num_tracks, sides => $sides, feedthrough_outputs=>$ft, registered_outputs=>$reg, pe_output_count=>1, is_bidi=>$is_bidi);
 //;   } else { 
-//;     $sb_hash{ $bus } = generate('sb', 'sb2', width => $bus_width, num_tracks => $num_tracks, sides => $sides, feedthrough_outputs=>$ft, registered_outputs=>$reg, pe_output_count=>2, is_bidi=>$is_bidi);
+//;     $sb_hash{ $bus } = generate('sb', 'sb2', width => $bus_width, num_tracks => $num_tracks, sides => $sides, feedthrough_outputs=>$ft, registered_outputs=>$reg, pe_output_count=>3, is_bidi=>$is_bidi);
 //;   }
 //; }
 //; for (my $row=0; $row < $mem_tile_height; $row++) {
