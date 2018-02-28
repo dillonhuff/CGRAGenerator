@@ -388,9 +388,9 @@ assign config_data = config_data_in;
     `$global_controller_obj->instantiate()` 
     (
       .clk_in(clk_in),
-      .clk_out(clk),
+      .clk_out(), //clk),
       .reset_in(reset_in),
-      .reset_out(reset),
+      .reset_out(), //reset),
       .config_addr_out(),//config_addr),
       .config_data_in(),//config_data_in),
       .config_data_out(),//config_data),
@@ -400,6 +400,9 @@ assign config_data = config_data_in;
       .tck(tck),
       .trst_n(trst_n)
     );
+    //UNTIL WE FIX TESTS TO INPUT CFG ADDR AND DATA THROUGH JTAG, DON'T RUN CLK SIGNALS THROUGH GC
+    assign clk = clk_in;
+    assign reset = reset_in;
 
 // FIXME Note there are LOTS of unused wires being created below!
 // FIXME I assume they will be hooked up to something eventually

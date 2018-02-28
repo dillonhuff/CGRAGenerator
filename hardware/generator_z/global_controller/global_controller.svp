@@ -116,7 +116,7 @@ trst_n
   always @ (posedge tck or posedge reset_in) begin
 	if (reset_in==1) begin
 		clk_switch_counter <= `$cfg_bus_width`'d20;
-		sys_clk_activated <= 0;//JUST TO MAKE TESTS PASS. THIS SHOULD BE 0
+		sys_clk_activated <= 0;
 		all_stalled_tck <= 0;
 	end
 	else if ((clk_switch_counter > 0) & (clk_switch_request == 1)) begin
