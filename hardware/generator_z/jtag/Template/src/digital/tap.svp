@@ -23,7 +23,7 @@
  * Date          Author   Description
  * Mar 30, 2010  shacham  init version  --  
  * May 20, 2014  jingpu   cumulative fixes, compatible with async active low reset flops
- * 
+ * Feb 20, 2014, ajcars   change back to async active high reset flops 
  * ****************************************************************************/
 //;
 //; use Scalar::Util qw(looks_like_number);
@@ -217,7 +217,7 @@ module `$self->get_module_name()`
    // Qualifiers for the various jtag stages
    // OS: unfortunatelly, this is hard coded based on the DW_tap documentation 
    //     and implementation. Not very robust though...
-   assign test_logic_reset  = ~tap_state[0];
+   assign test_logic_reset  = tap_state[0];
    logic  at_capture_dr;
    assign at_capture_dr = tap_state[3]; 
    logic  at_shift_dr;
