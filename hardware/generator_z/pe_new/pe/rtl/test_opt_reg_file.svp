@@ -1,0 +1,116 @@
+//; my $reg_cnt  = parameter(Name=>'reg_cnt',
+//;                               Val=> 4, Min=>1, Step=>1, Max=>16,
+//;                               Doc=>"Total number of registers");
+//;
+//; my $use_reg_file = ($reg_cnt > 1);
+//;
+//; use POSIX qw(ceil floor);
+//; sub CeilLog2{ceil(log(shift)/log(2));}
+
+// $use_reg_file = `$use_reg_file`
+
+module  `mname`  #(
+  parameter DataWidth = 16
+) (
+  input                  clk,
+  input                  clk_en,
+  input                  rst_n,
+
+  input                  load,
+  input  [DataWidth-1:0] val,
+
+//; if($use_reg_file) {
+  input  [DataWidth-1:0] cfg_d,
+  input  [3:0]           cfg_a,
+  input                  cfg_en,
+//; }
+
+  input  [2:0]           mode,
+
+  input        [DataWidth-1:0] data_in,
+  output logic [DataWidth-1:0] res
+);
+
+logic [DataWidth-1:0] data_in_reg [`$reg_cnt-1`:0];
+logic [DataWidth-1:0] data_in_reg_next;
+logic                 data_in_le;
+
+localparam REG_CONST  = 3'h0; // FF is loaded only when 'load'=1 with 'val'
+localparam REG_VALID  = 3'h1; // Pipeline delay with clock_en = 'clk_en'
+localparam REG_BYPASS = 3'h2; // FF is bypassed
+localparam REG_DELAY  = 3'h3; // Assumes data is always valid
+localparam REG_FILE   = 3'h4;
+
+
+//; if($use_reg_file) {
+always_comb begin
+  if (cfg_en) begin
+    data_in_reg_next = cfg_d;
+  end else if (load) begin
+    data_in_reg_next = val;
+  end else begin
+    data_in_reg_next = data_in;
+  end
+end
+
+assign data_in_le = load                           |
+                    (cfg_en & (cfg_a == 4'h0))     |
+                    (cfg_en & (mode == REG_CONST)) |
+                    (mode == REG_DELAY)            |
+                    ((mode == REG_VALID) & clk_en);
+
+always_ff @(posedge clk or negedge rst_n) begin
+  if(~rst_n) begin
+    data_in_reg[0] <= 'h0;
+  end else if(data_in_le) begin
+    data_in_reg[0] <= data_in_reg_next;
+  end
+end
+
+
+genvar g_i;
+
+generate
+  for (g_i = 1; g_i < `$reg_cnt`; g_i = g_i + 1) begin : GEN_REG_FILE
+    always_ff @(posedge clk or negedge rst_n) begin
+      if(~rst_n) begin
+        data_in_reg[g_i] <= 'h0;
+      end else if(cfg_en & (g_i[3:0] == cfg_a)) begin
+        data_in_reg[g_i] <= cfg_d;
+      end
+    end
+  end
+endgenerate
+
+
+always_comb begin
+  case (mode)
+    REG_BYPASS: res = data_in;
+    REG_CONST : res = data_in_reg[0];
+    REG_FILE  : begin
+      res = (data_in[`CeilLog2($reg_cnt)`:0] < `$reg_cnt`) ?
+            data_in_reg[data_in[`CeilLog2($reg_cnt)`:0]] :
+            data_in_reg[0];
+    end
+    default   : res = data_in_reg[0];
+  endcase // mode
+
+end
+//; } else {
+
+assign data_in_reg_next = load ? val : data_in;
+assign data_in_le       = load | (mode == REG_DELAY) |
+                          ((mode == REG_VALID) & clk_en);
+
+always_ff @(posedge clk or negedge rst_n) begin
+  if(~rst_n) begin
+    data_in_reg[0] <= 'h0;
+  end else if(data_in_le) begin
+    data_in_reg[0] <= data_in_reg_next;
+  end
+end
+
+assign res = (mode == REG_BYPASS) ? data_in : data_in_reg[0];
+//; }
+
+endmodule
