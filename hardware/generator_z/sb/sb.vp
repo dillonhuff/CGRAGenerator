@@ -186,7 +186,11 @@ config_en
 //;       if ($registered[$j]==1) {
   reg [`$width-1`:0] out_`$i`_`$j`_id1;
   always @(posedge clk or posedge reset) begin
-    out_`$i`_`$j`_id1 <= out_`$i`_`$j`_i;
+    if (reset == 1'b1) begin
+      out_`$i`_`$j`_id1 <= 0;
+    end else begin
+      out_`$i`_`$j`_id1 <= out_`$i`_`$j`_i;
+    end
   end
 //;        $registered_config_bit_count++;
   assign out_`$i`_`$j` = config_sb[`$config_bit_r`]?out_`$i`_`$j`_id1:out_`$i`_`$j`_i; 
