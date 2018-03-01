@@ -44,7 +44,8 @@ localparam REG_FILE   = 3'h4;
 
 //; if($use_reg_file) {
 always_comb begin
-  if (cfg_en) begin
+/* TODO Be careful about reg[0] */
+  if (cfg_en && (cfg_a == 4'h1)) begin
     data_in_reg_next = cfg_d;
   end else if (load) begin
     data_in_reg_next = val;
@@ -54,8 +55,8 @@ always_comb begin
 end
 
 assign data_in_le = load                           |
-                    (cfg_en & (cfg_a == 4'h0))     |
-                    (cfg_en & (mode == REG_CONST)) |
+                    (cfg_en & (cfg_a == 4'h1))     |
+//                    (cfg_en & (mode == REG_CONST)) |
                     (mode == REG_DELAY)            |
                     ((mode == REG_VALID) & clk_en);
 
@@ -75,7 +76,7 @@ generate
     always_ff @(posedge clk or negedge rst_n) begin
       if(~rst_n) begin
         data_in_reg[g_i] <= 'h0;
-      end else if(cfg_en & (g_i[3:0] == cfg_a)) begin
+      end else if(cfg_en & (g_i[3:0] == cfg_a + 1)) begin
         data_in_reg[g_i] <= cfg_d;
       end
     end
