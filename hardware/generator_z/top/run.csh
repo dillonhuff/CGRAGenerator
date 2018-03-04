@@ -76,6 +76,6 @@ source remove_genesis_wires.csh
 if [ `hostname` == "kiwi" ]; then
   echo Checking cgra_info for errors...
   echo xmllint --noout cgra_info.txt
-  xmllint --noout cgra_info.txt |& head -n 20
+  xmllint --noout cgra_info.txt | head -n 20
 fi
 
